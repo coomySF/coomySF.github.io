@@ -294,7 +294,7 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 .writing-hero h1 em, .about-hero h1 em { position: relative; color: var(--ink); font-style: normal; }
 .writing-hero h1 em::after, .about-hero h1 em::after { content: ""; position: absolute; right: 1%; bottom: .03em; left: 0; z-index: -1; height: .13em; border-radius: 50%; background: color-mix(in srgb, var(--clay) 46%, transparent); transform: rotate(-1.2deg); }
 .writing-hero-copy > p:last-child { max-width: 660px; margin: 36px 0 0; color: var(--muted); font-size: 18px; line-height: 1.95; }
-.writing-orbit { width: min(39vw, 500px); }
+.writing-portrait { width: min(34vw, 430px); }
 
 .archive { padding: 74px 0 120px; }
 .archive-heading { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 22px; border-bottom: 1px solid var(--ink); }
@@ -404,7 +404,7 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
   .writing-hero, .about-hero { min-height: auto; grid-template-columns: 1fr; }
   .writing-hero { padding: 76px 0 68px; gap: 32px; }
   .writing-hero h1, .about-hero h1 { font-size: clamp(43px, 12vw, 62px); }
-  .writing-orbit { width: min(92vw, 460px); justify-self: center; margin: -18px 0 -30px; }
+  .writing-portrait { width: min(86vw, 390px); justify-self: center; margin-bottom: 20px; }
   .archive { padding: 52px 0 88px; }
   .archive-heading { align-items: flex-start; gap: 20px; }
   .archive-link { grid-template-columns: 34px minmax(0, 1fr); min-height: auto; gap: 16px; padding: 34px 0 39px; }
