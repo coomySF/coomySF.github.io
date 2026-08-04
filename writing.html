@@ -4,18 +4,39 @@ title: 文章
 permalink: /writing/
 description: Coomy 關於 AI、團隊、決策與軟體生產的文章。
 ---
-<section class="page-intro">
-  <p class="eyebrow">WRITING</p>
-  <h1>把想過的問題，<br>留成下一次的起點。</h1>
+<section class="writing-hero" data-reveal>
+  <div class="writing-hero-copy">
+    <p class="eyebrow">WRITING / FIELD NOTES</p>
+    <h1>把想過的問題，<br><em>留成下一次的起點。</em></h1>
+    <p>關於人與 Agent 如何一起工作、團隊如何學會做決定，以及軟體生產怎麼從一次成功，變成可以重複的能力。</p>
+  </div>
+  <div class="writing-signal" aria-hidden="true">
+    <span class="signal-ring signal-ring-a"></span>
+    <span class="signal-ring signal-ring-b"></span>
+    <span class="signal-core"><strong>{{ site.posts | size }}</strong><small>NOTES</small></span>
+    <span class="signal-node signal-node-a"></span>
+    <span class="signal-node signal-node-b"></span>
+  </div>
 </section>
-<section class="archive">
+<section class="archive" aria-label="文章列表">
+  <header class="archive-heading" data-reveal>
+    <p>ARCHIVE</p>
+    <span>由最近的思考開始</span>
+  </header>
   {% for post in site.posts %}
-  <article class="archive-item">
-    <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
-    <div>
-      <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
-      <p>{{ post.description }}</p>
-    </div>
+  <article class="archive-item" data-reveal>
+    <a class="archive-link" href="{{ post.url | relative_url }}" aria-label="閱讀：{{ post.title }}">
+      <div class="archive-index">{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}</div>
+      <div class="archive-content">
+        <div class="archive-meta">
+          <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
+          {% if post.tags.first %}<span>{{ post.tags.first }}</span>{% endif %}
+        </div>
+        <h2>{{ post.title }}</h2>
+        <p>{{ post.description }}</p>
+      </div>
+      <span class="archive-arrow" aria-hidden="true">↗</span>
+    </a>
   </article>
   {% endfor %}
 </section>
