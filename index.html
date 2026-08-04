@@ -19,15 +19,32 @@ description: Coomy 的個人長文網站，記錄 AI、團隊、決策與可複�
     <svg class="orbit-svg" viewBox="0 0 520 520" width="520" height="520" role="presentation">
       <defs>
         <path id="orbit-copy-path" d="M 95 260 A 165 165 0 1 1 425 260 A 165 165 0 1 1 95 260" />
+        <linearGradient id="core-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fffaf0" />
+          <stop offset=".52" stop-color="#e7d9c9" />
+          <stop offset="1" stop-color="#c8d6d1" />
+        </linearGradient>
+        <linearGradient id="thread-gradient" x1="80" y1="120" x2="440" y2="400" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#6f8794" />
+          <stop offset=".5" stop-color="#b96e55" />
+          <stop offset="1" stop-color="#768778" />
+        </linearGradient>
+        <radialGradient id="aura-gradient" cx="45%" cy="38%" r="65%">
+          <stop offset="0" stop-color="#fffaf0" stop-opacity=".95" />
+          <stop offset=".58" stop-color="#c9d8d4" stop-opacity=".42" />
+          <stop offset="1" stop-color="#bd765d" stop-opacity=".08" />
+        </radialGradient>
         <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
           <feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity=".12" />
         </filter>
       </defs>
+      <path class="orbit-aura" d="M103 129C162 62 285 49 377 91c95 43 115 152 72 244-42 91-142 145-246 117C96 423 42 319 61 226c8-39 21-70 42-97Z" />
       <g class="orbit-plane orbit-plane-back">
         <ellipse cx="260" cy="260" rx="208" ry="95" />
         <ellipse cx="260" cy="260" rx="150" ry="67" />
       </g>
       <circle class="orbit-ring" cx="260" cy="260" r="165" />
+      <path class="orbit-ribbon" d="M71 250C122 143 200 107 283 124c91 19 140 88 177 179" />
       <path class="orbit-thread" d="M86 325 C165 90 355 90 434 325 C365 448 155 448 86 325Z" />
       <text class="orbit-copy">
         <textPath href="#orbit-copy-path" startOffset="0%">HUMAN × AGENT × TEAM × DECISION × HUMAN × AGENT × TEAM × DECISION × </textPath>
