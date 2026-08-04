@@ -115,6 +115,13 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--clay); outline-
   font: 500 15px var(--display);
   transition: transform .45s var(--ease), border-radius .45s var(--ease);
 }
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
 .brand-mark::after { content: ""; position: absolute; inset: -5px; border: 1px solid var(--line); border-radius: 45% 55% 52% 48%; transform: rotate(15deg); }
 .brand:hover .brand-mark { transform: rotate(-12deg) scale(1.05); border-radius: 44% 56% 46% 54%; }
 nav { display: flex; align-items: center; gap: 26px; }
