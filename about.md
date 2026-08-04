@@ -11,10 +11,10 @@ description: 關於 Coomy 與這個 Blog。
     <h1>我把人、AI<br>與團隊放在<br><em>同一個系統裡思考。</em></h1>
     <p class="about-lead">我曾在外商擔任 Frontend Tech Lead，也帶過 Automation Team——一支由人與 AI 共同工作的團隊。現在我關心的是，怎麼讓 Agent 協作、團隊決策與軟體生產，真正變成可以重複的能力。</p>
   </div>
-  <a class="about-portrait" href="https://github.com/coomySF" target="_blank" rel="me noopener" aria-label="前往 Coomy 的 GitHub 個人頁面">
+  <a class="about-portrait" href="https://www.threads.com/@coomysky" target="_blank" rel="me noopener" aria-label="前往 Coomy 的 Threads 個人頁面">
     <span class="portrait-halo" aria-hidden="true"></span>
     <img src="{{ '/assets/images/coomy-avatar.webp' | relative_url }}" width="640" height="640" alt="Coomy 的個人頭像" decoding="async">
-    <span class="portrait-caption"><strong>@coomySF</strong><small>TAIPEI · FRONTEND × AGENTIC</small></span>
+    <span class="portrait-caption"><strong>@coomysky</strong><small>THREADS · FRONTEND × AGENTIC</small></span>
   </a>
 </section>
 
