@@ -5,9 +5,16 @@ permalink: /about/
 description: 關於 Coomy 與這個 Blog。
 ---
 
-<section class="page-intro">
-  <p class="eyebrow">ABOUT</p>
-  <h1>我是 Coomy。</h1>
+<section class="page-intro page-intro-about">
+  <div>
+    <p class="eyebrow">ABOUT</p>
+    <h1>我是 Coomy。</h1>
+  </div>
+  <a class="about-avatar" href="https://github.com/coomySF" target="_blank" rel="me noopener" aria-label="前往 Coomy 的 GitHub 個人頁面">
+    <span class="avatar-orbit" aria-hidden="true"></span>
+    <img src="https://github.com/coomySF.png?size=320" width="320" height="320" alt="Coomy 的 GitHub 頭像" decoding="async">
+    <span class="avatar-caption"><strong>@coomySF</strong><small>FRONTEND × AGENTIC</small></span>
+  </a>
 </section>
 
 <section class="about-copy" markdown="1">

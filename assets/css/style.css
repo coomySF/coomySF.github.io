@@ -233,9 +233,8 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 .orbit-shadow { position: absolute; inset: 29% 12% 4%; z-index: -3; background: color-mix(in srgb, var(--blue) 23%, transparent); border-radius: 50%; filter: blur(48px); transform: translateZ(-80px) rotateX(70deg); }
 .orbit-svg { display: block; width: 100%; height: 100%; overflow: visible; transform-style: preserve-3d; }
 .orbit-aura { fill: url(#aura-gradient); opacity: .76; }
-.orbit-plane ellipse, .orbit-ring, .orbit-thread, .orbit-ribbon { fill: none; vector-effect: non-scaling-stroke; }
-.orbit-plane ellipse { stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-width: .9; }
-.orbit-plane-back { transform-origin: center; transform: rotate(18deg); }
+.orbit-plane circle, .orbit-ring, .orbit-thread, .orbit-ribbon { fill: none; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; }
+.orbit-plane circle { stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-width: .9; }
 .orbit-ring { stroke: color-mix(in srgb, var(--sage) 70%, transparent); stroke-width: 1.25; stroke-dasharray: 2 7; transform-origin: center; animation: orbit-spin 26s linear infinite; }
 .orbit-ribbon { stroke: rgba(255,255,255,.86); stroke-width: 7; stroke-linecap: round; opacity: .62; filter: blur(.3px); }
 .orbit-thread { stroke: url(#thread-gradient); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 15 9 3 9; stroke-dashoffset: 0; animation: thread-flow 7s linear infinite; }
@@ -304,6 +303,47 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 .about-copy { max-width: 760px; margin: 82px auto 135px; font-size: 21px; line-height: 2; }
 .about-copy p { margin: 1.55em 0; }
 .about-copy strong { color: var(--clay); font-weight: 600; }
+.page-intro-about { display: grid; grid-template-columns: minmax(0, 1fr) 260px; align-items: center; gap: 7vw; overflow: visible; }
+.page-intro-about::after { right: 19%; bottom: 8%; }
+.about-avatar {
+  position: relative;
+  z-index: 2;
+  width: 220px;
+  justify-self: end;
+  color: var(--ink);
+  text-decoration: none;
+  perspective: 700px;
+}
+.about-avatar img {
+  display: block;
+  width: 176px;
+  height: 176px;
+  margin-left: auto;
+  object-fit: cover;
+  border: 8px solid color-mix(in srgb, var(--surface) 92%, var(--paper));
+  border-radius: 50%;
+  box-shadow: 0 22px 55px rgba(48, 48, 42, .16);
+  filter: saturate(.86) contrast(1.03);
+  transform: rotate(2deg);
+  transition: transform .5s var(--ease), filter .35s ease, box-shadow .5s var(--ease);
+}
+.avatar-orbit {
+  position: absolute;
+  top: -16px;
+  right: -17px;
+  width: 210px;
+  height: 210px;
+  border: 1px solid color-mix(in srgb, var(--clay) 48%, transparent);
+  border-radius: 50%;
+  transform: rotateX(68deg) rotateZ(-12deg);
+  transition: transform .7s var(--ease);
+}
+.avatar-orbit::after { content: ""; position: absolute; top: 50%; left: -5px; width: 9px; height: 9px; background: var(--clay); border-radius: 50%; box-shadow: 0 0 0 5px var(--paper); }
+.avatar-caption { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 18px; font-family: var(--mono); }
+.avatar-caption strong { font-size: 12px; font-weight: 500; }
+.avatar-caption small { color: var(--muted); font-size: 8px; letter-spacing: .08em; }
+.about-avatar:hover img { filter: saturate(1) contrast(1.04); transform: rotate(-2deg) translateY(-6px) rotateY(-4deg); box-shadow: 0 30px 65px rgba(48, 48, 42, .2); }
+.about-avatar:hover .avatar-orbit { transform: rotateX(63deg) rotateZ(14deg) scale(1.04); }
 
 .post { width: min(100%, 820px); margin-inline: auto; }
 .post-header { position: relative; padding: 105px 0 72px; border-bottom: 1px solid var(--line); }
@@ -354,6 +394,11 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
   .archive-item { grid-template-columns: 1fr; gap: 12px; }
   .page-intro { padding: 78px 0 62px; }
   .page-intro::after { opacity: .55; }
+  .page-intro-about { grid-template-columns: 1fr; gap: 48px; }
+  .page-intro-about::after { right: 7%; bottom: 5%; }
+  .about-avatar { width: 200px; justify-self: start; margin-left: 16px; }
+  .about-avatar img { width: 156px; height: 156px; }
+  .avatar-orbit { width: 188px; height: 188px; }
   .post-header { padding: 75px 0 50px; }
   .post-deck { font-size: 18px; }
   .post-body { padding: 48px 0; font-size: 17px; }
