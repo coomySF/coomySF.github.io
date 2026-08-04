@@ -13,7 +13,7 @@ description: 關於 Coomy 與這個 Blog。
   </div>
   <a class="about-portrait" href="https://github.com/coomySF" target="_blank" rel="me noopener" aria-label="前往 Coomy 的 GitHub 個人頁面">
     <span class="portrait-halo" aria-hidden="true"></span>
-    <img src="{{ '/assets/images/coomy-avatar-think-together.webp' | relative_url }}" width="640" height="640" alt="Coomy 與 Think Together 軌道融合的個人頭像" decoding="async">
+    <img src="{{ '/assets/images/coomy-avatar.webp' | relative_url }}" width="640" height="640" alt="Coomy 的個人頭像" decoding="async">
     <span class="portrait-caption"><strong>@coomySF</strong><small>TAIPEI · FRONTEND × AGENTIC</small></span>
   </a>
 </section>
