@@ -1,0 +1,18 @@
+title: Coomy
+description: 關於 AI、團隊、決策與可複製的軟體生產。
+url: https://coomysf.github.io
+baseurl: ""
+lang: zh-TW
+timezone: Asia/Taipei
+author: Coomy
+permalink: /writing/:title/
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+plugins:
+  - jekyll-feed
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock

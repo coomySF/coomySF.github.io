@@ -1,0 +1,40 @@
+---
+layout: default
+title:
+description: Coomy 的個人長文網站，記錄 AI、團隊、決策與可複製的軟體生產。
+---
+<section class="hero">
+  <p class="eyebrow">AI × TEAM × DECISION</p>
+  <h1>不只讓 AI<br>把事情做快一點。</h1>
+  <p class="hero-copy">我在意的是，怎麼讓人與 AI 一起工作之後，團隊下一次能做得更好，而且不必再從頭摸索。</p>
+  <a class="hero-link" href="#latest">閱讀最新文章 <span aria-hidden="true">↓</span></a>
+</section>
+
+<section class="manifesto" aria-label="關注主題">
+  <p>這裡記錄我對</p>
+  <ul>
+    <li><span>01</span> Agent 與人的協作</li>
+    <li><span>02</span> 團隊如何學會做決定</li>
+    <li><span>03</span> 可複製的軟體生產</li>
+  </ul>
+</section>
+
+<section class="latest" id="latest">
+  <div class="section-heading">
+    <p class="eyebrow">LATEST WRITING</p>
+    <h2>最近寫的</h2>
+  </div>
+  <div class="article-list">
+    {% for post in site.posts %}
+    <article class="article-card">
+      <div class="article-meta">
+        <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
+        <span>{{ post.tags | first }}</span>
+      </div>
+      <h3><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h3>
+      <p>{{ post.description }}</p>
+      <a class="read-more" href="{{ post.url | relative_url }}" aria-label="閱讀：{{ post.title }}">閱讀全文 →</a>
+    </article>
+    {% endfor %}
+  </div>
+</section>

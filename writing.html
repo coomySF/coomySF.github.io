@@ -1,0 +1,21 @@
+---
+layout: default
+title: 文章
+permalink: /writing/
+description: Coomy 關於 AI、團隊、決策與軟體生產的文章。
+---
+<section class="page-intro">
+  <p class="eyebrow">WRITING</p>
+  <h1>把想過的問題，<br>留成下一次的起點。</h1>
+</section>
+<section class="archive">
+  {% for post in site.posts %}
+  <article class="archive-item">
+    <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
+    <div>
+      <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+      <p>{{ post.description }}</p>
+    </div>
+  </article>
+  {% endfor %}
+</section>
