@@ -12,7 +12,7 @@ description: 關於 Coomy 與這個 Blog。
   </div>
   <a class="about-avatar" href="https://github.com/coomySF" target="_blank" rel="me noopener" aria-label="前往 Coomy 的 GitHub 個人頁面">
     <span class="avatar-orbit" aria-hidden="true"></span>
-    <img src="https://github.com/coomySF.png?size=320" width="320" height="320" alt="Coomy 的 GitHub 頭像" decoding="async">
+    <img src="{{ '/assets/images/coomy-avatar-think-together.webp' | relative_url }}" width="640" height="640" alt="Coomy 與 Think Together 軌道融合的個人頭像" decoding="async">
     <span class="avatar-caption"><strong>@coomySF</strong><small>FRONTEND × AGENTIC</small></span>
   </a>
 </section>
