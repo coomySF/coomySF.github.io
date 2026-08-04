@@ -4,6 +4,7 @@ url: https://coomysf.github.io
 baseurl: ""
 lang: zh-TW
 timezone: Asia/Taipei
+future: true
 author: Coomy
 permalink: /writing/:title/
 markdown: kramdown
