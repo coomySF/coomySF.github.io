@@ -24,11 +24,6 @@ description: Coomy 的個人長文網站，記錄 AI、團隊、決策與可複�
           <stop offset=".52" stop-color="#e7d9c9" />
           <stop offset="1" stop-color="#c8d6d1" />
         </linearGradient>
-        <linearGradient id="thread-gradient" x1="80" y1="120" x2="440" y2="400" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#6f8794" />
-          <stop offset=".5" stop-color="#b96e55" />
-          <stop offset="1" stop-color="#768778" />
-        </linearGradient>
         <radialGradient id="aura-gradient" cx="45%" cy="38%" r="65%">
           <stop offset="0" stop-color="#fffaf0" stop-opacity=".95" />
           <stop offset=".58" stop-color="#c9d8d4" stop-opacity=".42" />
@@ -40,12 +35,11 @@ description: Coomy 的個人長文網站，記錄 AI、團隊、決策與可複�
       </defs>
       <path class="orbit-aura" d="M103 129C162 62 285 49 377 91c95 43 115 152 72 244-42 91-142 145-246 117C96 423 42 319 61 226c8-39 21-70 42-97Z" />
       <g class="orbit-plane orbit-plane-back">
-        <circle cx="260" cy="260" r="208" />
-        <circle cx="260" cy="260" r="150" />
+        <ellipse cx="260" cy="260" rx="208" ry="95" />
+        <ellipse cx="260" cy="260" rx="150" ry="67" />
       </g>
       <circle class="orbit-ring" cx="260" cy="260" r="165" />
-      <circle class="orbit-ribbon" cx="260" cy="260" r="195" />
-      <circle class="orbit-thread" cx="260" cy="260" r="132" />
+      <path class="orbit-ribbon" d="M71 250C122 143 200 107 283 124c91 19 140 88 177 179" />
       <text class="orbit-copy">
         <textPath href="#orbit-copy-path" startOffset="0%">HUMAN × AGENT × TEAM × DECISION × HUMAN × AGENT × TEAM × DECISION × </textPath>
       </text>
@@ -58,7 +52,6 @@ description: Coomy 的個人長文網站，記錄 AI、團隊、決策與可複�
       <g class="orbit-node node-agent"><circle cx="386" cy="154" r="9" /><text x="397" y="145">AI</text></g>
       <g class="orbit-node node-team"><circle cx="370" cy="385" r="9" /><text x="382" y="406">團隊</text></g>
     </svg>
-    <p class="orbit-note">移動游標，看看協作如何改變軌道</p>
   </div>
 </section>
 

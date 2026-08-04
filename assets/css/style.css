@@ -233,11 +233,11 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 .orbit-shadow { position: absolute; inset: 29% 12% 4%; z-index: -3; background: color-mix(in srgb, var(--blue) 23%, transparent); border-radius: 50%; filter: blur(48px); transform: translateZ(-80px) rotateX(70deg); }
 .orbit-svg { display: block; width: 100%; height: 100%; overflow: visible; transform-style: preserve-3d; }
 .orbit-aura { fill: url(#aura-gradient); opacity: .76; }
-.orbit-plane circle, .orbit-ring, .orbit-thread, .orbit-ribbon { fill: none; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; }
-.orbit-plane circle { stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-width: .9; }
+.orbit-plane ellipse, .orbit-ring, .orbit-ribbon { fill: none; vector-effect: non-scaling-stroke; }
+.orbit-plane ellipse { stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-width: .9; }
+.orbit-plane-back { transform-origin: center; transform: rotate(18deg); }
 .orbit-ring { stroke: color-mix(in srgb, var(--sage) 70%, transparent); stroke-width: 1.25; stroke-dasharray: 2 7; transform-origin: center; animation: orbit-spin 26s linear infinite; }
 .orbit-ribbon { stroke: rgba(255,255,255,.86); stroke-width: 7; stroke-linecap: round; opacity: .62; filter: blur(.3px); }
-.orbit-thread { stroke: url(#thread-gradient); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 15 9 3 9; stroke-dashoffset: 0; animation: thread-flow 7s linear infinite; }
 .orbit-copy { fill: color-mix(in srgb, var(--ink) 72%, transparent); font: 500 8px var(--mono); letter-spacing: .15em; transform-origin: center; animation: orbit-copy 34s linear infinite; }
 .orbit-core circle { fill: url(#core-gradient); stroke: rgba(54,58,55,.42); stroke-width: 1; }
 .orbit-core { transform-origin: center; filter: drop-shadow(0 15px 18px rgba(57,55,48,.18)); }
@@ -251,11 +251,9 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 .node-human { animation: node-float 4.8s ease-in-out infinite; }
 .node-agent { animation: node-float 5.4s ease-in-out -.9s infinite; }
 .node-team { animation: node-float 5.1s ease-in-out -1.8s infinite; }
-.orbit-note { margin: -24px 0 0; color: var(--faint); font: 10px var(--mono); text-align: center; letter-spacing: .08em; }
 
 @keyframes orbit-spin { to { transform: rotate(360deg); } }
 @keyframes orbit-copy { to { transform: rotate(-360deg); } }
-@keyframes thread-flow { to { stroke-dashoffset: -150; } }
 @keyframes node-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 
 [data-reveal] { opacity: 1; transform: none; }
@@ -384,7 +382,6 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
   .hero h1 { font-size: clamp(46px, 13vw, 66px); }
   .hero-copy { font-size: 17px; }
   .hero-orbit { width: min(92vw, 460px); justify-self: center; margin: -20px 0 -26px; }
-  .orbit-note { margin-top: -18px; }
   .manifesto, .section-heading { grid-template-columns: 1fr; gap: 28px; }
   .manifesto { padding: 68px 0; }
   .manifesto li { font-size: 25px; }
@@ -410,7 +407,6 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
   .brand > span:last-child { display: none; }
   .hero h1 { font-size: 43px; }
   .hero-orbit { width: 104%; margin-left: -2%; }
-  .orbit-note { font-size: 9px; }
 }
 
 @media (pointer: coarse) { .cursor-aura { display: none; } }
