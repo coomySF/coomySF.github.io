@@ -4,13 +4,48 @@ title:
 description: Coomy 的個人長文網站，記錄 AI、團隊、決策與可複製的軟體生產。
 ---
 <section class="hero">
-  <p class="eyebrow">AI × TEAM × DECISION</p>
-  <h1>不只讓 AI<br>把事情做快一點。</h1>
-  <p class="hero-copy">我在意的是，怎麼讓人與 AI 一起工作之後，團隊下一次能做得更好，而且不必再從頭摸索。</p>
-  <a class="hero-link" href="#latest">閱讀最新文章 <span aria-hidden="true">↓</span></a>
+  <div class="hero-words" data-reveal>
+    <p class="eyebrow">AI × TEAM × DECISION</p>
+    <h1 aria-label="不只讓 AI 把事情做快一點。">
+      <span class="title-line" aria-hidden="true">不只讓 AI</span>
+      <span class="title-line title-line-shift" aria-hidden="true">把事情做快一點。</span>
+    </h1>
+    <p class="hero-copy">我在意的是，怎麼讓人與 AI 一起工作之後，團隊下一次能做得更好，而且不必再從頭摸索。</p>
+    <a class="hero-link" href="#latest">閱讀最新文章 <span aria-hidden="true">↘</span></a>
+  </div>
+
+  <div class="hero-orbit" data-tilt data-reveal aria-hidden="true">
+    <div class="orbit-shadow"></div>
+    <svg class="orbit-svg" viewBox="0 0 520 520" width="520" height="520" role="presentation">
+      <defs>
+        <path id="orbit-copy-path" d="M 95 260 A 165 165 0 1 1 425 260 A 165 165 0 1 1 95 260" />
+        <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity=".12" />
+        </filter>
+      </defs>
+      <g class="orbit-plane orbit-plane-back">
+        <ellipse cx="260" cy="260" rx="208" ry="95" />
+        <ellipse cx="260" cy="260" rx="150" ry="67" />
+      </g>
+      <circle class="orbit-ring" cx="260" cy="260" r="165" />
+      <path class="orbit-thread" d="M86 325 C165 90 355 90 434 325 C365 448 155 448 86 325Z" />
+      <text class="orbit-copy">
+        <textPath href="#orbit-copy-path" startOffset="0%">HUMAN × AGENT × TEAM × DECISION × HUMAN × AGENT × TEAM × DECISION × </textPath>
+      </text>
+      <g class="orbit-core" filter="url(#soft-shadow)">
+        <circle cx="260" cy="260" r="72" />
+        <text x="260" y="251">THINK</text>
+        <text x="260" y="278">TOGETHER</text>
+      </g>
+      <g class="orbit-node node-human"><circle cx="96" cy="260" r="9" /><text x="78" y="235">人</text></g>
+      <g class="orbit-node node-agent"><circle cx="386" cy="154" r="9" /><text x="397" y="145">AI</text></g>
+      <g class="orbit-node node-team"><circle cx="370" cy="385" r="9" /><text x="382" y="406">團隊</text></g>
+    </svg>
+    <p class="orbit-note">移動游標，看看協作如何改變軌道</p>
+  </div>
 </section>
 
-<section class="manifesto" aria-label="關注主題">
+<section class="manifesto" aria-label="關注主題" data-reveal>
   <p>這裡記錄我對</p>
   <ul>
     <li><span>01</span> Agent 與人的協作</li>
@@ -19,7 +54,7 @@ description: Coomy 的個人長文網站，記錄 AI、團隊、決策與可複�
   </ul>
 </section>
 
-<section class="latest" id="latest">
+<section class="latest" id="latest" data-reveal>
   <div class="section-heading">
     <p class="eyebrow">LATEST WRITING</p>
     <h2>最近寫的</h2>
