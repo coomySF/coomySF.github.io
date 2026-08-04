@@ -9,7 +9,7 @@ description: 關於 Coomy 與這個 Blog。
   <div class="about-heading">
     <p class="eyebrow">ABOUT / COOMY</p>
     <h1>我把人、AI<br>與團隊放在<br><em>同一個系統裡思考。</em></h1>
-    <p class="about-lead">前端工程師，也是長期研究 Agent 協作、團隊決策與可複製軟體生產的人。</p>
+    <p class="about-lead">我曾在外商擔任 Frontend Tech Lead，也帶過 Automation Team——一支由人與 AI 共同工作的團隊。現在我關心的是，怎麼讓 Agent 協作、團隊決策與軟體生產，真正變成可以重複的能力。</p>
   </div>
   <a class="about-portrait" href="https://github.com/coomySF" target="_blank" rel="me noopener" aria-label="前往 Coomy 的 GitHub 個人頁面">
     <span class="portrait-halo" aria-hidden="true"></span>
