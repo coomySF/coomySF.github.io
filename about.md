@@ -10,7 +10,7 @@ description: 關於 Coomy 與這個 Blog。
   <h1>我是 Coomy。</h1>
 </section>
 
-<section class="about-copy">
+<section class="about-copy" markdown="1">
 
 我長期在研究一件事：**怎麼讓人與 AI 一起工作，而且不只是得到一次性的成功。**
 
