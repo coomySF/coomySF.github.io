@@ -302,6 +302,7 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
   .manifesto { padding: 68px 0; }
   .manifesto li { font-size: 25px; }
   .article-list { margin-left: 0; }
+  .article-card::before { inset: 18px 0; }
   .latest { padding: 78px 0; }
   .archive-item { grid-template-columns: 1fr; gap: 12px; }
   .page-intro { padding: 78px 0 62px; }
