@@ -1,11 +1,20 @@
 title: Coomy
+tagline: 把做過的事，留成下一次的起點
 description: 關於 AI、團隊、決策與可複製的軟體生產。
 url: https://coomysf.github.io
 baseurl: ""
 lang: zh-TW
+locale: zh_TW
 timezone: Asia/Taipei
 future: true
-author: Coomy
+author:
+  name: Coomy
+  url: https://coomysf.github.io/about/
+social:
+  name: Coomy
+  links:
+    - https://www.threads.com/@coomysky
+    - https://github.com/coomySF
 permalink: /writing/:title/
 markdown: kramdown
 kramdown:
@@ -13,6 +22,8 @@ kramdown:
   syntax_highlighter: rouge
 plugins:
   - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
 exclude:
   - README.md
   - Gemfile

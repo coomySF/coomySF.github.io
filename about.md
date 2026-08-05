@@ -3,6 +3,11 @@ layout: default
 title: 關於
 permalink: /about/
 description: 關於 Coomy 與這個 Blog。
+seo:
+  type: Person
+  links:
+    - https://www.threads.com/@coomysky
+    - https://github.com/coomySF
 ---
 
 <section class="about-hero" data-reveal>
