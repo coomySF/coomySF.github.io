@@ -16,8 +16,12 @@ layout: default
     <span>END</span>
     <p>如果這篇文章讓你想到一個真實案例，歡迎把那個案例帶回對話裡。</p>
   </footer>
-  {% assign continue_post = page.previous %}
-  {% unless continue_post %}{% assign continue_post = page.next %}{% endunless %}
+  {% assign continue_post = page.next %}
+  {% assign continue_label = '較新文章' %}
+  {% unless continue_post %}
+    {% assign continue_post = page.previous %}
+    {% assign continue_label = '較早文章' %}
+  {% endunless %}
   <nav class="post-navigation" aria-label="文章導覽">
     <div class="post-navigation-heading">
       <p>CONTINUE READING</p>
@@ -26,7 +30,7 @@ layout: default
     {% if continue_post %}
     <a class="post-next-card" href="{{ continue_post.url | relative_url }}" aria-label="繼續閱讀：{{ continue_post.title }}">
       <div>
-        <span>下一篇</span>
+        <span>{{ continue_label }}</span>
         <time datetime="{{ continue_post.date | date_to_xmlschema }}">{{ continue_post.date | date: '%Y.%m.%d' }}</time>
       </div>
       <h2>{{ continue_post.title }}</h2>
