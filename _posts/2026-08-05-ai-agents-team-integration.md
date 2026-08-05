@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 一個人帶 Agent 兩天做完 POC，四個人一起 Vibe，最後全在收拾 Agent 的爛攤子
+title: 一個人帶 Agent 兩天做完 POC，四個人一起 Vibe，收四倍的爛攤子
 description: 從 Automation Team 的多人 AI 開發失控現場，重新思考 Agent 時代的需求、分工與 BDD 驗收。
 date: 2026-08-05 22:00:00 +0800
 tags: [AI, Agent, 團隊, 軟體開發]
@@ -11,6 +11,8 @@ seo:
 我以前帶 Automation Team 做 AI 履歷產品時，團隊透過人與 AI 協作，不到一兩天就把測試環境、基本網站和履歷生成功能跑起來了。
 
 AI 在 POC 前期確實很好用。問題出現在四個人各自帶著 Agent，一起修改同一個專案之後。
+
+說穿了就是 Garbage in, garbage out。沒有先說清楚的需求與邊界，也會被 Agent 一起放大。
 
 ## 每個人都完成了，產品卻開始失控
 
