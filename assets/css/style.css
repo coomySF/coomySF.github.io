@@ -374,6 +374,20 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 .post-end { padding: 55px 0 90px; border-top: 1px solid var(--line); }
 .post-end span { color: var(--clay); font: 500 10px var(--mono); letter-spacing: .14em; }
 .post-end p { color: var(--muted); }
+.post-navigation { padding: 0 0 110px; }
+.post-navigation-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 0; border-block: 1px solid var(--ink); }
+.post-navigation-heading p, .post-navigation-heading a { margin: 0; font: 500 9px var(--mono); letter-spacing: .11em; }
+.post-navigation-heading a { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; transition: color .2s ease; }
+.post-navigation-heading a:hover { color: var(--clay); }
+.post-next-card { position: relative; display: block; min-height: 265px; padding: 42px 76px 46px 0; border-bottom: 1px solid var(--line); text-decoration: none; cursor: pointer; }
+.post-next-card::before { content: ""; position: absolute; inset: 12px -20px; z-index: -1; border: 1px solid transparent; border-radius: 4px; background: transparent; transition: background .25s ease, border-color .25s ease, transform .3s var(--ease), box-shadow .3s var(--ease); }
+.post-next-card:hover::before, .post-next-card:focus-visible::before { border-color: var(--line); background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 12px 14px 0 color-mix(in srgb, var(--paper-deep) 50%, transparent); transform: translateY(-3px); }
+.post-next-card > div { display: flex; gap: 18px; color: var(--muted); font: 500 9px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.post-next-card > div span { color: var(--clay); }
+.post-next-card h2 { max-width: 720px; margin: 25px 0 0; font: 600 clamp(30px, 4.5vw, 48px)/1.45 var(--display); letter-spacing: -.035em; transition: color .2s ease, transform .3s var(--ease); }
+.post-next-arrow { position: absolute; right: 0; top: 50%; display: grid; place-items: center; width: 50px; height: 50px; border: 1px solid var(--line); border-radius: 50%; font: 18px var(--mono); transform: translateY(-50%); transition: color .2s ease, background .2s ease, transform .3s var(--ease); }
+.post-next-card:hover h2 { color: var(--clay); transform: translateX(7px); }
+.post-next-card:hover .post-next-arrow { color: var(--paper); background: var(--ink); transform: translate(5px, -50%); }
 .site-footer { padding: 48px 0 64px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 30px; color: var(--muted); font: 11px/1.7 var(--mono); }
 
 @media (max-width: 900px) {
@@ -424,6 +438,11 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
   .post-body { padding: 48px 0; font-size: 17px; }
   .post-body table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; font-size: 14px; }
   .post-body th, .post-body td { min-width: 265px; padding: 15px 16px; }
+  .post-end { padding-bottom: 68px; }
+  .post-navigation { padding-bottom: 82px; }
+  .post-next-card { min-height: 230px; padding: 34px 54px 38px 0; }
+  .post-next-card h2 { font-size: clamp(27px, 8vw, 38px); }
+  .post-next-arrow { width: 44px; height: 44px; }
   .site-footer { flex-direction: column; }
 }
 
@@ -435,6 +454,8 @@ nav a:hover::after { transform: scaleX(1); transform-origin: left; }
   .writing-hero-copy > p:last-child, .about-lead { font-size: 16px; }
   .portrait-caption { right: 0; bottom: -26px; left: 0; }
   .portrait-caption small { max-width: 125px; text-align: right; }
+  .post-navigation-heading { align-items: flex-start; }
+  .post-navigation-heading a { text-align: right; }
 }
 
 @media (pointer: coarse) { .cursor-aura { display: none; } }
