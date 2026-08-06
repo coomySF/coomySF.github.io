@@ -245,6 +245,31 @@ function boot() {
   const hintEl = document.querySelector('.scroll-hint');
   const wordEl = document.querySelector('.sf-word');
 
+  // ---------- sound: fully synthesized, opt-in ----------
+  const soundBtn = document.querySelector('.sound-toggle');
+  const sound = makeSound();
+  let soundOn = false;
+  const setSoundUI = () => {
+    soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  };
+  soundBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    localStorage.setItem('coomy-sound', soundOn ? 'on' : 'off');
+    if (soundOn) sound.start(); else sound.stop();
+    setSoundUI();
+  });
+  if (localStorage.getItem('coomy-sound') === 'on') {
+    // remember the preference, but audio still needs a gesture to actually start
+    soundOn = true;
+    setSoundUI();
+    const arm = () => { if (soundOn) sound.start(); removeEventListener('pointerdown', arm); };
+    addEventListener('pointerdown', arm, { once: true });
+  }
+
+  // one-shot event triggers, fired on upward crossings of the scrub
+  const fired = { ship: false, boards: [false, false, false, false], finale: false };
+
   // ---------- scroll progress (critically damped for weight) ----------
   let P = 0, Psm = 0, vel = 0;
   ScrollTrigger.create({
@@ -409,6 +434,20 @@ function boot() {
     dustUniforms.uTime.value = t;
     grain.uniforms.uT.value = t;
     updateScene(Psm, t, vel);
+
+    if (soundOn) {
+      if (!fired.ship && Psm > 0.075) { fired.ship = true; sound.flare(); }
+      if (fired.ship && Psm < 0.03) fired.ship = false;
+      for (let i = 0; i < 4; i++) {
+        const bp = 0.115 + i * 0.185 + 0.185 * 0.7;
+        if (!fired.boards[i] && Psm > bp) { fired.boards[i] = true; sound.board(i); }
+        if (fired.boards[i] && Psm < bp - 0.09) fired.boards[i] = false;
+      }
+      if (!fired.finale && Psm > 0.905) { fired.finale = true; sound.finale(); }
+      if (fired.finale && Psm < 0.85) fired.finale = false;
+      sound.wind(Math.abs(vel));
+    }
+
     composer.render();
   }
 
@@ -421,6 +460,101 @@ function boot() {
     renderer.setSize(innerWidth, innerHeight);
     composer.setSize(innerWidth, innerHeight);
   });
+}
+
+/* Synthesized sound design — no audio files, all Web Audio.
+   Ambient space bed + one-shots for the film's beats; opt-in only. */
+function makeSound() {
+  let ctx = null, master, windGain, windFilter;
+
+  const ensure = () => {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(ctx.destination);
+
+    // soft brown-noise bed through a low-pass: the hum of space
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf; noise.loop = true;
+    const nf = ctx.createBiquadFilter();
+    nf.type = 'lowpass'; nf.frequency.value = 180;
+    const ag = ctx.createGain(); ag.gain.value = 0.05;
+    noise.connect(nf); nf.connect(ag); ag.connect(master); noise.start();
+    const drone = ctx.createOscillator();
+    drone.frequency.value = 55;
+    const dg = ctx.createGain(); dg.gain.value = 0.016;
+    drone.connect(dg); dg.connect(master); drone.start();
+
+    // scroll wind: same noise, band-passed, gain driven by velocity
+    const wind = ctx.createBufferSource();
+    wind.buffer = buf; wind.loop = true; wind.playbackRate.value = 1.8;
+    windFilter = ctx.createBiquadFilter();
+    windFilter.type = 'bandpass'; windFilter.frequency.value = 520; windFilter.Q.value = 0.6;
+    windGain = ctx.createGain(); windGain.gain.value = 0;
+    wind.connect(windFilter); windFilter.connect(windGain); windGain.connect(master); wind.start();
+  };
+
+  const blip = (f, delay = 0, dur = 0.18, type = 'triangle', vol = 0.1) => {
+    if (!ctx) return;
+    const o = ctx.createOscillator();
+    o.type = type; o.frequency.value = f;
+    const g = ctx.createGain();
+    const now = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g); g.connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+  };
+
+  return {
+    start() { ensure(); ctx.resume(); master.gain.cancelScheduledValues(ctx.currentTime); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1.4); },
+    stop() { if (ctx) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5); },
+    flare() {
+      if (!ctx) return;
+      const o = ctx.createOscillator();
+      const now = ctx.currentTime;
+      o.type = 'sine';
+      o.frequency.setValueAtTime(220, now);
+      o.frequency.exponentialRampToValueAtTime(880, now + 0.7);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.09, now + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+      o.connect(g); g.connect(master);
+      o.start(now); o.stop(now + 1);
+    },
+    board(i) {
+      const roots = [660, 587, 740, 831];  // a slightly different pling per crew member
+      blip(roots[i], 0, 0.16, 'triangle', 0.09);
+      blip(roots[i] * 1.5, 0.09, 0.22, 'triangle', 0.07);
+    },
+    finale() {
+      if (!ctx) return;
+      [262, 330, 392, 494].forEach((f) => {
+        const o = ctx.createOscillator();
+        o.type = 'sine'; o.frequency.value = f * 2;
+        const g = ctx.createGain();
+        const now = ctx.currentTime;
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(0.045, now + 1.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 3.4);
+        o.connect(g); g.connect(master);
+        o.start(now); o.stop(now + 3.6);
+      });
+      for (let k = 0; k < 7; k++) blip(1100 + Math.random() * 1500, 0.4 + k * 0.22, 0.3, 'sine', 0.04);
+    },
+    wind(v) {
+      if (!windGain) return;
+      windGain.gain.value += (Math.min(0.13, v * 9) - windGain.gain.value) * 0.1;
+    },
+  };
 }
 
 /* Cute crew: big geodesic head, round little body, stubby cheering limbs.

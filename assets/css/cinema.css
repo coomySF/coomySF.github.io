@@ -115,6 +115,25 @@ html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film
   to { background-position: 400% 0; }
 }
 
+.sound-toggle {
+  position: absolute;
+  right: 28px; bottom: 28px;
+  pointer-events: auto;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .22em;
+  color: var(--film-muted);
+  background: none;
+  border: 1px solid var(--film-line);
+  border-radius: 999px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: color .3s ease, border-color .3s ease;
+}
+.sound-toggle:hover { color: var(--film-clay); border-color: rgba(220, 148, 124, .5); }
+.sound-toggle[aria-pressed="true"] { color: var(--film-clay); border-color: rgba(220, 148, 124, .5); }
+html.film-static .sound-toggle { display: none; }
+
 /* the writing — four recent posts, one row of four */
 html.home-noir .latest { position: relative; z-index: 2; padding: 20vh 0 90px; }
 html.home-noir .latest .section-heading .eyebrow { color: var(--film-clay); }
