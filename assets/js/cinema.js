@@ -445,15 +445,16 @@ function boot() {
       if (cryLabels[i]) cryLabels[i].style.opacity = '0';
       if (!active) return;
 
-      const enter = ss(0, 0.3, q);
-      const exit = ss(0.8, 1, q);
+      const enter = ss(0, 0.22, q);
+      const exit = ss(0.85, 1, q);
       const y = lerp(-16, -3.1, enter) + exit * 18;
       const x = st.side * lerp(4.2, 3.1, enter);
       st.group.position.set(x, y, -1.2);
       st.group.rotation.z = 0;
 
       // the chase: crew flees along the surface, wild AI right behind
-      const escaped = q > 0.5;
+      // (held long — this beat is the heart of the act)
+      const escaped = q > 0.62;
       const chaseAngle = t * 1.6 + i * 2;
       st.chaseCrew.visible = !escaped;
       if (!escaped) {
@@ -464,7 +465,7 @@ function boot() {
       // the cry for help, bobbing above the fleeing crew member
       const cry = cryLabels[i];
       if (cry) {
-        const cryOp = escaped ? 0 : ss(0.16, 0.26, q) * (1 - ss(0.46, 0.5, q));
+        const cryOp = escaped ? 0 : ss(0.14, 0.24, q) * (1 - ss(0.57, 0.62, q));
         if (cryOp > 0.01) {
           const wx = x + st.chaseCrew.position.x;
           const wy = y + st.chaseCrew.position.y + 0.85;
@@ -479,10 +480,10 @@ function boot() {
       st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : 0));  // fumes when the meal escapes
 
       // the escape: crew leaps off the planet into the ship
-      if (q > 0.5 && q < 0.82) {
-        const born = ss(0.5, 0.55, q);
-        const ride = ss(0.53, 0.72, q);
-        const gone = ss(0.72, 0.78, q);
+      if (q > 0.62 && q < 0.9) {
+        const born = ss(0.62, 0.66, q);
+        const ride = ss(0.64, 0.8, q);
+        const gone = ss(0.8, 0.86, q);
         const fromX = x, fromY = y + 1.9;
         const arc = Math.sin(ride * Math.PI) * 1.3;
         st.rideCrew.visible = true;
@@ -663,7 +664,7 @@ function boot() {
       if (!fired.ship && Psm > 0.075) { fired.ship = true; sound.flare(); }
       if (fired.ship && Psm < 0.03) fired.ship = false;
       for (let i = 0; i < 3; i++) {
-        const bp = 0.115 + i * CREW_SEGMENT + CREW_SEGMENT * 0.55;
+        const bp = 0.115 + i * CREW_SEGMENT + CREW_SEGMENT * 0.66;
         if (!fired.escapes[i] && Psm > bp) { fired.escapes[i] = true; sound.board(i); }
         if (fired.escapes[i] && Psm < bp - 0.08) fired.escapes[i] = false;
       }

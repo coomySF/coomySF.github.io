@@ -17,7 +17,7 @@ html.home-noir .site-header .brand-mark { background: var(--film-ink); color: va
 html.home-noir .paper-noise { opacity: .22; }
 html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film-line); position: relative; z-index: 2; }
 
-#film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1050vh; }
+#film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1400vh; }
 
 #film-canvas {
   position: fixed;
