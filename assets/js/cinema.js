@@ -274,10 +274,11 @@ function boot() {
     return { wild, wildMat, pet, petMat, phase: rng() * Math.PI * 2 };
   });
 
-  // leashes for the ending walk
+  // leashes for the ending walk — sampled quadratic curves so they sag like rope
+  const LEASH_PTS = 12;
   const leashes = crewStations.map(() => {
     const mat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
-    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]);
+    const geo = new THREE.BufferGeometry().setFromPoints(Array.from({ length: LEASH_PTS }, () => new THREE.Vector3()));
     const line = new THREE.Line(geo, mat);
     line.visible = false;
     scene.add(line);
@@ -594,10 +595,20 @@ function boot() {
       le.line.visible = show;
       if (show) {
         const a = st.rideCrew.position, b = sw.pet.position;
+        const ax = a.x + 0.2, ay = a.y + 0.1, az = a.z;
+        const bx = b.x, by = b.y + 0.3, bz = b.z;
+        const cx = (ax + bx) / 2, cy = Math.min(ay, by) - 0.38 + Math.sin(t * 2.2 + i) * 0.03, cz = (az + bz) / 2;
         const posAttr = le.geo.getAttribute('position');
-        posAttr.setXYZ(0, a.x + 0.2, a.y + 0.1, a.z);
-        posAttr.setXYZ(1, (a.x + b.x) / 2, Math.min(a.y, b.y) - 0.18, (a.z + b.z) / 2);
-        posAttr.setXYZ(2, b.x, b.y + 0.3, b.z);
+        for (let k = 0; k < LEASH_PTS; k++) {
+          const u = k / (LEASH_PTS - 1);
+          const iu = 1 - u;
+          posAttr.setXYZ(
+            k,
+            iu * iu * ax + 2 * iu * u * cx + u * u * bx,
+            iu * iu * ay + 2 * iu * u * cy + u * u * by,
+            iu * iu * az + 2 * iu * u * cz + u * u * bz
+          );
+        }
         posAttr.needsUpdate = true;
         le.mat.opacity = ss(0.6, 0.85, walkQ) * 0.6 * endFade;
       }
