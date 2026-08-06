@@ -621,17 +621,17 @@ function boot() {
           const squash = Math.sin(t * 7.2 + i * 1.7) * 0.08 * walkQ;
           sw.pet.scale.set(0.75 * (1 - squash * 0.7), 0.75 * (1 + squash), 0.75);
         } else {
-          // the free spirit: zooming and tumbling around everyone
-          const fx = Math.cos(t * 0.85) * 3.6;
-          const fy = -1.65 + Math.sin(t * 1.7) * 0.85;
-          const fz = 3 + Math.sin(t * 0.85) * 0.9;
+          // the free spirit: drifting and tumbling around everyone
+          const fx = Math.cos(t * 0.45) * 3.6;
+          const fy = -1.65 + Math.sin(t * 0.9) * 0.85;
+          const fz = 3 + Math.sin(t * 0.45) * 0.9;
           sw.pet.position.set(
             lerp(ship.position.x + HULL_OFFSETS[i].x, fx, walkQ),
             lerp(ship.position.y + HULL_OFFSETS[i].y, fy, walkQ),
             lerp(HULL_OFFSETS[i].z, fz, walkQ)
           );
-          sw.pet.rotation.z = t * 4.2;  // rolling, always rolling
-          sw.pet.scale.setScalar(0.72 + Math.sin(t * 3.4) * 0.05);
+          sw.pet.rotation.z = t * 2.2;  // rolling, always rolling — at a lazy pace
+          sw.pet.scale.setScalar(0.72 + Math.sin(t * 2.2) * 0.05);
 
           // the proud declaration, tumbling along with it
           const petCry = cryLabels[4];
