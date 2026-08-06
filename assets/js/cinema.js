@@ -1,8 +1,8 @@
-/* Homepage film v4 — the voyage.
-   A wireframe ship appears on scroll, flies past four particle planets
-   (RD → PM → QA → AI), picks up a little geometric crew member from each,
-   then lights up in color as SpecFormula appears. Scroll drives everything;
-   the title screen is still until the user starts. */
+/* Homepage film v5 — the rescue voyage.
+   Wild AIs chase the crew on their planets; the rocket rescues RD, PM, QA;
+   the AI swarm boards the hull; SpecFormula streaks in, the rocket
+   super-evolves, and the wild AIs become cute pets everyone walks off with.
+   Scroll drives everything; the title screen holds still until START. */
 
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -123,17 +123,17 @@ function boot() {
   });
   scene.add(new THREE.Points(dustGeo, dustMat));
 
-  // ---------- the ship (wireframe) ----------
+  // ---------- the ship (wireframe, with hidden evolution parts) ----------
   const shipMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
   const ship = new THREE.Group();
-  const edgeOf = (geo, thresholdAngle = 20) => {
-    const seg = new THREE.LineSegments(new THREE.EdgesGeometry(geo, thresholdAngle), shipMat);
+  const edgeOf = (geo, mat = shipMat, thresholdAngle = 20) => {
+    const seg = new THREE.LineSegments(new THREE.EdgesGeometry(geo, thresholdAngle), mat);
     geo.dispose();
     return seg;
   };
   const body = edgeOf(new THREE.CylinderGeometry(0.34, 0.5, 1.9, 6));
   const nose = edgeOf(new THREE.ConeGeometry(0.5, 0.85, 6));
-  nose.rotation.x = Math.PI;               // apex points down: direction of travel
+  nose.rotation.x = Math.PI;
   nose.position.y = -1.35;
   const windowRing = edgeOf(new THREE.CircleGeometry(0.17, 12));
   windowRing.position.set(0, 0.25, 0.51);
@@ -144,7 +144,6 @@ function boot() {
   const finR = new THREE.Line(finGeo.clone(), shipMat);
   finR.scale.x = -1;
   finR.position.set(-0.42, 0.35, 0);
-  // thrust dashes above the tail (we fly downward)
   const thrustGeo = new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(-0.16, 1.05, 0), new THREE.Vector3(-0.16, 1.45, 0),
     new THREE.Vector3(0, 1.1, 0), new THREE.Vector3(0, 1.7, 0),
@@ -152,14 +151,32 @@ function boot() {
   ]);
   const thrust = new THREE.LineSegments(thrustGeo, shipMat);
   ship.add(body, nose, windowRing, finL, finR, thrust);
+
+  // evolution parts: grand swept wings, an orbit ring, extra thrusters
+  const evoGroup = new THREE.Group();
+  const bigWing = [new THREE.Vector3(0, -0.2, 0), new THREE.Vector3(0.2, 1.0, 0), new THREE.Vector3(1.35, 1.55, 0), new THREE.Vector3(0.55, 0.1, 0), new THREE.Vector3(0, -0.2, 0)];
+  const bigWingGeo = new THREE.BufferGeometry().setFromPoints(bigWing);
+  const wingL = new THREE.Line(bigWingGeo, shipMat);
+  wingL.position.set(0.4, -0.1, -0.05);
+  const wingR = new THREE.Line(bigWingGeo.clone(), shipMat);
+  wingR.scale.x = -1;
+  wingR.position.set(-0.4, -0.1, -0.05);
+  const haloRing = edgeOf(new THREE.TorusGeometry(0.95, 0.02, 3, 28));
+  haloRing.rotation.x = Math.PI / 2;
+  haloRing.position.y = 0.1;
+  const evoThrust = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-0.3, 1.1, 0), new THREE.Vector3(-0.3, 1.9, 0),
+    new THREE.Vector3(0.3, 1.1, 0), new THREE.Vector3(0.3, 1.9, 0),
+  ]), shipMat);
+  evoGroup.add(wingL, wingR, haloRing, evoThrust);
+  evoGroup.scale.setScalar(0.001);
+  ship.add(evoGroup);
+
   ship.position.set(0, 0.4, 0);
   ship.visible = false;
   scene.add(ship);
 
-  // ---------- planets + pipes + crew ----------
-  const STATIONS = ['RD', 'PM', 'QA', 'AI'];
-  const labels = [...document.querySelectorAll('.planet-label')];
-  const planetMatBase = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+  // ---------- glow texture ----------
   const glowTex = (() => {
     const c = document.createElement('canvas');
     c.width = c.height = 64;
@@ -172,11 +189,17 @@ function boot() {
     g.fillRect(0, 0, 64, 64);
     return new THREE.CanvasTexture(c);
   })();
-  const stations = STATIONS.map((name, i) => {
+
+  // ---------- crew stations (RD / PM / QA): chased on their planets ----------
+  const STATION_COLORS = ['#8fb8e8', '#7ee0a8', '#ffd479', '#ff8d7a'];
+  const labels = [...document.querySelectorAll('.planet-label')];
+  const cryLabels = [...document.querySelectorAll('.cry-label')];
+  const planetMatBase = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+
+  const makePlanet = (colorIdx, radius = 1.5) => {
     const group = new THREE.Group();
-    // particle ball, like the archive orb
     const PTS = small ? 380 : 650;
-    const geo = new THREE.IcosahedronGeometry(1.5, 1);
+    const geo = new THREE.IcosahedronGeometry(radius, 1);
     const pos = geo.getAttribute('position');
     const triCount = pos.count / 3;
     const pts = new Float32Array(PTS * 3);
@@ -193,31 +216,81 @@ function boot() {
     geo.dispose();
     const ballGeo = new THREE.BufferGeometry();
     ballGeo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
-    // each planet wears its crew member's color — one world, one system
-    const STATION_COLORS = ['#8fb8e8', '#7ee0a8', '#ffd479', '#ff8d7a'];
-    const ballMat = new THREE.PointsMaterial({ ...planetMatBase, size: 0.05, color: STATION_COLORS[i], opacity: 0.9, sizeAttenuation: true });
+    const ballMat = new THREE.PointsMaterial({ ...planetMatBase, size: 0.05, color: STATION_COLORS[colorIdx], opacity: 0.9, sizeAttenuation: true });
     group.add(new THREE.Points(ballGeo, ballMat));
-    const haloMat = new THREE.SpriteMaterial({ map: glowTex, color: STATION_COLORS[i], transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending });
+    const haloMat = new THREE.SpriteMaterial({ map: glowTex, color: STATION_COLORS[colorIdx], transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending });
     const halo = new THREE.Sprite(haloMat);
-    halo.scale.setScalar(5.6);
+    halo.scale.setScalar(radius * 3.7);
     group.add(halo);
-
     group.visible = false;
     scene.add(group);
+    return { group, ballMat, haloMat };
+  };
 
-    // a little geometric crew member (flies to the ship, so lives in world space);
-    // each role gets its own look: RD glasses, PM tie, QA magnifier, AI monster
-    const isMonster = i === 3;
-    const BODY_COLORS = ['#8fb8e8', '#7ee0a8', '#ffd479', '#ff8d7a'];  // RD blue, PM green, QA gold, AI ember
-    const bodyMat = new THREE.LineBasicMaterial({ color: BODY_COLORS[i], transparent: true, opacity: 1 });
-    const propMat = isMonster ? bodyMat : new THREE.LineBasicMaterial({ color: '#f2efe6', transparent: true, opacity: 1 });
-    const fig = isMonster ? makeMonster(bodyMat) : makeCrew(i, bodyMat, propMat);
-    fig.visible = false;
-    scene.add(fig);
+  const CREW_SEGMENT = 0.16;
+  const crewStations = ['RD', 'PM', 'QA'].map((name, i) => {
+    const planet = makePlanet(i);
+    const bodyMat = new THREE.LineBasicMaterial({ color: STATION_COLORS[i], transparent: true, opacity: 1 });
+    const propMat = new THREE.LineBasicMaterial({ color: '#f2efe6', transparent: true, opacity: 1 });
 
-    const side = i % 2 === 0 ? 1 : -1;  // RD right, PM left, QA right, AI left
-    return { name, group, fig, figMats: [bodyMat, propMat], ballMat, haloMat, side, label: labels[i] };
+    // the chase happens ON the planet: crew runs, a wild AI chases
+    const chaseCrew = makeCrew(i, bodyMat, propMat);
+    chaseCrew.scale.setScalar(0.85);
+    planet.group.add(chaseCrew);
+    const chaserMat = new THREE.LineBasicMaterial({ color: '#ff5348', transparent: true, opacity: 1 });
+    const chaser = makeWildAI(chaserMat, rng);
+    chaser.scale.setScalar(0.8);
+    planet.group.add(chaser);
+
+    // the escape ride happens in world space
+    const rideCrew = makeCrew(i, bodyMat, propMat);
+    rideCrew.visible = false;
+    scene.add(rideCrew);
+
+    const side = i % 2 === 0 ? 1 : -1;
+    return { name, ...planet, chaseCrew, chaser, chaserMat, rideCrew, figMats: [bodyMat, propMat], side, label: labels[i], s: 0.115 + i * CREW_SEGMENT };
   });
+
+  // ---------- the AI planet and its swarm ----------
+  const aiPlanet = makePlanet(3, 1.7);
+  const aiLabel = labels[3];
+  const AI_S = 0.60, AI_E = 0.74;
+  const SWARM = 4;
+  const HULL_OFFSETS = [
+    new THREE.Vector3(-0.62, 0.35, 0.25),
+    new THREE.Vector3(0.58, 0.05, 0.25),
+    new THREE.Vector3(-0.35, -0.7, 0.25),
+    new THREE.Vector3(0.5, -0.55, 0.25),
+  ];
+  const PET_COLORS = ['#ff8d7a', '#8fb8e8', '#7ee0a8', '#ffd479'];
+  const swarm = Array.from({ length: SWARM }, (_, i) => {
+    const wildMat = new THREE.LineBasicMaterial({ color: '#ff5348', transparent: true, opacity: 1 });
+    const wild = makeWildAI(wildMat, rng);
+    wild.visible = false;
+    scene.add(wild);
+    const petMat = new THREE.LineBasicMaterial({ color: PET_COLORS[i], transparent: true, opacity: 1 });
+    const pet = makePet(petMat);
+    pet.visible = false;
+    scene.add(pet);
+    return { wild, wildMat, pet, petMat, phase: rng() * Math.PI * 2 };
+  });
+
+  // leashes for the ending walk — sampled quadratic curves so they sag like rope
+  const LEASH_PTS = 12;
+  const leashes = crewStations.map(() => {
+    const mat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
+    const geo = new THREE.BufferGeometry().setFromPoints(Array.from({ length: LEASH_PTS }, () => new THREE.Vector3()));
+    const line = new THREE.Line(geo, mat);
+    line.visible = false;
+    scene.add(line);
+    return { line, mat, geo };
+  });
+
+  // SpecFormula streaks in as a comet
+  const cometMat = new THREE.SpriteMaterial({ map: glowTex, color: '#fff3d6', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const comet = new THREE.Sprite(cometMat);
+  comet.scale.setScalar(1.6);
+  scene.add(comet);
 
   // ---------- post ----------
   const composer = new EffectComposer(renderer);
@@ -245,13 +318,11 @@ function boot() {
   const hintEl = document.querySelector('.scroll-hint');
   const wordEl = document.querySelector('.sf-word');
 
-  // ---------- sound: fully synthesized, opt-in ----------
-  // the button shows the ACTUAL audio state: silent until START (or the
-  // button itself) is clicked, so visitors know where to turn it on
+  // ---------- sound: synthesized, button reflects actual state ----------
   const soundBtn = document.querySelector('.sound-toggle');
   const sound = makeSound();
-  let soundOn = false;                                          // actually audible right now
-  let muted = localStorage.getItem('coomy-sound') === 'off';    // explicit user opt-out
+  let soundOn = false;
+  let muted = localStorage.getItem('coomy-sound') === 'off';
   const setSoundUI = () => {
     soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
     soundBtn.setAttribute('aria-pressed', String(soundOn));
@@ -272,8 +343,7 @@ function boot() {
   });
   setSoundUI();
 
-  // START: one click turns the sound on (unless the user muted it before)
-  // and glides the camera into the voyage; afterwards, nudge them to scroll
+  // START: turn on the sound (unless muted) and glide into the voyage
   const keepScrollingEl = document.querySelector('.keep-scrolling');
   let scrollPrompt = 0;
   hintEl.addEventListener('click', () => {
@@ -284,10 +354,10 @@ function boot() {
     setTimeout(() => { scrollPrompt = 1; }, 1100);
   });
 
-  // one-shot event triggers, fired on upward crossings of the scrub
-  const fired = { ship: false, boards: [false, false, false, false], finale: false };
+  // one-shot sound triggers on upward crossings
+  const fired = { ship: false, escapes: [false, false, false], swarm: false, evolve: false, pops: [false, false, false, false] };
 
-  // ---------- scroll progress (critically damped for weight) ----------
+  // ---------- scroll progress (critically damped) ----------
   let P = 0, Psm = 0, vel = 0;
   ScrollTrigger.create({
     trigger: '#film',
@@ -297,7 +367,6 @@ function boot() {
   });
   window.__filmSeek = (p) => { P = p; Psm = p; renderFrame(); };  // QA hook
 
-  // ---------- choreography: everything is a pure function of (P, t) ----------
   const mouse = { x: 0, y: 0 };
   addEventListener('pointermove', (e) => {
     mouse.x = (e.clientX / innerWidth - 0.5);
@@ -310,135 +379,270 @@ function boot() {
   const clock = new THREE.Clock();
 
   function updateScene(p, t, v = 0) {
-    // scroll velocity → subtle speed feel: FOV kick + livelier dust
     const speed = Math.min(0.02, Math.abs(v));
     camera.fov = 50 + speed * 240;
     camera.updateProjectionMatrix();
 
-    // title + hint: still until the user starts, then it lifts away
+    // title + hint
     const titleOp = 1 - ss(0.015, 0.06, p);
     titleEl.style.opacity = String(titleOp);
     titleEl.style.transform = `translate(-50%, -50%) translateY(${(1 - titleOp) * -42}px)`;
     titleEl.style.filter = `blur(${(1 - titleOp) * 7}px)`;
     hintEl.style.opacity = String(Math.min(1, titleOp));
     hintEl.style.pointerEvents = titleOp > 0.3 ? 'auto' : 'none';
-    // post-START nudge: appears when the glide settles, leaves once they scroll on
     keepScrollingEl.style.opacity = String(scrollPrompt * ss(0.06, 0.09, p) * (1 - ss(0.135, 0.18, p)));
 
-    // ship enters; at the very end it blasts off upward and out
+    // everything softly yields to the cards at the very end
+    const endFade = 1 - ss(0.985, 1.0, p);
+
+    // ship
     const sa = ss(0.045, 0.1, p);
-    const leave = ss(0.955, 0.995, p);
-    ship.visible = sa > 0.01 && leave < 0.999;
-    shipMat.opacity = sa * (1 - leave);
-    ship.scale.setScalar(0.5 + 0.5 * sa);
-    ship.position.y = 0.4 + Math.sin(t * 0.9) * 0.09 + leave * leave * 14;
+    const flare = Math.sin(sa * Math.PI);
+    ship.visible = sa > 0.01;
+    ship.position.y = 0.4 + Math.sin(t * 0.9) * 0.09;
     ship.rotation.z = mouse.x * 0.1 + Math.sin(t * 0.55) * 0.04;
     thrust.scale.y = 0.85 + 0.3 * Math.abs(Math.sin(t * 7));
 
-    // finale (settles back down as the page hands over to the cards)
-    const f = ss(0.865, 0.925, p) * (1 - ss(0.96, 1, p) * 0.65);
-    // the ship flares as it materializes, then settles
-    const flare = Math.sin(sa * Math.PI);
+    // evolution + rainbow
+    const evo = ss(0.82, 0.865, p);
+    evoGroup.scale.setScalar(Math.max(0.001, evo));
+    const f = ss(0.84, 0.885, p);
+    const cometQ = ss(0.76, 0.82, p);
+    const evoFlash = Math.sin(ss(0.815, 0.85, p) * Math.PI);
     if (f > 0.001) {
       const hue = (t * 0.45) % 1;
       const rainbow = new THREE.Color().setHSL(hue, 0.8, 0.62);
       shipMat.color.copy(shipBase).lerp(rainbow, f);
-      ship.scale.setScalar((0.5 + 0.5 * sa) * (1 + 0.05 * Math.sin(t * 6) * f));
     } else {
-      shipMat.color.copy(shipBase).lerp(flareWhite, flare * 0.85);
+      shipMat.color.copy(shipBase).lerp(flareWhite, Math.max(flare * 0.85, evoFlash));
     }
-    bloom.strength = 0.55 + f * 1.05 + flare * 0.75;
+    ship.scale.setScalar((0.5 + 0.5 * sa) * (1 + 0.18 * evo + 0.04 * Math.sin(t * 6) * f));
+    shipMat.opacity = sa * endFade;
+    bloom.strength = 0.55 + f * 0.9 + flare * 0.75 + evoFlash * 1.1;
     dustUniforms.uWarm.value = 0.35 + f * 0.65;
     dustUniforms.uTurb.value = 0.5 + f * 0.9 + speed * 26;
-    const wordOp = ss(0.9, 0.955, p) * (1 - ss(0.985, 1.0, p));
+
+    // SpecFormula comet
+    cometMat.opacity = Math.sin(cometQ * Math.PI) * endFade;
+    comet.position.set(lerp(-9, ship.position.x, cometQ), lerp(5.5, ship.position.y, cometQ), 1.5);
+
+    // the wordmark
+    const wordOp = ss(0.88, 0.93, p) * endFade;
     wordEl.style.opacity = String(wordOp);
-    wordEl.style.transform = `translate(-50%, -50%) translateY(${(1 - wordOp) * 20}px) scale(${0.92 + 0.08 * wordOp})`;
+    wordEl.style.transform = `translate(-50%, -78%) translateY(${(1 - wordOp) * 20}px) scale(${0.92 + 0.08 * wordOp})`;
     wordEl.style.letterSpacing = `${lerp(0.14, 0.02, wordOp)}em`;
     wordEl.style.filter = `blur(${(1 - wordOp) * 9}px) drop-shadow(0 0 34px rgba(255, 200, 150, .35))`;
 
-    // stations
+    // ---- crew stations: chase, then escape ----
     const w = innerWidth, h = innerHeight;
-    let lean = 0, boardPulse = 0;
-    stations.forEach((st, i) => {
-      const s = 0.115 + i * 0.185;
-      const q = (p - s) / 0.185;
+    let lean = 0;
+    crewStations.forEach((st, i) => {
+      const q = (p - st.s) / CREW_SEGMENT;
       const active = q > 0 && q < 1.05;
       st.group.visible = active;
-      st.fig.visible = false;
+      st.rideCrew.visible = false;
       if (st.label) st.label.style.opacity = '0';
+      if (cryLabels[i]) cryLabels[i].style.opacity = '0';
       if (!active) return;
 
-      // planet path: rises from below, holds beside the ship, exits upward
-      const enter = ss(0, 0.32, q);
-      const exit = ss(0.78, 1, q);
+      const enter = ss(0, 0.3, q);
+      const exit = ss(0.8, 1, q);
       const y = lerp(-16, -3.1, enter) + exit * 18;
       const x = st.side * lerp(4.2, 3.1, enter);
       st.group.position.set(x, y, -1.2);
-      st.group.rotation.y = t * 0.25 + i;
+      st.group.rotation.z = 0;
 
-      // once its crew member has boarded, the planet quietly dims
-      const picked = ss(0.72, 0.8, q);
-      st.ballMat.opacity = 0.9 - picked * 0.5;
-      st.haloMat.opacity = 0.14 - picked * 0.08;
-
-      // the ship leans toward whichever planet it is meeting
-      lean += st.side * Math.sin(Math.min(1, Math.max(0, q)) * Math.PI);
-      // a small flash the moment someone boards
-      boardPulse = Math.max(boardPulse, Math.sin(ss(0.66, 0.76, q) * Math.PI));
-
-      // crew member: pops up from the planet's surface, then flies into the ship
-      if (q > 0.36 && q < 0.78) {
-        const born = ss(0.36, 0.44, q);
-        const ride = ss(0.48, 0.7, q);
-        const gone = ss(0.7, 0.76, q);
-        const tipX = x, tipY = y + 1.5 + 0.15 + born * 0.4;
-        st.fig.visible = true;
-        st.fig.scale.setScalar(0.9 * born * (1 - gone * 0.6));
-        st.figMats.forEach((m) => { m.opacity = born * (1 - gone); });
-        const arc = Math.sin(ride * Math.PI) * 1.2;  // a little launch arc
-        st.fig.position.set(
-          lerp(tipX, ship.position.x, ride) + st.side * arc * 0.3,
-          lerp(tipY, ship.position.y - 0.3, ride) + arc,
-          lerp(-1.2, 0, ride)
-        );
-        st.fig.rotation.z = ride * st.side * -0.7;
+      // the chase: crew flees along the surface, wild AI right behind
+      const escaped = q > 0.5;
+      const chaseAngle = t * 1.6 + i * 2;
+      st.chaseCrew.visible = !escaped;
+      if (!escaped) {
+        st.chaseCrew.position.set(Math.cos(chaseAngle) * 1.75, Math.sin(chaseAngle) * 1.75, 0.15);
+        st.chaseCrew.rotation.z = chaseAngle - Math.PI / 2;
       }
 
-      // label at the planet's center
+      // the cry for help, bobbing above the fleeing crew member
+      const cry = cryLabels[i];
+      if (cry) {
+        const cryOp = escaped ? 0 : ss(0.16, 0.26, q) * (1 - ss(0.46, 0.5, q));
+        if (cryOp > 0.01) {
+          const wx = x + st.chaseCrew.position.x;
+          const wy = y + st.chaseCrew.position.y + 0.85;
+          tmpV.set(wx, wy, -1.05).project(camera);
+          cry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * 9 + i) * 4}deg)`;
+        }
+        cry.style.opacity = String(cryOp);
+      }
+      const chaserAngle = chaseAngle - 0.55 - (escaped ? Math.sin(t * 9) * 0.06 : 0);
+      st.chaser.position.set(Math.cos(chaserAngle) * 1.78, Math.sin(chaserAngle) * 1.78, 0.15);
+      st.chaser.rotation.z = chaserAngle - Math.PI / 2 + Math.sin(t * 12) * 0.14;
+      st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : 0));  // fumes when the meal escapes
+
+      // the escape: crew leaps off the planet into the ship
+      if (q > 0.5 && q < 0.82) {
+        const born = ss(0.5, 0.55, q);
+        const ride = ss(0.53, 0.72, q);
+        const gone = ss(0.72, 0.78, q);
+        const fromX = x, fromY = y + 1.9;
+        const arc = Math.sin(ride * Math.PI) * 1.3;
+        st.rideCrew.visible = true;
+        st.rideCrew.scale.setScalar(0.9 * born * (1 - gone * 0.6));
+        st.figMats.forEach((m) => { m.opacity = born * (1 - gone); });
+        st.rideCrew.position.set(
+          lerp(fromX, ship.position.x, ride) + st.side * arc * 0.3,
+          lerp(fromY, ship.position.y - 0.3, ride) + arc,
+          lerp(-1.2, 0, ride)
+        );
+        st.rideCrew.rotation.z = ride * st.side * -0.7;
+      } else {
+        st.figMats.forEach((m) => { m.opacity = 1; });
+      }
+
+      lean += st.side * Math.sin(Math.min(1, Math.max(0, q)) * Math.PI);
+
       if (st.label) {
-        const op = ss(0.14, 0.26, q) * (1 - ss(0.74, 0.84, q));
+        const op = ss(0.12, 0.24, q) * (1 - ss(0.74, 0.84, q));
         tmpV.copy(st.group.position).project(camera);
         st.label.style.transform = `translate(-50%, -50%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
         st.label.style.opacity = String(op);
       }
     });
 
-    // piloted, not on rails: the ship leans and drifts toward each meeting,
-    // and blinks the moment a crew member boards
-    ship.rotation.z += lean * -0.13;
-    ship.position.x = lean * 0.5;
-    if (boardPulse > 0.001) {
-      bloom.strength += boardPulse * 0.55;
-      if (f <= 0.001) shipMat.color.copy(shipBase).lerp(flareWhite, Math.max(flare * 0.85, boardPulse * 0.75));
+    // ---- the AI planet: the swarm notices, leaps, and clings ----
+    const aq = (p - AI_S) / (AI_E - AI_S);
+    const aiActive = aq > 0 && aq < 1.05;
+    aiPlanet.group.visible = aiActive;
+    if (aiLabel) aiLabel.style.opacity = '0';
+    if (cryLabels[3]) cryLabels[3].style.opacity = '0';
+    if (aiActive) {
+      const enter = ss(0, 0.3, aq);
+      const exit = ss(0.82, 1, aq);
+      const y = lerp(-16, -3.0, enter) + exit * 18;
+      const x = -3.2;
+      aiPlanet.group.position.set(x, y, -1.2);
+      if (aiLabel) {
+        const op = ss(0.12, 0.24, aq) * (1 - ss(0.7, 0.8, aq));
+        tmpV.copy(aiPlanet.group.position).project(camera);
+        aiLabel.style.transform = `translate(-50%, -50%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+        aiLabel.style.opacity = String(op);
+      }
+      // the swarm spots its favorite species
+      const aiCry = cryLabels[3];
+      if (aiCry) {
+        const op = ss(0.2, 0.28, aq) * (1 - ss(0.5, 0.58, aq));
+        if (op > 0.01) {
+          tmpV.set(x + 0.4, y + 2.4, -1.05).project(camera);
+          aiCry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * 11) * 3}deg)`;
+        }
+        aiCry.style.opacity = String(op);
+      }
     }
 
-    // finale dance: the whole crew jumps out front and celebrates
-    const dance = ss(0.915, 0.955, p) * (1 - ss(0.985, 1.0, p));
-    if (dance > 0.001) {
-      stations.forEach((st, i) => {
-        const phase = t * 5 + i * 1.4;
-        const hop = Math.abs(Math.sin(phase)) * 0.45;
-        st.fig.visible = true;
-        st.figMats.forEach((m) => { m.opacity = dance; });
-        st.fig.position.set(
-          -2.1 + i * 1.4 + Math.sin(t * 1.1 + i * 2) * 0.14,
-          -2.35 + hop * dance,
-          3
+    // swarm lifecycle: on planet → leap to hull → cling → become pets → walk off
+    const petQ = ss(0.86, 0.9, p);          // transformation window
+    const walkQ = ss(0.9, 0.955, p);        // disembark and walk
+    swarm.forEach((sw, i) => {
+      const leap = ss(0.35 + i * 0.05, 0.55 + i * 0.05, aq);
+      const onPlanet = aiActive && leap < 0.02;
+      const clinging = (aiActive && leap >= 0.02) || (p > AI_E && petQ < 1 && walkQ < 0.01);
+
+      sw.wild.visible = false;
+      sw.pet.visible = false;
+
+      if (onPlanet) {
+        const ang = t * 0.9 + sw.phase;
+        sw.wild.visible = true;
+        sw.wild.position.set(
+          aiPlanet.group.position.x + Math.cos(ang) * 1.95,
+          aiPlanet.group.position.y + Math.sin(ang) * 1.95,
+          -1.05
         );
-        st.fig.rotation.z = Math.sin(phase) * 0.3 * dance;
-        st.fig.scale.setScalar(1.25 * dance + Math.sin(phase * 0.5) * 0.06);
-      });
-    }
+        sw.wild.rotation.z = ang - Math.PI / 2 + Math.sin(t * 10 + i) * 0.2;
+        sw.wild.scale.setScalar(0.7);
+      } else if (clinging && petQ < 0.99) {
+        // mid-leap or clinging to the hull, shivering with excitement
+        const from = aiActive
+          ? tmpV.set(aiPlanet.group.position.x, aiPlanet.group.position.y + 1.9, -1.05)
+          : tmpV.set(ship.position.x, ship.position.y, 0);
+        const hull = HULL_OFFSETS[i];
+        const hx = ship.position.x + hull.x * ship.scale.x;
+        const hy = ship.position.y + hull.y * ship.scale.y;
+        const k = aiActive ? leap : 1;
+        const arc = Math.sin(k * Math.PI) * 1.6;
+        if (petQ < 0.02) {
+          sw.wild.visible = true;
+          sw.wild.position.set(lerp(from.x, hx, k), lerp(from.y, hy, k) + arc * (aiActive ? 1 : 0), hull.z);
+          sw.wild.rotation.z = Math.sin(t * 11 + sw.phase) * 0.22;
+          sw.wild.scale.setScalar(0.7);
+        } else {
+          // pop! the wild AI becomes a cute pet on the hull
+          const pop = Math.sin(Math.min(1, petQ * 1.6 - i * 0.12) * Math.PI);
+          sw.pet.visible = true;
+          sw.pet.position.set(hx, hy, hull.z);
+          sw.pet.rotation.z = Math.sin(t * 3 + i) * 0.08;
+          sw.pet.scale.setScalar(0.7 + Math.max(0, pop) * 0.25);
+          sw.petMat.opacity = endFade;
+        }
+      } else if (walkQ > 0.01) {
+        // pets hop down with everyone
+        const gx = -2.7 + i * 1.75;
+        const gy = -2.62;
+        sw.pet.visible = true;
+        sw.pet.position.set(
+          lerp(ship.position.x + HULL_OFFSETS[i].x, gx, walkQ),
+          lerp(ship.position.y + HULL_OFFSETS[i].y, gy, walkQ) + Math.sin(walkQ * Math.PI) * 1.2 + Math.abs(Math.sin(t * 4 + i)) * 0.12 * walkQ,
+          lerp(HULL_OFFSETS[i].z, 3, walkQ)
+        );
+        sw.pet.rotation.z = Math.sin(t * 4 + i) * 0.12;
+        sw.pet.scale.setScalar(0.75);
+        sw.petMat.opacity = endFade;
+      }
+    });
+
+    // ---- the ending walk: crew steps off, each leading a pet ----
+    crewStations.forEach((st, i) => {
+      const gx = -3.3 + i * 1.75;
+      const gy = -2.5;
+      if (walkQ > 0.01) {
+        st.rideCrew.visible = true;
+        st.figMats.forEach((m) => { m.opacity = endFade; });
+        st.rideCrew.position.set(
+          lerp(ship.position.x, gx, walkQ),
+          lerp(ship.position.y - 0.3, gy, walkQ) + Math.sin(walkQ * Math.PI) * 0.9 + Math.abs(Math.sin(t * 3.2 + i)) * 0.08 * walkQ,
+          lerp(0, 3, walkQ)
+        );
+        st.rideCrew.rotation.z = Math.sin(t * 3.2 + i) * 0.06;
+        st.rideCrew.scale.setScalar(1.05);
+      }
+      // leash from crew hand to pet
+      const le = leashes[i];
+      const sw = swarm[i];
+      const show = walkQ > 0.6 && sw.pet.visible;
+      le.line.visible = show;
+      if (show) {
+        const a = st.rideCrew.position, b = sw.pet.position;
+        const ax = a.x + 0.2, ay = a.y + 0.1, az = a.z;
+        const bx = b.x, by = b.y + 0.3, bz = b.z;
+        const cx = (ax + bx) / 2, cy = Math.min(ay, by) - 0.38 + Math.sin(t * 2.2 + i) * 0.03, cz = (az + bz) / 2;
+        const posAttr = le.geo.getAttribute('position');
+        for (let k = 0; k < LEASH_PTS; k++) {
+          const u = k / (LEASH_PTS - 1);
+          const iu = 1 - u;
+          posAttr.setXYZ(
+            k,
+            iu * iu * ax + 2 * iu * u * cx + u * u * bx,
+            iu * iu * ay + 2 * iu * u * cy + u * u * by,
+            iu * iu * az + 2 * iu * u * cz + u * u * bz
+          );
+        }
+        posAttr.needsUpdate = true;
+        le.mat.opacity = ss(0.6, 0.85, walkQ) * 0.6 * endFade;
+      }
+    });
+
+    // piloted feel
+    ship.rotation.z += lean * -0.13;
+    ship.position.x = lean * 0.5;
 
     // camera parallax
     camera.position.x += (mouse.x * 1.3 - camera.position.x) * 0.05;
@@ -458,14 +662,20 @@ function boot() {
     if (soundOn) {
       if (!fired.ship && Psm > 0.075) { fired.ship = true; sound.flare(); }
       if (fired.ship && Psm < 0.03) fired.ship = false;
-      for (let i = 0; i < 4; i++) {
-        const bp = 0.115 + i * 0.185 + 0.185 * 0.7;
-        if (!fired.boards[i] && Psm > bp) { fired.boards[i] = true; sound.board(i); }
-        if (fired.boards[i] && Psm < bp - 0.09) fired.boards[i] = false;
+      for (let i = 0; i < 3; i++) {
+        const bp = 0.115 + i * CREW_SEGMENT + CREW_SEGMENT * 0.55;
+        if (!fired.escapes[i] && Psm > bp) { fired.escapes[i] = true; sound.board(i); }
+        if (fired.escapes[i] && Psm < bp - 0.08) fired.escapes[i] = false;
       }
-      if (!fired.finale && Psm > 0.905) { fired.finale = true; sound.finale(); }
-      if (fired.finale && Psm < 0.85) fired.finale = false;
-      sound.wind(Math.abs(vel));
+      if (!fired.swarm && Psm > AI_S + 0.06) { fired.swarm = true; sound.swarm(); }
+      if (fired.swarm && Psm < AI_S) fired.swarm = false;
+      if (!fired.evolve && Psm > 0.825) { fired.evolve = true; sound.finale(); }
+      if (fired.evolve && Psm < 0.78) fired.evolve = false;
+      for (let i = 0; i < 4; i++) {
+        const pp = 0.865 + i * 0.012;
+        if (!fired.pops[i] && Psm > pp) { fired.pops[i] = true; sound.pop(i); }
+        if (fired.pops[i] && Psm < 0.84) fired.pops[i] = false;
+      }
     }
 
     composer.render();
@@ -482,8 +692,7 @@ function boot() {
   });
 }
 
-/* Synthesized sound design — no audio files, all Web Audio.
-   Ambient space bed + one-shots for the film's beats; opt-in only. */
+/* Synthesized sound design — no audio files, all Web Audio. */
 function makeSound() {
   let ctx = null, master, windGain, windFilter;
 
@@ -494,7 +703,6 @@ function makeSound() {
     master.gain.value = 0;
     master.connect(ctx.destination);
 
-    // soft brown-noise bed through a low-pass: the hum of space
     const len = ctx.sampleRate * 2;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = buf.getChannelData(0);
@@ -511,7 +719,6 @@ function makeSound() {
     const dg = ctx.createGain(); dg.gain.value = 0.016;
     drone.connect(dg); dg.connect(master); drone.start();
 
-    // scroll wind: same noise, band-passed, gain driven by velocity
     const wind = ctx.createBufferSource();
     wind.buffer = buf; wind.loop = true; wind.playbackRate.value = 1.8;
     windFilter = ctx.createBiquadFilter();
@@ -551,9 +758,18 @@ function makeSound() {
       o.start(now); o.stop(now + 1);
     },
     board(i) {
-      const roots = [660, 587, 740, 831];  // a slightly different pling per crew member
+      const roots = [660, 587, 740];
       blip(roots[i], 0, 0.16, 'triangle', 0.09);
       blip(roots[i] * 1.5, 0.09, 0.22, 'triangle', 0.07);
+    },
+    swarm() {
+      blip(130, 0, 0.5, 'sawtooth', 0.05);
+      blip(98, 0.12, 0.6, 'sawtooth', 0.05);
+      blip(147, 0.24, 0.5, 'sawtooth', 0.04);
+    },
+    pop(i) {
+      blip(880 + i * 140, 0, 0.12, 'sine', 0.08);
+      blip((880 + i * 140) * 1.35, 0.06, 0.16, 'sine', 0.06);
     },
     finale() {
       if (!ctx) return;
@@ -586,15 +802,14 @@ function makeCrew(kind, bodyMat, propMat) {
   const belly = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.12, 0), 10), bodyMat);
   belly.position.y = 0.14;
   const limbs = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-0.1, 0.2, 0), new THREE.Vector3(-0.22, 0.34, 0),   // arms up, cheering
+    new THREE.Vector3(-0.1, 0.2, 0), new THREE.Vector3(-0.22, 0.34, 0),
     new THREE.Vector3(0.1, 0.2, 0), new THREE.Vector3(0.22, 0.34, 0),
-    new THREE.Vector3(-0.06, 0.02, 0), new THREE.Vector3(-0.09, -0.14, 0), // stubby legs
+    new THREE.Vector3(-0.06, 0.02, 0), new THREE.Vector3(-0.09, -0.14, 0),
     new THREE.Vector3(0.06, 0.02, 0), new THREE.Vector3(0.09, -0.14, 0),
   ]), bodyMat);
   fig.add(head, belly, limbs);
 
   if (kind === 0) {
-    // RD: chunky round glasses + a bridge
     const lensL = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.08, 10)), propMat);
     lensL.position.set(-0.09, 0.44, 0.21);
     const lensR = lensL.clone();
@@ -604,14 +819,12 @@ function makeCrew(kind, bodyMat, propMat) {
     ]), propMat);
     fig.add(lensL, lensR, bridge);
   } else if (kind === 1) {
-    // PM: a proper tie
     const tie = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(-0.06, 0.27, 0.17), new THREE.Vector3(0.06, 0.27, 0.17),
       new THREE.Vector3(0, 0.02, 0.17), new THREE.Vector3(-0.06, 0.27, 0.17),
     ]), propMat);
     fig.add(tie);
   } else {
-    // QA: a magnifier in hand
     const lens = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.07, 10)), propMat);
     lens.position.set(0.3, 0.42, 0.05);
     const handle = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
@@ -622,25 +835,44 @@ function makeCrew(kind, bodyMat, propMat) {
   return fig;
 }
 
-function makeMonster(mat) {
+/* A wild AI: spiky, jittery, a little menacing. */
+function makeWildAI(mat, rng) {
   const fig = new THREE.Group();
-  const body = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.24, 0), 10), mat);
-  body.position.y = 0.26;
+  const core = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.16, 0), 10), mat);
+  core.position.y = 0.22;
+  const spikes = [];
+  for (let k = 0; k < 9; k++) {
+    const a = (k / 9) * Math.PI * 2 + rng() * 0.3;
+    const r1 = 0.17, r2 = 0.3 + rng() * 0.1;
+    spikes.push(new THREE.Vector3(Math.cos(a) * r1, 0.22 + Math.sin(a) * r1, 0));
+    spikes.push(new THREE.Vector3(Math.cos(a) * r2, 0.22 + Math.sin(a) * r2, 0));
+  }
+  const spikeLines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(spikes), mat);
+  const eye = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.05, 6)), mat);
+  eye.position.set(0, 0.22, 0.17);
+  fig.add(core, spikeLines, eye);
+  return fig;
+}
+
+/* A tamed AI: round, big-eyed, antennae — the cute after picture. */
+function makePet(mat) {
+  const fig = new THREE.Group();
+  const body = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.2, 0), 10), mat);
+  body.position.y = 0.22;
   const limbs = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-0.1, 0.46, 0), new THREE.Vector3(-0.19, 0.66, 0),   // antennae
-    new THREE.Vector3(0.1, 0.46, 0), new THREE.Vector3(0.19, 0.66, 0),
-    new THREE.Vector3(-0.12, 0.05, 0), new THREE.Vector3(-0.17, -0.14, 0), // three stubby legs
-    new THREE.Vector3(0, 0.03, 0), new THREE.Vector3(0, -0.16, 0),
-    new THREE.Vector3(0.12, 0.05, 0), new THREE.Vector3(0.17, -0.14, 0),
+    new THREE.Vector3(-0.08, 0.4, 0), new THREE.Vector3(-0.15, 0.56, 0),
+    new THREE.Vector3(0.08, 0.4, 0), new THREE.Vector3(0.15, 0.56, 0),
+    new THREE.Vector3(-0.1, 0.05, 0), new THREE.Vector3(-0.13, -0.1, 0),
+    new THREE.Vector3(0.1, 0.05, 0), new THREE.Vector3(0.13, -0.1, 0),
   ]), mat);
-  const bobL = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.04, 6)), mat);
-  bobL.position.set(-0.19, 0.7, 0);
+  const bobL = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.035, 6)), mat);
+  bobL.position.set(-0.15, 0.6, 0);
   const bobR = bobL.clone();
-  bobR.position.set(0.19, 0.7, 0);
-  const eyeL = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.05, 8)), mat);
-  eyeL.position.set(-0.09, 0.3, 0.22);
+  bobR.position.set(0.15, 0.6, 0);
+  const eyeL = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.045, 8)), mat);
+  eyeL.position.set(-0.075, 0.26, 0.18);
   const eyeR = eyeL.clone();
-  eyeR.position.set(0.09, 0.3, 0.22);
+  eyeR.position.set(0.075, 0.26, 0.18);
   fig.add(body, limbs, bobL, bobR, eyeL, eyeR);
   return fig;
 }
