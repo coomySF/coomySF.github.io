@@ -54,7 +54,7 @@ AI 在 POC 前期確實很好用。問題出現在四個人各自帶著 Agent，
 
 ## 如果當時有 Specformula
 
-我在 Automation Team 時已經開始理解 SDD，但還沒有真正導入團隊就離開了。後來開發 Specformula、實際使用 SDD 與 BDD，我才把當時的問題整理成一套可操作的流程。
+我在 Automation Team 時已經開始理解 SDD，但還沒有真正導入團隊就離開了。後來我們團隊在開發 Specformula、實際使用 SDD 與 BDD 的過程中，才把當時的問題整理成一套可操作的流程。
 
 我自己很喜歡的一點是，這些規格不只留在文字裡。Specformula 會把 Activity Flow、Feature、API 與資料表之間的關係視覺化，讓使用者先從圖上看懂功能怎麼走、規格怎麼串，再回到對應規格看實作設計。多人與 Agent 一起開發時，大家可以先看同一張圖，不必各自讀完文件後再在腦中拼出整套系統。
 
