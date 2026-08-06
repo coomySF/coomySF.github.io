@@ -193,6 +193,7 @@ function boot() {
   // ---------- crew stations (RD / PM / QA): chased on their planets ----------
   const STATION_COLORS = ['#8fb8e8', '#7ee0a8', '#ffd479', '#ff8d7a'];
   const labels = [...document.querySelectorAll('.planet-label')];
+  const cryLabels = [...document.querySelectorAll('.cry-label')];
   const planetMatBase = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
 
   const makePlanet = (colorIdx, radius = 1.5) => {
@@ -441,6 +442,7 @@ function boot() {
       st.group.visible = active;
       st.rideCrew.visible = false;
       if (st.label) st.label.style.opacity = '0';
+      if (cryLabels[i]) cryLabels[i].style.opacity = '0';
       if (!active) return;
 
       const enter = ss(0, 0.3, q);
@@ -457,6 +459,19 @@ function boot() {
       if (!escaped) {
         st.chaseCrew.position.set(Math.cos(chaseAngle) * 1.75, Math.sin(chaseAngle) * 1.75, 0.15);
         st.chaseCrew.rotation.z = chaseAngle - Math.PI / 2;
+      }
+
+      // the cry for help, bobbing above the fleeing crew member
+      const cry = cryLabels[i];
+      if (cry) {
+        const cryOp = escaped ? 0 : ss(0.16, 0.26, q) * (1 - ss(0.46, 0.5, q));
+        if (cryOp > 0.01) {
+          const wx = x + st.chaseCrew.position.x;
+          const wy = y + st.chaseCrew.position.y + 0.85;
+          tmpV.set(wx, wy, -1.05).project(camera);
+          cry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * 9 + i) * 4}deg)`;
+        }
+        cry.style.opacity = String(cryOp);
       }
       const chaserAngle = chaseAngle - 0.55 - (escaped ? Math.sin(t * 9) * 0.06 : 0);
       st.chaser.position.set(Math.cos(chaserAngle) * 1.78, Math.sin(chaserAngle) * 1.78, 0.15);

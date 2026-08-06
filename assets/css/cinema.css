@@ -119,6 +119,19 @@ html.film-static .keep-scrolling { display: none; }
   will-change: transform;
 }
 
+.cry-label {
+  position: absolute;
+  top: 0; left: 0;
+  font-family: var(--mono);
+  font-size: clamp(12px, 1.2vw, 15px);
+  letter-spacing: .08em;
+  color: var(--film-ink);
+  text-shadow: 0 2px 14px rgba(11, 16, 14, .9);
+  white-space: nowrap;
+  opacity: 0;
+  will-change: transform;
+}
+
 .sf-word {
   position: absolute;
   left: 50%; top: 50%;
