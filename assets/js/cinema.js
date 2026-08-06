@@ -160,6 +160,18 @@ function boot() {
   const STATIONS = ['RD', 'PM', 'QA', 'AI'];
   const labels = [...document.querySelectorAll('.planet-label')];
   const planetMatBase = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending };
+  const glowTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(255,255,255,.9)');
+    grad.addColorStop(0.45, 'rgba(255,255,255,.28)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  })();
   const stations = STATIONS.map((name, i) => {
     const group = new THREE.Group();
     // particle ball, like the archive orb
@@ -181,8 +193,14 @@ function boot() {
     geo.dispose();
     const ballGeo = new THREE.BufferGeometry();
     ballGeo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
-    const ballMat = new THREE.PointsMaterial({ ...planetMatBase, size: 0.05, color: '#e8a184', opacity: 0.9, sizeAttenuation: true });
+    // each planet wears its crew member's color — one world, one system
+    const STATION_COLORS = ['#8fb8e8', '#7ee0a8', '#ffd479', '#ff8d7a'];
+    const ballMat = new THREE.PointsMaterial({ ...planetMatBase, size: 0.05, color: STATION_COLORS[i], opacity: 0.9, sizeAttenuation: true });
     group.add(new THREE.Points(ballGeo, ballMat));
+    const haloMat = new THREE.SpriteMaterial({ map: glowTex, color: STATION_COLORS[i], transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending });
+    const halo = new THREE.Sprite(haloMat);
+    halo.scale.setScalar(5.6);
+    group.add(halo);
 
     group.visible = false;
     scene.add(group);
@@ -198,7 +216,7 @@ function boot() {
     scene.add(fig);
 
     const side = i % 2 === 0 ? 1 : -1;  // RD right, PM left, QA right, AI left
-    return { name, group, fig, figMats: [bodyMat, propMat], ballMat, side, label: labels[i] };
+    return { name, group, fig, figMats: [bodyMat, propMat], ballMat, haloMat, side, label: labels[i] };
   });
 
   // ---------- post ----------
@@ -227,15 +245,15 @@ function boot() {
   const hintEl = document.querySelector('.scroll-hint');
   const wordEl = document.querySelector('.sf-word');
 
-  // ---------- scroll progress ----------
-  let P = 0;
+  // ---------- scroll progress (critically damped for weight) ----------
+  let P = 0, Psm = 0, vel = 0;
   ScrollTrigger.create({
     trigger: '#film',
     start: 'top top',
     end: 'bottom bottom',
-    onUpdate: (self) => { P = self.progress; renderFrame(); },
+    onUpdate: (self) => { P = self.progress; },
   });
-  window.__filmSeek = (p) => { P = p; renderFrame(); };  // QA hook
+  window.__filmSeek = (p) => { P = p; Psm = p; renderFrame(); };  // QA hook
 
   // ---------- choreography: everything is a pure function of (P, t) ----------
   const mouse = { x: 0, y: 0 };
@@ -249,10 +267,17 @@ function boot() {
   const tmpV = new THREE.Vector3();
   const clock = new THREE.Clock();
 
-  function updateScene(p, t) {
-    // title + hint: still until the user starts
+  function updateScene(p, t, v = 0) {
+    // scroll velocity → subtle speed feel: FOV kick + livelier dust
+    const speed = Math.min(0.02, Math.abs(v));
+    camera.fov = 50 + speed * 240;
+    camera.updateProjectionMatrix();
+
+    // title + hint: still until the user starts, then it lifts away
     const titleOp = 1 - ss(0.015, 0.06, p);
     titleEl.style.opacity = String(titleOp);
+    titleEl.style.transform = `translate(-50%, -50%) translateY(${(1 - titleOp) * -42}px)`;
+    titleEl.style.filter = `blur(${(1 - titleOp) * 7}px)`;
     hintEl.style.opacity = String(Math.min(1, titleOp));
 
     // ship enters; at the very end it blasts off upward and out
@@ -279,13 +304,16 @@ function boot() {
     }
     bloom.strength = 0.55 + f * 1.05 + flare * 0.75;
     dustUniforms.uWarm.value = 0.35 + f * 0.65;
-    dustUniforms.uTurb.value = 0.5 + f * 0.9;
+    dustUniforms.uTurb.value = 0.5 + f * 0.9 + speed * 26;
     const wordOp = ss(0.9, 0.955, p) * (1 - ss(0.985, 1.0, p));
     wordEl.style.opacity = String(wordOp);
-    wordEl.style.transform = `translate(-50%, -50%) scale(${0.92 + 0.08 * wordOp})`;
+    wordEl.style.transform = `translate(-50%, -50%) translateY(${(1 - wordOp) * 20}px) scale(${0.92 + 0.08 * wordOp})`;
+    wordEl.style.letterSpacing = `${lerp(0.14, 0.02, wordOp)}em`;
+    wordEl.style.filter = `blur(${(1 - wordOp) * 9}px) drop-shadow(0 0 34px rgba(255, 200, 150, .35))`;
 
     // stations
     const w = innerWidth, h = innerHeight;
+    let lean = 0, boardPulse = 0;
     stations.forEach((st, i) => {
       const s = 0.115 + i * 0.185;
       const q = (p - s) / 0.185;
@@ -302,6 +330,16 @@ function boot() {
       const x = st.side * lerp(4.2, 3.1, enter);
       st.group.position.set(x, y, -1.2);
       st.group.rotation.y = t * 0.25 + i;
+
+      // once its crew member has boarded, the planet quietly dims
+      const picked = ss(0.72, 0.8, q);
+      st.ballMat.opacity = 0.9 - picked * 0.5;
+      st.haloMat.opacity = 0.14 - picked * 0.08;
+
+      // the ship leans toward whichever planet it is meeting
+      lean += st.side * Math.sin(Math.min(1, Math.max(0, q)) * Math.PI);
+      // a small flash the moment someone boards
+      boardPulse = Math.max(boardPulse, Math.sin(ss(0.66, 0.76, q) * Math.PI));
 
       // crew member: pops up from the planet's surface, then flies into the ship
       if (q > 0.36 && q < 0.78) {
@@ -330,6 +368,15 @@ function boot() {
       }
     });
 
+    // piloted, not on rails: the ship leans and drifts toward each meeting,
+    // and blinks the moment a crew member boards
+    ship.rotation.z += lean * -0.13;
+    ship.position.x = lean * 0.5;
+    if (boardPulse > 0.001) {
+      bloom.strength += boardPulse * 0.55;
+      if (f <= 0.001) shipMat.color.copy(shipBase).lerp(flareWhite, Math.max(flare * 0.85, boardPulse * 0.75));
+    }
+
     // finale dance: the whole crew jumps out front and celebrates
     const dance = ss(0.915, 0.955, p) * (1 - ss(0.985, 1.0, p));
     if (dance > 0.001) {
@@ -356,9 +403,12 @@ function boot() {
 
   function renderFrame() {
     const t = clock.getElapsedTime();
+    const dp = P - Psm;
+    Psm += dp * 0.14;
+    vel = lerp(vel, dp, 0.2);
     dustUniforms.uTime.value = t;
     grain.uniforms.uT.value = t;
-    updateScene(P, t);
+    updateScene(Psm, t, vel);
     composer.render();
   }
 
