@@ -136,6 +136,10 @@ html.film-static .keep-scrolling { display: none; }
   font-size: clamp(13px, 1.4vw, 17px);
   text-shadow: 0 0 18px rgba(255, 83, 72, .55);
 }
+.cry-label[data-cry="4"] {
+  color: #ffd479;
+  text-shadow: 0 0 16px rgba(255, 212, 121, .55);
+}
 
 .sf-word {
   position: absolute;

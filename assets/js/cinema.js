@@ -543,6 +543,7 @@ function boot() {
     // swarm lifecycle: on planet → leap to hull → cling → become pets → walk off
     const petQ = ss(0.86, 0.9, p);          // transformation window
     const walkQ = ss(0.9, 0.955, p);        // disembark and walk
+    if (cryLabels[4]) cryLabels[4].style.opacity = '0';
     swarm.forEach((sw, i) => {
       const leap = ss(0.35 + i * 0.05, 0.55 + i * 0.05, aq);
       const onPlanet = aiActive && leap < 0.02;
@@ -613,6 +614,14 @@ function boot() {
           );
           sw.pet.rotation.z = t * 4.2;  // rolling, always rolling
           sw.pet.scale.setScalar(0.72 + Math.sin(t * 3.4) * 0.05);
+
+          // the proud declaration, tumbling along with it
+          const petCry = cryLabels[4];
+          if (petCry && walkQ > 0.6) {
+            tmpV.copy(sw.pet.position).project(camera);
+            petCry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * innerWidth}px, ${(-tmpV.y * 0.5 + 0.5) * innerHeight - 26}px) rotate(${Math.sin(t * 4.2) * 8}deg)`;
+            petCry.style.opacity = String(ss(0.6, 0.8, walkQ) * endFade);
+          }
         }
       }
     });
