@@ -263,6 +263,7 @@ function boot() {
     new THREE.Vector3(0.5, -0.55, 0.25),
   ];
   const PET_COLORS = ['#ff8d7a', '#8fb8e8', '#7ee0a8', '#ffd479'];
+  const PAIR_X = [-2.35, 0, 2.35];  // the three crew+pet pairs stand centered
   const swarm = Array.from({ length: SWARM }, (_, i) => {
     const wildMat = new THREE.LineBasicMaterial({ color: '#ff5348', transparent: true, opacity: 1 });
     const wild = makeWildAI(wildMat, rng);
@@ -585,35 +586,53 @@ function boot() {
           sw.petMat.opacity = endFade;
         }
       } else if (walkQ > 0.01) {
-        // pets hop down with everyone
-        const gx = -2.7 + i * 1.75;
-        const gy = -2.62;
         sw.pet.visible = true;
-        sw.pet.position.set(
-          lerp(ship.position.x + HULL_OFFSETS[i].x, gx, walkQ),
-          lerp(ship.position.y + HULL_OFFSETS[i].y, gy, walkQ) + Math.sin(walkQ * Math.PI) * 1.2 + Math.abs(Math.sin(t * 4 + i)) * 0.12 * walkQ,
-          lerp(HULL_OFFSETS[i].z, 3, walkQ)
-        );
-        sw.pet.rotation.z = Math.sin(t * 4 + i) * 0.12;
-        sw.pet.scale.setScalar(0.75);
         sw.petMat.opacity = endFade;
+        if (i < 3) {
+          // leashed pets: bouncy, counter-phased to their humans
+          const gx = PAIR_X[i] + 0.52;
+          const gy = -2.62;
+          const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7 + Math.PI)) * 0.2 * walkQ;
+          sw.pet.position.set(
+            lerp(ship.position.x + HULL_OFFSETS[i].x, gx, walkQ),
+            lerp(ship.position.y + HULL_OFFSETS[i].y, gy, walkQ) + Math.sin(walkQ * Math.PI) * 1.2 + hop,
+            lerp(HULL_OFFSETS[i].z, 3, walkQ)
+          );
+          sw.pet.rotation.z = Math.sin(t * 5.2 + i * 2) * 0.22 * walkQ;
+          const squash = Math.sin(t * 7.2 + i * 1.7) * 0.08 * walkQ;
+          sw.pet.scale.set(0.75 * (1 - squash * 0.7), 0.75 * (1 + squash), 0.75);
+        } else {
+          // the free spirit: zooming and tumbling around everyone
+          const fx = Math.cos(t * 0.85) * 3.6;
+          const fy = -1.65 + Math.sin(t * 1.7) * 0.85;
+          const fz = 3 + Math.sin(t * 0.85) * 0.9;
+          sw.pet.position.set(
+            lerp(ship.position.x + HULL_OFFSETS[i].x, fx, walkQ),
+            lerp(ship.position.y + HULL_OFFSETS[i].y, fy, walkQ),
+            lerp(HULL_OFFSETS[i].z, fz, walkQ)
+          );
+          sw.pet.rotation.z = t * 4.2;  // rolling, always rolling
+          sw.pet.scale.setScalar(0.72 + Math.sin(t * 3.4) * 0.05);
+        }
       }
     });
 
-    // ---- the ending walk: crew steps off, each leading a pet ----
+    // ---- the ending walk: crew steps off, each leading a pet, centered ----
     crewStations.forEach((st, i) => {
-      const gx = -3.3 + i * 1.75;
+      const gx = PAIR_X[i] - 0.45;
       const gy = -2.5;
       if (walkQ > 0.01) {
         st.rideCrew.visible = true;
         st.figMats.forEach((m) => { m.opacity = endFade; });
+        const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7)) * 0.16 * walkQ;
         st.rideCrew.position.set(
-          lerp(ship.position.x, gx, walkQ),
-          lerp(ship.position.y - 0.3, gy, walkQ) + Math.sin(walkQ * Math.PI) * 0.9 + Math.abs(Math.sin(t * 3.2 + i)) * 0.08 * walkQ,
+          lerp(ship.position.x, gx, walkQ) + Math.sin(t * 1.3 + i * 2.4) * 0.07 * walkQ,
+          lerp(ship.position.y - 0.3, gy, walkQ) + Math.sin(walkQ * Math.PI) * 0.9 + hop,
           lerp(0, 3, walkQ)
         );
-        st.rideCrew.rotation.z = Math.sin(t * 3.2 + i) * 0.06;
-        st.rideCrew.scale.setScalar(1.05);
+        st.rideCrew.rotation.z = Math.sin(t * 3.6 + i * 1.7) * 0.11 * walkQ;
+        const squash = Math.sin(t * 7.2 + i * 1.2) * 0.06 * walkQ;
+        st.rideCrew.scale.set(1.05 * (1 - squash * 0.7), 1.05 * (1 + squash), 1.05);
       }
       // leash from crew hand to pet
       const le = leashes[i];
