@@ -318,6 +318,8 @@ function boot() {
   const titleEl = document.querySelector('.film-title');
   const hintEl = document.querySelector('.scroll-hint');
   const wordEl = document.querySelector('.sf-word');
+  const waterballEl = document.querySelector('.waterball');
+  const waterballHi = document.querySelector('.waterball-hi');
 
   // ---------- sound: synthesized, button reflects actual state ----------
   const soundBtn = document.querySelector('.sound-toggle');
@@ -433,6 +435,22 @@ function boot() {
     wordEl.style.transform = `translate(-50%, -78%) translateY(${(1 - wordOp) * 20}px) scale(${0.92 + 0.08 * wordOp})`;
     wordEl.style.letterSpacing = `${lerp(0.14, 0.02, wordOp)}em`;
     wordEl.style.filter = `blur(${(1 - wordOp) * 9}px) drop-shadow(0 0 34px rgba(255, 200, 150, .35))`;
+
+    // the waterball crawls out from behind the S to say hi
+    const wbQ = ss(0.93, 0.958, p);
+    const wbOp = wbQ * endFade;
+    waterballEl.style.opacity = String(wbOp);
+    if (wbOp > 0.01) {
+      const r = wordEl.getBoundingClientRect();
+      const sx = r.left + r.width * 0.052;              // the S
+      const k = wbQ;
+      const overshoot = 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);  // ease-out-back
+      const y = r.top + r.height * lerp(0.6, 0.2, overshoot);  // climbs from behind the glyph to perch on the S
+      waterballEl.style.transform = `translate(-50%, -96%) translate(${sx}px, ${y}px) rotate(${Math.sin(t * 3.1) * 9 * wbQ}deg) scale(${0.5 + 0.5 * wbQ})`;
+      waterballHi.style.opacity = String(ss(0.952, 0.962, p) * endFade * (0.75 + 0.25 * Math.sin(t * 2.4)));
+    } else {
+      waterballHi.style.opacity = '0';
+    }
 
     // ---- crew stations: chase, then escape ----
     const w = innerWidth, h = innerHeight;

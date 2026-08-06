@@ -141,6 +141,27 @@ html.film-static .keep-scrolling { display: none; }
   text-shadow: 0 0 16px rgba(255, 212, 121, .55);
 }
 
+.waterball {
+  position: absolute;
+  top: 0; left: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+.waterball svg { display: block; filter: drop-shadow(0 0 12px rgba(143, 208, 255, .65)); }
+.waterball-hi {
+  position: absolute;
+  left: 100%;
+  top: -8px;
+  margin-left: 6px;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: .08em;
+  color: #8fd0ff;
+  text-shadow: 0 0 12px rgba(143, 208, 255, .6);
+  opacity: 0;
+}
+
 .sf-word {
   position: absolute;
   left: 50%; top: 50%;
