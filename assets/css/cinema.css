@@ -92,6 +92,21 @@ html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film
   50% { transform: translate(-50%, 10px); }
 }
 
+.keep-scrolling {
+  position: absolute;
+  bottom: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .3em;
+  color: var(--film-muted);
+  opacity: 0;
+  transition: opacity .6s ease;
+  animation: hint-drift 2.4s ease-in-out infinite;
+}
+html.film-static .keep-scrolling { display: none; }
+
 .planet-label {
   position: absolute;
   top: 0; left: 0;
