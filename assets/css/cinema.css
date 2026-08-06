@@ -69,11 +69,23 @@ html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film
   bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: 1px solid rgba(220, 148, 124, .4);
+  border-radius: 999px;
+  padding: 13px 30px;
   font-family: var(--mono);
   font-size: 12px;
   letter-spacing: .34em;
   color: var(--film-clay);
   animation: hint-drift 2.4s ease-in-out infinite;
+  transition: background .3s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+.scroll-hint:hover {
+  background: rgba(220, 148, 124, .12);
+  border-color: var(--film-clay);
+  box-shadow: 0 0 26px rgba(220, 148, 124, .25);
 }
 @keyframes hint-drift {
   0%, 100% { transform: translate(-50%, 0); }

@@ -268,6 +268,14 @@ function boot() {
     ['pointerdown', 'keydown', 'touchend'].forEach((ev) => addEventListener(ev, arm, { once: true }));
   }
 
+  // START: one click arms the sound and glides the camera into the voyage
+  hintEl.addEventListener('click', () => {
+    if (soundOn) sound.start();
+    const target = (document.getElementById('film').offsetHeight - innerHeight) * 0.115;
+    if (lenis) lenis.scrollTo(target, { duration: 2.4, easing: (x) => 1 - Math.pow(1 - x, 3) });
+    else scrollTo({ top: target, behavior: 'smooth' });
+  });
+
   // one-shot event triggers, fired on upward crossings of the scrub
   const fired = { ship: false, boards: [false, false, false, false], finale: false };
 
