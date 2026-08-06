@@ -281,7 +281,7 @@ function boot() {
     const target = (document.getElementById('film').offsetHeight - innerHeight) * 0.115;
     if (lenis) lenis.scrollTo(target, { duration: 2.4, easing: (x) => 1 - Math.pow(1 - x, 3) });
     else scrollTo({ top: target, behavior: 'smooth' });
-    setTimeout(() => { scrollPrompt = 1; }, 2500);
+    setTimeout(() => { scrollPrompt = 1; }, 1100);
   });
 
   // one-shot event triggers, fired on upward crossings of the scrub
@@ -323,7 +323,7 @@ function boot() {
     hintEl.style.opacity = String(Math.min(1, titleOp));
     hintEl.style.pointerEvents = titleOp > 0.3 ? 'auto' : 'none';
     // post-START nudge: appears when the glide settles, leaves once they scroll on
-    keepScrollingEl.style.opacity = String(scrollPrompt * ss(0.09, 0.115, p) * (1 - ss(0.135, 0.18, p)));
+    keepScrollingEl.style.opacity = String(scrollPrompt * ss(0.06, 0.09, p) * (1 - ss(0.135, 0.18, p)));
 
     // ship enters; at the very end it blasts off upward and out
     const sa = ss(0.045, 0.1, p);
