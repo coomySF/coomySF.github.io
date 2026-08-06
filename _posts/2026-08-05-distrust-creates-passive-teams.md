@@ -3,6 +3,7 @@ layout: post
 title: 不信任團隊的領導者，會親手製造一個更不值得信任的團隊
 description: 團員可能不是沒有想法，而是早已學會：在這個團隊裡，自己做決定反而更容易出事。
 date: 2026-08-05 09:00:00 +0800
+hidden: true
 tags: [團隊, AI, 領導]
 seo:
   type: BlogPosting

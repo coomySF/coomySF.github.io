@@ -18,10 +18,12 @@ layout: default
   </footer>
   {% assign continue_post = page.next %}
   {% assign continue_label = '較新文章' %}
+  {% if continue_post.hidden %}{% assign continue_post = nil %}{% endif %}
   {% unless continue_post %}
     {% assign continue_post = page.previous %}
     {% assign continue_label = '較早文章' %}
   {% endunless %}
+  {% if continue_post.hidden %}{% assign continue_post = nil %}{% endif %}
   <nav class="post-navigation" aria-label="文章導覽">
     <div class="post-navigation-heading">
       <p>CONTINUE READING</p>

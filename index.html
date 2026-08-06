@@ -31,7 +31,8 @@ seo:
     <h2>最近寫的</h2>
   </div>
   <div class="post-grid">
-    {% for post in site.posts limit: 4 %}
+    {% assign visible_posts = site.posts | where_exp: "p", "p.hidden != true" %}
+    {% for post in visible_posts limit: 4 %}
     <a class="post-card" href="{{ post.url | relative_url }}" aria-label="閱讀：{{ post.title }}">
       <span class="post-card-index" aria-hidden="true">{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}</span>
       <div class="article-meta">

@@ -22,7 +22,8 @@ seo:
   </header>
 
   <section class="library-shelf" aria-label="文章列表">
-    {% for post in site.posts %}
+    {% assign visible_posts = site.posts | where_exp: "p", "p.hidden != true" %}
+    {% for post in visible_posts %}
     {% assign chars = post.content | strip_html | strip_newlines | size %}
     <article class="volume" data-reveal>
       <a class="volume-link" href="{{ post.url | relative_url }}" aria-label="閱讀：{{ post.title }}">
@@ -40,7 +41,7 @@ seo:
       </a>
     </article>
     {% endfor %}
-    <p class="library-count" data-reveal>目前 {{ site.posts | size }} 篇——都還不是答案，是過程。</p>
+    <p class="library-count" data-reveal>目前 {{ visible_posts | size }} 篇——都還不是答案，是過程。</p>
   </section>
 </div>
 
