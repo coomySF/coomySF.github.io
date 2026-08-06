@@ -148,7 +148,10 @@ html.film-static .keep-scrolling { display: none; }
   pointer-events: none;
   will-change: transform;
 }
-.waterball svg { display: block; filter: drop-shadow(0 0 12px rgba(143, 208, 255, .65)); }
+.waterball svg {
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(165, 219, 255, .95)) drop-shadow(0 0 20px rgba(143, 208, 255, .6));
+}
 .waterball-hi {
   position: absolute;
   left: 100%;
