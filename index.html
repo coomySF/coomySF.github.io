@@ -33,15 +33,14 @@ seo:
   <div class="post-grid">
     {% for post in site.posts limit: 4 %}
     <a class="post-card" href="{{ post.url | relative_url }}" aria-label="閱讀：{{ post.title }}">
-      <img class="post-card-cover" src="{{ '/assets/images/covers/' | relative_url }}{{ post.slug }}.svg" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ '/assets/images/covers/default.svg' | relative_url }}'">
-      <div class="post-card-body">
-        <div class="article-meta">
-          <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
-          <span>{{ post.tags | first }}</span>
-        </div>
-        <h3>{{ post.title }}</h3>
-        <p>{{ post.description }}</p>
+      <span class="post-card-index" aria-hidden="true">{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}</span>
+      <div class="article-meta">
+        <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
+        <span>{{ post.tags | first }}</span>
       </div>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.description }}</p>
+      <span class="post-card-arrow" aria-hidden="true">閱讀 →</span>
     </a>
     {% endfor %}
   </div>
