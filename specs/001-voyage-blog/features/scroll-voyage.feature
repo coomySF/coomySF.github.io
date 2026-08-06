@@ -1,10 +1,10 @@
-# 對應 spec: specs/001-voyage-blog/spec.md#user-story-2---首頁航行旅程-priority-p2
-# 詞彙對照（供翻譯層，不進 step）：旅程進度=ScrollTrigger progress、站名標籤=.planet-label、產品字樣=.sf-word、靜態版面=html.film-static
+# 對應 spec: specs/001-voyage-blog/spec.md#user-story-2---首頁救援旅程-priority-p2
+# 詞彙對照（供翻譯層，不進 step）：旅程進度=ScrollTrigger progress、站名標籤=.planet-label、產品字樣=.sf-word、靜態版面=html.film-static、野生 AI=makeWildAI、寵物=makePet
 # Last updated: 2026-08-06
 
 @feature-001-voyage-blog
-Feature: 捲動觀看旅程
-  捲動是唯一的播放器：旅程隨捲動進度依序呈現四站接人與終幕。
+Feature: 捲動觀看救援旅程
+  捲動是唯一的播放器：三站追逐與逃生、AI 群跳船、超進化與馴化、牽寵下船。
 
   Rule: 後置（回應） - 系統應在各站區間將站名顯示於星球中央
 
@@ -16,36 +16,55 @@ Feature: 捲動觀看旅程
 
       Examples:
         | 旅程進度 | 站名 |
-        | 21%      | RD   |
-        | 39%      | PM   |
-        | 57%      | QA   |
-        | 76%      | AI   |
+        | 20%      | RD   |
+        | 36%      | PM   |
+        | 52%      | QA   |
+        | 67%      | AI   |
 
-  Rule: 後置（回應） - 系統應在每站讓該站乘客自星球飛入飛船
+  Rule: 後置（回應） - 系統應在乘客站呈現野生 AI 追逐且火箭抵達時乘客躍船逃生
 
     @happy
-    Scenario Outline: 各站乘客的辨識造型
-      Given 訪客 "Visitor001" 捲動至 "<站名>" 站的接人區間
-      When 乘客自星球表面升起
-      Then 乘客造型應為 "<乘客造型>" 且身體顏色為 "<身體顏色>"
-      And 乘客抵達飛船時飛船應閃光一次
+    Scenario Outline: 各站的追逐與逃生
+      Given 訪客 "Visitor001" 捲動至 "<站名>" 站的停靠區間
+      When 星球表面的追逐進行中
+      Then 乘客 "<乘客造型>" 應在前方奔逃且一隻尖刺狀野生 AI 緊追在後
+      And 火箭靠近時該乘客應躍入火箭
+      And 野生 AI 應留在星球上原地顫抖
 
       Examples:
-        | 站名 | 乘客造型       | 身體顏色 |
-        | RD   | 戴眼鏡的小人   | 藍色     |
-        | PM   | 打領帶的小人   | 綠色     |
-        | QA   | 持放大鏡的小人 | 金色     |
-        | AI   | 雙觸角小怪物   | 橘紅色   |
+        | 站名 | 乘客造型       |
+        | RD   | 戴眼鏡的小人   |
+        | PM   | 打領帶的小人   |
+        | QA   | 持放大鏡的小人 |
 
-  Rule: 後置（回應） - 系統應在終幕顯示產品字樣與群舞
+  Rule: 後置（回應） - 系統應在 AI 星球區間讓 4 隻野生 AI 依序躍上船身攀附
 
     @happy
-    Scenario: 捲動至終幕
-      Given 訪客 "Visitor001" 已看完 4 站接人
-      When "Visitor001" 捲動至旅程進度 94%
-      Then 畫面中央應顯示產品字樣 "SpecFormula"
-      And 飛船應以彩色閃爍
-      And 4 位乘客應在飛船前方跳舞
+    Scenario: 野生 AI 群跳船
+      Given 訪客 "Visitor001" 捲動至旅程進度 67%
+      When 野生 AI 群發現火箭
+      Then 4 隻尖刺狀野生 AI 應依序躍向船身
+      And 抵達後應攀附於船身四個位置並持續抖動
+
+  Rule: 後置（回應） - 系統應在 SpecFormula 彗星射入後讓火箭超進化並馴化野生 AI
+
+    @happy
+    Scenario: 超進化與馴化
+      Given 4 隻野生 AI 已攀附於船身
+      When 訪客 "Visitor001" 捲動至旅程進度 85%
+      Then 一道彗星應自畫面外射入火箭
+      And 火箭應展開大翼與光環並轉為彩虹色
+      And 續捲至旅程進度 89% 時船身上的野生 AI 應逐隻變成圓眼可愛寵物
+
+  Rule: 後置（回應） - 系統應在終幕呈現產品字樣與牽寵下船
+
+    @happy
+    Scenario: 牽著寵物下船
+      Given 馴化已完成
+      When 訪客 "Visitor001" 捲動至旅程進度 94%
+      Then 畫面應顯示產品字樣 "SpecFormula"
+      And 3 位乘客應各以一條有垂墜弧度的牽繩牽著 1 隻寵物站於畫面下方
+      And 第 4 隻寵物應在旁自由蹦跳
 
   Rule: 前置（狀態） - 瀏覽器必須支援 3D 繪圖才播放旅程動畫
 
