@@ -131,6 +131,11 @@ html.film-static .keep-scrolling { display: none; }
   opacity: 0;
   will-change: transform;
 }
+.cry-label[data-cry="3"] {
+  color: #ff8d7a;
+  font-size: clamp(13px, 1.4vw, 17px);
+  text-shadow: 0 0 18px rgba(255, 83, 72, .55);
+}
 
 .sf-word {
   position: absolute;

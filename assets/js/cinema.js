@@ -513,6 +513,7 @@ function boot() {
     const aiActive = aq > 0 && aq < 1.05;
     aiPlanet.group.visible = aiActive;
     if (aiLabel) aiLabel.style.opacity = '0';
+    if (cryLabels[3]) cryLabels[3].style.opacity = '0';
     if (aiActive) {
       const enter = ss(0, 0.3, aq);
       const exit = ss(0.82, 1, aq);
@@ -524,6 +525,16 @@ function boot() {
         tmpV.copy(aiPlanet.group.position).project(camera);
         aiLabel.style.transform = `translate(-50%, -50%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
         aiLabel.style.opacity = String(op);
+      }
+      // the swarm spots its favorite species
+      const aiCry = cryLabels[3];
+      if (aiCry) {
+        const op = ss(0.2, 0.28, aq) * (1 - ss(0.5, 0.58, aq));
+        if (op > 0.01) {
+          tmpV.set(x + 0.4, y + 2.4, -1.05).project(camera);
+          aiCry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * 11) * 3}deg)`;
+        }
+        aiCry.style.opacity = String(op);
       }
     }
 
