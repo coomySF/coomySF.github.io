@@ -259,12 +259,13 @@ function boot() {
     if (soundOn) sound.start(); else sound.stop();
     setSoundUI();
   });
-  if (localStorage.getItem('coomy-sound') === 'on') {
-    // remember the preference, but audio still needs a gesture to actually start
-    soundOn = true;
-    setSoundUI();
-    const arm = () => { if (soundOn) sound.start(); removeEventListener('pointerdown', arm); };
-    addEventListener('pointerdown', arm, { once: true });
+  // sound is on by default (opt-out); browsers still require one gesture
+  // before anything is audible, so the bed fades in on first interaction
+  soundOn = localStorage.getItem('coomy-sound') !== 'off';
+  setSoundUI();
+  if (soundOn) {
+    const arm = () => { if (soundOn) sound.start(); };
+    ['pointerdown', 'keydown', 'touchend'].forEach((ev) => addEventListener(ev, arm, { once: true }));
   }
 
   // one-shot event triggers, fired on upward crossings of the scrub
