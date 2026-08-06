@@ -1,24 +1,10 @@
 (() => {
   const root = document.documentElement;
-  const toggle = document.querySelector('.theme-toggle');
   const progress = document.querySelector('.reading-progress span');
   const hero = document.querySelector('.hero');
   const tilt = document.querySelector('[data-tilt]');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const finePointer = matchMedia('(pointer: fine)');
-
-  const syncThemeControl = () => {
-    if (!toggle) return;
-    const isDark = root.dataset.theme === 'dark';
-    toggle.setAttribute('aria-pressed', String(isDark));
-    toggle.title = isDark ? '切換為淺色模式' : '切換為深色模式';
-  };
-
-  toggle?.addEventListener('click', () => {
-    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('coomy-theme-v2', root.dataset.theme);
-    syncThemeControl();
-  });
 
   const updateProgress = () => {
     const scrollable = document.documentElement.scrollHeight - innerHeight;
@@ -73,6 +59,5 @@
   addEventListener('pointermove', updatePointer, { passive: true });
   hero?.addEventListener('pointermove', updateHeroDepth, { passive: true });
   hero?.addEventListener('pointerleave', resetHeroDepth);
-  syncThemeControl();
   updateProgress();
 })();

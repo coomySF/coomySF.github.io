@@ -1,0 +1,162 @@
+/* The Archive — dark library page, the film's epilogue.
+   Reading stays on paper; browsing happens in the dark. */
+
+:root {
+  --lib-bg: #0b100e;
+  --lib-ink: #ece8de;
+  --lib-muted: #9aa39c;
+  --lib-clay: #dc947c;
+  --lib-line: rgba(236, 232, 222, .12);
+}
+
+html.library-dark body { background: var(--lib-bg); }
+html.library-dark .site-header a,
+html.library-dark .site-header .theme-toggle span { color: var(--lib-ink); }
+html.library-dark .site-header .brand-mark { background: var(--lib-ink); color: var(--lib-bg); }
+html.library-dark .paper-noise { opacity: .25; }
+html.library-dark .site-footer { color: var(--lib-muted); border-color: var(--lib-line); }
+
+.library {
+  margin: 0 calc(50% - 50vw);
+  padding: 0 max(24px, calc(50vw - 620px)) 90px;
+  background:
+    radial-gradient(60% 40% at 70% 0%, rgba(220, 148, 124, .07), transparent 70%),
+    var(--lib-bg);
+  color: var(--lib-ink);
+  min-height: 100vh;
+}
+
+.library .eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  color: var(--lib-clay);
+  margin-bottom: 20px;
+}
+
+.library-hero {
+  padding: 96px 0 72px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(260px, 26vw, 380px);
+  gap: clamp(20px, 4vw, 60px);
+  align-items: center;
+}
+.library-orb { position: relative; }
+#library-orb-canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .library-hero { grid-template-columns: 1fr; }
+  .library-orb { display: none; }
+}
+.library-hero h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(34px, 5.4vw, 64px);
+  line-height: 1.3;
+  margin: 0;
+}
+.library-hero h1 em { font-style: normal; color: var(--lib-clay); }
+.library-lead {
+  font-family: var(--serif);
+  color: var(--lib-muted);
+  max-width: 34em;
+  line-height: 1.9;
+  margin-top: 22px;
+  font-size: clamp(14px, 1.5vw, 17px);
+}
+
+.library-shelf { border-top: 1px solid var(--lib-line); }
+
+.volume { border-bottom: 1px solid var(--lib-line); }
+
+.volume-link {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: clamp(18px, 3vw, 42px);
+  padding: clamp(30px, 4.5vw, 54px) 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: padding .45s var(--ease);
+}
+.volume-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(55% 120% at 30% 50%, rgba(220, 148, 124, .10), transparent 70%);
+  opacity: 0;
+  transition: opacity .45s ease;
+  pointer-events: none;
+}
+.volume-link:hover::before { opacity: 1; }
+.volume-link:hover { padding-left: 26px; }
+
+.volume-index {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--lib-muted);
+  transition: color .3s ease;
+}
+.volume-link:hover .volume-index { color: var(--lib-clay); }
+
+.volume-title {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(24px, 3.6vw, 44px);
+  line-height: 1.4;
+  margin: 0;
+  transition: color .3s ease, text-shadow .3s ease;
+}
+.volume-link:hover .volume-title {
+  color: #fff6ec;
+  text-shadow: 0 0 34px rgba(220, 148, 124, .35);
+}
+
+.volume-desc {
+  font-family: var(--serif);
+  color: var(--lib-muted);
+  line-height: 1.8;
+  margin: 14px 0 0;
+  max-width: 46em;
+  font-size: clamp(13px, 1.4vw, 16px);
+}
+
+.volume-meta {
+  display: flex;
+  gap: 18px;
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .14em;
+  color: var(--lib-muted);
+}
+.volume-meta span:nth-child(2) { color: var(--lib-clay); }
+
+.volume-arrow {
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--lib-muted);
+  transform: translateX(0);
+  transition: transform .45s var(--ease), color .3s ease;
+  align-self: center;
+}
+.volume-link:hover .volume-arrow { transform: translateX(10px); color: var(--lib-clay); }
+
+.library-count {
+  font-family: var(--serif);
+  color: var(--lib-muted);
+  padding: 42px 8px 0;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .library-hero { padding: 64px 0 44px; }
+  .volume-link { grid-template-columns: auto 1fr; }
+  .volume-arrow { display: none; }
+}

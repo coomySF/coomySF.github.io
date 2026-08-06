@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}?v=20260805-11">
     <script>
       document.documentElement.classList.add('js');
-      document.documentElement.dataset.theme = localStorage.getItem('coomy-theme-v2') || 'light';
     </script>
   </head>
   <body>
@@ -26,11 +25,8 @@
       </a>
       <nav aria-label="主要選單">
         <a href="{{ '/writing/' | relative_url }}">文章</a>
-        <a href="{{ '/about/' | relative_url }}">關於</a>
+        <a href="{{ '/' | relative_url }}#about">關於</a>
         <a href="{{ '/feed.xml' | relative_url }}">RSS</a>
-        <button class="theme-toggle" type="button" aria-label="切換明暗模式" aria-pressed="false">
-          <span>明暗</span><i aria-hidden="true"></i>
-        </button>
       </nav>
     </header>
     <main>{{ content }}</main>
