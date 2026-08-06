@@ -246,31 +246,36 @@ function boot() {
   const wordEl = document.querySelector('.sf-word');
 
   // ---------- sound: fully synthesized, opt-in ----------
+  // the button shows the ACTUAL audio state: silent until START (or the
+  // button itself) is clicked, so visitors know where to turn it on
   const soundBtn = document.querySelector('.sound-toggle');
   const sound = makeSound();
-  let soundOn = false;
+  let soundOn = false;                                          // actually audible right now
+  let muted = localStorage.getItem('coomy-sound') === 'off';    // explicit user opt-out
   const setSoundUI = () => {
     soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
     soundBtn.setAttribute('aria-pressed', String(soundOn));
   };
+  const startSound = () => { sound.start(); soundOn = true; setSoundUI(); };
   soundBtn.addEventListener('click', () => {
-    soundOn = !soundOn;
-    localStorage.setItem('coomy-sound', soundOn ? 'on' : 'off');
-    if (soundOn) sound.start(); else sound.stop();
+    if (soundOn) {
+      sound.stop();
+      soundOn = false;
+      muted = true;
+      localStorage.setItem('coomy-sound', 'off');
+    } else {
+      muted = false;
+      localStorage.setItem('coomy-sound', 'on');
+      startSound();
+    }
     setSoundUI();
   });
-  // sound is on by default (opt-out); browsers still require one gesture
-  // before anything is audible, so the bed fades in on first interaction
-  soundOn = localStorage.getItem('coomy-sound') !== 'off';
   setSoundUI();
-  if (soundOn) {
-    const arm = () => { if (soundOn) sound.start(); };
-    ['pointerdown', 'keydown', 'touchend'].forEach((ev) => addEventListener(ev, arm, { once: true }));
-  }
 
-  // START: one click arms the sound and glides the camera into the voyage
+  // START: one click turns the sound on (unless the user muted it before)
+  // and glides the camera into the voyage
   hintEl.addEventListener('click', () => {
-    if (soundOn) sound.start();
+    if (!muted && !soundOn) startSound();
     const target = (document.getElementById('film').offsetHeight - innerHeight) * 0.115;
     if (lenis) lenis.scrollTo(target, { duration: 2.4, easing: (x) => 1 - Math.pow(1 - x, 3) });
     else scrollTo({ top: target, behavior: 'smooth' });
