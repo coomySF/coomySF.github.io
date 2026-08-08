@@ -97,7 +97,7 @@ html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film
 }
 .film-teaser {
   position: absolute;
-  bottom: 16px;
+  bottom: 98px;
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--mono);

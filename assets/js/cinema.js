@@ -608,8 +608,9 @@ function boot() {
 
       // the chase: crew flees along the surface, wild AI right behind
       // (held long — this beat is the heart of the act)
+      // each station is more dangerous: faster chase, smaller gap
       const escaped = q > 0.62;
-      const chaseAngle = t * 1.6 + i * 2;
+      const chaseAngle = t * (1.5 + i * 0.35) + i * 2;
       st.chaseCrew.visible = !escaped;
       if (!escaped) {
         st.chaseCrew.position.set(Math.cos(chaseAngle) * 1.75, Math.sin(chaseAngle) * 1.75, 0.15);
@@ -624,11 +625,11 @@ function boot() {
           const wx = x + st.chaseCrew.position.x;
           const wy = y + st.chaseCrew.position.y + 0.85;
           tmpV.set(wx, wy, -1.05).project(camera);
-          cry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * 9 + i) * 4}deg)`;
+          cry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * (9 + i * 3) + i) * (4 + i * 3.5)}deg) scale(${1 + i * 0.09})`;
         }
         cry.style.opacity = String(cryOp);
       }
-      const chaserAngle = chaseAngle - 0.55 - (escaped ? Math.sin(t * 9) * 0.06 : 0);
+      const chaserAngle = chaseAngle - (0.62 - i * 0.16) - (escaped ? Math.sin(t * 9) * 0.06 : 0);
       st.chaser.position.set(Math.cos(chaserAngle) * 1.78, Math.sin(chaserAngle) * 1.78, 0.15);
       st.chaser.rotation.z = chaserAngle - Math.PI / 2 + Math.sin(t * 12) * 0.14;
       st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : Math.abs(Math.sin(t * 6 + i)) * 0.05));  // menace pulse; fumes when the meal escapes
