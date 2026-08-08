@@ -79,8 +79,8 @@ html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film
   font-size: 12px;
   letter-spacing: .34em;
   color: var(--film-clay);
-  animation: hint-drift 2.4s ease-in-out infinite;
-  transition: background .3s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease;
+  animation: hint-drift 2.4s ease-in-out infinite, start-glow 2.4s ease-in-out infinite;
+  transition: background .3s ease, color .3s ease, border-color .3s ease;
 }
 .scroll-hint:hover {
   background: rgba(220, 148, 124, .12);
@@ -90,6 +90,23 @@ html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film
 @keyframes hint-drift {
   0%, 100% { transform: translate(-50%, 0); }
   50% { transform: translate(-50%, 10px); }
+}
+@keyframes start-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(220, 148, 124, 0); }
+  50% { box-shadow: 0 0 30px rgba(220, 148, 124, .28); }
+}
+.film-teaser {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .3em;
+  text-indent: .3em;
+  color: var(--film-muted);
+  opacity: 0;
+  white-space: nowrap;
 }
 
 .keep-scrolling {
@@ -409,4 +426,4 @@ html.film-static #film-canvas { display: none; }
 html.film-static .film-ui { position: static; }
 html.film-static .film-title { position: static; transform: none; margin: 0 auto; padding: 22vh 24px 18vh; }
 html.film-static .scroll-hint, html.film-static .planet-label, html.film-static .sf-word,
-html.film-static .letterbox, html.film-static .fin-mark { display: none; }
+html.film-static .letterbox, html.film-static .fin-mark, html.film-static .film-teaser { display: none; }
