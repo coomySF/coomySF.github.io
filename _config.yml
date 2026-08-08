@@ -15,6 +15,12 @@ social:
   links:
     - https://www.threads.com/@coomysky
     - https://github.com/coomySF
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: /assets/og-cover.jpg
+
 permalink: /writing/:title/
 markdown: kramdown
 kramdown:

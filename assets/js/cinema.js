@@ -349,6 +349,18 @@ function boot() {
   impPts.visible = false;
   scene.add(impPts);
 
+  // shooting stars — the title screen's quiet promise that this is a film
+  const shooters = Array.from({ length: 3 }, (_, k) => {
+    const mat = new THREE.LineBasicMaterial({ color: '#ffe9c9', transparent: true, opacity: 0 });
+    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(1.3, 0, 0)]);
+    const line = new THREE.Line(geo, mat);
+    const dx = 7 + k * 1.2, dy = -2.4 - k * 0.5;
+    line.rotation.z = Math.atan2(dy, dx);
+    line.visible = false;
+    scene.add(line);
+    return { line, mat, period: 5.5 + k * 2.7, phase: k * 2.9, x0: -7 + k * 3.6, y0: 3.6 - k * 0.9, dx, dy };
+  });
+
   // a soft shaft of light for the cinematic close
   const rayMat = new THREE.SpriteMaterial({ map: glowTex, color: '#fff8e2', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const godRay = new THREE.Sprite(rayMat);
@@ -388,6 +400,7 @@ function boot() {
   const lbTop = document.querySelector('.letterbox-top');
   const lbBot = document.querySelector('.letterbox-bottom');
   const finEl = document.querySelector('.fin-mark');
+  const teaserEl = document.querySelector('.film-teaser');
 
   // ---------- sound: synthesized, button reflects actual state ----------
   const soundBtn = document.querySelector('.sound-toggle');
@@ -479,13 +492,26 @@ function boot() {
     hintEl.style.opacity = String(Math.min(1, titleOp));
     hintEl.style.pointerEvents = titleOp > 0.3 ? 'auto' : 'none';
     keepScrollingEl.style.opacity = String(scrollPrompt * ss(0.06, 0.09, p) * (1 - ss(0.135, 0.18, p)));
+    if (teaserEl) teaserEl.style.opacity = String(titleOp * (0.5 + 0.14 * Math.sin(t * 1.6)));
 
-    // ship
+    // shooting stars: bright over the title, subtle during the voyage
+    const shootAmp = 0.25 + 0.75 * titleOp;
+    shooters.forEach((s) => {
+      const u = ((t + s.phase) % s.period) / 1.1;
+      const on = u < 1;
+      s.line.visible = on;
+      if (!on) return;
+      s.line.position.set(s.x0 + s.dx * u, s.y0 + s.dy * u, -2.5);
+      s.mat.opacity = Math.sin(u * Math.PI) * 0.75 * shootAmp;
+    });
+
+    // ship — a small cameo drifting through the title screen, then the hero
     const sa = ss(0.045, 0.1, p);
     const flare = Math.sin(sa * Math.PI);
-    ship.visible = sa > 0.01;
-    ship.position.y = 0.4 + Math.sin(t * 0.9) * 0.09;
-    ship.rotation.z = mouse.x * 0.1 + Math.sin(t * 0.55) * 0.04;
+    const hero = ss(0.03, 0.09, p);
+    ship.visible = sa > 0.01 || titleOp > 0.01;
+    ship.position.y = lerp(2.0 + Math.sin(t * 0.5) * 0.18, 0.4 + Math.sin(t * 0.9) * 0.09, hero);
+    ship.rotation.z = lerp(-0.5 + Math.sin(t * 0.3) * 0.06, mouse.x * 0.1 + Math.sin(t * 0.55) * 0.04, hero);
     thrust.scale.y = 0.85 + 0.3 * Math.abs(Math.sin(t * 7));
 
     // evolution + rainbow
@@ -501,8 +527,8 @@ function boot() {
     } else {
       shipMat.color.copy(shipBase).lerp(flareWhite, Math.max(flare * 0.85, evoFlash));
     }
-    ship.scale.setScalar((0.5 + 0.5 * sa) * (1 + 0.18 * evo + 0.04 * Math.sin(t * 6) * f));
-    shipMat.opacity = sa * endFade;
+    ship.scale.setScalar(lerp(0.34, (0.5 + 0.5 * sa) * (1 + 0.18 * evo + 0.04 * Math.sin(t * 6) * f), hero));
+    shipMat.opacity = Math.max(sa, titleOp * 0.6) * endFade;
     bloom.strength = 0.55 + f * 0.9 + flare * 0.75 + evoFlash * 1.1;
     dustUniforms.uWarm.value = 0.35 + f * 0.65;
     dustUniforms.uTurb.value = 0.5 + f * 0.9 + speed * 26;
@@ -582,8 +608,9 @@ function boot() {
 
       // the chase: crew flees along the surface, wild AI right behind
       // (held long — this beat is the heart of the act)
+      // each station is more dangerous: faster chase, smaller gap
       const escaped = q > 0.62;
-      const chaseAngle = t * 1.6 + i * 2;
+      const chaseAngle = t * (1.5 + i * 0.35) + i * 2;
       st.chaseCrew.visible = !escaped;
       if (!escaped) {
         st.chaseCrew.position.set(Math.cos(chaseAngle) * 1.75, Math.sin(chaseAngle) * 1.75, 0.15);
@@ -598,11 +625,11 @@ function boot() {
           const wx = x + st.chaseCrew.position.x;
           const wy = y + st.chaseCrew.position.y + 0.85;
           tmpV.set(wx, wy, -1.05).project(camera);
-          cry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * 9 + i) * 4}deg)`;
+          cry.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px) rotate(${Math.sin(t * (9 + i * 3) + i) * (4 + i * 3.5)}deg) scale(${1 + i * 0.09})`;
         }
         cry.style.opacity = String(cryOp);
       }
-      const chaserAngle = chaseAngle - 0.55 - (escaped ? Math.sin(t * 9) * 0.06 : 0);
+      const chaserAngle = chaseAngle - (0.62 - i * 0.16) - (escaped ? Math.sin(t * 9) * 0.06 : 0);
       st.chaser.position.set(Math.cos(chaserAngle) * 1.78, Math.sin(chaserAngle) * 1.78, 0.15);
       st.chaser.rotation.z = chaserAngle - Math.PI / 2 + Math.sin(t * 12) * 0.14;
       st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : Math.abs(Math.sin(t * 6 + i)) * 0.05));  // menace pulse; fumes when the meal escapes
@@ -804,9 +831,9 @@ function boot() {
       }
     });
 
-    // piloted feel
+    // piloted feel (the cameo waits off to the side during the title)
     ship.rotation.z += lean * -0.13;
-    ship.position.x = lean * 0.5;
+    ship.position.x = lean * 0.5 + (1 - hero) * (3.3 + Math.sin(t * 0.4) * 0.2);
 
     // ---- epilogue beat 2: the victory lap ----
     const fb = ss(0.4, 0.64, ep);
@@ -923,7 +950,8 @@ function boot() {
   function renderFrame() {
     const t = clock.getElapsedTime();
     const dp = P - Psm;
-    Psm += dp * 0.14;
+    // catch up faster after a big jump (scrollbar drags, anchor links)
+    Psm += dp * (Math.abs(dp) > 0.15 ? 0.4 : 0.14);
     vel = lerp(vel, dp, 0.2);
     dustUniforms.uTime.value = t;
     grain.uniforms.uT.value = t;
