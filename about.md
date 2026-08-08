@@ -2,7 +2,7 @@
 layout: default
 title: 關於
 permalink: /about/
-description: 關於 Coomy 與這個 Blog。
+description: 關於 Coomy——前外商 Frontend Tech Lead、帶過人與 AI 混編的 Automation Team，現於 SpecFormula 研發，寫 AI 協作與團隊決策。
 seo:
   type: Person
   links:

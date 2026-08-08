@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 主管嘴上要 ownership，卻只允許團隊用 Turn-Based Loop 工作
-description: 從四種 Agent Loop 重新看領導者如何依照人、任務與風險，選擇介入、同步與授權的方式。
+description: 從四種 Agent Loop 看 AI 團隊管理——領導者如何依照人、任務與風險，選擇介入、同步與授權的方式。
 date: 2026-08-05 21:00:00 +0800
 tags: [領導, Agent, 團隊]
 image:

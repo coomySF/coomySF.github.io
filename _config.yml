@@ -20,6 +20,14 @@ defaults:
       path: ""
     values:
       image: /assets/og-cover.jpg
+  - scope:
+      path: "specs"
+    values:
+      sitemap: false
+  - scope:
+      path: "googlea140d4084a3bd256.html"
+    values:
+      sitemap: false
 
 permalink: /writing/:title/
 markdown: kramdown
