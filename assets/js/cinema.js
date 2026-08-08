@@ -58,6 +58,11 @@ function boot() {
   const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 120);
   camera.position.set(0, 0, 10);
 
+  // the story owns the first stretch of scroll; the epilogue (orbit →
+  // triumph → cinematic close) owns the rest
+  const EPI_S = 0.78;
+  const STORY_CAP = 0.968;
+
   const rng = mulberry32(20260806);
 
   // ---------- dust ----------
@@ -293,6 +298,42 @@ function boot() {
   comet.scale.setScalar(1.6);
   scene.add(comet);
 
+  // fireworks for the triumph beat
+  const FW_N = small ? 60 : 110;
+  const FW_COLORS = ['#ffd479', '#ff8d7a', '#8fb8e8', '#7ee0a8', '#fff3d6'];
+  const fwColor = new THREE.Color();
+  const fireworks = [
+    { at: 0.42, pos: [-3.6, 1.6, 0.5] },
+    { at: 0.52, pos: [3.4, 2.3, -0.5] },
+    { at: 0.62, pos: [0, 3.1, 1] },
+  ].map((f) => {
+    const dirs = new Float32Array(FW_N * 3);
+    const cols = new Float32Array(FW_N * 3);
+    for (let i = 0; i < FW_N; i++) {
+      const th = rng() * Math.PI * 2, ph = Math.acos(2 * rng() - 1), r = 0.55 + rng() * 0.45;
+      dirs[i * 3] = Math.sin(ph) * Math.cos(th) * r;
+      dirs[i * 3 + 1] = Math.sin(ph) * Math.sin(th) * r;
+      dirs[i * 3 + 2] = Math.cos(ph) * r * 0.6;
+      fwColor.set(FW_COLORS[Math.floor(rng() * FW_COLORS.length)]);
+      cols[i * 3] = fwColor.r; cols[i * 3 + 1] = fwColor.g; cols[i * 3 + 2] = fwColor.b;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(FW_N * 3), 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    const mat = new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const pts = new THREE.Points(geo, mat);
+    pts.visible = false;
+    scene.add(pts);
+    return { ...f, dirs, geo, mat, pts };
+  });
+
+  // a soft shaft of light for the cinematic close
+  const rayMat = new THREE.SpriteMaterial({ map: glowTex, color: '#fff8e2', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const godRay = new THREE.Sprite(rayMat);
+  godRay.scale.set(2.6, 13, 1);
+  godRay.position.set(0, 2.4, 2.2);
+  scene.add(godRay);
+
   // ---------- post ----------
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
@@ -320,6 +361,9 @@ function boot() {
   const wordEl = document.querySelector('.sf-word');
   const waterballEl = document.querySelector('.waterball');
   const waterballHi = document.querySelector('.waterball-hi');
+  const lbTop = document.querySelector('.letterbox-top');
+  const lbBot = document.querySelector('.letterbox-bottom');
+  const finEl = document.querySelector('.fin-mark');
 
   // ---------- sound: synthesized, button reflects actual state ----------
   const soundBtn = document.querySelector('.sound-toggle');
@@ -351,14 +395,14 @@ function boot() {
   let scrollPrompt = 0;
   hintEl.addEventListener('click', () => {
     if (!muted && !soundOn) startSound();
-    const target = (document.getElementById('film').offsetHeight - innerHeight) * 0.115;
+    const target = (document.getElementById('film').offsetHeight - innerHeight) * (0.115 / STORY_CAP * EPI_S);
     if (lenis) lenis.scrollTo(target, { duration: 2.4, easing: (x) => 1 - Math.pow(1 - x, 3) });
     else scrollTo({ top: target, behavior: 'smooth' });
     setTimeout(() => { scrollPrompt = 1; }, 1100);
   });
 
   // one-shot sound triggers on upward crossings
-  const fired = { ship: false, escapes: [false, false, false], swarm: false, evolve: false, pops: [false, false, false, false] };
+  const fired = { ship: false, escapes: [false, false, false], swarm: false, evolve: false, pops: [false, false, false, false], fly: false, fws: [false, false, false] };
 
   // ---------- scroll progress (critically damped) ----------
   let P = 0, Psm = 0, vel = 0;
@@ -381,7 +425,16 @@ function boot() {
   const tmpV = new THREE.Vector3();
   const clock = new THREE.Clock();
 
-  function updateScene(p, t, v = 0) {
+  function updateScene(pRaw, t, v = 0) {
+    // epilogue progress: orbit → triumph → cinematic close
+    const ep = Math.min(1, Math.max(0, (pRaw - EPI_S) / (1 - EPI_S)));
+    // the story itself, same pacing as before, held at the tableau
+    const p = Math.min(1, pRaw / EPI_S) * STORY_CAP;
+    // everything softly yields to the cards at the very end
+    const endFade = 1 - ss(0.94, 1, ep);
+    // everyone celebrates while the camera circles them
+    const cheer = Math.sin(ss(0.04, 0.36, ep) * Math.PI);
+
     const speed = Math.min(0.02, Math.abs(v));
     const targetFov = 50 + speed * 240;
     if (Math.abs(camera.fov - targetFov) > 0.05) {
@@ -397,9 +450,6 @@ function boot() {
     hintEl.style.opacity = String(Math.min(1, titleOp));
     hintEl.style.pointerEvents = titleOp > 0.3 ? 'auto' : 'none';
     keepScrollingEl.style.opacity = String(scrollPrompt * ss(0.06, 0.09, p) * (1 - ss(0.135, 0.18, p)));
-
-    // everything softly yields to the cards at the very end
-    const endFade = 1 - ss(0.985, 1.0, p);
 
     // ship
     const sa = ss(0.045, 0.1, p);
@@ -432,8 +482,9 @@ function boot() {
     cometMat.opacity = Math.sin(cometQ * Math.PI) * endFade;
     comet.position.set(lerp(-9, ship.position.x, cometQ), lerp(5.5, ship.position.y, cometQ), 1.5);
 
-    // the wordmark
-    const wordOp = ss(0.88, 0.93, p) * endFade;
+    // the wordmark — it steps aside while the camera circles the crew
+    const dip = 1 - cheer * 0.9;
+    const wordOp = ss(0.88, 0.93, p) * endFade * dip;
     wordEl.style.opacity = String(wordOp);
     wordEl.style.transform = `translate(-50%, -78%) translateY(${(1 - wordOp) * 20}px) scale(${0.92 + 0.08 * wordOp})`;
     wordEl.style.letterSpacing = `${lerp(0.14, 0.02, wordOp)}em`;
@@ -441,7 +492,7 @@ function boot() {
 
     // the waterball crawls out from behind the S to say hi
     const wbQ = ss(0.93, 0.958, p);
-    const wbOp = wbQ * endFade;
+    const wbOp = wbQ * endFade * dip;
     waterballEl.style.opacity = String(wbOp);
     if (wbOp > 0.01) {
       const r = wordEl.getBoundingClientRect();
@@ -450,7 +501,7 @@ function boot() {
       const overshoot = 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);  // ease-out-back
       const y = r.top + r.height * lerp(0.6, 0.2, overshoot);  // climbs from behind the glyph to perch on the S
       waterballEl.style.transform = `translate(-50%, -96%) translate(${sx}px, ${y}px) rotate(${Math.sin(t * 3.1) * 9 * wbQ}deg) scale(${0.5 + 0.5 * wbQ})`;
-      waterballHi.style.opacity = String(ss(0.952, 0.962, p) * endFade * (0.75 + 0.25 * Math.sin(t * 2.4)));
+      waterballHi.style.opacity = String(ss(0.952, 0.962, p) * endFade * dip * (0.75 + 0.25 * Math.sin(t * 2.4)));
     } else {
       waterballHi.style.opacity = '0';
     }
@@ -614,7 +665,8 @@ function boot() {
           // leashed pets: bouncy, counter-phased to their humans
           const gx = PAIR_X[i] + 0.52;
           const gy = -2.62;
-          const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7 + Math.PI)) * 0.2 * walkQ;
+          const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7 + Math.PI)) * 0.2 * walkQ
+            + Math.abs(Math.sin(t * 4.2)) * 0.34 * cheer;
           sw.pet.position.set(
             lerp(ship.position.x + HULL_OFFSETS[i].x, gx, walkQ),
             lerp(ship.position.y + HULL_OFFSETS[i].y, gy, walkQ) + Math.sin(walkQ * Math.PI) * 1.2 + hop,
@@ -654,7 +706,8 @@ function boot() {
       if (walkQ > 0.01) {
         st.rideCrew.visible = true;
         st.figMats.forEach((m) => { m.opacity = endFade; });
-        const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7)) * 0.16 * walkQ;
+        const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7)) * 0.16 * walkQ
+          + Math.abs(Math.sin(t * 4.2)) * 0.26 * cheer;
         st.rideCrew.position.set(
           lerp(ship.position.x, gx, walkQ) + Math.sin(t * 1.3 + i * 2.4) * 0.07 * walkQ,
           lerp(ship.position.y - 0.3, gy, walkQ) + Math.sin(walkQ * Math.PI) * 0.9 + hop,
@@ -694,10 +747,86 @@ function boot() {
     ship.rotation.z += lean * -0.13;
     ship.position.x = lean * 0.5;
 
-    // camera parallax
+    // ---- epilogue beat 2: the victory lap ----
+    const fb = ss(0.4, 0.64, ep);
+    const fly = Math.sin(fb * Math.PI);
+    ship.position.z = fly * 2.2;   // absolute — never accumulate across frames
+    if (fly > 0.001) {
+      ship.position.x += Math.sin(fb * Math.PI * 2) * 4.8 * fly;
+      ship.position.y += fly * 2.7;
+      ship.rotation.z += -Math.cos(fb * Math.PI * 2) * 0.8 * fly;  // banking
+      thrust.scale.y = 1.2 + fly * 1.6;
+      comet.position.copy(ship.position);
+      comet.scale.setScalar(1.2 + fly * 1.6);
+      cometMat.opacity = Math.max(cometMat.opacity, fly * 0.85 * endFade);
+    }
+    bloom.strength += fly * 0.4;
+    dustUniforms.uTurb.value += fly * 1.4;
+
+    fireworks.forEach((fw) => {
+      const q = Math.min(1, Math.max(0, (ep - fw.at) / 0.2));
+      const on = q > 0 && q < 1;
+      fw.pts.visible = on;
+      if (!on) return;
+      const r = 1 - Math.pow(1 - q, 3);   // ease-out expansion
+      const drop = q * q * 0.55;          // gravity pulls the sparks down
+      const posAttr = fw.geo.getAttribute('position');
+      for (let i = 0; i < FW_N; i++) {
+        posAttr.setXYZ(
+          i,
+          fw.pos[0] + fw.dirs[i * 3] * r * 2.6,
+          fw.pos[1] + fw.dirs[i * 3 + 1] * r * 2.6 - drop,
+          fw.pos[2] + fw.dirs[i * 3 + 2] * r * 2.6
+        );
+      }
+      posAttr.needsUpdate = true;
+      fw.mat.opacity = Math.sin(q * Math.PI) * endFade;
+    });
+
+    // ---- epilogue beat 3: the cinematic close ----
+    const rayQ = ss(0.7, 0.86, ep);
+    rayMat.opacity = rayQ * 0.16 * endFade;
+    dustUniforms.uDim.value = 0.55 * (1 - rayQ * 0.55);
+
+    const lb = ss(0.68, 0.85, ep);
+    lbTop.style.height = lbBot.style.height = `${lb * 9}vh`;
+    lbTop.style.opacity = lbBot.style.opacity = String(Math.min(1, lb * 2) * endFade);
+
+    // a metallic glint sweeps once across the wordmark
+    const glint = ss(0.78, 0.96, ep);
+    if (glint > 0.001 && glint < 0.999) {
+      const gx = -30 + glint * 160;
+      wordEl.style.backgroundImage =
+        `linear-gradient(100deg, rgba(255,255,255,0) ${gx - 12}%, rgba(255,255,255,.95) ${gx}%, rgba(255,255,255,0) ${gx + 12}%),` +
+        ' linear-gradient(100deg, #ff8d7a, #ffd479, #7ee0a8, #7ab8ff, #c98bff, #ff8d7a)';
+      wordEl.style.backgroundSize = '100% 100%, 400% 100%';
+    } else {
+      wordEl.style.backgroundImage = '';
+      wordEl.style.backgroundSize = '';
+    }
+
+    finEl.style.opacity = String(ss(0.88, 0.97, ep) * endFade);
+
+    // camera: parallax during the story, a slow orbit + dolly-in after
     camera.position.x += (mouse.x * 1.3 - camera.position.x) * 0.05;
     camera.position.y += (-mouse.y * 0.8 - camera.position.y) * 0.05;
-    camera.lookAt(0, 0, 0);
+    let lz = 10, lookY = 0, lookZ = 0;
+    if (ep > 0.001) {
+      const camE = ss(0.0, 0.07, ep);
+      const swing = Math.sin(ss(0.0, 0.38, ep) * Math.PI) * 0.85;  // out and back around the tableau
+      const push = ss(0.68, 0.97, ep);                              // final slow dolly-in
+      const R = 8.6 - push * 2.1;
+      const ox = Math.sin(swing) * R;
+      const oz = 1.4 + Math.cos(swing) * R;
+      const oy = -0.55 - push * 0.35;
+      camera.position.x = lerp(camera.position.x, ox + mouse.x * 0.5, camE);
+      camera.position.y = lerp(camera.position.y, oy - mouse.y * 0.35, camE);
+      lz = lerp(10, oz, camE);
+      lookY = lerp(0, -0.9, camE);
+      lookZ = lerp(0, 1.4, camE);
+    }
+    camera.position.z = lz;
+    camera.lookAt(0, lookY, lookZ);
   }
 
   function renderFrame() {
@@ -710,21 +839,30 @@ function boot() {
     updateScene(Psm, t, vel);
 
     if (soundOn) {
-      if (!fired.ship && Psm > 0.075) { fired.ship = true; sound.flare(); }
-      if (fired.ship && Psm < 0.03) fired.ship = false;
+      const sps = Math.min(1, Psm / EPI_S) * STORY_CAP;
+      const eps = Math.min(1, Math.max(0, (Psm - EPI_S) / (1 - EPI_S)));
+      if (!fired.ship && sps > 0.075) { fired.ship = true; sound.flare(); }
+      if (fired.ship && sps < 0.03) fired.ship = false;
       for (let i = 0; i < 3; i++) {
         const bp = 0.115 + i * CREW_SEGMENT + CREW_SEGMENT * 0.66;
-        if (!fired.escapes[i] && Psm > bp) { fired.escapes[i] = true; sound.board(i); }
-        if (fired.escapes[i] && Psm < bp - 0.08) fired.escapes[i] = false;
+        if (!fired.escapes[i] && sps > bp) { fired.escapes[i] = true; sound.board(i); }
+        if (fired.escapes[i] && sps < bp - 0.08) fired.escapes[i] = false;
       }
-      if (!fired.swarm && Psm > AI_S + 0.06) { fired.swarm = true; sound.swarm(); }
-      if (fired.swarm && Psm < AI_S) fired.swarm = false;
-      if (!fired.evolve && Psm > 0.825) { fired.evolve = true; sound.finale(); }
-      if (fired.evolve && Psm < 0.78) fired.evolve = false;
+      if (!fired.swarm && sps > AI_S + 0.06) { fired.swarm = true; sound.swarm(); }
+      if (fired.swarm && sps < AI_S) fired.swarm = false;
+      if (!fired.evolve && sps > 0.825) { fired.evolve = true; sound.finale(); }
+      if (fired.evolve && sps < 0.78) fired.evolve = false;
       for (let i = 0; i < 4; i++) {
         const pp = 0.865 + i * 0.012;
-        if (!fired.pops[i] && Psm > pp) { fired.pops[i] = true; sound.pop(i); }
-        if (fired.pops[i] && Psm < 0.84) fired.pops[i] = false;
+        if (!fired.pops[i] && sps > pp) { fired.pops[i] = true; sound.pop(i); }
+        if (fired.pops[i] && sps < 0.84) fired.pops[i] = false;
+      }
+      if (!fired.fly && eps > 0.42) { fired.fly = true; sound.flare(); }
+      if (fired.fly && eps < 0.36) fired.fly = false;
+      for (let i = 0; i < 3; i++) {
+        const fp = 0.45 + i * 0.1;
+        if (!fired.fws[i] && eps > fp) { fired.fws[i] = true; sound.pop(i + 1); }
+        if (fired.fws[i] && eps < fp - 0.08) fired.fws[i] = false;
       }
     }
 
