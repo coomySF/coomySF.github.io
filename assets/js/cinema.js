@@ -222,14 +222,15 @@ function boot() {
     const ballGeo = new THREE.BufferGeometry();
     ballGeo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
     const ballMat = new THREE.PointsMaterial({ ...planetMatBase, size: 0.05, color: STATION_COLORS[colorIdx], opacity: 0.9, sizeAttenuation: true });
-    group.add(new THREE.Points(ballGeo, ballMat));
+    const ball = new THREE.Points(ballGeo, ballMat);
+    group.add(ball);
     const haloMat = new THREE.SpriteMaterial({ map: glowTex, color: STATION_COLORS[colorIdx], transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending });
     const halo = new THREE.Sprite(haloMat);
     halo.scale.setScalar(radius * 3.7);
     group.add(halo);
     group.visible = false;
     scene.add(group);
-    return { group, ballMat, haloMat };
+    return { group, ball, ballMat, haloMat };
   };
 
   const CREW_SEGMENT = 0.16;
@@ -327,6 +328,27 @@ function boot() {
     return { ...f, dirs, geo, mat, pts };
   });
 
+  // gold sparks for the moment the comet strikes the ship
+  const IMP_N = small ? 50 : 90;
+  const impDirs = new Float32Array(IMP_N * 3);
+  const impCols = new Float32Array(IMP_N * 3);
+  const impGold = new THREE.Color('#ffd479'), impWhite = new THREE.Color('#fff3d6');
+  for (let i = 0; i < IMP_N; i++) {
+    const th = rng() * Math.PI * 2, ph = Math.acos(2 * rng() - 1), r = 0.5 + rng() * 0.5;
+    impDirs[i * 3] = Math.sin(ph) * Math.cos(th) * r;
+    impDirs[i * 3 + 1] = Math.sin(ph) * Math.sin(th) * r;
+    impDirs[i * 3 + 2] = Math.cos(ph) * r * 0.6;
+    fwColor.copy(impGold).lerp(impWhite, rng());
+    impCols[i * 3] = fwColor.r; impCols[i * 3 + 1] = fwColor.g; impCols[i * 3 + 2] = fwColor.b;
+  }
+  const impGeo = new THREE.BufferGeometry();
+  impGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(IMP_N * 3), 3));
+  impGeo.setAttribute('color', new THREE.BufferAttribute(impCols, 3));
+  const impMat = new THREE.PointsMaterial({ size: 0.07, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const impPts = new THREE.Points(impGeo, impMat);
+  impPts.visible = false;
+  scene.add(impPts);
+
   // a soft shaft of light for the cinematic close
   const rayMat = new THREE.SpriteMaterial({ map: glowTex, color: '#fff8e2', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
   const godRay = new THREE.Sprite(rayMat);
@@ -337,7 +359,9 @@ function boot() {
   // ---------- post ----------
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(small ? new THREE.Vector2(256, 256) : new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.85, 0.12);
+  // small screens run bloom at reduced res — keep the blur tight and the
+  // threshold high there, or big glow sprites smear across the whole frame
+  const bloom = new UnrealBloomPass(small ? new THREE.Vector2(384, 384) : new THREE.Vector2(innerWidth, innerHeight), 0.55, small ? 0.45 : 0.85, small ? 0.24 : 0.12);
   composer.addPass(bloom);
   const grain = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, uT: { value: 0 } },
@@ -404,6 +428,11 @@ function boot() {
   // one-shot sound triggers on upward crossings
   const fired = { ship: false, escapes: [false, false, false], swarm: false, evolve: false, pops: [false, false, false, false], fly: false, fws: [false, false, false] };
 
+  // camera impact impulses: set on a crossing, decay per frame — a real
+  // thump no matter how fast the visitor scrolls through the moment
+  let kick = 0;
+  const kicked = [false, false, false, false];  // 3 boardings + the comet impact
+
   // ---------- scroll progress (critically damped) ----------
   let P = 0, Psm = 0, vel = 0;
   ScrollTrigger.create({
@@ -425,6 +454,11 @@ function boot() {
   const tmpV = new THREE.Vector3();
   const clock = new THREE.Clock();
 
+  // per-act color grade: each planet tints the whole scene
+  const baseBg = new THREE.Color('#0b100e');
+  const gradeCol = new THREE.Color();
+  const stationBgCols = STATION_COLORS.map((c) => new THREE.Color(c).multiplyScalar(0.22));
+
   function updateScene(pRaw, t, v = 0) {
     // epilogue progress: orbit → triumph → cinematic close
     const ep = Math.min(1, Math.max(0, (pRaw - EPI_S) / (1 - EPI_S)));
@@ -436,11 +470,6 @@ function boot() {
     const cheer = Math.sin(ss(0.04, 0.36, ep) * Math.PI);
 
     const speed = Math.min(0.02, Math.abs(v));
-    const targetFov = 50 + speed * 240;
-    if (Math.abs(camera.fov - targetFov) > 0.05) {
-      camera.fov = targetFov;
-      camera.updateProjectionMatrix();
-    }
 
     // title + hint
     const titleOp = 1 - ss(0.015, 0.06, p);
@@ -482,6 +511,25 @@ function boot() {
     cometMat.opacity = Math.sin(cometQ * Math.PI) * endFade;
     comet.position.set(lerp(-9, ship.position.x, cometQ), lerp(5.5, ship.position.y, cometQ), 1.5);
 
+    // gold sparks fly on impact
+    const iq = Math.min(1, Math.max(0, (p - 0.818) / 0.07));
+    const impOn = iq > 0 && iq < 1;
+    impPts.visible = impOn;
+    if (impOn) {
+      const ir = 1 - Math.pow(1 - iq, 3);
+      const posAttr = impGeo.getAttribute('position');
+      for (let i = 0; i < IMP_N; i++) {
+        posAttr.setXYZ(
+          i,
+          ship.position.x + impDirs[i * 3] * ir * 1.9,
+          ship.position.y + impDirs[i * 3 + 1] * ir * 1.9 - iq * iq * 0.4,
+          impDirs[i * 3 + 2] * ir * 1.9
+        );
+      }
+      posAttr.needsUpdate = true;
+      impMat.opacity = Math.sin(iq * Math.PI);
+    }
+
     // the wordmark — it steps aside while the camera circles the crew
     const dip = 1 - cheer * 0.9;
     const wordOp = ss(0.88, 0.93, p) * endFade * dip;
@@ -508,7 +556,7 @@ function boot() {
 
     // ---- crew stations: chase, then escape ----
     const w = innerWidth, h = innerHeight;
-    let lean = 0;
+    let lean = 0, env = 0, gradeIdx = -1, gradeAmt = 0;
     crewStations.forEach((st, i) => {
       const q = (p - st.s) / CREW_SEGMENT;
       const active = q > 0 && q < 1.05;
@@ -524,6 +572,13 @@ function boot() {
       const x = st.side * lerp(4.2, 3.1, enter);
       st.group.position.set(x, y, -1.2);
       st.group.rotation.z = 0;
+
+      // the planet lives: slow spin, halo breathing with the visit
+      const stay = Math.sin(Math.min(1, Math.max(0, q)) * Math.PI);
+      st.ball.rotation.y = t * 0.16 + i * 2;
+      st.haloMat.opacity = 0.14 + stay * 0.1;
+      env = Math.max(env, stay);
+      if (stay > gradeAmt) { gradeAmt = stay; gradeIdx = i; }
 
       // the chase: crew flees along the surface, wild AI right behind
       // (held long — this beat is the heart of the act)
@@ -550,7 +605,7 @@ function boot() {
       const chaserAngle = chaseAngle - 0.55 - (escaped ? Math.sin(t * 9) * 0.06 : 0);
       st.chaser.position.set(Math.cos(chaserAngle) * 1.78, Math.sin(chaserAngle) * 1.78, 0.15);
       st.chaser.rotation.z = chaserAngle - Math.PI / 2 + Math.sin(t * 12) * 0.14;
-      st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : 0));  // fumes when the meal escapes
+      st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : Math.abs(Math.sin(t * 6 + i)) * 0.05));  // menace pulse; fumes when the meal escapes
 
       // the escape: crew leaps off the planet into the ship
       if (q > 0.62 && q < 0.9) {
@@ -585,6 +640,7 @@ function boot() {
     // ---- the AI planet: the swarm notices, leaps, and clings ----
     const aq = (p - AI_S) / (AI_E - AI_S);
     const aiActive = aq > 0 && aq < 1.05;
+    let aiEnv = 0;
     aiPlanet.group.visible = aiActive;
     if (aiLabel) aiLabel.style.opacity = '0';
     if (cryLabels[3]) cryLabels[3].style.opacity = '0';
@@ -594,6 +650,11 @@ function boot() {
       const y = lerp(-16, -3.0, enter) + exit * 18;
       const x = -3.2;
       aiPlanet.group.position.set(x, y, -1.2);
+      aiEnv = Math.sin(Math.min(1, Math.max(0, aq)) * Math.PI);
+      aiPlanet.ball.rotation.y = t * 0.12;
+      aiPlanet.haloMat.opacity = 0.14 + aiEnv * 0.1;
+      env = Math.max(env, aiEnv);
+      if (aiEnv > gradeAmt) { gradeAmt = aiEnv; gradeIdx = 3; }
       if (aiLabel) {
         const op = ss(0.12, 0.24, aq) * (1 - ss(0.7, 0.8, aq));
         tmpV.copy(aiPlanet.group.position).project(camera);
@@ -807,10 +868,33 @@ function boot() {
 
     finEl.style.opacity = String(ss(0.88, 0.97, ep) * endFade);
 
-    // camera: parallax during the story, a slow orbit + dolly-in after
-    camera.position.x += (mouse.x * 1.3 - camera.position.x) * 0.05;
-    camera.position.y += (-mouse.y * 0.8 - camera.position.y) * 0.05;
-    let lz = 10, lookY = 0, lookZ = 0;
+    // ---- the scene breathes with each act ----
+    const act = Math.max(env, aiEnv);
+    // color grade: station acts tint the night; the AI act is a red alert
+    // (small screens skip the grain pass and render hotter — tint gently there)
+    const gradeMix = (gradeIdx === 3 ? gradeAmt * (0.5 + Math.sin(t * 3.2) * 0.1) : gradeAmt * 0.3) * (small ? 0.4 : 1);
+    gradeCol.copy(baseBg);
+    if (gradeIdx >= 0) gradeCol.lerp(stationBgCols[gradeIdx], gradeMix);
+    scene.background.copy(gradeCol);
+    scene.fog.color.copy(gradeCol);
+    bloom.strength += act * 0.22;
+
+    // warp cruise between stops: wide lens, rushing dust, a longer flame
+    const travel = (1 - act) * ss(0.115, 0.16, p) * (1 - ss(0.74, 0.79, p));
+    dustUniforms.uTurb.value += travel * 2.2;
+    dustUniforms.uSize.value = DPR * 2.2 * (1 + travel * 0.8);
+    thrust.scale.y *= 1 + travel * 1.3;
+
+    // camera: dolly INTO each act so the chase fills the frame, drift toward
+    // the planet, impact impulses — then the epilogue's orbit + dolly-in
+    const driftX = lean * 0.7 - aiEnv * 0.6;
+    const driftY = -Math.abs(lean) * 0.22 - aiEnv * 0.2;
+    camera.position.x += (mouse.x * 1.3 + driftX - camera.position.x) * 0.05;
+    camera.position.y += (-mouse.y * 0.8 + driftY - camera.position.y) * 0.05;
+    camera.position.x += Math.sin(t * 49) * 0.26 * kick;
+    camera.position.y += Math.cos(t * 57) * 0.2 * kick;
+    let lz = 10 - act * 2.6, lookY = -act * 1.15, lookZ = 0;
+    let lookX = lean * 0.9 - aiEnv * 1.3;
     if (ep > 0.001) {
       const camE = ss(0.0, 0.07, ep);
       const swing = Math.sin(ss(0.0, 0.38, ep) * Math.PI) * 0.85;  // out and back around the tableau
@@ -821,12 +905,19 @@ function boot() {
       const oy = -0.55 - push * 0.35;
       camera.position.x = lerp(camera.position.x, ox + mouse.x * 0.5, camE);
       camera.position.y = lerp(camera.position.y, oy - mouse.y * 0.35, camE);
-      lz = lerp(10, oz, camE);
-      lookY = lerp(0, -0.9, camE);
-      lookZ = lerp(0, 1.4, camE);
+      lz = lerp(lz, oz, camE);
+      lookX = lerp(lookX, 0, camE);
+      lookY = lerp(lookY, -0.9, camE);
+      lookZ = lerp(lookZ, 1.4, camE);
     }
-    camera.position.z = lz;
-    camera.lookAt(0, lookY, lookZ);
+    camera.position.z = lz - evoFlash * 0.9;  // the evolution punch-in
+    camera.lookAt(lookX, lookY, lookZ);
+    camera.rotation.z += lean * 0.045 - aiEnv * 0.03 + evoFlash * 0.03 + Math.sin(t * 43) * 0.014 * kick;  // dutch angle + impact roll
+    const targetFov = 50 + speed * 240 + travel * 16 - evoFlash * 4 - act * 4;
+    if (Math.abs(camera.fov - targetFov) > 0.05) {
+      camera.fov = targetFov;
+      camera.updateProjectionMatrix();
+    }
   }
 
   function renderFrame() {
@@ -836,6 +927,18 @@ function boot() {
     vel = lerp(vel, dp, 0.2);
     dustUniforms.uTime.value = t;
     grain.uniforms.uT.value = t;
+
+    const spsK = Math.min(1, Psm / EPI_S) * STORY_CAP;
+    for (let i = 0; i < 3; i++) {
+      const bp = 0.115 + i * CREW_SEGMENT + CREW_SEGMENT * 0.8;  // the landing
+      if (!kicked[i] && spsK > bp) { kicked[i] = true; kick = Math.max(kick, 1); }
+      if (kicked[i] && spsK < bp - 0.05) kicked[i] = false;
+    }
+    if (!kicked[3] && spsK > 0.822) { kicked[3] = true; kick = Math.max(kick, 1.35); }
+    if (kicked[3] && spsK < 0.78) kicked[3] = false;
+    kick *= 0.9;
+    if (kick < 0.001) kick = 0;
+
     updateScene(Psm, t, vel);
 
     if (soundOn) {
