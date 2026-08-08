@@ -12,7 +12,7 @@ seo:
 
 AI 在 POC 前期確實很好用。問題出現在四個人各自帶著 Agent，一起修改同一個專案之後。
 
-說穿了就是 Garbage in, garbage out。沒有先說清楚的需求與邊界，也會被 Agent 一起放大。
+說穿了就是 Garbage in, garbage out。需求沒說清楚、修改邊界沒定義，Agent 只會更快地把混亂寫進專案裡。
 
 ## 每個人都完成了，產品卻開始失控
 
