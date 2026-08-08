@@ -12,7 +12,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 
 const docEl = document.documentElement;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const small = matchMedia('(max-width: 640px)').matches;
+const small = matchMedia('(max-width: 640px)').matches || new URLSearchParams(location.search).has('mobile');
 
 function webglOK() {
   try {
@@ -47,7 +47,7 @@ function boot() {
 
   const canvas = document.getElementById('film-canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-  const DPR = Math.min(devicePixelRatio, small ? 1.5 : 2);
+  const DPR = Math.min(devicePixelRatio, small ? 1.2 : 2);
   renderer.setPixelRatio(DPR);
   renderer.setSize(innerWidth, innerHeight);
 
@@ -61,7 +61,7 @@ function boot() {
   const rng = mulberry32(20260806);
 
   // ---------- dust ----------
-  const DUST = small ? 4000 : 9000;
+  const DUST = small ? 2400 : 9000;
   const dustPos = new Float32Array(DUST * 3);
   const dustSeed = new Float32Array(DUST);
   for (let i = 0; i < DUST; i++) {
@@ -198,7 +198,7 @@ function boot() {
 
   const makePlanet = (colorIdx, radius = 1.5) => {
     const group = new THREE.Group();
-    const PTS = small ? 380 : 650;
+    const PTS = small ? 280 : 650;
     const geo = new THREE.IcosahedronGeometry(radius, 1);
     const pos = geo.getAttribute('position');
     const triCount = pos.count / 3;
@@ -296,7 +296,7 @@ function boot() {
   // ---------- post ----------
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.85, 0.12);
+  const bloom = new UnrealBloomPass(small ? new THREE.Vector2(256, 256) : new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.85, 0.12);
   composer.addPass(bloom);
   const grain = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, uT: { value: 0 } },
@@ -312,7 +312,7 @@ function boot() {
       }
     `,
   });
-  composer.addPass(grain);
+  if (!small) composer.addPass(grain);
 
   // ---------- HTML overlays ----------
   const titleEl = document.querySelector('.film-title');
@@ -383,8 +383,11 @@ function boot() {
 
   function updateScene(p, t, v = 0) {
     const speed = Math.min(0.02, Math.abs(v));
-    camera.fov = 50 + speed * 240;
-    camera.updateProjectionMatrix();
+    const targetFov = 50 + speed * 240;
+    if (Math.abs(camera.fov - targetFov) > 0.05) {
+      camera.fov = targetFov;
+      camera.updateProjectionMatrix();
+    }
 
     // title + hint
     const titleOp = 1 - ss(0.015, 0.06, p);
@@ -728,7 +731,12 @@ function boot() {
     composer.render();
   }
 
-  const tick = () => { requestAnimationFrame(tick); renderFrame(); };
+  let frameFlip = false;
+  const tick = () => {
+    requestAnimationFrame(tick);
+    if (small) { frameFlip = !frameFlip; if (frameFlip) return; }  // ~30fps is plenty on phones
+    renderFrame();
+  };
   tick();
 
   addEventListener('resize', () => {
