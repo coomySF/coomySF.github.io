@@ -17,7 +17,7 @@ html.home-noir .site-header .brand-mark { background: var(--film-ink); color: va
 html.home-noir .paper-noise { opacity: .22; }
 html.home-noir .site-footer { color: var(--film-muted); border-color: var(--film-line); position: relative; z-index: 2; }
 
-#film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1400vh; }
+#film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1800vh; }
 
 #film-canvas {
   position: fixed;
@@ -380,8 +380,33 @@ html.home-noir .latest .section-heading h2 { color: var(--film-ink); }
 .about-threads:hover { border-color: var(--film-clay); }
 
 /* Static fallback: no WebGL / reduced motion */
+/* the cinematic close: letterbox bars + fin card */
+.letterbox {
+  position: absolute;
+  left: 0; right: 0;
+  height: 0;
+  background: #050604;
+  opacity: 0;
+  z-index: 3;
+}
+.letterbox-top { top: 0; }
+.letterbox-bottom { bottom: 0; }
+.fin-mark {
+  position: absolute;
+  left: 50%; bottom: 3.2vh;
+  transform: translateX(-50%);
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: .55em;
+  text-indent: .55em;
+  color: #cfc8b6;
+  opacity: 0;
+  z-index: 4;
+}
+
 html.film-static #film { height: auto; }
 html.film-static #film-canvas { display: none; }
 html.film-static .film-ui { position: static; }
 html.film-static .film-title { position: static; transform: none; margin: 0 auto; padding: 22vh 24px 18vh; }
-html.film-static .scroll-hint, html.film-static .planet-label, html.film-static .sf-word { display: none; }
+html.film-static .scroll-hint, html.film-static .planet-label, html.film-static .sf-word,
+html.film-static .letterbox, html.film-static .fin-mark { display: none; }

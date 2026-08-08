@@ -58,6 +58,11 @@ function boot() {
   const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 120);
   camera.position.set(0, 0, 10);
 
+  // the story owns the first stretch of scroll; the epilogue (orbit →
+  // triumph → cinematic close) owns the rest
+  const EPI_S = 0.78;
+  const STORY_CAP = 0.968;
+
   const rng = mulberry32(20260806);
 
   // ---------- dust ----------
@@ -217,14 +222,15 @@ function boot() {
     const ballGeo = new THREE.BufferGeometry();
     ballGeo.setAttribute('position', new THREE.BufferAttribute(pts, 3));
     const ballMat = new THREE.PointsMaterial({ ...planetMatBase, size: 0.05, color: STATION_COLORS[colorIdx], opacity: 0.9, sizeAttenuation: true });
-    group.add(new THREE.Points(ballGeo, ballMat));
+    const ball = new THREE.Points(ballGeo, ballMat);
+    group.add(ball);
     const haloMat = new THREE.SpriteMaterial({ map: glowTex, color: STATION_COLORS[colorIdx], transparent: true, opacity: 0.14, depthWrite: false, blending: THREE.AdditiveBlending });
     const halo = new THREE.Sprite(haloMat);
     halo.scale.setScalar(radius * 3.7);
     group.add(halo);
     group.visible = false;
     scene.add(group);
-    return { group, ballMat, haloMat };
+    return { group, ball, ballMat, haloMat };
   };
 
   const CREW_SEGMENT = 0.16;
@@ -293,10 +299,69 @@ function boot() {
   comet.scale.setScalar(1.6);
   scene.add(comet);
 
+  // fireworks for the triumph beat
+  const FW_N = small ? 60 : 110;
+  const FW_COLORS = ['#ffd479', '#ff8d7a', '#8fb8e8', '#7ee0a8', '#fff3d6'];
+  const fwColor = new THREE.Color();
+  const fireworks = [
+    { at: 0.42, pos: [-3.6, 1.6, 0.5] },
+    { at: 0.52, pos: [3.4, 2.3, -0.5] },
+    { at: 0.62, pos: [0, 3.1, 1] },
+  ].map((f) => {
+    const dirs = new Float32Array(FW_N * 3);
+    const cols = new Float32Array(FW_N * 3);
+    for (let i = 0; i < FW_N; i++) {
+      const th = rng() * Math.PI * 2, ph = Math.acos(2 * rng() - 1), r = 0.55 + rng() * 0.45;
+      dirs[i * 3] = Math.sin(ph) * Math.cos(th) * r;
+      dirs[i * 3 + 1] = Math.sin(ph) * Math.sin(th) * r;
+      dirs[i * 3 + 2] = Math.cos(ph) * r * 0.6;
+      fwColor.set(FW_COLORS[Math.floor(rng() * FW_COLORS.length)]);
+      cols[i * 3] = fwColor.r; cols[i * 3 + 1] = fwColor.g; cols[i * 3 + 2] = fwColor.b;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(FW_N * 3), 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    const mat = new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+    const pts = new THREE.Points(geo, mat);
+    pts.visible = false;
+    scene.add(pts);
+    return { ...f, dirs, geo, mat, pts };
+  });
+
+  // gold sparks for the moment the comet strikes the ship
+  const IMP_N = small ? 50 : 90;
+  const impDirs = new Float32Array(IMP_N * 3);
+  const impCols = new Float32Array(IMP_N * 3);
+  const impGold = new THREE.Color('#ffd479'), impWhite = new THREE.Color('#fff3d6');
+  for (let i = 0; i < IMP_N; i++) {
+    const th = rng() * Math.PI * 2, ph = Math.acos(2 * rng() - 1), r = 0.5 + rng() * 0.5;
+    impDirs[i * 3] = Math.sin(ph) * Math.cos(th) * r;
+    impDirs[i * 3 + 1] = Math.sin(ph) * Math.sin(th) * r;
+    impDirs[i * 3 + 2] = Math.cos(ph) * r * 0.6;
+    fwColor.copy(impGold).lerp(impWhite, rng());
+    impCols[i * 3] = fwColor.r; impCols[i * 3 + 1] = fwColor.g; impCols[i * 3 + 2] = fwColor.b;
+  }
+  const impGeo = new THREE.BufferGeometry();
+  impGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(IMP_N * 3), 3));
+  impGeo.setAttribute('color', new THREE.BufferAttribute(impCols, 3));
+  const impMat = new THREE.PointsMaterial({ size: 0.07, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const impPts = new THREE.Points(impGeo, impMat);
+  impPts.visible = false;
+  scene.add(impPts);
+
+  // a soft shaft of light for the cinematic close
+  const rayMat = new THREE.SpriteMaterial({ map: glowTex, color: '#fff8e2', transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  const godRay = new THREE.Sprite(rayMat);
+  godRay.scale.set(2.6, 13, 1);
+  godRay.position.set(0, 2.4, 2.2);
+  scene.add(godRay);
+
   // ---------- post ----------
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(small ? new THREE.Vector2(256, 256) : new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.85, 0.12);
+  // small screens run bloom at reduced res — keep the blur tight and the
+  // threshold high there, or big glow sprites smear across the whole frame
+  const bloom = new UnrealBloomPass(small ? new THREE.Vector2(384, 384) : new THREE.Vector2(innerWidth, innerHeight), 0.55, small ? 0.45 : 0.85, small ? 0.24 : 0.12);
   composer.addPass(bloom);
   const grain = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, uT: { value: 0 } },
@@ -320,6 +385,9 @@ function boot() {
   const wordEl = document.querySelector('.sf-word');
   const waterballEl = document.querySelector('.waterball');
   const waterballHi = document.querySelector('.waterball-hi');
+  const lbTop = document.querySelector('.letterbox-top');
+  const lbBot = document.querySelector('.letterbox-bottom');
+  const finEl = document.querySelector('.fin-mark');
 
   // ---------- sound: synthesized, button reflects actual state ----------
   const soundBtn = document.querySelector('.sound-toggle');
@@ -351,14 +419,19 @@ function boot() {
   let scrollPrompt = 0;
   hintEl.addEventListener('click', () => {
     if (!muted && !soundOn) startSound();
-    const target = (document.getElementById('film').offsetHeight - innerHeight) * 0.115;
+    const target = (document.getElementById('film').offsetHeight - innerHeight) * (0.115 / STORY_CAP * EPI_S);
     if (lenis) lenis.scrollTo(target, { duration: 2.4, easing: (x) => 1 - Math.pow(1 - x, 3) });
     else scrollTo({ top: target, behavior: 'smooth' });
     setTimeout(() => { scrollPrompt = 1; }, 1100);
   });
 
   // one-shot sound triggers on upward crossings
-  const fired = { ship: false, escapes: [false, false, false], swarm: false, evolve: false, pops: [false, false, false, false] };
+  const fired = { ship: false, escapes: [false, false, false], swarm: false, evolve: false, pops: [false, false, false, false], fly: false, fws: [false, false, false] };
+
+  // camera impact impulses: set on a crossing, decay per frame — a real
+  // thump no matter how fast the visitor scrolls through the moment
+  let kick = 0;
+  const kicked = [false, false, false, false];  // 3 boardings + the comet impact
 
   // ---------- scroll progress (critically damped) ----------
   let P = 0, Psm = 0, vel = 0;
@@ -381,13 +454,22 @@ function boot() {
   const tmpV = new THREE.Vector3();
   const clock = new THREE.Clock();
 
-  function updateScene(p, t, v = 0) {
+  // per-act color grade: each planet tints the whole scene
+  const baseBg = new THREE.Color('#0b100e');
+  const gradeCol = new THREE.Color();
+  const stationBgCols = STATION_COLORS.map((c) => new THREE.Color(c).multiplyScalar(0.22));
+
+  function updateScene(pRaw, t, v = 0) {
+    // epilogue progress: orbit → triumph → cinematic close
+    const ep = Math.min(1, Math.max(0, (pRaw - EPI_S) / (1 - EPI_S)));
+    // the story itself, same pacing as before, held at the tableau
+    const p = Math.min(1, pRaw / EPI_S) * STORY_CAP;
+    // everything softly yields to the cards at the very end
+    const endFade = 1 - ss(0.94, 1, ep);
+    // everyone celebrates while the camera circles them
+    const cheer = Math.sin(ss(0.04, 0.36, ep) * Math.PI);
+
     const speed = Math.min(0.02, Math.abs(v));
-    const targetFov = 50 + speed * 240;
-    if (Math.abs(camera.fov - targetFov) > 0.05) {
-      camera.fov = targetFov;
-      camera.updateProjectionMatrix();
-    }
 
     // title + hint
     const titleOp = 1 - ss(0.015, 0.06, p);
@@ -397,9 +479,6 @@ function boot() {
     hintEl.style.opacity = String(Math.min(1, titleOp));
     hintEl.style.pointerEvents = titleOp > 0.3 ? 'auto' : 'none';
     keepScrollingEl.style.opacity = String(scrollPrompt * ss(0.06, 0.09, p) * (1 - ss(0.135, 0.18, p)));
-
-    // everything softly yields to the cards at the very end
-    const endFade = 1 - ss(0.985, 1.0, p);
 
     // ship
     const sa = ss(0.045, 0.1, p);
@@ -432,8 +511,28 @@ function boot() {
     cometMat.opacity = Math.sin(cometQ * Math.PI) * endFade;
     comet.position.set(lerp(-9, ship.position.x, cometQ), lerp(5.5, ship.position.y, cometQ), 1.5);
 
-    // the wordmark
-    const wordOp = ss(0.88, 0.93, p) * endFade;
+    // gold sparks fly on impact
+    const iq = Math.min(1, Math.max(0, (p - 0.818) / 0.07));
+    const impOn = iq > 0 && iq < 1;
+    impPts.visible = impOn;
+    if (impOn) {
+      const ir = 1 - Math.pow(1 - iq, 3);
+      const posAttr = impGeo.getAttribute('position');
+      for (let i = 0; i < IMP_N; i++) {
+        posAttr.setXYZ(
+          i,
+          ship.position.x + impDirs[i * 3] * ir * 1.9,
+          ship.position.y + impDirs[i * 3 + 1] * ir * 1.9 - iq * iq * 0.4,
+          impDirs[i * 3 + 2] * ir * 1.9
+        );
+      }
+      posAttr.needsUpdate = true;
+      impMat.opacity = Math.sin(iq * Math.PI);
+    }
+
+    // the wordmark — it steps aside while the camera circles the crew
+    const dip = 1 - cheer * 0.9;
+    const wordOp = ss(0.88, 0.93, p) * endFade * dip;
     wordEl.style.opacity = String(wordOp);
     wordEl.style.transform = `translate(-50%, -78%) translateY(${(1 - wordOp) * 20}px) scale(${0.92 + 0.08 * wordOp})`;
     wordEl.style.letterSpacing = `${lerp(0.14, 0.02, wordOp)}em`;
@@ -441,7 +540,7 @@ function boot() {
 
     // the waterball crawls out from behind the S to say hi
     const wbQ = ss(0.93, 0.958, p);
-    const wbOp = wbQ * endFade;
+    const wbOp = wbQ * endFade * dip;
     waterballEl.style.opacity = String(wbOp);
     if (wbOp > 0.01) {
       const r = wordEl.getBoundingClientRect();
@@ -450,14 +549,14 @@ function boot() {
       const overshoot = 1 + 2.7 * Math.pow(k - 1, 3) + 1.7 * Math.pow(k - 1, 2);  // ease-out-back
       const y = r.top + r.height * lerp(0.6, 0.2, overshoot);  // climbs from behind the glyph to perch on the S
       waterballEl.style.transform = `translate(-50%, -96%) translate(${sx}px, ${y}px) rotate(${Math.sin(t * 3.1) * 9 * wbQ}deg) scale(${0.5 + 0.5 * wbQ})`;
-      waterballHi.style.opacity = String(ss(0.952, 0.962, p) * endFade * (0.75 + 0.25 * Math.sin(t * 2.4)));
+      waterballHi.style.opacity = String(ss(0.952, 0.962, p) * endFade * dip * (0.75 + 0.25 * Math.sin(t * 2.4)));
     } else {
       waterballHi.style.opacity = '0';
     }
 
     // ---- crew stations: chase, then escape ----
     const w = innerWidth, h = innerHeight;
-    let lean = 0;
+    let lean = 0, env = 0, gradeIdx = -1, gradeAmt = 0;
     crewStations.forEach((st, i) => {
       const q = (p - st.s) / CREW_SEGMENT;
       const active = q > 0 && q < 1.05;
@@ -473,6 +572,13 @@ function boot() {
       const x = st.side * lerp(4.2, 3.1, enter);
       st.group.position.set(x, y, -1.2);
       st.group.rotation.z = 0;
+
+      // the planet lives: slow spin, halo breathing with the visit
+      const stay = Math.sin(Math.min(1, Math.max(0, q)) * Math.PI);
+      st.ball.rotation.y = t * 0.16 + i * 2;
+      st.haloMat.opacity = 0.14 + stay * 0.1;
+      env = Math.max(env, stay);
+      if (stay > gradeAmt) { gradeAmt = stay; gradeIdx = i; }
 
       // the chase: crew flees along the surface, wild AI right behind
       // (held long — this beat is the heart of the act)
@@ -499,7 +605,7 @@ function boot() {
       const chaserAngle = chaseAngle - 0.55 - (escaped ? Math.sin(t * 9) * 0.06 : 0);
       st.chaser.position.set(Math.cos(chaserAngle) * 1.78, Math.sin(chaserAngle) * 1.78, 0.15);
       st.chaser.rotation.z = chaserAngle - Math.PI / 2 + Math.sin(t * 12) * 0.14;
-      st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : 0));  // fumes when the meal escapes
+      st.chaser.scale.setScalar(0.8 + (escaped ? Math.abs(Math.sin(t * 10)) * 0.12 : Math.abs(Math.sin(t * 6 + i)) * 0.05));  // menace pulse; fumes when the meal escapes
 
       // the escape: crew leaps off the planet into the ship
       if (q > 0.62 && q < 0.9) {
@@ -534,6 +640,7 @@ function boot() {
     // ---- the AI planet: the swarm notices, leaps, and clings ----
     const aq = (p - AI_S) / (AI_E - AI_S);
     const aiActive = aq > 0 && aq < 1.05;
+    let aiEnv = 0;
     aiPlanet.group.visible = aiActive;
     if (aiLabel) aiLabel.style.opacity = '0';
     if (cryLabels[3]) cryLabels[3].style.opacity = '0';
@@ -543,6 +650,11 @@ function boot() {
       const y = lerp(-16, -3.0, enter) + exit * 18;
       const x = -3.2;
       aiPlanet.group.position.set(x, y, -1.2);
+      aiEnv = Math.sin(Math.min(1, Math.max(0, aq)) * Math.PI);
+      aiPlanet.ball.rotation.y = t * 0.12;
+      aiPlanet.haloMat.opacity = 0.14 + aiEnv * 0.1;
+      env = Math.max(env, aiEnv);
+      if (aiEnv > gradeAmt) { gradeAmt = aiEnv; gradeIdx = 3; }
       if (aiLabel) {
         const op = ss(0.12, 0.24, aq) * (1 - ss(0.7, 0.8, aq));
         tmpV.copy(aiPlanet.group.position).project(camera);
@@ -614,7 +726,8 @@ function boot() {
           // leashed pets: bouncy, counter-phased to their humans
           const gx = PAIR_X[i] + 0.52;
           const gy = -2.62;
-          const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7 + Math.PI)) * 0.2 * walkQ;
+          const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7 + Math.PI)) * 0.2 * walkQ
+            + Math.abs(Math.sin(t * 4.2)) * 0.34 * cheer;
           sw.pet.position.set(
             lerp(ship.position.x + HULL_OFFSETS[i].x, gx, walkQ),
             lerp(ship.position.y + HULL_OFFSETS[i].y, gy, walkQ) + Math.sin(walkQ * Math.PI) * 1.2 + hop,
@@ -654,7 +767,8 @@ function boot() {
       if (walkQ > 0.01) {
         st.rideCrew.visible = true;
         st.figMats.forEach((m) => { m.opacity = endFade; });
-        const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7)) * 0.16 * walkQ;
+        const hop = Math.abs(Math.sin(t * 3.6 + i * 1.7)) * 0.16 * walkQ
+          + Math.abs(Math.sin(t * 4.2)) * 0.26 * cheer;
         st.rideCrew.position.set(
           lerp(ship.position.x, gx, walkQ) + Math.sin(t * 1.3 + i * 2.4) * 0.07 * walkQ,
           lerp(ship.position.y - 0.3, gy, walkQ) + Math.sin(walkQ * Math.PI) * 0.9 + hop,
@@ -694,10 +808,116 @@ function boot() {
     ship.rotation.z += lean * -0.13;
     ship.position.x = lean * 0.5;
 
-    // camera parallax
-    camera.position.x += (mouse.x * 1.3 - camera.position.x) * 0.05;
-    camera.position.y += (-mouse.y * 0.8 - camera.position.y) * 0.05;
-    camera.lookAt(0, 0, 0);
+    // ---- epilogue beat 2: the victory lap ----
+    const fb = ss(0.4, 0.64, ep);
+    const fly = Math.sin(fb * Math.PI);
+    ship.position.z = fly * 2.2;   // absolute — never accumulate across frames
+    if (fly > 0.001) {
+      ship.position.x += Math.sin(fb * Math.PI * 2) * 4.8 * fly;
+      ship.position.y += fly * 2.7;
+      ship.rotation.z += -Math.cos(fb * Math.PI * 2) * 0.8 * fly;  // banking
+      thrust.scale.y = 1.2 + fly * 1.6;
+      comet.position.copy(ship.position);
+      comet.scale.setScalar(1.2 + fly * 1.6);
+      cometMat.opacity = Math.max(cometMat.opacity, fly * 0.85 * endFade);
+    }
+    bloom.strength += fly * 0.4;
+    dustUniforms.uTurb.value += fly * 1.4;
+
+    fireworks.forEach((fw) => {
+      const q = Math.min(1, Math.max(0, (ep - fw.at) / 0.2));
+      const on = q > 0 && q < 1;
+      fw.pts.visible = on;
+      if (!on) return;
+      const r = 1 - Math.pow(1 - q, 3);   // ease-out expansion
+      const drop = q * q * 0.55;          // gravity pulls the sparks down
+      const posAttr = fw.geo.getAttribute('position');
+      for (let i = 0; i < FW_N; i++) {
+        posAttr.setXYZ(
+          i,
+          fw.pos[0] + fw.dirs[i * 3] * r * 2.6,
+          fw.pos[1] + fw.dirs[i * 3 + 1] * r * 2.6 - drop,
+          fw.pos[2] + fw.dirs[i * 3 + 2] * r * 2.6
+        );
+      }
+      posAttr.needsUpdate = true;
+      fw.mat.opacity = Math.sin(q * Math.PI) * endFade;
+    });
+
+    // ---- epilogue beat 3: the cinematic close ----
+    const rayQ = ss(0.7, 0.86, ep);
+    rayMat.opacity = rayQ * 0.16 * endFade;
+    dustUniforms.uDim.value = 0.55 * (1 - rayQ * 0.55);
+
+    const lb = ss(0.68, 0.85, ep);
+    lbTop.style.height = lbBot.style.height = `${lb * 9}vh`;
+    lbTop.style.opacity = lbBot.style.opacity = String(Math.min(1, lb * 2) * endFade);
+
+    // a metallic glint sweeps once across the wordmark
+    const glint = ss(0.78, 0.96, ep);
+    if (glint > 0.001 && glint < 0.999) {
+      const gx = -30 + glint * 160;
+      wordEl.style.backgroundImage =
+        `linear-gradient(100deg, rgba(255,255,255,0) ${gx - 12}%, rgba(255,255,255,.95) ${gx}%, rgba(255,255,255,0) ${gx + 12}%),` +
+        ' linear-gradient(100deg, #ff8d7a, #ffd479, #7ee0a8, #7ab8ff, #c98bff, #ff8d7a)';
+      wordEl.style.backgroundSize = '100% 100%, 400% 100%';
+    } else {
+      wordEl.style.backgroundImage = '';
+      wordEl.style.backgroundSize = '';
+    }
+
+    finEl.style.opacity = String(ss(0.88, 0.97, ep) * endFade);
+
+    // ---- the scene breathes with each act ----
+    const act = Math.max(env, aiEnv);
+    // color grade: station acts tint the night; the AI act is a red alert
+    // (small screens skip the grain pass and render hotter — tint gently there)
+    const gradeMix = (gradeIdx === 3 ? gradeAmt * (0.5 + Math.sin(t * 3.2) * 0.1) : gradeAmt * 0.3) * (small ? 0.4 : 1);
+    gradeCol.copy(baseBg);
+    if (gradeIdx >= 0) gradeCol.lerp(stationBgCols[gradeIdx], gradeMix);
+    scene.background.copy(gradeCol);
+    scene.fog.color.copy(gradeCol);
+    bloom.strength += act * 0.22;
+
+    // warp cruise between stops: wide lens, rushing dust, a longer flame
+    const travel = (1 - act) * ss(0.115, 0.16, p) * (1 - ss(0.74, 0.79, p));
+    dustUniforms.uTurb.value += travel * 2.2;
+    dustUniforms.uSize.value = DPR * 2.2 * (1 + travel * 0.8);
+    thrust.scale.y *= 1 + travel * 1.3;
+
+    // camera: dolly INTO each act so the chase fills the frame, drift toward
+    // the planet, impact impulses — then the epilogue's orbit + dolly-in
+    const driftX = lean * 0.7 - aiEnv * 0.6;
+    const driftY = -Math.abs(lean) * 0.22 - aiEnv * 0.2;
+    camera.position.x += (mouse.x * 1.3 + driftX - camera.position.x) * 0.05;
+    camera.position.y += (-mouse.y * 0.8 + driftY - camera.position.y) * 0.05;
+    camera.position.x += Math.sin(t * 49) * 0.26 * kick;
+    camera.position.y += Math.cos(t * 57) * 0.2 * kick;
+    let lz = 10 - act * 2.6, lookY = -act * 1.15, lookZ = 0;
+    let lookX = lean * 0.9 - aiEnv * 1.3;
+    if (ep > 0.001) {
+      const camE = ss(0.0, 0.07, ep);
+      const swing = Math.sin(ss(0.0, 0.38, ep) * Math.PI) * 0.85;  // out and back around the tableau
+      const push = ss(0.68, 0.97, ep);                              // final slow dolly-in
+      const R = 8.6 - push * 2.1;
+      const ox = Math.sin(swing) * R;
+      const oz = 1.4 + Math.cos(swing) * R;
+      const oy = -0.55 - push * 0.35;
+      camera.position.x = lerp(camera.position.x, ox + mouse.x * 0.5, camE);
+      camera.position.y = lerp(camera.position.y, oy - mouse.y * 0.35, camE);
+      lz = lerp(lz, oz, camE);
+      lookX = lerp(lookX, 0, camE);
+      lookY = lerp(lookY, -0.9, camE);
+      lookZ = lerp(lookZ, 1.4, camE);
+    }
+    camera.position.z = lz - evoFlash * 0.9;  // the evolution punch-in
+    camera.lookAt(lookX, lookY, lookZ);
+    camera.rotation.z += lean * 0.045 - aiEnv * 0.03 + evoFlash * 0.03 + Math.sin(t * 43) * 0.014 * kick;  // dutch angle + impact roll
+    const targetFov = 50 + speed * 240 + travel * 16 - evoFlash * 4 - act * 4;
+    if (Math.abs(camera.fov - targetFov) > 0.05) {
+      camera.fov = targetFov;
+      camera.updateProjectionMatrix();
+    }
   }
 
   function renderFrame() {
@@ -707,24 +927,45 @@ function boot() {
     vel = lerp(vel, dp, 0.2);
     dustUniforms.uTime.value = t;
     grain.uniforms.uT.value = t;
+
+    const spsK = Math.min(1, Psm / EPI_S) * STORY_CAP;
+    for (let i = 0; i < 3; i++) {
+      const bp = 0.115 + i * CREW_SEGMENT + CREW_SEGMENT * 0.8;  // the landing
+      if (!kicked[i] && spsK > bp) { kicked[i] = true; kick = Math.max(kick, 1); }
+      if (kicked[i] && spsK < bp - 0.05) kicked[i] = false;
+    }
+    if (!kicked[3] && spsK > 0.822) { kicked[3] = true; kick = Math.max(kick, 1.35); }
+    if (kicked[3] && spsK < 0.78) kicked[3] = false;
+    kick *= 0.9;
+    if (kick < 0.001) kick = 0;
+
     updateScene(Psm, t, vel);
 
     if (soundOn) {
-      if (!fired.ship && Psm > 0.075) { fired.ship = true; sound.flare(); }
-      if (fired.ship && Psm < 0.03) fired.ship = false;
+      const sps = Math.min(1, Psm / EPI_S) * STORY_CAP;
+      const eps = Math.min(1, Math.max(0, (Psm - EPI_S) / (1 - EPI_S)));
+      if (!fired.ship && sps > 0.075) { fired.ship = true; sound.flare(); }
+      if (fired.ship && sps < 0.03) fired.ship = false;
       for (let i = 0; i < 3; i++) {
         const bp = 0.115 + i * CREW_SEGMENT + CREW_SEGMENT * 0.66;
-        if (!fired.escapes[i] && Psm > bp) { fired.escapes[i] = true; sound.board(i); }
-        if (fired.escapes[i] && Psm < bp - 0.08) fired.escapes[i] = false;
+        if (!fired.escapes[i] && sps > bp) { fired.escapes[i] = true; sound.board(i); }
+        if (fired.escapes[i] && sps < bp - 0.08) fired.escapes[i] = false;
       }
-      if (!fired.swarm && Psm > AI_S + 0.06) { fired.swarm = true; sound.swarm(); }
-      if (fired.swarm && Psm < AI_S) fired.swarm = false;
-      if (!fired.evolve && Psm > 0.825) { fired.evolve = true; sound.finale(); }
-      if (fired.evolve && Psm < 0.78) fired.evolve = false;
+      if (!fired.swarm && sps > AI_S + 0.06) { fired.swarm = true; sound.swarm(); }
+      if (fired.swarm && sps < AI_S) fired.swarm = false;
+      if (!fired.evolve && sps > 0.825) { fired.evolve = true; sound.finale(); }
+      if (fired.evolve && sps < 0.78) fired.evolve = false;
       for (let i = 0; i < 4; i++) {
         const pp = 0.865 + i * 0.012;
-        if (!fired.pops[i] && Psm > pp) { fired.pops[i] = true; sound.pop(i); }
-        if (fired.pops[i] && Psm < 0.84) fired.pops[i] = false;
+        if (!fired.pops[i] && sps > pp) { fired.pops[i] = true; sound.pop(i); }
+        if (fired.pops[i] && sps < 0.84) fired.pops[i] = false;
+      }
+      if (!fired.fly && eps > 0.42) { fired.fly = true; sound.flare(); }
+      if (fired.fly && eps < 0.36) fired.fly = false;
+      for (let i = 0; i < 3; i++) {
+        const fp = 0.45 + i * 0.1;
+        if (!fired.fws[i] && eps > fp) { fired.fws[i] = true; sound.pop(i + 1); }
+        if (fired.fws[i] && eps < fp - 0.08) fired.fws[i] = false;
       }
     }
 
