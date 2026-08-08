@@ -225,7 +225,33 @@ html.film-static .keep-scrolling { display: none; }
 html.film-static .sound-toggle { display: none; }
 
 /* the writing — four recent posts, one row of four */
-html.home-noir .latest { position: relative; z-index: 2; padding: 20vh 0 90px; }
+/* the thesis card — the film's metaphor, said out loud */
+html.home-noir .film-thesis {
+  position: relative;
+  z-index: 2;
+  padding: 26vh 24px 6vh;
+  text-align: center;
+}
+.film-thesis .thesis-line {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(26px, 4vw, 46px);
+  line-height: 1.6;
+  color: var(--film-ink);
+  margin: 0 auto;
+  max-width: 22em;
+}
+.film-thesis .thesis-sub {
+  font-family: var(--serif);
+  font-size: clamp(14px, 1.5vw, 17px);
+  color: var(--film-muted);
+  margin: 26px auto 0;
+  max-width: 30em;
+  line-height: 2;
+}
+html.film-static .film-thesis { display: none; }
+
+html.home-noir .latest { position: relative; z-index: 2; padding: 12vh 0 90px; }
 html.home-noir .latest .section-heading .eyebrow { color: var(--film-clay); }
 html.home-noir .latest .section-heading h2 { color: var(--film-ink); }
 

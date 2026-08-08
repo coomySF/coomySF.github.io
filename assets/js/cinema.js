@@ -950,7 +950,8 @@ function boot() {
   function renderFrame() {
     const t = clock.getElapsedTime();
     const dp = P - Psm;
-    Psm += dp * 0.14;
+    // catch up faster after a big jump (scrollbar drags, anchor links)
+    Psm += dp * (Math.abs(dp) > 0.15 ? 0.4 : 0.14);
     vel = lerp(vel, dp, 0.2);
     dustUniforms.uTime.value = t;
     grain.uniforms.uT.value = t;
