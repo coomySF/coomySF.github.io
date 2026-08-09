@@ -451,14 +451,44 @@ function boot() {
 
   // stall detection: nudge the visitor when they stop scrolling mid-film
   let lastMoveT = 0, lastPseen = 0, nudgeOp = 0;
+  // chapter starts in real scroll progress (matches the timeline ticks)
+  const CHAPTERS = [0.09, 0.22, 0.35, 0.48, 0.61, 0.78, 0.88, 0.99];
+
+  // A/B experiment — what should happen when a visitor stalls mid-film?
+  // A: show the SCROLL nudge (current behavior)
+  // B: auto-advance to the next chapter, like the film plays itself
+  // Assignment sticks per browser; the variant rides along on every
+  // funnel event as a dataLayer variable for GA4 segmentation.
+  const AB_EXPERIMENT = 'stall_rescue_v1';
+  // ?ab=A / ?ab=B forces a variant for QA and demos — it never touches the
+  // sticky assignment, and the events carry ab_forced so GA4 can exclude them
+  const abParam = (new URLSearchParams(location.search).get('ab') || '').toUpperCase();
+  const abForced = abParam === 'A' || abParam === 'B';
+  let abVariant;
+  if (abForced) {
+    abVariant = abParam;
+  } else {
+    try {
+      abVariant = localStorage.getItem('ab-' + AB_EXPERIMENT);
+      if (abVariant !== 'A' && abVariant !== 'B') {
+        abVariant = Math.random() < 0.5 ? 'A' : 'B';
+        localStorage.setItem('ab-' + AB_EXPERIMENT, abVariant);
+      }
+    } catch (_) { abVariant = 'A'; }
+  }
+  const nudgeEnabled = abVariant === 'A';
 
   // funnel events for GTM: start → complete → reach the posts
   const tracked = {};
   const track = (ev) => {
     if (tracked[ev]) return;
     tracked[ev] = true;
-    try { (window.dataLayer = window.dataLayer || []).push({ event: ev }); } catch (_) {}
+    try {
+      (window.dataLayer = window.dataLayer || []).push({ event: ev, ab_experiment: AB_EXPERIMENT, ab_variant: abVariant, ab_forced: abForced });
+    } catch (_) {}
   };
+  track('ab_assign');
+  tracked.ab_assign = true;
   const latestSection = document.getElementById('latest');
   if (latestSection && 'IntersectionObserver' in window) {
     new IntersectionObserver((entries, obs) => {
@@ -998,8 +1028,18 @@ function boot() {
 
     if (Psm > 0.985) track('film_complete');
     if (Math.abs(P - lastPseen) > 0.0004) { lastPseen = P; lastMoveT = t; }
-    const stalled = t - lastMoveT > 1 && P > 0.05 && P < 0.94;
+    const stalled = nudgeEnabled && t - lastMoveT > 1 && P > 0.05 && P < 0.94;
     nudgeOp += ((stalled ? 0.9 : 0) - nudgeOp) * 0.05;
+
+    // variant B: after 2s of stillness, glide to the next chapter —
+    // any user scroll moves P and naturally takes the wheel back
+    if (!nudgeEnabled && lenis && t - lastMoveT > 2 && P > 0.05 && P < 0.94) {
+      const next = CHAPTERS.find((c) => c > P + 0.01);
+      if (next) {
+        lastMoveT = t;  // one advance per stall
+        lenis.scrollTo((document.getElementById('film').offsetHeight - innerHeight) * next, { duration: 3.2, easing: (x) => 1 - Math.pow(1 - x, 3) });
+      }
+    }
 
     updateScene(Psm, t, vel);
 
