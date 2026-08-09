@@ -433,6 +433,7 @@ function boot() {
   const keepScrollingEl = document.querySelector('.keep-scrolling');
   let scrollPrompt = 0;
   hintEl.addEventListener('click', () => {
+    track('film_start');
     if (!muted && !soundOn) startSound();
     const target = (document.getElementById('film').offsetHeight - innerHeight) * (0.115 / STORY_CAP * EPI_S);
     if (lenis) lenis.scrollTo(target, { duration: 2.4, easing: (x) => 1 - Math.pow(1 - x, 3) });
@@ -450,6 +451,20 @@ function boot() {
 
   // stall detection: nudge the visitor when they stop scrolling mid-film
   let lastMoveT = 0, lastPseen = 0, nudgeOp = 0;
+
+  // funnel events for GTM: start → complete → reach the posts
+  const tracked = {};
+  const track = (ev) => {
+    if (tracked[ev]) return;
+    tracked[ev] = true;
+    try { (window.dataLayer = window.dataLayer || []).push({ event: ev }); } catch (_) {}
+  };
+  const latestSection = document.getElementById('latest');
+  if (latestSection && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries, obs) => {
+      if (entries.some((e) => e.isIntersecting)) { track('reach_posts'); obs.disconnect(); }
+    }, { threshold: 0.2 }).observe(latestSection);
+  }
 
   // ---------- scroll progress (critically damped) ----------
   let P = 0, Psm = 0, vel = 0;
@@ -981,6 +996,7 @@ function boot() {
     kick *= 0.9;
     if (kick < 0.001) kick = 0;
 
+    if (Psm > 0.985) track('film_complete');
     if (Math.abs(P - lastPseen) > 0.0004) { lastPseen = P; lastMoveT = t; }
     const stalled = t - lastMoveT > 1 && P > 0.05 && P < 0.94;
     nudgeOp += ((stalled ? 0.9 : 0) - nudgeOp) * 0.05;
