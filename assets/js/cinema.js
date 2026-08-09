@@ -449,10 +449,20 @@ function boot() {
   let kick = 0;
   const kicked = [false, false, false, false];  // 3 boardings + the comet impact
 
-  // stall detection: nudge the visitor when they stop scrolling mid-film
-  let lastMoveT = 0, lastPseen = 0, nudgeOp = 0;
+  // stall detection: watch scrollY (progress clamps at the film's end, but
+  // the journey truly ends at the thesis card)
+  let lastMoveT = 0, lastYseen = 0, nudgeOp = 0;
   // chapter starts in real scroll progress (matches the timeline ticks)
   const CHAPTERS = [0.09, 0.22, 0.35, 0.48, 0.61, 0.78, 0.88, 0.99];
+
+  // the finish line for both variants: the thesis card has been seen
+  let thesisSeen = false;
+  const thesisEl = document.querySelector('.film-thesis');
+  if (thesisEl && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries, obs) => {
+      if (entries.some((e) => e.isIntersecting)) { thesisSeen = true; obs.disconnect(); }
+    }, { threshold: 0.35 }).observe(thesisEl);
+  }
 
   // A/B experiment — what should happen when a visitor stalls mid-film?
   // A: show the SCROLL nudge (current behavior)
@@ -1027,17 +1037,21 @@ function boot() {
     if (kick < 0.001) kick = 0;
 
     if (Psm > 0.985) track('film_complete');
-    if (Math.abs(P - lastPseen) > 0.0004) { lastPseen = P; lastMoveT = t; }
-    const stalled = nudgeEnabled && t - lastMoveT > 1 && P > 0.05 && P < 0.94;
+    const nowY = lenis ? lenis.scroll : scrollY;
+    if (Math.abs(nowY - lastYseen) > 2) { lastYseen = nowY; lastMoveT = t; }
+    const stalled = nudgeEnabled && t - lastMoveT > 1 && P > 0.05 && !thesisSeen;
     nudgeOp += ((stalled ? 0.9 : 0) - nudgeOp) * 0.05;
 
-    // variant B: after 2s of stillness, glide to the next chapter —
-    // any user scroll moves P and naturally takes the wheel back
-    if (!nudgeEnabled && lenis && t - lastMoveT > 2 && P > 0.05 && P < 0.94) {
-      const next = CHAPTERS.find((c) => c > P + 0.01);
+    // variant B: after 2s of stillness, glide to the next chapter — and past
+    // FIN, on to the thesis card. Any user scroll takes the wheel back.
+    if (!nudgeEnabled && lenis && t - lastMoveT > 2 && P > 0.05 && !thesisSeen) {
+      lastMoveT = t;  // one advance per stall
+      const next = P < 0.985 ? CHAPTERS.find((c) => c > P + 0.01) : null;
+      const ease = (x) => 1 - Math.pow(1 - x, 3);
       if (next) {
-        lastMoveT = t;  // one advance per stall
-        lenis.scrollTo((document.getElementById('film').offsetHeight - innerHeight) * next, { duration: 3.2, easing: (x) => 1 - Math.pow(1 - x, 3) });
+        lenis.scrollTo((document.getElementById('film').offsetHeight - innerHeight) * next, { duration: 3.2, easing: ease });
+      } else if (thesisEl) {
+        lenis.scrollTo(thesisEl, { offset: -Math.round(innerHeight * 0.22), duration: 3, easing: ease });
       }
     }
 
