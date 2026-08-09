@@ -401,6 +401,8 @@ function boot() {
   const lbBot = document.querySelector('.letterbox-bottom');
   const finEl = document.querySelector('.fin-mark');
   const teaserEl = document.querySelector('.film-teaser');
+  const timelineEl = document.querySelector('.film-timeline');
+  const ftFill = document.querySelector('.ft-fill');
 
   // ---------- sound: synthesized, button reflects actual state ----------
   const soundBtn = document.querySelector('.sound-toggle');
@@ -445,6 +447,9 @@ function boot() {
   // thump no matter how fast the visitor scrolls through the moment
   let kick = 0;
   const kicked = [false, false, false, false];  // 3 boardings + the comet impact
+
+  // stall detection: nudge the visitor when they stop scrolling mid-film
+  let lastMoveT = 0, lastPseen = 0, nudgeOp = 0;
 
   // ---------- scroll progress (critically damped) ----------
   let P = 0, Psm = 0, vel = 0;
@@ -491,8 +496,17 @@ function boot() {
     titleEl.style.filter = `blur(${(1 - titleOp) * 7}px)`;
     hintEl.style.opacity = String(Math.min(1, titleOp));
     hintEl.style.pointerEvents = titleOp > 0.3 ? 'auto' : 'none';
-    keepScrollingEl.style.opacity = String(scrollPrompt * ss(0.06, 0.09, p) * (1 - ss(0.135, 0.18, p)));
+    // the SCROLL cue: shows after START, and again whenever the visitor
+    // stalls mid-film and forgets the movie is scroll-driven
+    const promptOp = scrollPrompt * ss(0.06, 0.09, p) * (1 - ss(0.135, 0.18, p));
+    keepScrollingEl.style.opacity = String(Math.max(promptOp, nudgeOp));
     if (teaserEl) teaserEl.style.opacity = String(titleOp * (0.5 + 0.14 * Math.sin(t * 1.6)));
+
+    // the film timeline: a scrubber so nobody thinks the movie is over
+    if (timelineEl) {
+      timelineEl.style.opacity = String(ss(0.025, 0.05, pRaw) * (1 - ss(0.975, 0.995, pRaw)) * 0.9);
+      ftFill.style.transform = `scaleX(${pRaw})`;
+    }
 
     // shooting stars: bright over the title, subtle during the voyage
     const shootAmp = 0.25 + 0.75 * titleOp;
@@ -966,6 +980,10 @@ function boot() {
     if (kicked[3] && spsK < 0.78) kicked[3] = false;
     kick *= 0.9;
     if (kick < 0.001) kick = 0;
+
+    if (Math.abs(P - lastPseen) > 0.0004) { lastPseen = P; lastMoveT = t; }
+    const stalled = t - lastMoveT > 1 && P > 0.05 && P < 0.94;
+    nudgeOp += ((stalled ? 0.9 : 0) - nudgeOp) * 0.05;
 
     updateScene(Psm, t, vel);
 
