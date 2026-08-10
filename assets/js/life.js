@@ -189,7 +189,12 @@ function boot() {
     new THREE.Vector3(side * 0.42, -0.24, -0.02),
     new THREE.Vector3(side * 0.34, -0.34, -0.02),
   ]), manMat);
-  const fringe = arcLine(0, 0.52, 0.34, Math.PI * 0.22, Math.PI * 0.78, 12, manMat, 0.3);
+  // proper bangs: a scalloped fringe across the forehead
+  const fringe = new THREE.Group();
+  fringe.add(arcLine(0, 0.52, 0.34, Math.PI * 0.15, Math.PI * 0.85, 14, manMat, 0.3));
+  for (let k = 0; k < 4; k++) {
+    fringe.add(arcLine(-0.24 + k * 0.16, 0.73, 0.082, Math.PI, Math.PI * 2, 8, manMat, 0.33));
+  }
   coomy.add(head, belly, limbs, lens(-0.13), lens(0.13), bridge, dot(-0.13), dot(0.13), cSmile, cBlush(-0.26), cBlush(0.26), tuft, strand(-1), strand(1), fringe);
   scene.add(coomy);
 
