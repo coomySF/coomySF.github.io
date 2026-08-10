@@ -199,7 +199,9 @@ function boot() {
   const manSoft = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0.8 });
   const coomy = new THREE.Group();
   {
-    const head = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.32, 0), 10), manMat);
+    // round soft face + starry eyes, per the birthday girl's art direction
+    const head = new THREE.Group();
+    head.add(lineOf(arcPts(0, 0, 0.32, 0, Math.PI * 2, 28, 0), manMat));
     head.position.y = 0.5;
     const dress = [new THREE.Vector3(-0.11, 0.2, 0), new THREE.Vector3(-0.27, -0.18, 0)];
     for (let i = 0; i <= 10; i++) {
@@ -223,11 +225,25 @@ function boot() {
       new THREE.Vector3(side * 0.4, 0.3, -0.02), new THREE.Vector3(side * 0.35, 0.0, -0.02),
       new THREE.Vector3(side * 0.42, -0.24, -0.02), new THREE.Vector3(side * 0.34, -0.34, -0.02),
     ], manMat);
-    const smile = lineOf(arcPts(0, 0.42, 0.09, Math.PI * 1.2, Math.PI * 1.8, 10, 0.34), manMat);
-    const blush = (x) => segsOf([new THREE.Vector3(x - 0.035, 0.42, 0.33), new THREE.Vector3(x + 0.035, 0.445, 0.33)], manSoft);
+    const smile = lineOf(arcPts(0, 0.4, 0.1, Math.PI * 1.15, Math.PI * 1.85, 10, 0.34), manMat);
+    const blush = (x) => {
+      const b = lineOf(arcPts(0, 0, 0.04, 0, Math.PI * 2, 10, 0), manSoft);
+      b.position.set(x, 0.41, 0.33);
+      return b;
+    };
+    const starEye = (x) => {
+      const s = 0.045, wv = 0.017;
+      const st = lineOf([
+        new THREE.Vector3(0, s, 0), new THREE.Vector3(wv, 0.015, 0), new THREE.Vector3(s, 0, 0),
+        new THREE.Vector3(wv, -0.015, 0), new THREE.Vector3(0, -s, 0), new THREE.Vector3(-wv, -0.015, 0),
+        new THREE.Vector3(-s, 0, 0), new THREE.Vector3(-wv, 0.015, 0), new THREE.Vector3(0, s, 0),
+      ], starMat);
+      st.position.set(x, 0.51, 0.34);
+      return st;
+    };
     const tuft = lineOf([new THREE.Vector3(0.02, 0.8, 0), new THREE.Vector3(0.09, 0.96, 0), new THREE.Vector3(0.16, 0.9, 0)], manMat);
     const fringe = lineOf(arcPts(0, 0.52, 0.34, Math.PI * 0.22, Math.PI * 0.78, 12, 0.3), manMat);
-    coomy.add(head, lineOf(dress, manMat), limbs, lens(-0.13), lens(0.13), smile, blush(-0.26), blush(0.26), tuft, strand(-1), strand(1), fringe);
+    coomy.add(head, lineOf(dress, manMat), limbs, lens(-0.13), lens(0.13), starEye(-0.13), starEye(0.13), smile, blush(-0.26), blush(0.26), tuft, strand(-1), strand(1), fringe);
   }
   scene.add(coomy);
 

@@ -132,7 +132,9 @@ function boot() {
   const manMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 1 });
   const manSoft = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0.8 });
   const coomy = new THREE.Group();
-  const head = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.32, 0), 10), manMat);
+  // a round soft face — she asked to be cuter, the ball approved this shape
+  const head = new THREE.Group();
+  head.add(arcLine(0, 0, 0.32, 0, Math.PI * 2, 28, manMat, 0));
   head.position.y = 0.5;
   // a little A-line dress with a gently scalloped hem
   const dressPts = [new THREE.Vector3(-0.11, 0.2, 0), new THREE.Vector3(-0.27, -0.18, 0)];
@@ -156,16 +158,24 @@ function boot() {
   const bridge = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(-0.02, 0.52, 0.33), new THREE.Vector3(0.02, 0.52, 0.33),
   ]), manMat);
-  // eyes behind the glasses + a smile + blush
+  // starry eyes behind the glasses (a matching pair with the ball's)
+  const cStarMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0.95 });
   const dot = (x) => {
-    const d = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.022, 6)), manMat);
-    d.position.set(x, 0.51, 0.34);
-    return d;
+    const s = 0.045, w = 0.017;
+    const st = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, s, 0), new THREE.Vector3(w, 0.015, 0), new THREE.Vector3(s, 0, 0),
+      new THREE.Vector3(w, -0.015, 0), new THREE.Vector3(0, -s, 0), new THREE.Vector3(-w, -0.015, 0),
+      new THREE.Vector3(-s, 0, 0), new THREE.Vector3(-w, 0.015, 0), new THREE.Vector3(0, s, 0),
+    ]), cStarMat);
+    st.position.set(x, 0.51, 0.34);
+    return st;
   };
-  const cSmile = arcLine(0, 0.42, 0.09, Math.PI * 1.2, Math.PI * 1.8, 10, manMat, 0.34);
-  const cBlush = (x) => new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(x - 0.035, 0.42, 0.33), new THREE.Vector3(x + 0.035, 0.445, 0.33),
-  ]), manSoft);
+  const cSmile = arcLine(0, 0.4, 0.1, Math.PI * 1.15, Math.PI * 1.85, 10, manMat, 0.34);
+  const cBlush = (x) => {
+    const b = arcLine(0, 0, 0.04, 0, Math.PI * 2, 10, manSoft, 0);
+    b.position.set(x, 0.41, 0.33);
+    return b;
+  };
   // the tuft on top
   const tuft = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(0.02, 0.8, 0), new THREE.Vector3(0.09, 0.96, 0), new THREE.Vector3(0.16, 0.9, 0),
