@@ -114,7 +114,7 @@ function kf(p, pts) {
 function boot() {
   docEl.style.scrollBehavior = 'auto';
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.2 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setSize(innerWidth, innerHeight);
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#110e0b');

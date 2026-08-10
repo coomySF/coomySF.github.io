@@ -47,7 +47,7 @@ function boot() {
 
   const canvas = document.getElementById('film-canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-  const DPR = Math.min(devicePixelRatio, small ? 1.2 : 2);
+  const DPR = Math.min(devicePixelRatio, 2);
   renderer.setPixelRatio(DPR);
   renderer.setSize(innerWidth, innerHeight);
 

@@ -40,7 +40,7 @@ function boot() {
   docEl.style.scrollBehavior = 'auto';  // site smooth-scroll fights our glide tween
   const canvas = document.getElementById('life-canvas');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.2 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setSize(innerWidth, innerHeight);
 
   const scene = new THREE.Scene();
