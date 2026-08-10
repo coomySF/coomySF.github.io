@@ -19,7 +19,7 @@ defaults:
   - scope:
       path: ""
     values:
-      image: /assets/og-poster.jpg
+      image: /assets/og-hero.jpg
   - scope:
       path: "specs"
     values:
