@@ -3,6 +3,14 @@ layout: default
 ---
 <link rel="stylesheet" href="{{ '/assets/css/life.css' | relative_url }}?v=20260811-1">
 <script>document.documentElement.classList.add('life-dark');</script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
 
 {% assign is_life = false %}
 {% if page.tags contains '我們的日子' %}{% assign is_life = true %}{% endif %}
@@ -35,12 +43,3 @@ layout: default
     {% endif %}
   </footer>
 </article>
-
-<script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }
-  }
-</script>

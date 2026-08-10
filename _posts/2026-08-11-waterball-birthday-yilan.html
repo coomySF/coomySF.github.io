@@ -1,0 +1,684 @@
+---
+layout: film
+title: 水球的生日：我們在飯店裡旅行了一整天
+description: 8/9 水球生日，我們去了宜蘭蘭城晶英——幸運升級的房間、失敗連連的賽車、櫻桃鴨壽司、驚喜蛋糕，和人生第一次精油按摩。
+date: 2026-08-11 09:00:00 +0800
+tags: [我們的日子, 生日]
+seo:
+  type: BlogPosting
+---
+<style>
+  #bday-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 700vh; }
+  .bday-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  #bday-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .bday-ui { position: absolute; inset: 0; pointer-events: none; }
+  .bday-cap {
+    position: absolute; left: 50%; top: 13vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.9; color: var(--life-ink); opacity: 0;
+    text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
+  }
+  .bday-cap small { display: block; font-size: .78em; color: var(--life-muted); margin-top: 6px; }
+  .bday-say {
+    position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 14px;
+    color: #a5dbff; opacity: 0; white-space: nowrap; text-shadow: 0 0 14px rgba(165, 219, 255, .5);
+  }
+  .bday-say-coomy { color: var(--life-ink); text-shadow: 0 0 14px rgba(242, 238, 229, .4); }
+  .bday-tag {
+    position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .14em; color: var(--life-muted); opacity: 0; white-space: nowrap;
+  }
+  .bday-end {
+    position: absolute; left: 50%; bottom: 10vh; transform: translateX(-50%);
+    width: max-content; max-width: min(26em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(16px, 2vw, 21px);
+    line-height: 2; color: var(--life-ink); opacity: 0;
+    text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
+  }
+  .bday-sound {
+    position: absolute; right: 26px; bottom: 24px; pointer-events: auto; cursor: pointer;
+    background: none; border: 1px solid rgba(226, 221, 207, .25); border-radius: 999px;
+    padding: 10px 20px; font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
+    color: var(--life-muted); transition: color .3s ease, border-color .3s ease;
+  }
+  .bday-sound:hover { color: var(--life-clay); border-color: var(--life-clay); }
+</style>
+
+<div id="bday-film">
+  <div class="bday-stage">
+    <canvas id="bday-canvas" aria-hidden="true"></canvas>
+    <div class="bday-ui">
+      <p class="bday-cap" data-cap="0">8/9，水球生日。我們去了宜蘭的蘭城晶英。</p>
+      <p class="bday-cap" data-cap="1">Check-in 的時候，櫃檯說：你們訂的房間剛好在維修——幫你們升級。<small>（運氣 +999）</small></p>
+      <p class="bday-cap" data-cap="2">房間大到可以迷路：大陽台、露天浴池、和式廳、還有客廳。</p>
+      <p class="bday-cap" data-cap="3">下午玩賽車。超擬真，擬真到我一直失敗。</p>
+      <p class="bday-cap" data-cap="4">晚餐在紅樓。櫻桃鴨壽司，好吃到我們都安靜了。</p>
+      <p class="bday-cap" data-cap="5">然後燈暗了——我偷偷請飯店送上蛋糕和禮物。</p>
+      <p class="bday-cap" data-cap="6">飯後，水球解鎖了人生第一次精油按摩。</p>
+      <p class="bday-say bday-say-ball" aria-hidden="true">哇！！</p>
+      <p class="bday-say bday-say-coomy" aria-hidden="true">又失敗了 XD</p>
+      <p class="bday-end">水球，生日快樂。<br>未來每一年，我們都一起過。</p>
+      <button class="bday-sound" type="button" aria-pressed="false">SOUND · OFF</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = matchMedia('(max-width: 640px)').matches;
+const canvas = document.getElementById('bday-canvas');
+
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+  catch { return false; }
+}
+if (!reduced && webglOK()) boot();
+
+function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], ss(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.2 : 2));
+  renderer.setSize(innerWidth, innerHeight);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#110e0b');
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 10);
+
+  const glowTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  })();
+  const sprite = (color, scale, opacity = 0) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.setScalar(scale);
+    scene.add(s);
+    return s;
+  };
+
+  // stars
+  const DUST = small ? 400 : 900;
+  const dp = new Float32Array(DUST * 3);
+  for (let i = 0; i < DUST; i++) {
+    dp[i * 3] = (Math.random() - 0.5) * 30; dp[i * 3 + 1] = (Math.random() - 0.5) * 18; dp[i * 3 + 2] = -3 - Math.random() * 12;
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+  const dustMat = new THREE.PointsMaterial({ color: '#d8c8a8', size: 0.035, transparent: true, opacity: 0.6, depthWrite: false });
+  scene.add(new THREE.Points(dustGeo, dustMat));
+
+  const arcPts = (cx, cy, r, a0, a1, n, z = 0.03) => {
+    const pts = [];
+    for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * (i / n); pts.push(new THREE.Vector3(cx + Math.cos(a) * r, cy + Math.sin(a) * r, z)); }
+    return pts;
+  };
+  const lineOf = (pts, mat) => new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  const segsOf = (pts, mat) => new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  const boxOf = (w, h, d, mat) => new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)), mat);
+
+  // ---------- 水球 ----------
+  const ballMat = new THREE.LineBasicMaterial({ color: '#a5dbff', transparent: true, opacity: 1 });
+  const ballSoft = new THREE.LineBasicMaterial({ color: '#cfeaff', transparent: true, opacity: 0.75 });
+  const starMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0.95 });
+  const ball = new THREE.Group();
+  {
+    const body = [];
+    for (let i = 0; i <= 56; i++) {
+      const a = (i / 56) * Math.PI * 2;
+      const x = Math.sin(a) * 0.56;
+      let y = -Math.cos(a) * 0.48 - 0.04;
+      if (y < -0.3) y = -0.3 - (Math.abs(y) - 0.3) * 0.55;
+      body.push(new THREE.Vector3(x, y, 0));
+    }
+    ball.add(lineOf(body, ballMat));
+    ball.add(lineOf([new THREE.Vector3(-0.05, 0.42, 0), new THREE.Vector3(0.02, 0.56, 0)], ballMat));
+    ball.add(lineOf(arcPts(0.11, 0.6, 0.09, Math.PI * 1.15, Math.PI * 2.9, 12, 0), ballMat));
+    const eye = (x) => {
+      const g = new THREE.Group();
+      g.add(lineOf(arcPts(0, 0, 0.115, 0, Math.PI * 2, 18), ballMat));
+      const s = 0.052, w = 0.02;
+      g.add(lineOf([
+        new THREE.Vector3(0, s, 0.01), new THREE.Vector3(w, 0.018, 0.01), new THREE.Vector3(s, 0, 0.01),
+        new THREE.Vector3(w, -0.018, 0.01), new THREE.Vector3(0, -s, 0.01), new THREE.Vector3(-w, -0.018, 0.01),
+        new THREE.Vector3(-s, 0, 0.01), new THREE.Vector3(-w, 0.018, 0.01), new THREE.Vector3(0, s, 0.01),
+      ], starMat));
+      g.position.set(x, -0.02, 0.03);
+      return g;
+    };
+    ball.add(eye(-0.21), eye(0.21));
+    ball.add(lineOf(arcPts(-0.038, -0.22, 0.038, Math.PI * 1.05, Math.PI * 1.95, 8), ballMat));
+    ball.add(lineOf(arcPts(0.038, -0.22, 0.038, Math.PI * 1.05, Math.PI * 1.95, 8), ballMat));
+    ball.add(lineOf(arcPts(-0.1, 0.02, 0.34, Math.PI * 0.58, Math.PI * 0.82, 8), ballSoft));
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: '#a5dbff', transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending }));
+    glow.scale.setScalar(2.1);
+    ball.add(glow);
+  }
+  scene.add(ball);
+
+  // ---------- Coomy ----------
+  const manMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 1 });
+  const manSoft = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0.8 });
+  const coomy = new THREE.Group();
+  {
+    const head = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.32, 0), 10), manMat);
+    head.position.y = 0.5;
+    const dress = [new THREE.Vector3(-0.11, 0.2, 0), new THREE.Vector3(-0.27, -0.18, 0)];
+    for (let i = 0; i <= 10; i++) {
+      const u = i / 10;
+      dress.push(new THREE.Vector3(-0.27 + u * 0.54, -0.18 - Math.abs(Math.sin(u * Math.PI * 3)) * 0.035, 0));
+    }
+    dress.push(new THREE.Vector3(0.27, -0.18, 0), new THREE.Vector3(0.11, 0.2, 0), new THREE.Vector3(-0.11, 0.2, 0));
+    const limbs = segsOf([
+      new THREE.Vector3(-0.13, 0.1, 0), new THREE.Vector3(-0.3, 0.26, 0),
+      new THREE.Vector3(0.13, 0.1, 0), new THREE.Vector3(0.3, 0.26, 0),
+      new THREE.Vector3(-0.07, -0.2, 0), new THREE.Vector3(-0.09, -0.34, 0),
+      new THREE.Vector3(0.07, -0.2, 0), new THREE.Vector3(0.09, -0.34, 0),
+    ], manMat);
+    const lens = (x) => {
+      const l = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.115, 12)), manMat);
+      l.position.set(x, 0.52, 0.33);
+      return l;
+    };
+    const strand = (side) => lineOf([
+      new THREE.Vector3(side * 0.16, 0.82, -0.02), new THREE.Vector3(side * 0.34, 0.6, -0.02),
+      new THREE.Vector3(side * 0.4, 0.3, -0.02), new THREE.Vector3(side * 0.35, 0.0, -0.02),
+      new THREE.Vector3(side * 0.42, -0.24, -0.02), new THREE.Vector3(side * 0.34, -0.34, -0.02),
+    ], manMat);
+    const smile = lineOf(arcPts(0, 0.42, 0.09, Math.PI * 1.2, Math.PI * 1.8, 10, 0.34), manMat);
+    const blush = (x) => segsOf([new THREE.Vector3(x - 0.035, 0.42, 0.33), new THREE.Vector3(x + 0.035, 0.445, 0.33)], manSoft);
+    const tuft = lineOf([new THREE.Vector3(0.02, 0.8, 0), new THREE.Vector3(0.09, 0.96, 0), new THREE.Vector3(0.16, 0.9, 0)], manMat);
+    const fringe = lineOf(arcPts(0, 0.52, 0.34, Math.PI * 0.22, Math.PI * 0.78, 12, 0.3), manMat);
+    coomy.add(head, lineOf(dress, manMat), limbs, lens(-0.13), lens(0.13), smile, blush(-0.26), blush(0.26), tuft, strand(-1), strand(1), fringe);
+  }
+  scene.add(coomy);
+
+  // ---------- props per beat ----------
+  const propMat = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0 });
+  const goldMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0 });
+  const beat = (mats) => ({ g: new THREE.Group(), mats });
+
+  // hotel + desk + key
+  const hotelMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
+  const hotel = new THREE.Group();
+  hotel.add(boxOf(2.6, 3.4, 1, hotelMat));
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+    const win = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.4, 0.34)), hotelMat);
+    win.position.set(-0.8 + c * 0.8, 0.9 - r * 0.9, 0.51);
+    hotel.add(win);
+  }
+  const door = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(0.6, 0.8)), hotelMat);
+  door.position.set(0, -1.3, 0.51);
+  hotel.add(door);
+  hotel.position.set(2.6, -0.6, -1);
+  scene.add(hotel);
+  const desk = new THREE.Group();
+  desk.add(boxOf(1.6, 0.7, 0.5, propMat));
+  const bell = lineOf(arcPts(0.45, 0.45, 0.12, 0, Math.PI, 10), propMat);
+  desk.add(bell);
+  desk.position.set(1.4, -1.4, 0);
+  scene.add(desk);
+  const key = new THREE.Group();
+  const keyMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0 });
+  key.add(lineOf(arcPts(0, 0.14, 0.14, 0, Math.PI * 2, 14), keyMat));
+  key.add(segsOf([
+    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.34, 0),
+    new THREE.Vector3(0, -0.34, 0), new THREE.Vector3(0.1, -0.34, 0),
+    new THREE.Vector3(0, -0.24, 0), new THREE.Vector3(0.08, -0.24, 0),
+  ], keyMat));
+  key.position.set(1.4, -0.7, 0.4);
+  scene.add(key);
+  const keyGlow = sprite('#ffd479', 1.4);
+
+  // the room
+  const roomMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
+  const room = new THREE.Group();
+  room.add(boxOf(6.4, 3, 2.6, roomMat));                       // the big room shell
+  const rail = segsOf((() => {
+    const pts = [];
+    for (let i = 0; i <= 8; i++) { pts.push(new THREE.Vector3(-3.2 + i * 0.8, -1.5, 1.4), new THREE.Vector3(-3.2 + i * 0.8, -0.7, 1.4)); }
+    pts.push(new THREE.Vector3(-3.2, -0.7, 1.4), new THREE.Vector3(3.2, -0.7, 1.4));
+    return pts;
+  })(), roomMat);
+  rail.position.y = -0.15;
+  room.add(rail);                                              // balcony rail
+  const tub = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(0.62, 0.55, 0.42, 12), 30), roomMat);
+  tub.position.set(2.2, -1.2, 0.9);
+  room.add(tub);                                               // open-air bath
+  const lowTable = boxOf(0.9, 0.24, 0.6, roomMat);
+  lowTable.position.set(-2.1, -1.3, 0.3);
+  room.add(lowTable);                                          // tatami room table
+  const sofa = new THREE.Group();
+  const sofaSeat = boxOf(1.3, 0.35, 0.55, roomMat); sofaSeat.position.set(0, -1.35, 0);
+  const sofaBack = boxOf(1.3, 0.5, 0.16, roomMat); sofaBack.position.set(0, -1, -0.22);
+  sofa.add(sofaSeat, sofaBack);
+  sofa.position.x = -0.2;
+  room.add(sofa);                                              // living room
+  room.position.set(0, 0.2, -0.5);
+  scene.add(room);
+
+  // race track + cars
+  const trackMat = new THREE.LineBasicMaterial({ color: '#8b877b', transparent: true, opacity: 0 });
+  const track = lineOf(arcPts(0, 0, 1, 0, Math.PI * 2, 48), trackMat);
+  track.scale.set(3.2, 1.4, 1);
+  track.position.set(0, -1.1, 0);
+  scene.add(track);
+  const mkCar = (mat) => {
+    const g = new THREE.Group();
+    const body = boxOf(0.56, 0.2, 0.3, mat); body.position.y = 0.1;
+    const top = boxOf(0.28, 0.14, 0.26, mat); top.position.set(-0.04, 0.26, 0);
+    const wheel = (x) => { const w = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.09, 8)), mat); w.position.set(x, 0, 0.16); return w; };
+    g.add(body, top, wheel(-0.18), wheel(0.18));
+    return g;
+  };
+  const carBallMat = new THREE.LineBasicMaterial({ color: '#a5dbff', transparent: true, opacity: 0 });
+  const carCoomyMat = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0 });
+  const carBall = mkCar(carBallMat); scene.add(carBall);
+  const carCoomy = mkCar(carCoomyMat); scene.add(carCoomy);
+  const crashStar = sprite('#ffd479', 0.7);
+
+  // dinner: lantern, table, duck, sushi
+  const dinner = new THREE.Group();
+  const dinMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
+  const lanternMat = new THREE.LineBasicMaterial({ color: '#ff8d7a', transparent: true, opacity: 0 });
+  const dTable = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(1.5, 1.5, 0.12, 16), 30), dinMat);
+  dTable.position.y = -1.2;
+  dinner.add(dTable);
+  const lantern = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(0.32, 6, 4)), lanternMat);
+  lantern.position.set(0, 1.6, -0.5);
+  dinner.add(lantern);
+  const duck = new THREE.Group();
+  duck.add(lineOf(arcPts(0, 0, 0.34, Math.PI * 0.1, Math.PI * 1.9, 20), dinMat));   // body
+  duck.add(lineOf(arcPts(0.3, 0.28, 0.13, 0, Math.PI * 2, 12), dinMat));            // head
+  duck.add(lineOf([new THREE.Vector3(0.42, 0.28, 0.03), new THREE.Vector3(0.56, 0.24, 0.03), new THREE.Vector3(0.42, 0.2, 0.03)], lanternMat)); // beak
+  const plate = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(0.55, 0.55, 0.05, 14), 30), dinMat);
+  plate.position.y = -0.32;
+  duck.add(plate);
+  duck.position.set(0, -0.55, 0.3);
+  dinner.add(duck);
+  for (let i = 0; i < 4; i++) {
+    const sushi = boxOf(0.3, 0.14, 0.18, dinMat);
+    sushi.position.set(-1.05 + i * 0.34, -0.98, 0.75);
+    dinner.add(sushi);
+  }
+  dinner.position.set(0, 0, -0.3);
+  scene.add(dinner);
+  const lanternGlow = sprite('#ff8d7a', 2.4);
+
+  // surprise: cake + gift + candle
+  const cake = new THREE.Group();
+  const cakeMat = new THREE.LineBasicMaterial({ color: '#f2eee5', transparent: true, opacity: 0 });
+  const c1 = boxOf(1, 0.34, 0.7, cakeMat); c1.position.y = 0.17;
+  const c2 = boxOf(0.64, 0.3, 0.46, cakeMat); c2.position.y = 0.49;
+  const candle = lineOf([new THREE.Vector3(0, 0.64, 0), new THREE.Vector3(0, 0.92, 0)], cakeMat);
+  cake.add(c1, c2, candle);
+  cake.position.set(0.8, -1.35, 0.6);
+  scene.add(cake);
+  const flame = sprite('#ffd479', 0.5);
+  const gift = new THREE.Group();
+  const giftMat = new THREE.LineBasicMaterial({ color: '#ff9d9d', transparent: true, opacity: 0 });
+  const gBox = boxOf(0.5, 0.4, 0.4, giftMat);
+  const ribbonV = segsOf([new THREE.Vector3(0, -0.2, 0.21), new THREE.Vector3(0, 0.2, 0.21)], giftMat);
+  const bow = lineOf(arcPts(0, 0.28, 0.09, 0, Math.PI * 2, 10), giftMat);
+  gift.add(gBox, ribbonV, bow);
+  gift.position.set(-0.9, -1.42, 0.6);
+  scene.add(gift);
+
+  // massage: oil bottle + drops + waves
+  const spaMat = new THREE.LineBasicMaterial({ color: '#7ee0a8', transparent: true, opacity: 0 });
+  const bottle = new THREE.Group();
+  bottle.add(boxOf(0.24, 0.34, 0.24, spaMat));
+  const neck = boxOf(0.1, 0.12, 0.1, spaMat); neck.position.y = 0.23;
+  bottle.add(neck);
+  bottle.position.set(0.4, 0.5, 0.5);
+  scene.add(bottle);
+  const drops = [sprite('#7ee0a8', 0.22), sprite('#7ee0a8', 0.18), sprite('#7ee0a8', 0.2)];
+  const waves = [];
+  for (let i = 0; i < 3; i++) {
+    const w = lineOf(arcPts(0, 0, 0.5 + i * 0.32, Math.PI * 0.15, Math.PI * 0.85, 14), spaMat);
+    w.position.set(-0.4, -0.6, 0.4);
+    scene.add(w);
+    waves.push(w);
+  }
+
+  // ending: tub under the stars + wish star
+  const bathMat = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0 });
+  const bigTub = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(1.5, 1.35, 0.8, 14), 30), bathMat);
+  bigTub.position.set(0, -1.5, 0.5);
+  scene.add(bigTub);
+  const steam = [sprite('#f2eee5', 0.14), sprite('#f2eee5', 0.12), sprite('#f2eee5', 0.14), sprite('#f2eee5', 0.12)];
+  const wishStar = sprite('#ffd479', 0.6);
+  const heartMat = new THREE.LineBasicMaterial({ color: '#ff9d9d', transparent: true, opacity: 0 });
+  const heartPts = [];
+  for (let i = 0; i <= 30; i++) {
+    const a = (i / 30) * Math.PI * 2;
+    heartPts.push(new THREE.Vector3(0.013 * 16 * Math.pow(Math.sin(a), 3), 0.013 * (13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)), 0.2));
+  }
+  const heart = lineOf(heartPts, heartMat);
+  scene.add(heart);
+
+  // ---------- DOM ----------
+  const caps = [...document.querySelectorAll('.bday-cap')];
+  const sayBall = document.querySelector('.bday-say-ball');
+  const sayCoomy = document.querySelector('.bday-say-coomy');
+  const endEl = document.querySelector('.bday-end');
+  const tags = [
+    { label: '大陽台', x: -2.6, y: -0.4, w: [0.27, 0.4] },
+    { label: '露天浴池', x: 2.2, y: -0.5, w: [0.29, 0.42] },
+    { label: '和式廳', x: -2.1, y: -0.75, w: [0.31, 0.44] },
+    { label: '客廳', x: -0.2, y: -0.55, w: [0.33, 0.46] },
+  ].map((t) => {
+    const el = document.createElement('p');
+    el.className = 'bday-tag';
+    el.textContent = t.label;
+    document.querySelector('.bday-ui').appendChild(el);
+    return { ...t, el };
+  });
+
+  // ---------- sound ----------
+  const sound = makeSound();
+  const soundBtn = document.querySelector('.bday-sound');
+  let soundOn = false;
+  let mutedPref = localStorage.getItem('coomy-sound') === 'off';
+  const setSoundUI = () => {
+    soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  };
+  soundBtn.addEventListener('click', () => {
+    if (soundOn) { sound.stop(); soundOn = false; localStorage.setItem('coomy-sound', 'off'); }
+    else { sound.start(); soundOn = true; localStorage.setItem('coomy-sound', 'on'); }
+    setSoundUI();
+  });
+  setSoundUI();
+  const CUES = [
+    { at: 0.16, fn: () => sound.lucky() },
+    { at: 0.44, fn: () => sound.engine() },
+    { at: 0.58, fn: () => sound.pop() },
+    { at: 0.72, fn: () => sound.chord() },
+    { at: 0.84, fn: () => sound.soft() },
+    { at: 0.94, fn: () => sound.wish() },
+  ].map((c) => ({ ...c, fired: false }));
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('bday-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__bdaySeek = (p) => { P = p; Psm = p; render(); };
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  const cancelGlide = () => { autoScroll = null; };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const CH = [0.1, 0.24, 0.4, 0.54, 0.68, 0.82, 0.93, 1];
+  let lastYs = 0, lastMoveTs = 0, endSeen = false;
+
+  const tmpV = new THREE.Vector3();
+  const clock = new THREE.Clock();
+
+  function update(p, t) {
+    const w = innerWidth, h = innerHeight;
+    // beats
+    const arrive = ss(0.02, 0.1, p);
+    const checkin = ss(0.1, 0.14, p) * (1 - ss(0.22, 0.26, p));
+    const roomQ = ss(0.24, 0.3, p) * (1 - ss(0.38, 0.42, p));
+    const raceQ = ss(0.42, 0.46, p) * (1 - ss(0.52, 0.56, p));
+    const dinQ = ss(0.56, 0.6, p) * (1 - ss(0.66, 0.7, p));
+    const supQ = ss(0.7, 0.74, p) * (1 - ss(0.8, 0.83, p));
+    const spaQ = ss(0.83, 0.86, p) * (1 - ss(0.9, 0.93, p));
+    const bathQ = ss(0.93, 0.97, p);
+
+    // captions
+    const capW = [
+      ss(0.03, 0.06, p) * (1 - ss(0.1, 0.13, p)),
+      ss(0.12, 0.15, p) * (1 - ss(0.22, 0.25, p)),
+      ss(0.26, 0.29, p) * (1 - ss(0.38, 0.41, p)),
+      ss(0.43, 0.46, p) * (1 - ss(0.52, 0.55, p)),
+      ss(0.57, 0.6, p) * (1 - ss(0.66, 0.69, p)),
+      ss(0.71, 0.74, p) * (1 - ss(0.79, 0.82, p)),
+      ss(0.84, 0.87, p) * (1 - ss(0.91, 0.93, p)),
+    ];
+    caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
+    endEl.style.opacity = String(ss(0.955, 0.985, p));
+
+    // hotel + checkin
+    hotelMat.opacity = Math.max(arrive * (1 - ss(0.22, 0.28, p)), 0);
+    hotel.position.x = lerp(6, 2.6, arrive);
+    propMat.opacity = checkin;
+    keyMat.opacity = checkin;
+    key.position.y = -0.7 + checkin * 0.45 + Math.sin(t * 1.6) * 0.06;
+    key.rotation.z = t * 0.8;
+    keyGlow.position.copy(key.position);
+    keyGlow.material.opacity = checkin * 0.4;
+
+    // room
+    roomMat.opacity = roomQ;
+    room.scale.setScalar(0.6 + 0.4 * ss(0.24, 0.32, p));
+    tags.forEach((tg) => {
+      const op = ss(tg.w[0], tg.w[0] + 0.02, p) * (1 - ss(tg.w[1] - 0.02 + 0.02, tg.w[1] + 0.02, p)) * (roomQ > 0.01 ? 1 : 0);
+      tmpV.set(tg.x * room.scale.x, tg.y * room.scale.y + 0.9, 0).project(camera);
+      tg.el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+      tg.el.style.opacity = String(op);
+    });
+
+    // race
+    trackMat.opacity = raceQ;
+    carBallMat.opacity = raceQ;
+    carCoomyMat.opacity = raceQ;
+    const la = t * 1.5;
+    carBall.position.set(Math.cos(la) * 3.2 * 0.92, -1.1 + Math.sin(la) * 1.4 * 0.92, 0.2);
+    carBall.rotation.z = Math.atan2(Math.cos(la) * 1.4, -Math.sin(la) * 3.2);
+    const crash = Math.max(0, Math.sin(t * 0.9));
+    const ca = t * 1.1;
+    carCoomy.position.set(Math.cos(ca) * 3.2 * 0.7, -1.1 + Math.sin(ca) * 1.4 * 0.7, 0.25);
+    carCoomy.rotation.z = crash > 0.7 ? t * 9 : Math.atan2(Math.cos(ca) * 1.4, -Math.sin(ca) * 3.2);
+    crashStar.position.set(carCoomy.position.x, carCoomy.position.y + 0.5, 0.3);
+    crashStar.material.opacity = raceQ * (crash > 0.7 ? 0.8 : 0);
+
+    // dinner
+    dinMat.opacity = dinQ;
+    lanternMat.opacity = dinQ;
+    lanternGlow.position.set(0, 1.6, -0.8);
+    lanternGlow.material.opacity = dinQ * 0.3;
+
+    // surprise: the lights dim, candle glows
+    dustMat.opacity = 0.6 - supQ * 0.35;
+    cakeMat.opacity = Math.max(supQ, bathQ * 0.4);
+    giftMat.opacity = supQ;
+    cake.position.x = lerp(3.5, 0.8, ss(0.7, 0.75, p));
+    gift.position.x = lerp(-3.5, -0.9, ss(0.71, 0.76, p));
+    flame.position.set(cake.position.x, cake.position.y + 0.98, 0.6);
+    const flameLive = Math.max(supQ, bathQ) * (1 - ss(0.975, 0.985, p));
+    flame.material.opacity = flameLive * (0.6 + 0.3 * Math.abs(Math.sin(t * 7)));
+
+    // massage
+    spaMat.opacity = spaQ;
+    bottle.rotation.z = -0.5 - Math.sin(t * 1.2) * 0.14;
+    drops.forEach((d, i) => {
+      const u = ((t * 0.5 + i * 0.33) % 1);
+      d.position.set(0.28 - u * 0.5, 0.35 - u * 0.8, 0.5);
+      d.material.opacity = spaQ * Math.sin(u * Math.PI) * 0.7;
+    });
+    waves.forEach((wv, i) => {
+      wv.scale.setScalar(1 + ((t * 0.4 + i * 0.33) % 1) * 0.5);
+      wv.material = spaMat;
+    });
+
+    // bath ending
+    bathMat.opacity = bathQ;
+    steam.forEach((s, i) => {
+      const u = ((t * 0.22 + i * 0.27) % 1);
+      s.position.set(-0.7 + i * 0.45 + Math.sin(u * 5 + i) * 0.07, -0.9 + u * 0.9, 0.6);
+      s.material.opacity = bathQ * Math.sin(u * Math.PI) * 0.4;
+    });
+    // the wish: candle flame becomes a new star
+    const wishQ = ss(0.975, 1, p);
+    wishStar.position.set(lerp(cake.position.x, 1.6, wishQ), lerp(-0.35, 2.6, wishQ), lerp(0.6, -2, wishQ));
+    wishStar.material.opacity = Math.sin(wishQ * Math.PI * 0.9) * 0.95;
+    wishStar.scale.setScalar(0.4 + wishQ * 0.5);
+    const hu = (t * 0.16) % 1;
+    heart.position.set(0.15, -0.5 + hu * 0.7, 0.8);
+    heart.scale.setScalar(0.8 + hu * 0.3);
+    heartMat.opacity = bathQ * Math.sin(hu * Math.PI) * 0.85;
+
+    // ---------- the two of them ----------
+    const bx = kf(p, [[0, -5], [0.08, -2.2], [0.12, -0.6], [0.24, -0.6], [0.3, -2.2], [0.34, 0.9], [0.38, 2.2], [0.44, -3.4], [0.56, -1], [0.7, -0.9], [0.83, -0.4], [0.9, -0.4], [0.97, -0.55]]);
+    const by = kf(p, [[0, -1.3], [0.12, -1.3], [0.24, -1.3], [0.3, -0.9], [0.34, -1.2], [0.38, -1.1], [0.44, -2.8], [0.56, -1.15], [0.7, -1.1], [0.83, -0.75], [0.9, -0.75], [0.97, -0.85]]);
+    const cx = kf(p, [[0, -6.2], [0.08, -1.2], [0.12, 0.35], [0.24, 0.35], [0.3, -1.4], [0.34, 1.6], [0.38, -0.2], [0.44, -3.4], [0.56, 1], [0.7, 1], [0.83, 1.5], [0.9, 1.5], [0.97, 0.55]]);
+    const cy = kf(p, [[0, -1.15], [0.12, -1.15], [0.24, -1.15], [0.3, -0.8], [0.34, -1.1], [0.38, -1.05], [0.44, -2.8], [0.56, -1.05], [0.7, -1.05], [0.83, -0.7], [0.9, -0.7], [0.97, -0.8]]);
+    const happyHop = Math.max(checkin, supQ) * Math.abs(Math.sin(t * 4.5)) * 0.16;
+    // 按摩時水球趴平
+    const lie = spaQ;
+    ball.position.set(lerp(bx, -0.5, lie), lerp(by + happyHop + Math.sin(t * 1.2) * 0.07, -0.72, lie), 0.5);
+    ball.rotation.z = Math.sin(t * 0.9) * 0.06 + lie * Math.PI * 0.5;
+    ball.scale.set(1 - lie * 0.05, 1 - lie * 0.22, 1);
+    // 用餐吃飽肚子變圓
+    const full = dinQ * ss(0.6, 0.66, p);
+    coomy.position.set(cx, cy + happyHop * 0.8 + Math.sin(t * 1.1 + 1) * 0.06, 0.5);
+    coomy.rotation.z = Math.sin(t * 0.8 + 2) * 0.05;
+    coomy.scale.set(1 + full * 0.08, 1, 1);
+    // 泡湯只露上半身
+    const dip = bathQ;
+    ball.position.y -= dip * 0.55;
+    coomy.position.y -= dip * 0.6;
+
+    // says
+    sayBall.textContent = p < 0.3 ? '哇！！' : p < 0.6 ? '哈哈哈哈' : p < 0.83 ? '嗚嗚謝謝你' : '好舒服～';
+    const sb = Math.max(
+      ss(0.14, 0.17, p) * (1 - ss(0.2, 0.23, p)),
+      ss(0.47, 0.5, p) * (1 - ss(0.52, 0.55, p)),
+      ss(0.75, 0.78, p) * (1 - ss(0.8, 0.82, p)),
+      ss(0.86, 0.89, p) * (1 - ss(0.91, 0.93, p))
+    );
+    const sc = ss(0.48, 0.51, p) * (1 - ss(0.53, 0.56, p));
+    const proj = (obj, el, dy) => {
+      tmpV.copy(obj.position); tmpV.y += dy; tmpV.project(camera);
+      el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+    };
+    proj(ball, sayBall, 0.85);
+    proj(carCoomy, sayCoomy, 0.7);
+    sayBall.style.opacity = String(sb);
+    sayCoomy.style.opacity = String(sc);
+
+    camera.position.x = Math.sin(t * 0.25) * 0.12;
+    camera.position.y = Math.sin(t * 0.3) * 0.08;
+    camera.position.z = 10 - p * 1.2;
+    camera.lookAt(0, -0.3, 0);
+  }
+
+  function render() {
+    const t = clock.getElapsedTime();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (performance.now() - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, 1 - Math.pow(1 - u, 3)));
+      if (u >= 1) autoScroll = null;
+    }
+    const nowY = scrollY;
+    if (Math.abs(nowY - lastYs) > 2) { lastYs = nowY; lastMoveTs = t; }
+    if (!autoScroll && P > 0.005 && P < 0.995 && !endSeen && t - lastMoveTs > 1.5) {
+      const next = CH.find((c) => c > P + 0.01);
+      if (next) { lastMoveTs = t; glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * next, 3200); }
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm, t);
+    if (soundOn) {
+      CUES.forEach((c) => {
+        if (!c.fired && Psm > c.at) { c.fired = true; c.fn(); }
+        if (c.fired && Psm < c.at - 0.06) c.fired = false;
+      });
+    }
+    renderer.render(scene, camera);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    readScroll();
+  });
+}
+
+/* tiny synthesized soundtrack */
+function makeSound() {
+  let ctx = null, master, noiseBuf, twinkleTimer = null;
+  const ensure = () => {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const wn = Math.random() * 2 - 1; last = (last + 0.02 * wn) / 1.02; d[i] = last * 3.2; }
+    noiseBuf = buf;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf; noise.loop = true;
+    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 240;
+    const ng = ctx.createGain(); ng.gain.value = 0.03;
+    noise.connect(nf); nf.connect(ng); ng.connect(master); noise.start();
+  };
+  const blip = (f, delay = 0, dur = 0.2, type = 'sine', vol = 0.06) => {
+    if (!ctx) return;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ctx.createGain();
+    const now = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g); g.connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+  };
+  const twinkle = () => {
+    if (!ctx) return;
+    const notes = [1046.5, 1174.7, 1318.5, 1568, 1760];
+    blip(notes[Math.floor(Math.random() * notes.length)], 0, 1.4, 'sine', 0.018 + Math.random() * 0.01);
+  };
+  const schedule = () => { twinkleTimer = setTimeout(() => { twinkle(); schedule(); }, 2000 + Math.random() * 3000); };
+  return {
+    start() { ensure(); ctx.resume(); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1); clearTimeout(twinkleTimer); schedule(); },
+    stop() { if (ctx) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); clearTimeout(twinkleTimer); },
+    lucky() { [660, 830, 990, 1320].forEach((f, i) => blip(f, i * 0.09, 0.3, 'triangle', 0.06)); },
+    engine() {
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.025, now + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 200;
+      lp.connect(g); g.connect(master);
+      [70, 71].forEach((f) => { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f; o.connect(lp); o.start(now); o.stop(now + 2.5); });
+    },
+    pop() { blip(740, 0, 0.14, 'sine', 0.06); blip(1100, 0.08, 0.16, 'sine', 0.05); },
+    chord() { [262, 330, 392, 523].forEach((f, i) => blip(f * 1.5, i * 0.06, 1.4, 'sine', 0.035)); },
+    soft() { blip(392, 0, 1.4, 'sine', 0.03); blip(494, 0.3, 1.4, 'sine', 0.025); },
+    wish() { [523, 659, 784, 1047].forEach((f, i) => blip(f, i * 0.12, 2, 'sine', 0.03)); blip(2093, 0.7, 1.6, 'sine', 0.02); },
+  };
+}
+</script>
