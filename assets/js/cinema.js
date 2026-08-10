@@ -505,6 +505,8 @@ function boot() {
       if (entries.some((e) => e.isIntersecting)) { track('reach_posts'); obs.disconnect(); }
     }, { threshold: 0.2 }).observe(latestSection);
   }
+  const thesisCta = document.querySelector('.thesis-cta');
+  if (thesisCta) thesisCta.addEventListener('click', () => track('thesis_cta_click'));
 
   // ---------- scroll progress (critically damped) ----------
   let P = 0, Psm = 0, vel = 0;

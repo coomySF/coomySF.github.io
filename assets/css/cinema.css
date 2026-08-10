@@ -276,6 +276,46 @@ html.home-noir .film-thesis {
   max-width: 30em;
   line-height: 2;
 }
+.thesis-cta {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 44px;
+  padding: 26px 34px;
+  max-width: min(560px, calc(100vw - 48px));
+  border: 1px solid rgba(220, 148, 124, .35);
+  border-radius: 14px;
+  text-decoration: none;
+  text-align: center;
+  background: rgba(220, 148, 124, .05);
+  transition: border-color .3s ease, background .3s ease, box-shadow .3s ease, transform .3s ease;
+}
+.thesis-cta:hover {
+  border-color: var(--film-clay);
+  background: rgba(220, 148, 124, .1);
+  box-shadow: 0 0 34px rgba(220, 148, 124, .18);
+  transform: translateY(-2px);
+}
+.thesis-cta .tc-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .34em;
+  text-indent: .34em;
+  color: var(--film-clay);
+}
+.thesis-cta .tc-title {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(17px, 2vw, 21px);
+  line-height: 1.7;
+  color: var(--film-ink);
+}
+.thesis-cta .tc-go {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .22em;
+  color: var(--film-clay);
+}
 html.film-static .film-thesis { display: none; }
 
 html.home-noir .latest { position: relative; z-index: 2; padding: 12vh 0 90px; }
