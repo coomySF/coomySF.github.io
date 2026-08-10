@@ -686,11 +686,12 @@ function boot() {
     const nowY = scrollY;
     if (Math.abs(nowY - lastYs) > 2) { lastYs = nowY; lastMoveTs = t; }
     if (!autoScroll && P > 0.005 && t - lastMoveTs > 1.5) {
-      if (P < 0.94) {
-        const next = LIFE_CHAPTERS.find((c) => c > P + 0.01);
-        if (next) { lastMoveTs = t; glideTo(pToY(next), 3200); }
-      } else if (listEl && !logsSeen && t - lastMoveTs > 2.5) {
-        logsSeen = true;  // one send-off only; the observer still fires the event
+      const next = P < 0.94 ? LIFE_CHAPTERS.find((c) => c > P + 0.01) : null;
+      if (next) {
+        lastMoveTs = t;
+        glideTo(pToY(next), 3200);
+      } else if (listEl && !logsSeen) {
+        // keep offering the ride to the logs until they actually arrive
         lastMoveTs = t;
         glideTo(listEl.offsetTop - 60, 2800);
       }
