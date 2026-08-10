@@ -38,11 +38,17 @@ seo:
   }
   .bday-sound {
     position: absolute; right: 26px; bottom: 24px; pointer-events: auto; cursor: pointer;
-    background: none; border: 1px solid rgba(226, 221, 207, .25); border-radius: 999px;
+    background: none; border: 1px solid rgba(220, 148, 124, .45); border-radius: 999px;
     padding: 10px 20px; font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
-    color: var(--life-muted); transition: color .3s ease, border-color .3s ease;
+    color: var(--life-clay); transition: color .3s ease, border-color .3s ease;
+    animation: bday-sound-glow 2.2s ease-in-out infinite;
   }
+  .bday-sound[aria-pressed="true"] { color: var(--life-muted); border-color: rgba(226, 221, 207, .25); animation: none; }
   .bday-sound:hover { color: var(--life-clay); border-color: var(--life-clay); }
+  @keyframes bday-sound-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(220, 148, 124, 0); }
+    50% { box-shadow: 0 0 22px rgba(220, 148, 124, .3); }
+  }
 </style>
 
 <div id="bday-film">
