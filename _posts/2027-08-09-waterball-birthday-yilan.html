@@ -36,19 +36,19 @@ seo:
     line-height: 2; color: var(--life-ink); opacity: 0;
     text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
   }
+  .bday-start-wrap { text-align: center; margin: 6px 0 46px; }
   .bday-start {
-    position: absolute; left: 50%; bottom: 18vh; transform: translateX(-50%);
-    pointer-events: auto; cursor: pointer; background: none;
+    cursor: pointer; background: none;
     border: 1px solid rgba(220, 148, 124, .4); border-radius: 999px;
     padding: 13px 30px; font-family: var(--mono); font-size: 12px;
     letter-spacing: .34em; text-indent: .34em; color: var(--life-clay);
     animation: bday-drift 2.4s ease-in-out infinite, bday-sound-glow 2.4s ease-in-out infinite;
-    transition: background .3s ease, border-color .3s ease, opacity .4s ease;
+    transition: background .3s ease, border-color .3s ease;
   }
   .bday-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
   @keyframes bday-drift {
-    0%, 100% { transform: translate(-50%, 0); }
-    50% { transform: translate(-50%, 8px); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
   }
   .bday-sound {
     position: absolute; right: 26px; bottom: 24px; pointer-events: auto; cursor: pointer;
@@ -65,6 +65,8 @@ seo:
   }
 </style>
 
+<p class="bday-start-wrap"><button class="bday-start" type="button">▶ PLAY</button></p>
+
 <div id="bday-film">
   <div class="bday-stage">
     <canvas id="bday-canvas" aria-hidden="true"></canvas>
@@ -79,7 +81,6 @@ seo:
       <p class="bday-say bday-say-ball" aria-hidden="true">哇！！</p>
       <p class="bday-say bday-say-coomy" aria-hidden="true">又失敗了 XD</p>
       <p class="bday-end">水球，生日快樂。<br>未來每一年，我們都一起過。</p>
-      <button class="bday-start" type="button">START ↓</button>
       <button class="bday-sound" type="button" aria-pressed="false">SOUND · OFF</button>
     </div>
   </div>
@@ -489,11 +490,6 @@ function boot() {
     ];
     caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
     endEl.style.opacity = String(ss(0.955, 0.985, p));
-    if (startEl) {
-      const so = 1 - ss(0.02, 0.05, p);
-      startEl.style.opacity = String(so);
-      startEl.style.pointerEvents = so > 0.3 ? 'auto' : 'none';
-    }
 
     // hotel + checkin
     hotelMat.opacity = Math.max(arrive * (1 - ss(0.22, 0.28, p)), 0);
