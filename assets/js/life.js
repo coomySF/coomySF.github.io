@@ -456,6 +456,7 @@ function boot() {
   // START: sound (unless muted) + glide into the first beat
   let scrollPrompt = 0;
   if (startEl) startEl.addEventListener('click', () => {
+    track('life_film_start');
     if (!muted && !soundOn) { sound.start(); soundOn = true; setSoundUI(); }
     glideTo(pToY(0.12), 2600);
     setTimeout(() => { scrollPrompt = 1; }, 1100);
@@ -464,6 +465,21 @@ function boot() {
   // stall watch: like the homepage's variant B — the film plays itself
   const LIFE_CHAPTERS = [0.12, 0.3, 0.44, 0.58, 0.74, 0.84, 0.97];
   let lastYs = 0, lastMoveTs = 0;
+
+  // funnel events for GTM, and the final glide into the log list
+  const tracked = {};
+  const track = (ev) => {
+    if (tracked[ev]) return;
+    tracked[ev] = true;
+    try { (window.dataLayer = window.dataLayer || []).push({ event: ev }); } catch (_) {}
+  };
+  let logsSeen = false;
+  const listEl = document.querySelector('.life-list');
+  if (listEl && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries, obs) => {
+      if (entries.some((e) => e.isIntersecting)) { logsSeen = true; track('life_reach_logs'); obs.disconnect(); }
+    }, { threshold: 0.25 }).observe(listEl);
+  }
 
   const tmpV = new THREE.Vector3();
   const clock = new THREE.Clock();
@@ -664,12 +680,20 @@ function boot() {
       if (u >= 1) autoScroll = null;
     }
 
-    // stall watch: any pause mid-film → the film plays itself to the next beat
+    // stall watch: any pause mid-film → the film plays itself to the next
+    // beat, and after the desk it carries the visitor into the log list
+    if (Psm > 0.93) track('life_film_complete');
     const nowY = scrollY;
     if (Math.abs(nowY - lastYs) > 2) { lastYs = nowY; lastMoveTs = t; }
-    if (!autoScroll && P > 0.005 && P < 0.94 && t - lastMoveTs > 1.5) {
-      const next = LIFE_CHAPTERS.find((c) => c > P + 0.01);
-      if (next) { lastMoveTs = t; glideTo(pToY(next), 3200); }
+    if (!autoScroll && P > 0.005 && t - lastMoveTs > 1.5) {
+      if (P < 0.94) {
+        const next = LIFE_CHAPTERS.find((c) => c > P + 0.01);
+        if (next) { lastMoveTs = t; glideTo(pToY(next), 3200); }
+      } else if (listEl && !logsSeen && t - lastMoveTs > 2.5) {
+        logsSeen = true;  // one send-off only; the observer still fires the event
+        lastMoveTs = t;
+        glideTo(listEl.offsetTop - 60, 2800);
+      }
     }
 
     update(Psm, t);

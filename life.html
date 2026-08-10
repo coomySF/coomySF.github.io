@@ -2,7 +2,7 @@
 layout: default
 title: 我們的日子
 permalink: /life/
-description: 我們的日子——一趟從兩個人開始的航程。Coomy 與水球造了一艘小火箭，後來，船上有了更多人。
+description: 我們的日子——Coomy 與水球潘的夫妻生活日誌，還有 SpecFormula 團員們的生活發現。一趟從兩個人開始的航程，後來船上有了更多人。
 image: /assets/og-life.jpg
 seo:
   type: CollectionPage
@@ -37,6 +37,7 @@ seo:
   <div class="section-heading">
     <p class="life-eyebrow">LIFE LOG</p>
     <h2>日誌</h2>
+    <p class="life-intro">這裡記錄我和水球潘，還有 SpecFormula 團員們的生活發現——<br>一起吃飯、一起吵架構、一起把想做的東西做出來的那些日子。</p>
   </div>
   {% assign life_posts = site.posts | where_exp: "p", "p.hidden != true" | where_exp: "p", "p.tags contains '我們的日子'" %}
   {% if life_posts.size > 0 %}
@@ -55,7 +56,7 @@ seo:
     {% endfor %}
   </div>
   {% else %}
-  <p class="life-empty">第一篇還在鍋裡，很快端上來。</p>
+  <p class="life-empty">第一篇日誌正在鍋裡，很快端上來。<br>先去 Threads 找我們玩——<a class="life-threads" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener">@coomysky</a></p>
   {% endif %}
 </section>
 
