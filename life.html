@@ -1,0 +1,70 @@
+---
+layout: default
+title: 我們的日子
+permalink: /life/
+description: 我們的日子——一趟從兩個人開始的航程。Coomy 與水球造了一艘小火箭，後來，船上有了更多人。
+image: /assets/og-life.jpg
+seo:
+  type: CollectionPage
+---
+<link rel="stylesheet" href="{{ '/assets/css/life.css' | relative_url }}?v=20260810-1">
+<script>document.documentElement.classList.add('life-dark');</script>
+
+<div id="life-film">
+  <div class="life-stage">
+    <canvas id="life-canvas" aria-hidden="true"></canvas>
+    <div class="life-ui">
+      <div class="life-title">
+        <p class="life-eyebrow">—— COOMY × 水球</p>
+        <h1>我們的日子</h1>
+        <p class="life-sub">一趟從兩個人開始的航程。<br>後來，船上有了更多人。</p>
+        <button class="life-start" type="button">START ↓</button>
+      </div>
+      <p class="life-keep" aria-hidden="true">SCROLL ↓ 繼續播放</p>
+      <p class="life-say life-say-ball" aria-hidden="true">做這個！</p>
+      <p class="life-say life-say-coomy" aria-hidden="true">好，我來做！</p>
+      <p class="life-sf" aria-hidden="true">SpecFormula</p>
+      <p class="life-chapter life-cap-a" aria-hidden="true">兩個人能造出小火箭。但要去更遠的地方，需要更多人。</p>
+      <p class="life-chapter life-cap-b" aria-hidden="true">夥伴一個個跳上船——有人鑽進引擎室，有人重新打磨外裝。</p>
+      <p class="life-chapter life-cap-c" aria-hidden="true">後來它不再是誰的火箭了。它是我們一起打造的 SpecFormula。</p>
+      <p class="life-caption" aria-hidden="true">旅程還在繼續。每一篇日誌，都從這張桌子開始。</p>
+      <button class="life-sound" type="button" aria-pressed="false">SOUND · OFF</button>
+    </div>
+  </div>
+</div>
+
+<section class="life-list">
+  <div class="section-heading">
+    <p class="life-eyebrow">LIFE LOG</p>
+    <h2>日誌</h2>
+  </div>
+  {% assign life_posts = site.posts | where_exp: "p", "p.hidden != true" | where_exp: "p", "p.tags contains '我們的日子'" %}
+  {% if life_posts.size > 0 %}
+  <div class="life-grid">
+    {% for post in life_posts %}
+    <a class="post-card" href="{{ post.url | relative_url }}" aria-label="閱讀：{{ post.title }}">
+      <span class="post-card-index" aria-hidden="true">{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}</span>
+      <div class="article-meta">
+        <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
+        <span>{{ post.tags | first }}</span>
+      </div>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.description }}</p>
+      <span class="post-card-arrow" aria-hidden="true">閱讀 →</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="life-empty">第一篇還在鍋裡，很快端上來。</p>
+  {% endif %}
+</section>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+<script type="module" src="{{ '/assets/js/life.js' | relative_url }}?v=20260810-1"></script>
