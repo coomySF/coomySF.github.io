@@ -1,0 +1,222 @@
+/* 夫妻創業 — the life film page. Dark noir, matching the homepage cinema. */
+
+html.life-dark {
+  --life-bg: #0b100e;
+  --life-ink: #f2eee5;
+  --life-muted: #8b877b;
+  --life-clay: #dc947c;
+  --life-blue: #a5dbff;
+}
+
+html.life-dark body { background: var(--life-bg); color: var(--life-ink); }
+html.life-dark .site-header { border-color: rgba(226, 221, 207, .12); }
+html.life-dark .site-header a { color: var(--life-ink); }
+html.life-dark .site-footer { border-color: rgba(226, 221, 207, .12); color: var(--life-muted); }
+
+#life-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 650vh; }
+.life-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+#life-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.life-ui { position: absolute; inset: 0; pointer-events: none; }
+.life-title {
+  position: absolute;
+  left: 50%; top: 44%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: min(760px, calc(100vw - 48px));
+}
+.life-eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .34em;
+  color: var(--life-clay);
+  margin: 0 0 18px;
+}
+.life-title h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(40px, 6.5vw, 84px);
+  margin: 0;
+  color: var(--life-ink);
+  text-shadow: 0 2px 40px rgba(11, 16, 14, .8);
+}
+.life-sub {
+  font-family: var(--serif);
+  color: var(--life-muted);
+  font-size: clamp(14px, 1.6vw, 18px);
+  line-height: 1.95;
+  margin: 22px auto 0;
+  max-width: 30em;
+}
+.life-start {
+  pointer-events: auto;
+  cursor: pointer;
+  margin-top: 40px;
+  background: none;
+  border: 1px solid rgba(220, 148, 124, .4);
+  border-radius: 999px;
+  padding: 13px 30px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .34em;
+  text-indent: .34em;
+  color: var(--life-clay);
+  animation: life-drift 2.4s ease-in-out infinite, life-glow 2.4s ease-in-out infinite;
+  transition: background .3s ease, color .3s ease, border-color .3s ease;
+}
+.life-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
+@keyframes life-drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+@keyframes life-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(220, 148, 124, 0); }
+  50% { box-shadow: 0 0 26px rgba(220, 148, 124, .25); }
+}
+.life-keep {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .3em;
+  color: var(--life-muted);
+  opacity: 0;
+  animation: life-drift 2.4s ease-in-out infinite;
+}
+.life-say {
+  position: absolute;
+  left: 0; top: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--life-blue);
+  opacity: 0;
+  white-space: nowrap;
+  text-shadow: 0 0 14px rgba(165, 219, 255, .5);
+}
+.life-say-coomy { color: var(--life-ink); text-shadow: 0 0 14px rgba(242, 238, 229, .4); }
+.life-sf {
+  position: absolute;
+  left: 0; top: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(20px, 2.6vw, 30px);
+  background: linear-gradient(100deg, #ff8d7a, #ffd479, #7ee0a8, #7ab8ff, #c98bff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0;
+  white-space: nowrap;
+  filter: drop-shadow(0 0 18px rgba(255, 200, 150, .3));
+}
+.life-tag {
+  position: absolute;
+  left: 0; top: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .14em;
+  opacity: 0;
+  white-space: nowrap;
+  text-shadow: 0 0 12px rgba(0, 0, 0, .8);
+}
+.life-chapter {
+  position: absolute;
+  left: 50%; top: 16vh;
+  transform: translateX(-50%);
+  font-family: var(--serif);
+  font-size: clamp(15px, 1.9vw, 20px);
+  color: var(--life-ink);
+  opacity: 0;
+  white-space: nowrap;
+  max-width: calc(100vw - 40px);
+  text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
+}
+.life-caption {
+  position: absolute;
+  left: 50%; bottom: 12vh;
+  transform: translateX(-50%);
+  font-family: var(--serif);
+  font-size: clamp(15px, 1.8vw, 19px);
+  color: var(--life-ink);
+  opacity: 0;
+  white-space: nowrap;
+  text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
+}
+
+.life-sound {
+  position: absolute;
+  right: 26px; bottom: 24px;
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: 1px solid rgba(226, 221, 207, .25);
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .26em;
+  color: var(--life-muted);
+  transition: color .3s ease, border-color .3s ease;
+}
+.life-sound:hover { color: var(--life-clay); border-color: var(--life-clay); }
+html.life-static .life-sound { display: none; }
+
+.life-list { position: relative; z-index: 2; padding: 10vh 0 90px; }
+.life-list .section-heading { text-align: center; margin-bottom: 54px; }
+.life-list h2 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(30px, 4vw, 46px);
+  color: var(--life-ink);
+  margin: 12px 0 0;
+}
+.life-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 340px));
+  justify-content: center;
+  gap: 22px;
+  padding: 0 24px;
+}
+html.life-dark .post-card {
+  position: relative;
+  display: block;
+  padding: 26px 24px 22px;
+  border: 1px solid rgba(226, 221, 207, .14);
+  border-radius: 14px;
+  background: rgba(226, 221, 207, .03);
+  text-decoration: none;
+  color: var(--life-ink);
+  transition: border-color .3s ease, background .3s ease, transform .3s ease;
+}
+html.life-dark .post-card:hover {
+  border-color: var(--life-clay);
+  background: rgba(220, 148, 124, .07);
+  transform: translateY(-3px);
+}
+html.life-dark .post-card h3 { font-family: var(--display); font-size: 20px; line-height: 1.6; margin: 10px 0; }
+html.life-dark .post-card p { color: var(--life-muted); font-size: 14px; line-height: 1.9; }
+html.life-dark .post-card .article-meta { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: var(--life-muted); display: flex; gap: 14px; }
+html.life-dark .post-card .post-card-index {
+  position: absolute;
+  right: 18px; bottom: 8px;
+  font-family: var(--display);
+  font-size: 44px;
+  color: rgba(226, 221, 207, .07);
+}
+html.life-dark .post-card .post-card-arrow { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; color: var(--life-clay); }
+.life-empty {
+  text-align: center;
+  font-family: var(--serif);
+  color: var(--life-muted);
+  font-size: 16px;
+  padding: 30px 24px 10px;
+}
+
+/* static fallback */
+html.life-static #life-film { height: auto; }
+html.life-static #life-canvas { display: none; }
+html.life-static .life-stage { position: static; height: auto; padding: 90px 0 30px; }
+html.life-static .life-title { position: static; transform: none; margin: 0 auto; }
+html.life-static .life-start, html.life-static .life-keep, html.life-static .life-say, html.life-static .life-caption,
+html.life-static .life-sf, html.life-static .life-chapter, html.life-static .life-tag { display: none; }
