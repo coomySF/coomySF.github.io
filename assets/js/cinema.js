@@ -991,13 +991,15 @@ function boot() {
     camera.position.y += (-mouse.y * 0.8 + driftY - camera.position.y) * 0.05;
     camera.position.x += Math.sin(t * 49) * 0.26 * kick;
     camera.position.y += Math.cos(t * 57) * 0.2 * kick;
-    let lz = 10 - act * 2.6, lookY = -act * 1.15, lookZ = 0;
+    // narrow portrait screens see less width — pull back so the cast stays in frame
+    const wide = Math.max(1, 3.6 / (0.4663 * camera.aspect) / 10);
+    let lz = (10 - act * 2.6) * wide, lookY = -act * 1.15, lookZ = 0;
     let lookX = lean * 0.9 - aiEnv * 1.3;
     if (ep > 0.001) {
       const camE = ss(0.0, 0.07, ep);
       const swing = Math.sin(ss(0.0, 0.38, ep) * Math.PI) * 0.85;  // out and back around the tableau
       const push = ss(0.68, 0.97, ep);                              // final slow dolly-in
-      const R = 8.6 - push * 2.1;
+      const R = (8.6 - push * 2.1) * wide;
       const ox = Math.sin(swing) * R;
       const oz = 1.4 + Math.cos(swing) * R;
       const oy = -0.55 - push * 0.35;

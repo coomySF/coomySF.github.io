@@ -632,7 +632,7 @@ function boot() {
 
     camera.position.x = Math.sin(t * 0.25) * 0.12;
     camera.position.y = Math.sin(t * 0.3) * 0.08;
-    camera.position.z = 10 - p * 1.2;
+    camera.position.z = (10 - p * 1.2) * Math.max(1, 4.0 / (0.4663 * camera.aspect) / 10);
     camera.lookAt(0, -0.3, 0);
   }
 

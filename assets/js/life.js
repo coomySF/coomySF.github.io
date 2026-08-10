@@ -678,7 +678,7 @@ function boot() {
     captionEl.style.opacity = String(ss(0.92, 0.98, p));
 
     // camera: gentle push-in over the whole piece
-    camera.position.z = 10 - p * 1.6;
+    camera.position.z = (10 - p * 1.6) * Math.max(1, 3.5 / (0.4663 * camera.aspect) / 10);
     camera.position.y = Math.sin(t * 0.3) * 0.08;
     camera.lookAt(0, -0.2, 0);
   }
