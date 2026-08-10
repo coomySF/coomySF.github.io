@@ -232,6 +232,66 @@ html.life-dark .post-card .post-card-arrow { font-family: var(--mono); font-size
   padding: 30px 24px 10px;
 }
 
+/* film posts — animated log entries using this same dark language */
+html.life-dark .film-post { position: relative; z-index: 2; }
+.film-post-head {
+  text-align: center;
+  padding: 80px 24px 30px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.film-post-back {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .2em;
+  color: var(--life-clay);
+  text-decoration: none;
+}
+.film-post-head h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(30px, 4.6vw, 52px);
+  line-height: 1.5;
+  color: var(--life-ink);
+  margin: 22px 0 0;
+}
+.film-post-deck {
+  font-family: var(--serif);
+  color: var(--life-muted);
+  font-size: clamp(14px, 1.6vw, 17px);
+  line-height: 2;
+  margin: 18px auto 0;
+  max-width: 32em;
+}
+.film-post-meta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 22px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--life-muted);
+}
+.film-post-body { position: relative; }
+.film-post-body canvas { display: block; width: 100%; }
+.film-post-end {
+  text-align: center;
+  padding: 60px 24px 90px;
+}
+.film-post-end a {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: .2em;
+  color: var(--life-clay);
+  text-decoration: none;
+  border: 1px solid rgba(220, 148, 124, .4);
+  border-radius: 999px;
+  padding: 12px 26px;
+  transition: background .3s ease, border-color .3s ease;
+}
+.film-post-end a:hover { background: rgba(220, 148, 124, .1); border-color: var(--life-clay); }
+
 /* static fallback */
 html.life-static #life-film { height: auto; }
 html.life-static #life-canvas { display: none; }

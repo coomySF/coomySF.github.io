@@ -1,0 +1,46 @@
+---
+layout: default
+---
+<link rel="stylesheet" href="{{ '/assets/css/life.css' | relative_url }}?v=20260811-1">
+<script>document.documentElement.classList.add('life-dark');</script>
+
+{% assign is_life = false %}
+{% if page.tags contains '我們的日子' %}{% assign is_life = true %}{% endif %}
+
+<article class="film-post">
+  <header class="film-post-head">
+    {% if is_life %}
+    <a class="film-post-back" href="{{ '/life/' | relative_url }}">← 我們的日子</a>
+    {% else %}
+    <a class="film-post-back" href="{{ '/writing/' | relative_url }}">← 書庫</a>
+    {% endif %}
+    <h1>{{ page.title }}</h1>
+    {% if page.description %}<p class="film-post-deck">{{ page.description }}</p>{% endif %}
+    <div class="film-post-meta">
+      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: '%Y.%m.%d' }}</time>
+      {% if page.tags.first %}<span>{{ page.tags.first }}</span>{% endif %}
+      <span>動畫日誌 · 往下捲動播放</span>
+    </div>
+  </header>
+
+  <div class="film-post-body">
+    {{ content }}
+  </div>
+
+  <footer class="film-post-end">
+    {% if is_life %}
+    <a href="{{ '/life/' | relative_url }}">回到我們的日子 →</a>
+    {% else %}
+    <a href="{{ '/writing/' | relative_url }}">回到書庫 →</a>
+    {% endif %}
+  </footer>
+</article>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
