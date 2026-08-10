@@ -371,9 +371,11 @@ function boot() {
   // ---------- post ----------
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  // small screens run bloom at reduced res — keep the blur tight and the
-  // threshold high there, or big glow sprites smear across the whole frame
-  const bloom = new UnrealBloomPass(small ? new THREE.Vector2(384, 384) : new THREE.Vector2(innerWidth, innerHeight), 0.55, small ? 0.45 : 0.85, small ? 0.24 : 0.12);
+  // bloom target follows the real viewport aspect — a fixed square target
+  // stretches on portrait screens and turns warm glows blotchy; keep the
+  // radius a bit tighter on phones since the same radius covers more of a
+  // narrow frame
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, small ? 0.6 : 0.85, 0.12);
   composer.addPass(bloom);
   const grain = new ShaderPass({
     uniforms: { tDiffuse: { value: null }, uT: { value: 0 } },
