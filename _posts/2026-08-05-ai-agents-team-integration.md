@@ -3,6 +3,7 @@ layout: post
 title: 一個人帶 Agent 兩天做完 POC，四個人一起 Vibe，收四倍的爛攤子
 description: 從 Automation Team 的多人 vibe coding 失控現場，重新思考 AI 協作在 Agent 時代的需求、分工與 BDD 驗收。
 date: 2026-08-05 22:00:00 +0800
+image: /assets/og-post-agents.jpg
 tags: [AI, Agent, 團隊, 軟體開發]
 seo:
   type: BlogPosting
