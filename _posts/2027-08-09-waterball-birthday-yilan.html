@@ -215,10 +215,11 @@ function boot() {
       new THREE.Vector3(-0.07, -0.2, 0), new THREE.Vector3(-0.09, -0.34, 0),
       new THREE.Vector3(0.07, -0.2, 0), new THREE.Vector3(0.09, -0.34, 0),
     ], manMat);
-    const lens = (x) => {
-      const l = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.115, 12)), manMat);
-      l.position.set(x, 0.52, 0.33);
-      return l;
+    // no glasses — happy closed eyes, like her avatar
+    const closedEye = (x) => {
+      const e = lineOf(arcPts(0, 0, 0.08, Math.PI * 0.15, Math.PI * 0.85, 10, 0), manMat);
+      e.position.set(x, 0.5, 0.34);
+      return e;
     };
     const strand = (side) => lineOf([
       new THREE.Vector3(side * 0.16, 0.82, -0.02), new THREE.Vector3(side * 0.34, 0.6, -0.02),
@@ -231,23 +232,14 @@ function boot() {
       b.position.set(x, 0.41, 0.33);
       return b;
     };
-    const starEye = (x) => {
-      const s = 0.045, wv = 0.017;
-      const st = lineOf([
-        new THREE.Vector3(0, s, 0), new THREE.Vector3(wv, 0.015, 0), new THREE.Vector3(s, 0, 0),
-        new THREE.Vector3(wv, -0.015, 0), new THREE.Vector3(0, -s, 0), new THREE.Vector3(-wv, -0.015, 0),
-        new THREE.Vector3(-s, 0, 0), new THREE.Vector3(-wv, 0.015, 0), new THREE.Vector3(0, s, 0),
-      ], starMat);
-      st.position.set(x, 0.51, 0.34);
-      return st;
-    };
-    const tuft = lineOf([new THREE.Vector3(0.02, 0.8, 0), new THREE.Vector3(0.09, 0.96, 0), new THREE.Vector3(0.16, 0.9, 0)], manMat);
+    const bun = new THREE.Group();
+    bun.add(lineOf(arcPts(0.21, 0.92, 0.1, 0, Math.PI * 2, 14, -0.02), manMat));
+    bun.add(lineOf([new THREE.Vector3(0.29, 0.99, -0.02), new THREE.Vector3(0.39, 1.05, -0.02), new THREE.Vector3(0.42, 0.96, -0.02)], manMat));
     const fringe = new THREE.Group();
-    fringe.add(lineOf(arcPts(0, 0.52, 0.34, Math.PI * 0.15, Math.PI * 0.85, 14, 0.3), manMat));
-    for (let k = 0; k < 4; k++) {
-      fringe.add(lineOf(arcPts(-0.24 + k * 0.16, 0.73, 0.082, Math.PI, Math.PI * 2, 8, 0.33), manMat));
-    }
-    coomy.add(head, lineOf(dress, manMat), limbs, lens(-0.13), lens(0.13), starEye(-0.13), starEye(0.13), smile, blush(-0.26), blush(0.26), tuft, strand(-1), strand(1), fringe);
+    fringe.add(lineOf(arcPts(0, 0.52, 0.34, Math.PI * 0.12, Math.PI * 0.88, 14, 0.3), manMat));
+    fringe.add(lineOf([new THREE.Vector3(-0.3, 0.66, 0.33), new THREE.Vector3(-0.1, 0.72, 0.33), new THREE.Vector3(0.12, 0.64, 0.33), new THREE.Vector3(0.26, 0.55, 0.33)], manMat));
+    fringe.add(lineOf([new THREE.Vector3(-0.26, 0.58, 0.33), new THREE.Vector3(-0.06, 0.62, 0.33), new THREE.Vector3(0.08, 0.55, 0.33)], manMat));
+    coomy.add(head, lineOf(dress, manMat), limbs, closedEye(-0.13), closedEye(0.13), smile, blush(-0.26), blush(0.26), bun, strand(-1), strand(1), fringe);
   }
   scene.add(coomy);
 

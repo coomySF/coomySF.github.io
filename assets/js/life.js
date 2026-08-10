@@ -150,25 +150,11 @@ function boot() {
     new THREE.Vector3(-0.07, -0.2, 0), new THREE.Vector3(-0.09, -0.34, 0), // little legs under the hem
     new THREE.Vector3(0.07, -0.2, 0), new THREE.Vector3(0.09, -0.34, 0),
   ]), manMat);
-  const lens = (x) => {
-    const l = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CircleGeometry(0.115, 12)), manMat);
-    l.position.set(x, 0.52, 0.33);
-    return l;
-  };
-  const bridge = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-0.02, 0.52, 0.33), new THREE.Vector3(0.02, 0.52, 0.33),
-  ]), manMat);
-  // starry eyes behind the glasses (a matching pair with the ball's)
-  const cStarMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0.95 });
+  // no glasses — happy closed eyes, just like her avatar
   const dot = (x) => {
-    const s = 0.045, w = 0.017;
-    const st = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, s, 0), new THREE.Vector3(w, 0.015, 0), new THREE.Vector3(s, 0, 0),
-      new THREE.Vector3(w, -0.015, 0), new THREE.Vector3(0, -s, 0), new THREE.Vector3(-w, -0.015, 0),
-      new THREE.Vector3(-s, 0, 0), new THREE.Vector3(-w, 0.015, 0), new THREE.Vector3(0, s, 0),
-    ]), cStarMat);
-    st.position.set(x, 0.51, 0.34);
-    return st;
+    const e = arcLine(0, 0, 0.08, Math.PI * 0.15, Math.PI * 0.85, 10, manMat, 0);
+    e.position.set(x, 0.5, 0.34);
+    return e;
   };
   const cSmile = arcLine(0, 0.4, 0.1, Math.PI * 1.15, Math.PI * 1.85, 10, manMat, 0.34);
   const cBlush = (x) => {
@@ -176,10 +162,12 @@ function boot() {
     b.position.set(x, 0.41, 0.33);
     return b;
   };
-  // the tuft on top
-  const tuft = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0.02, 0.8, 0), new THREE.Vector3(0.09, 0.96, 0), new THREE.Vector3(0.16, 0.9, 0),
-  ]), manMat);
+  // the little top-side bun with its flick
+  const bun = new THREE.Group();
+  bun.add(arcLine(0.21, 0.92, 0.1, 0, Math.PI * 2, 14, manMat, -0.02));
+  bun.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0.29, 0.99, -0.02), new THREE.Vector3(0.39, 1.05, -0.02), new THREE.Vector3(0.42, 0.96, -0.02),
+  ]), manMat));
   // long hair — she asked for it herself
   const strand = (side) => new THREE.Line(new THREE.BufferGeometry().setFromPoints([
     new THREE.Vector3(side * 0.16, 0.82, -0.02),
@@ -189,13 +177,16 @@ function boot() {
     new THREE.Vector3(side * 0.42, -0.24, -0.02),
     new THREE.Vector3(side * 0.34, -0.34, -0.02),
   ]), manMat);
-  // proper bangs: a scalloped fringe across the forehead
+  // side-swept bangs, like the avatar
   const fringe = new THREE.Group();
-  fringe.add(arcLine(0, 0.52, 0.34, Math.PI * 0.15, Math.PI * 0.85, 14, manMat, 0.3));
-  for (let k = 0; k < 4; k++) {
-    fringe.add(arcLine(-0.24 + k * 0.16, 0.73, 0.082, Math.PI, Math.PI * 2, 8, manMat, 0.33));
-  }
-  coomy.add(head, belly, limbs, lens(-0.13), lens(0.13), bridge, dot(-0.13), dot(0.13), cSmile, cBlush(-0.26), cBlush(0.26), tuft, strand(-1), strand(1), fringe);
+  fringe.add(arcLine(0, 0.52, 0.34, Math.PI * 0.12, Math.PI * 0.88, 14, manMat, 0.3));
+  fringe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-0.3, 0.66, 0.33), new THREE.Vector3(-0.1, 0.72, 0.33), new THREE.Vector3(0.12, 0.64, 0.33), new THREE.Vector3(0.26, 0.55, 0.33),
+  ]), manMat));
+  fringe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-0.26, 0.58, 0.33), new THREE.Vector3(-0.06, 0.62, 0.33), new THREE.Vector3(0.08, 0.55, 0.33),
+  ]), manMat));
+  coomy.add(head, belly, limbs, dot(-0.13), dot(0.13), cSmile, cBlush(-0.26), cBlush(0.26), bun, strand(-1), strand(1), fringe);
   scene.add(coomy);
 
   // ---------- idea stars ----------
