@@ -167,8 +167,14 @@ html.life-dark .site-footer { border-color: rgba(226, 221, 207, .12); color: var
 .life-sound:hover { color: var(--life-clay); border-color: var(--life-clay); }
 html.life-static .life-sound { display: none; }
 
-.life-list { position: relative; z-index: 2; padding: 10vh 0 90px; }
-.life-list .section-heading { text-align: center; margin-bottom: 54px; }
+.life-list { position: relative; z-index: 2; padding: 7vh 0 90px; }
+.life-list .section-heading {
+  display: block;
+  text-align: center;
+  margin: 0 auto 36px;
+  max-width: none;
+}
+.life-list .section-heading > * { text-align: center; }
 .life-intro {
   font-family: var(--serif);
   color: var(--life-muted);
