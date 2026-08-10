@@ -1,8 +1,8 @@
 ---
 layout: film
 title: 水球的生日：我們在飯店裡旅行了一整天
-description: 8/9 水球生日，我們去了宜蘭蘭城晶英——幸運升級的房間、失敗連連的賽車、櫻桃鴨壽司、驚喜蛋糕，和人生第一次精油按摩。
-date: 2026-08-11 09:00:00 +0800
+description: 2027/8/7 水球生日，我們去了宜蘭蘭城晶英——幸運升級的房間、失敗連連的賽車、櫻桃鴨壽司、驚喜蛋糕，和人生第一次精油按摩。
+date: 2027-08-09 09:00:00 +0800
 tags: [我們的日子, 生日]
 seo:
   type: BlogPosting
@@ -36,6 +36,20 @@ seo:
     line-height: 2; color: var(--life-ink); opacity: 0;
     text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
   }
+  .bday-start {
+    position: absolute; left: 50%; bottom: 18vh; transform: translateX(-50%);
+    pointer-events: auto; cursor: pointer; background: none;
+    border: 1px solid rgba(220, 148, 124, .4); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .34em; text-indent: .34em; color: var(--life-clay);
+    animation: bday-drift 2.4s ease-in-out infinite, bday-sound-glow 2.4s ease-in-out infinite;
+    transition: background .3s ease, border-color .3s ease, opacity .4s ease;
+  }
+  .bday-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
+  @keyframes bday-drift {
+    0%, 100% { transform: translate(-50%, 0); }
+    50% { transform: translate(-50%, 8px); }
+  }
   .bday-sound {
     position: absolute; right: 26px; bottom: 24px; pointer-events: auto; cursor: pointer;
     background: none; border: 1px solid rgba(220, 148, 124, .45); border-radius: 999px;
@@ -55,7 +69,7 @@ seo:
   <div class="bday-stage">
     <canvas id="bday-canvas" aria-hidden="true"></canvas>
     <div class="bday-ui">
-      <p class="bday-cap" data-cap="0">8/9，水球生日。我們去了宜蘭的蘭城晶英。</p>
+      <p class="bday-cap" data-cap="0">2027 年 8 月 7 日，水球生日。我們去了宜蘭的蘭城晶英。</p>
       <p class="bday-cap" data-cap="1">Check-in 的時候，櫃檯說：你們訂的房間剛好在維修——幫你們升級。<small>（運氣 +999）</small></p>
       <p class="bday-cap" data-cap="2">房間大到可以迷路：大陽台、露天浴池、和式廳、還有客廳。</p>
       <p class="bday-cap" data-cap="3">下午玩賽車。超擬真，擬真到我一直失敗。</p>
@@ -65,6 +79,7 @@ seo:
       <p class="bday-say bday-say-ball" aria-hidden="true">哇！！</p>
       <p class="bday-say bday-say-coomy" aria-hidden="true">又失敗了 XD</p>
       <p class="bday-end">水球，生日快樂。<br>未來每一年，我們都一起過。</p>
+      <button class="bday-start" type="button">START ↓</button>
       <button class="bday-sound" type="button" aria-pressed="false">SOUND · OFF</button>
     </div>
   </div>
@@ -439,6 +454,11 @@ function boot() {
   addEventListener('wheel', cancelGlide, { passive: true });
   addEventListener('touchstart', cancelGlide, { passive: true });
   addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.bday-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    if (localStorage.getItem('coomy-sound') !== 'off' && !soundOn) { sound.start(); soundOn = true; setSoundUI(); }
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * 0.08, 2600);
+  });
   const CH = [0.1, 0.24, 0.4, 0.54, 0.68, 0.82, 0.93, 1];
   let lastYs = 0, lastMoveTs = 0, endSeen = false;
 
@@ -469,6 +489,11 @@ function boot() {
     ];
     caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
     endEl.style.opacity = String(ss(0.955, 0.985, p));
+    if (startEl) {
+      const so = 1 - ss(0.02, 0.05, p);
+      startEl.style.opacity = String(so);
+      startEl.style.pointerEvents = so > 0.3 ? 'auto' : 'none';
+    }
 
     // hotel + checkin
     hotelMat.opacity = Math.max(arrive * (1 - ss(0.22, 0.28, p)), 0);
