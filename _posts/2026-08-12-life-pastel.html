@@ -3,7 +3,7 @@ layout: film
 title: 我們的日子・動畫版本
 description: 用動畫實驗室的粉彩畫風，重拍我們的日子——兩個人造一艘歪歪的船，後來船上有了更多人，然後一起看 SUM 升起。
 date: 2026-08-12 22:00:00 +0800
-image: /assets/og-life-pastel2.jpg
+image: /assets/og-life-pastel3.jpg
 tags: [動畫實驗室, 我們的日子]
 seo:
   type: BlogPosting
@@ -215,6 +215,18 @@ function boot() {
       return m;
     };
     ball.add(mouthArc(-0.055), mouthArc(0.055));
+    const bEyeClosed = (x) => {
+      const c = mesh(new THREE.TorusGeometry(0.085, 0.018, 5, 10, Math.PI), solidMat('#4a3b52'));
+      c.position.set(x, 0.08, 0.56);
+      c.visible = false;
+      return c;
+    };
+    const bec1 = bEyeClosed(-0.2), bec2 = bEyeClosed(0.2);
+    ball.add(bec1, bec2);
+    const bMouthO = mesh(new THREE.TorusGeometry(0.055, 0.02, 6, 12), solidMat('#4a3b52'));
+    bMouthO.position.set(0, -0.17, 0.56);
+    bMouthO.visible = false;
+    ball.add(bMouthO);
     const blush = (x) => {
       const b = mesh(new THREE.CircleGeometry(0.085, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
       b.position.set(x, -0.1, 0.53);
@@ -222,6 +234,12 @@ function boot() {
       return b;
     };
     ball.add(blush(-0.36), blush(0.36));
+    ball.userData.face = {
+      eyesOpen: ball.children.filter((c) => c.geometry && c.geometry.type === 'SphereGeometry' && Math.abs(c.position.y - 0.1) < 0.06),
+      eyesClosed: [bec1, bec2],
+      mouthW: ball.children.filter((c) => c.geometry && c.geometry.type === 'TorusGeometry' && c.position.y < -0.1 && c !== bMouthO),
+      mouthO: bMouthO,
+    };
   }
   scene.add(ball);
   casts(ball);
@@ -271,7 +289,16 @@ function boot() {
       gl.position.set(x + 0.028, 0.42, 0.36);
       return gl;
     };
-    coomy.add(eye(-0.13), eye(0.13), glint(-0.13), glint(0.13));
+    const eL = eye(-0.13), eR = eye(0.13), gL = glint(-0.13), gR = glint(0.13);
+    coomy.add(eL, eR, gL, gR);
+    const cEyeClosed = (x) => {
+      const c = mesh(new THREE.TorusGeometry(0.065, 0.015, 5, 10, Math.PI), solidMat('#4a3b52'));
+      c.position.set(x, 0.37, 0.33);
+      c.visible = false;
+      return c;
+    };
+    const cec1 = cEyeClosed(-0.13), cec2 = cEyeClosed(0.13);
+    coomy.add(cec1, cec2);
     const arm = (side) => {
       const a = new THREE.Group();
       const sleeve = mesh(new THREE.CapsuleGeometry(0.055, 0.16, 3, 6), solidMat('#f6efe3'));
@@ -289,6 +316,11 @@ function boot() {
     smileM.position.set(0, 0.26, 0.33);
     smileM.rotation.z = Math.PI;
     coomy.add(smileM);
+    const cMouthO = mesh(new THREE.TorusGeometry(0.045, 0.018, 6, 12), solidMat('#4a3b52'));
+    cMouthO.position.set(0, 0.25, 0.33);
+    cMouthO.visible = false;
+    coomy.add(cMouthO);
+    coomy.userData.face = { eyesOpen: [eL, eR, gL, gR], eyesClosed: [cec1, cec2], mouthSmile: smileM, mouthO: cMouthO };
     const blush = (x) => {
       const b = mesh(new THREE.CircleGeometry(0.06, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
       b.position.set(x, 0.29, 0.31);
@@ -766,6 +798,25 @@ function boot() {
     ball.rotation.z = Math.sin(t * 0.9) * 0.06;
     coomy.position.set(cx, -1.32 + hopC + Math.sin(t * 1.1 + 1) * 0.04, 0.6);
     coomy.rotation.z = Math.sin(t * 0.8 + 2) * 0.05;
+
+    // 表情：歪掉大笑／倒數吶喊／起飛驚呼／日出滿足
+    const exprLaugh = ss(0.168, 0.185, p) * (1 - ss(0.24, 0.27, p));
+    const exprShout = ss(0.56, 0.6, p) * (1 - ss(0.66, 0.7, p));
+    const exprWow = ss(0.74, 0.78, p) * (1 - ss(0.84, 0.88, p));
+    const exprWarm = ss(0.9, 0.94, p);
+    const cf = coomy.userData.face;
+    const cClosed = exprLaugh > 0.5 || exprWarm > 0.5;
+    cf.eyesOpen.forEach((o) => { o.visible = !cClosed; });
+    cf.eyesClosed.forEach((o) => { o.visible = cClosed; });
+    cf.mouthO.visible = exprWarm <= 0.5 && (exprLaugh > 0.5 || exprShout > 0.5 || exprWow > 0.5);
+    cf.mouthSmile.visible = !cf.mouthO.visible;
+    const bf = ball.userData.face;
+    const bClosed = exprWarm > 0.5;
+    bf.eyesOpen.forEach((o) => { o.visible = !bClosed; });
+    bf.eyesClosed.forEach((o) => { o.visible = bClosed; });
+    const bO = exprWarm <= 0.5 && (exprLaugh > 0.5 || exprShout > 0.5 || exprWow > 0.5);
+    bf.mouthO.visible = bO;
+    bf.mouthW.forEach((o) => { o.visible = !bO; });
 
     // says
     const sb = ss(0.575, 0.6, p) * (1 - ss(0.65, 0.68, p));
