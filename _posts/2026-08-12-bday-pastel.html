@@ -1,0 +1,633 @@
+---
+layout: film
+title: 水球生日・動畫版本
+description: 用動畫實驗室的粉彩畫風，把 2026/8/7 的宜蘭生日再過一次——實體低多邊形的水球與 Coomy、會變色的天空、和同一顆許願星。
+date: 2026-08-12 21:00:00 +0800
+image: /assets/og-bday-pastel.jpg
+tags: [動畫實驗室, 生日]
+seo:
+  type: BlogPosting
+---
+<style>
+  #pb-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 560vh; }
+  .pb-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .pb-sky { position: absolute; inset: 0; transition: none; }
+  .pb-sky-warm { background: linear-gradient(180deg, #ffd9c4 0%, #f7c7e3 55%, #d9b8f0 100%); }
+  .pb-sky-dusk { background: linear-gradient(180deg, #e8a8c8 0%, #b998e0 55%, #8a7cc8 100%); opacity: 0; }
+  .pb-sky-night { background: linear-gradient(180deg, #4a3f7a 0%, #35305e 55%, #241f44 100%); opacity: 0; }
+  #pb-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .pb-ui { position: absolute; inset: 0; pointer-events: none; }
+  .pb-cap {
+    position: absolute; left: 50%; top: 11vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.9; color: #fff; opacity: 0;
+    text-shadow: 0 1px 18px rgba(60, 30, 70, .6);
+  }
+  .pb-cap small { display: block; font-size: .78em; opacity: .85; margin-top: 6px; }
+  .pb-say {
+    position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 13px;
+    color: #fff; opacity: 0; white-space: nowrap;
+    background: rgba(60, 30, 70, .4); border-radius: 999px; padding: 6px 12px;
+  }
+  .pb-end {
+    position: absolute; left: 50%; bottom: 11vh; transform: translateX(-50%);
+    width: max-content; max-width: min(26em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(16px, 2vw, 21px);
+    line-height: 2; color: #fff; opacity: 0;
+    text-shadow: 0 1px 20px rgba(20, 14, 40, .8);
+  }
+  .pb-start-wrap { text-align: center; margin: 6px 0 46px; }
+  .pb-start {
+    cursor: pointer; background: none;
+    border: 1px solid rgba(220, 148, 124, .4); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .34em; text-indent: .34em; color: var(--life-clay);
+    animation: pb-drift 2.4s ease-in-out infinite, pb-glow 2.4s ease-in-out infinite;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .pb-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
+  @keyframes pb-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+  .pb-sound {
+    position: absolute; right: 26px; bottom: 24px; pointer-events: auto; cursor: pointer;
+    background: rgba(60, 30, 70, .3); border: 1px solid rgba(255, 255, 255, .4); border-radius: 999px;
+    padding: 10px 20px; font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
+    color: #fff; transition: color .3s ease, border-color .3s ease;
+    animation: pb-glow 2.2s ease-in-out infinite;
+  }
+  .pb-sound[aria-pressed="true"] { color: rgba(255, 255, 255, .55); border-color: rgba(255, 255, 255, .2); animation: none; }
+  @keyframes pb-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+    50% { box-shadow: 0 0 22px rgba(255, 255, 255, .3); }
+  }
+</style>
+
+<p class="pb-start-wrap"><button class="pb-start" type="button">▶ PLAY</button></p>
+
+<div id="pb-film">
+  <div class="pb-stage">
+    <div class="pb-sky pb-sky-warm" aria-hidden="true"></div>
+    <div class="pb-sky pb-sky-dusk" aria-hidden="true"></div>
+    <div class="pb-sky pb-sky-night" aria-hidden="true"></div>
+    <canvas id="pb-canvas" aria-hidden="true"></canvas>
+    <div class="pb-ui">
+      <p class="pb-cap" data-cap="0">2026 年 8 月 7 日，水球生日。<small>這次，用動畫實驗室的新畫風，再過一次那一天。</small></p>
+      <p class="pb-cap" data-cap="1">下午的賽車，超擬真。<small>擬真到我一直打轉。</small></p>
+      <p class="pb-cap" data-cap="2">燈暗了——蛋糕和禮物偷偷上場。</p>
+      <p class="pb-cap" data-cap="3">最後，露天浴池，和一整片星空。</p>
+      <p class="pb-say pb-say-ball" aria-hidden="true">哇！！</p>
+      <p class="pb-say pb-say-coomy" aria-hidden="true">又失敗了 XD</p>
+      <p class="pb-end">水球，生日快樂。<br>未來每一年，我們都一起過。</p>
+      <button class="pb-sound" type="button" aria-pressed="false">SOUND · OFF</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = matchMedia('(max-width: 640px)').matches;
+const canvas = document.getElementById('pb-canvas');
+
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+  catch { return false; }
+}
+if (!reduced && webglOK()) boot();
+
+function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], ss(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 8);
+
+  // 柔光組（實驗 00 的配方）
+  const hemi = new THREE.HemisphereLight('#fffdfa', '#d8c8ee', 1.45);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight('#fff4ea', 0.8);
+  key.position.set(3, 4, 2.5);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight('#e2ecff', 0.3);
+  fill.position.set(-4, -2, -3);
+  scene.add(fill);
+
+  const glowTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  })();
+  const sprite = (color, scale) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.setScalar(scale);
+    scene.add(s);
+    return s;
+  };
+  const solidMat = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.95, metalness: 0, ...opts });
+  const mesh = (geo, mat) => new THREE.Mesh(geo, mat);
+  const arcPts = (cx, cy, r, a0, a1, n, z = 0.03) => {
+    const pts = [];
+    for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * (i / n); pts.push(new THREE.Vector3(cx + Math.cos(a) * r, cy + Math.sin(a) * r, z)); }
+    return pts;
+  };
+  const lineOf = (pts, mat) => new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  const inkMat = new THREE.LineBasicMaterial({ color: '#4a3b52', transparent: true, opacity: 0.9 });
+  const sparkle = (color = '#ffcf6f', s = 0.085) => {
+    const st = mesh(new THREE.OctahedronGeometry(s, 0), solidMat(color, { emissive: '#8a6a20' }));
+    st.scale.z = 0.45;
+    return st;
+  };
+
+  // 夜空星星（浴池幕才亮）
+  const STARN = small ? 200 : 450;
+  const sp = new Float32Array(STARN * 3);
+  for (let i = 0; i < STARN; i++) {
+    sp[i * 3] = (Math.random() - 0.5) * 30; sp[i * 3 + 1] = Math.random() * 12 - 2; sp[i * 3 + 2] = -6 - Math.random() * 10;
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
+  const starMat = new THREE.PointsMaterial({ color: '#fff6d8', size: 0.05, transparent: true, opacity: 0, depthWrite: false });
+  scene.add(new THREE.Points(starGeo, starMat));
+
+  // ---------- 水球（粉彩實體版）----------
+  const ball = new THREE.Group();
+  {
+    const body = mesh(new THREE.IcosahedronGeometry(0.56, 1), solidMat('#a5d8f5'));
+    body.scale.y = 0.92;
+    ball.add(body);
+    const knot = mesh(new THREE.TorusGeometry(0.09, 0.032, 6, 10), solidMat('#8ec8ee'));
+    knot.position.set(0.04, 0.6, 0);
+    knot.rotation.x = Math.PI / 2.4;
+    ball.add(knot);
+    const eyeL = sparkle(); eyeL.position.set(-0.2, 0.08, 0.54); ball.add(eyeL);
+    const eyeR = sparkle(); eyeR.position.set(0.2, 0.08, 0.54); ball.add(eyeR);
+    ball.add(lineOf(arcPts(-0.055, -0.2, 0.055, Math.PI * 1.05, Math.PI * 1.95, 8, 0.55), inkMat));
+    ball.add(lineOf(arcPts(0.055, -0.2, 0.055, Math.PI * 1.05, Math.PI * 1.95, 8, 0.55), inkMat));
+    const blush = (x) => {
+      const b = mesh(new THREE.CircleGeometry(0.06, 10), solidMat('#ffb6c8', { transparent: true, opacity: 0.75 }));
+      b.position.set(x, -0.12, 0.52);
+      return b;
+    };
+    ball.add(blush(-0.34), blush(0.34));
+  }
+  scene.add(ball);
+
+  // ---------- Coomy（粉彩實體版）----------
+  const coomy = new THREE.Group();
+  {
+    const dress = mesh(new THREE.ConeGeometry(0.4, 0.76, 9), solidMat('#f6efe3'));
+    dress.position.y = -0.28;
+    coomy.add(dress);
+    const head = mesh(new THREE.IcosahedronGeometry(0.3, 1), solidMat('#ffe3d6'));
+    head.position.y = 0.36;
+    coomy.add(head);
+    const hair = mesh(new THREE.SphereGeometry(0.32, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.52), solidMat('#9a7460'));
+    hair.position.y = 0.44;
+    hair.position.z = -0.03;
+    coomy.add(hair);
+    const tuft = mesh(new THREE.ConeGeometry(0.05, 0.16, 5), solidMat('#9a7460'));
+    tuft.position.set(0.07, 0.74, 0);
+    tuft.rotation.z = -0.5;
+    coomy.add(tuft);
+    const strand = (side) => {
+      const st = mesh(new THREE.CapsuleGeometry(0.04, 0.34, 3, 6), solidMat('#9a7460'));
+      st.position.set(side * 0.29, 0.16, -0.06);
+      st.rotation.z = side * 0.1;
+      return st;
+    };
+    coomy.add(strand(-1), strand(1));
+    const lens = (x) => {
+      const l = mesh(new THREE.TorusGeometry(0.095, 0.014, 6, 14), solidMat('#4a3b52'));
+      l.position.set(x, 0.36, 0.26);
+      return l;
+    };
+    coomy.add(lens(-0.12), lens(0.12));
+    const eyeL = sparkle('#ffcf6f', 0.055); eyeL.position.set(-0.12, 0.36, 0.29); coomy.add(eyeL);
+    const eyeR = sparkle('#ffcf6f', 0.055); eyeR.position.set(0.12, 0.36, 0.29); coomy.add(eyeR);
+    coomy.add(lineOf(arcPts(0, 0.26, 0.07, Math.PI * 1.15, Math.PI * 1.85, 8, 0.3), inkMat));
+    const blush = (x) => {
+      const b = mesh(new THREE.CircleGeometry(0.045, 10), solidMat('#ffb6c8', { transparent: true, opacity: 0.75 }));
+      b.position.set(x, 0.28, 0.28);
+      return b;
+    };
+    coomy.add(blush(-0.22), blush(0.22));
+  }
+  scene.add(coomy);
+
+  const fadeGroup = (grp, op) => {
+    grp.traverse((o) => {
+      if (o.material) { o.material.transparent = true; o.material.opacity = ('_baseOp' in o.material ? o.material._baseOp : 1) * op; }
+    });
+  };
+  const markBase = (grp) => grp.traverse((o) => { if (o.material) o.material._baseOp = o.material.opacity ?? 1; });
+
+  // ---------- 場景道具 ----------
+  // 蘭城晶英
+  const hotel = new THREE.Group();
+  {
+    const bodyM = mesh(new THREE.BoxGeometry(2.2, 2.8, 1), solidMat('#f6e8d8'));
+    hotel.add(bodyM);
+    const roof = mesh(new THREE.ConeGeometry(1.7, 0.7, 4), solidMat('#e8a8b8'));
+    roof.position.y = 1.75;
+    roof.rotation.y = Math.PI / 4;
+    hotel.add(roof);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+      const win = mesh(new THREE.PlaneGeometry(0.34, 0.3), solidMat('#ffd9a0', { emissive: '#a87830' }));
+      win.position.set(-0.66 + c * 0.66, 0.75 - r * 0.75, 0.51);
+      hotel.add(win);
+    }
+  }
+  hotel.position.set(2.4, -0.35, -1.2);
+  scene.add(hotel);
+  markBase(hotel);
+
+  // 賽車場
+  const race = new THREE.Group();
+  const trackRing = mesh(new THREE.RingGeometry(1.5, 2.9, 36), solidMat('#c9b6e8', { side: THREE.DoubleSide }));
+  trackRing.rotation.x = -Math.PI / 2;
+  trackRing.position.y = -1.72;
+  trackRing.scale.set(1.15, 0.75, 1);
+  race.add(trackRing);
+  const mkKart = (color) => {
+    const g = new THREE.Group();
+    const kb = mesh(new THREE.BoxGeometry(0.5, 0.2, 0.3), solidMat(color));
+    kb.position.y = 0.12;
+    g.add(kb);
+    const wheel = (x, z) => {
+      const w = mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 8), solidMat('#4a3b52'));
+      w.rotation.x = Math.PI / 2;
+      w.position.set(x, 0.05, z);
+      return w;
+    };
+    g.add(wheel(-0.16, 0.17), wheel(0.16, 0.17), wheel(-0.16, -0.17), wheel(0.16, -0.17));
+    race.add(g);
+    return g;
+  };
+  const kartBall = mkKart('#a5d8f5');
+  const kartCoomy = mkKart('#f0b8c8');
+  scene.add(race);
+  markBase(race);
+  const crashStar = sprite('#ffd479', 0.8);
+
+  // 蛋糕與禮物
+  const party = new THREE.Group();
+  {
+    const c1 = mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.3, 12), solidMat('#f8d8e8'));
+    c1.position.y = 0.15;
+    const c2 = mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.26, 12), solidMat('#fff2f8'));
+    c2.position.y = 0.43;
+    const candle = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.24, 6), solidMat('#a5d8f5'));
+    candle.position.y = 0.68;
+    party.add(c1, c2, candle);
+    party.position.set(1.75, -1.5, 0.3);
+  }
+  scene.add(party);
+  markBase(party);
+  const flame = sprite('#ffd479', 0.55);
+  const gift = new THREE.Group();
+  {
+    const gb = mesh(new THREE.BoxGeometry(0.5, 0.42, 0.42), solidMat('#ffb6d9'));
+    const ribV = mesh(new THREE.BoxGeometry(0.06, 0.43, 0.43), solidMat('#fff2f8'));
+    const ribH = mesh(new THREE.BoxGeometry(0.51, 0.43, 0.06), solidMat('#fff2f8'));
+    const bow = mesh(new THREE.TorusGeometry(0.08, 0.03, 6, 10), solidMat('#fff2f8'));
+    bow.position.y = 0.26;
+    bow.rotation.x = Math.PI / 2.6;
+    gift.add(gb, ribV, ribH, bow);
+  }
+  gift.position.set(-1.95, -1.5, 0.3);
+  scene.add(gift);
+  markBase(gift);
+
+  // 浴池
+  const bath = new THREE.Group();
+  {
+    const tub = mesh(new THREE.CylinderGeometry(1.35, 1.2, 0.75, 14, 1, true), solidMat('#d8a888', { side: THREE.DoubleSide }));
+    const rim = mesh(new THREE.TorusGeometry(1.35, 0.09, 8, 20), solidMat('#c89878'));
+    rim.rotation.x = Math.PI / 2;
+    rim.position.y = 0.38;
+    const water = mesh(new THREE.CircleGeometry(1.3, 20), solidMat('#a5dbff', { emissive: '#2a4a66', transparent: true, opacity: 0.85 }));
+    water.rotation.x = -Math.PI / 2;
+    water.position.y = 0.3;
+    bath.add(tub, rim, water);
+  }
+  bath.position.set(0, -2, 1.2);
+  scene.add(bath);
+  markBase(bath);
+  const steam = [];
+  for (let i = 0; i < 4; i++) {
+    const puff = mesh(new THREE.IcosahedronGeometry(0.12 + (i % 2) * 0.05, 1), solidMat('#ffffff', { transparent: true, opacity: 0.5 }));
+    scene.add(puff);
+    steam.push(puff);
+  }
+
+  // 愛心與許願星
+  const heartShape = new THREE.Shape();
+  heartShape.moveTo(0, 0.12);
+  heartShape.bezierCurveTo(0.12, 0.26, 0.3, 0.12, 0.14, -0.08);
+  heartShape.bezierCurveTo(0.06, -0.17, 0, -0.2, 0, -0.2);
+  heartShape.bezierCurveTo(0, -0.2, -0.06, -0.17, -0.14, -0.08);
+  heartShape.bezierCurveTo(-0.3, 0.12, -0.12, 0.26, 0, 0.12);
+  const heart = mesh(new THREE.ShapeGeometry(heartShape), solidMat('#ff8fb3', { side: THREE.DoubleSide, transparent: true, opacity: 0 }));
+  scene.add(heart);
+  const wishStar = sparkle('#ffcf6f', 0.16);
+  wishStar.material.transparent = true;
+  wishStar.material.opacity = 0;
+  scene.add(wishStar);
+  const wishGlow = sprite('#ffd479', 1.2);
+
+  // ---------- DOM ----------
+  const caps = [...document.querySelectorAll('.pb-cap')];
+  const sayBall = document.querySelector('.pb-say-ball');
+  const sayCoomy = document.querySelector('.pb-say-coomy');
+  const endEl = document.querySelector('.pb-end');
+  const skyWarm = document.querySelector('.pb-sky-warm');
+  const skyDusk = document.querySelector('.pb-sky-dusk');
+  const skyNight = document.querySelector('.pb-sky-night');
+
+  // ---------- sound ----------
+  const sound = makeSound();
+  const soundBtn = document.querySelector('.pb-sound');
+  let soundOn = false;
+  const setSoundUI = () => {
+    soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  };
+  soundBtn.addEventListener('click', () => {
+    if (soundOn) { sound.stop(); soundOn = false; localStorage.setItem('coomy-sound', 'off'); }
+    else { sound.start(); soundOn = true; localStorage.setItem('coomy-sound', 'on'); }
+    setSoundUI();
+  });
+  setSoundUI();
+  const CUES = [
+    { at: 0.08, fn: () => sound.lucky() },
+    { at: 0.3, fn: () => sound.engine() },
+    { at: 0.5, fn: () => sound.pop() },
+    { at: 0.56, fn: () => sound.chord() },
+    { at: 0.74, fn: () => sound.soft() },
+    { at: 0.9, fn: () => sound.wish() },
+  ].map((c) => ({ ...c, fired: false }));
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('pb-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__pbSeek = (p) => { P = p; Psm = p; render(); };
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  const cancelGlide = () => { autoScroll = null; };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.pb-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    if (localStorage.getItem('coomy-sound') !== 'off' && !soundOn) { sound.start(); soundOn = true; setSoundUI(); }
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * 0.06, 2600);
+  });
+  const CH = [0.08, 0.24, 0.44, 0.62, 0.8, 0.94, 1];
+  let lastYs = 0, lastMoveTs = 0, endSeen = false;
+
+  const tmpV = new THREE.Vector3();
+  const clock = new THREE.Clock();
+
+  function update(p, t) {
+    const w = innerWidth, h = innerHeight;
+    const arriveQ = ss(0.03, 0.08, p) * (1 - ss(0.2, 0.26, p));
+    const raceQ = ss(0.26, 0.31, p) * (1 - ss(0.44, 0.5, p));
+    const partyQ = ss(0.5, 0.55, p) * (1 - ss(0.66, 0.72, p));
+    const bathQ = ss(0.72, 0.78, p);
+
+    // 天空舞台燈
+    skyDusk.style.opacity = String(Math.max(ss(0.46, 0.56, p) * (1 - ss(0.7, 0.78, p)), 0));
+    skyNight.style.opacity = String(ss(0.7, 0.8, p));
+    starMat.opacity = ss(0.76, 0.86, p) * 0.9;
+    hemi.intensity = 1.45 - ss(0.46, 0.8, p) * 0.75;
+    key.intensity = 0.8 - ss(0.46, 0.8, p) * 0.45;
+
+    // captions
+    const capW = [
+      ss(0.04, 0.07, p) * (1 - ss(0.19, 0.23, p)),
+      ss(0.28, 0.31, p) * (1 - ss(0.43, 0.47, p)),
+      ss(0.52, 0.55, p) * (1 - ss(0.65, 0.69, p)),
+      ss(0.74, 0.78, p) * (1 - ss(0.88, 0.92, p)),
+    ];
+    caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
+    endEl.style.opacity = String(ss(0.92, 0.97, p));
+
+    // 場景進退
+    fadeGroup(hotel, arriveQ);
+    hotel.position.x = lerp(4.2, 2.4, ss(0.03, 0.1, p));
+    fadeGroup(race, raceQ);
+    fadeGroup(party, partyQ);
+    fadeGroup(gift, partyQ);
+    fadeGroup(bath, bathQ);
+    party.position.x = lerp(3.6, 1.75, ss(0.5, 0.56, p));
+    gift.position.x = lerp(-3.8, -1.95, ss(0.51, 0.57, p));
+
+    // 賽車
+    const la = t * 1.5;
+    kartBall.position.set(Math.cos(la) * 2.55, -1.62, Math.sin(la) * 1.15 + 0.2);
+    kartBall.rotation.y = -la;
+    const ca = t * 1.1;
+    const crash = Math.max(0, Math.sin(t * 0.9));
+    kartCoomy.position.set(Math.cos(ca) * 1.85, -1.62, Math.sin(ca) * 0.85 + 0.2);
+    kartCoomy.rotation.y = crash > 0.7 ? t * 9 : -ca;
+    crashStar.position.set(kartCoomy.position.x, kartCoomy.position.y + 0.55, kartCoomy.position.z + 0.2);
+    crashStar.material.opacity = raceQ * (crash > 0.7 ? 0.85 : 0);
+
+    // 蠟燭
+    flame.position.set(party.position.x, party.position.y + 0.92, party.position.z + 0.1);
+    const flameLive = partyQ * (1 - ss(0.68, 0.72, p));
+    flame.material.opacity = flameLive * (0.6 + 0.3 * Math.abs(Math.sin(t * 7)));
+
+    // 蒸氣與愛心（浴池幕）
+    steam.forEach((s, i) => {
+      const u = ((t * 0.2 + i * 0.27) % 1);
+      s.position.set(-0.7 + i * 0.5 + Math.sin(u * 5 + i) * 0.08, -1 + u * 1.1, 1.6);
+      s.material.opacity = bathQ * Math.sin(u * Math.PI) * 0.45;
+      s.scale.setScalar(0.8 + u * 0.6);
+    });
+    const hu = (t * 0.16) % 1;
+    heart.position.set(0.2, -0.55 + hu * 0.8, 1.9);
+    heart.scale.setScalar(0.8 + hu * 0.35);
+    heart.material.opacity = bathQ * Math.sin(hu * Math.PI) * 0.9;
+
+    // 許願星（蠟燭化星）
+    const wishQ = ss(0.9, 0.99, p);
+    wishStar.position.set(lerp(0.2, 1.7, wishQ), lerp(-0.4, 2.4, wishQ), lerp(1.6, -2, wishQ));
+    wishStar.material.opacity = Math.sin(wishQ * Math.PI * 0.9);
+    wishStar.rotation.z = t * 1.4;
+    wishGlow.position.copy(wishStar.position);
+    wishGlow.material.opacity = Math.sin(wishQ * Math.PI * 0.9) * 0.5;
+
+    // ---------- 兩人 ----------
+    const bx = kf(p, [[0, -4.5], [0.07, -1.4], [0.2, -1.4], [0.28, -4], [0.5, -0.75], [0.66, -0.75], [0.78, -0.5], [1, -0.5]]);
+    const by = kf(p, [[0, -1.35], [0.2, -1.35], [0.5, -1.3], [0.66, -1.3], [0.78, -1.38], [1, -1.38]]);
+    const cx = kf(p, [[0, -5.7], [0.07, -0.4], [0.2, -0.4], [0.28, -4], [0.5, 0.75], [0.66, 0.75], [0.78, 0.55], [1, 0.55]]);
+    const cy = kf(p, [[0, -1.3], [0.2, -1.3], [0.5, -1.28], [0.66, -1.28], [0.78, -1.32], [1, -1.32]]);
+    const rideHide = raceQ;
+    const hop = Math.max(arriveQ, partyQ) * Math.abs(Math.sin(t * 4.5)) * 0.14;
+    ball.position.set(bx, by + hop + Math.sin(t * 1.2) * 0.06, 0.6);
+    ball.rotation.z = Math.sin(t * 0.9) * 0.06;
+    fadeGroup(ball, 1 - rideHide);
+    coomy.position.set(cx, cy + hop * 0.8 + Math.sin(t * 1.1 + 1) * 0.05, 0.6);
+    coomy.rotation.z = Math.sin(t * 0.8 + 2) * 0.05;
+    fadeGroup(coomy, 1 - rideHide);
+
+    // 賽車時兩人坐進卡丁車（縮小版放在車上）
+    if (raceQ > 0.01) {
+      fadeGroup(ball, raceQ);
+      fadeGroup(coomy, raceQ);
+      ball.position.set(kartBall.position.x, kartBall.position.y + 0.42, kartBall.position.z);
+      ball.rotation.z = 0;
+      coomy.position.set(kartCoomy.position.x, kartCoomy.position.y + 0.4, kartCoomy.position.z);
+      coomy.rotation.z = kartCoomy.rotation.y === -ca ? 0 : Math.sin(t * 9) * 0.4;
+    }
+    const rideScale = 1 - raceQ * 0.45;
+    ball.scale.setScalar(rideScale);
+    coomy.scale.setScalar(rideScale);
+    // 泡湯只露上半身
+    // （位置已在 keyframe 內下沉，浴池壁自然遮擋）
+
+    // says
+    const sb = Math.max(
+      ss(0.09, 0.12, p) * (1 - ss(0.17, 0.2, p)),
+      ss(0.56, 0.59, p) * (1 - ss(0.63, 0.66, p))
+    );
+    sayBall.textContent = p < 0.4 ? '哇！！' : '嗚嗚謝謝老婆';
+    const sc = ss(0.36, 0.39, p) * (1 - ss(0.42, 0.45, p));
+    const proj = (obj, el, dy) => {
+      tmpV.copy(obj.position); tmpV.y += dy; tmpV.project(camera);
+      el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+    };
+    proj(ball, sayBall, 0.85);
+    proj(kartCoomy, sayCoomy, 0.75);
+    sayBall.style.opacity = String(sb);
+    sayCoomy.style.opacity = String(sc);
+
+    camera.position.x = Math.sin(t * 0.25) * 0.12;
+    camera.position.y = Math.sin(t * 0.3) * 0.08;
+    camera.position.z = (8 - p * 1.1) * Math.max(1, 3.6 / (0.4663 * camera.aspect) / 10);
+    camera.lookAt(0, -0.4, 0);
+  }
+
+  function render() {
+    const t = clock.getElapsedTime();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (performance.now() - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, 1 - Math.pow(1 - u, 3)));
+      if (u >= 1) autoScroll = null;
+    }
+    const nowY = scrollY;
+    if (Math.abs(nowY - lastYs) > 2) { lastYs = nowY; lastMoveTs = t; }
+    if (!autoScroll && P > 0.005 && P < 0.995 && !endSeen && t - lastMoveTs > 1.5) {
+      const next = CH.find((c) => c > P + 0.01);
+      if (next) { lastMoveTs = t; glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * next, 3200); }
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm, t);
+    if (soundOn) {
+      CUES.forEach((c) => {
+        if (!c.fired && Psm > c.at) { c.fired = true; c.fn(); }
+        if (c.fired && Psm < c.at - 0.06) c.fired = false;
+      });
+    }
+    renderer.render(scene, camera);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    readScroll();
+  });
+}
+
+/* tiny synthesized soundtrack（沿用生日片配方） */
+function makeSound() {
+  let ctx = null, master, twinkleTimer = null;
+  const ensure = () => {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const wn = Math.random() * 2 - 1; last = (last + 0.02 * wn) / 1.02; d[i] = last * 3.2; }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf; noise.loop = true;
+    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 240;
+    const ng = ctx.createGain(); ng.gain.value = 0.03;
+    noise.connect(nf); nf.connect(ng); ng.connect(master); noise.start();
+  };
+  const blip = (f, delay = 0, dur = 0.2, type = 'sine', vol = 0.06) => {
+    if (!ctx) return;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ctx.createGain();
+    const now = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g); g.connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+  };
+  const twinkle = () => {
+    if (!ctx) return;
+    const notes = [1046.5, 1174.7, 1318.5, 1568, 1760];
+    blip(notes[Math.floor(Math.random() * notes.length)], 0, 1.4, 'sine', 0.018 + Math.random() * 0.01);
+  };
+  const schedule = () => { twinkleTimer = setTimeout(() => { twinkle(); schedule(); }, 2000 + Math.random() * 3000); };
+  return {
+    start() { ensure(); ctx.resume(); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1); clearTimeout(twinkleTimer); schedule(); },
+    stop() { if (ctx) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); clearTimeout(twinkleTimer); },
+    lucky() { [660, 830, 990, 1320].forEach((f, i) => blip(f, i * 0.09, 0.3, 'triangle', 0.06)); },
+    engine() {
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.025, now + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 200;
+      lp.connect(g); g.connect(master);
+      [70, 71].forEach((f) => { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f; o.connect(lp); o.start(now); o.stop(now + 2.5); });
+    },
+    pop() { blip(740, 0, 0.14, 'sine', 0.06); blip(1100, 0.08, 0.16, 'sine', 0.05); },
+    chord() { [262, 330, 392, 523].forEach((f, i) => blip(f * 1.5, i * 0.06, 1.4, 'sine', 0.035)); },
+    soft() { blip(392, 0, 1.4, 'sine', 0.03); blip(494, 0.3, 1.4, 'sine', 0.025); },
+    wish() { [523, 659, 784, 1047].forEach((f, i) => blip(f, i * 0.12, 2, 'sine', 0.03)); blip(2093, 0.7, 1.6, 'sine', 0.02); },
+  };
+}
+</script>
+
+<div class="film-prose">
+  <p>這是<a href="/writing/waterball-birthday-yilan/">《水球的生日：我們在飯店裡旅行了一整天》</a>的動畫版本——同一天、同一個故事，但這次用<a href="/lab/">動畫實驗室</a>的粉彩畫風重拍：實體低多邊形的水球與 Coomy、flat shading 的切面、隨劇情從蜜桃色一路暗到星夜的天空。</p>
+  <p>對照原版（幾何線稿）一起看，就是實驗室路線圖裡「把新畫風套回站上的角色與場景」的第一次實戰。</p>
+</div>
