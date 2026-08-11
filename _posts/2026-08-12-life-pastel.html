@@ -1,0 +1,724 @@
+---
+layout: film
+title: 我們的日子・動畫版本
+description: 用動畫實驗室的粉彩畫風，重拍我們的日子——兩個人造一艘歪歪的船，後來船上有了更多人，然後一起看 SUM 升起。
+date: 2026-08-12 22:00:00 +0800
+image: /assets/og-life-pastel.jpg
+tags: [動畫實驗室, 我們的日子]
+seo:
+  type: BlogPosting
+---
+<style>
+  #lp-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 560vh; }
+  .lp-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .lp-sky { position: absolute; inset: 0; }
+  .lp-sky-warm { background: linear-gradient(180deg, #ffd9c4 0%, #f7c7e3 55%, #d9b8f0 100%); }
+  .lp-sky-dusk { background: linear-gradient(180deg, #e8a8c8 0%, #b998e0 55%, #8a7cc8 100%); opacity: 0; }
+  .lp-sky-dawn { background: linear-gradient(180deg, #ffd9a0 0%, #ffb6c8 55%, #c9b6ff 100%); opacity: 0; }
+  #lp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .lp-ui { position: absolute; inset: 0; pointer-events: none; }
+  .lp-bar { position: absolute; left: 0; right: 0; height: 7vh; background: #0d0a18; }
+  .lp-bar-top { top: 0; }
+  .lp-bar-bot { bottom: 0; }
+  .lp-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 52%, rgba(20, 12, 40, .4) 100%); }
+  .lp-cap {
+    position: absolute; left: 50%; top: 13vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.9; color: #fff; opacity: 0;
+    text-shadow: 0 1px 18px rgba(60, 30, 70, .6);
+  }
+  .lp-cap small { display: block; font-size: .78em; opacity: .85; margin-top: 6px; }
+  .lp-say {
+    position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 13px;
+    color: #fff; opacity: 0; white-space: nowrap;
+    background: rgba(60, 30, 70, .4); border-radius: 999px; padding: 6px 12px;
+  }
+  .lp-end {
+    position: absolute; left: 50%; bottom: 13vh; transform: translateX(-50%);
+    width: max-content; max-width: min(26em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(16px, 2vw, 21px);
+    line-height: 2; color: #fff; opacity: 0;
+    text-shadow: 0 1px 20px rgba(20, 14, 40, .8);
+  }
+  .lp-start-wrap { text-align: center; margin: 6px 0 46px; }
+  .lp-start {
+    cursor: pointer; background: none;
+    border: 1px solid rgba(220, 148, 124, .4); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .34em; text-indent: .34em; color: var(--life-clay);
+    animation: lp-drift 2.4s ease-in-out infinite, lp-glow 2.4s ease-in-out infinite;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .lp-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
+  @keyframes lp-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+  .lp-sound {
+    position: absolute; right: 26px; bottom: calc(7vh + 18px); pointer-events: auto; cursor: pointer;
+    background: rgba(60, 30, 70, .3); border: 1px solid rgba(255, 255, 255, .4); border-radius: 999px;
+    padding: 10px 20px; font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
+    color: #fff; transition: color .3s ease, border-color .3s ease;
+    animation: lp-glow 2.2s ease-in-out infinite;
+  }
+  .lp-sound[aria-pressed="true"] { color: rgba(255, 255, 255, .55); border-color: rgba(255, 255, 255, .2); animation: none; }
+  @keyframes lp-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+    50% { box-shadow: 0 0 22px rgba(255, 255, 255, .3); }
+  }
+</style>
+
+<p class="lp-start-wrap"><button class="lp-start" type="button">▶ PLAY</button></p>
+
+<div id="lp-film">
+  <div class="lp-stage">
+    <div class="lp-sky lp-sky-warm" aria-hidden="true"></div>
+    <div class="lp-sky lp-sky-dusk" aria-hidden="true"></div>
+    <div class="lp-sky lp-sky-dawn" aria-hidden="true"></div>
+    <canvas id="lp-canvas" aria-hidden="true"></canvas>
+    <div class="lp-ui">
+      <div class="lp-vig" aria-hidden="true"></div>
+      <div class="lp-bar lp-bar-top" aria-hidden="true"></div>
+      <div class="lp-bar lp-bar-bot" aria-hidden="true"></div>
+      <p class="lp-cap" data-cap="0">一開始，只有我們兩個。<small>水球丟點子，我敲敲打打——歪了也沒關係。</small></p>
+      <p class="lp-cap" data-cap="1">後來，船上有了更多人。<small>有人調引擎、有人刷船身，每個人帶著自己的顏色。</small></p>
+      <p class="lp-cap" data-cap="2">裝上翅膀和光環——<small>SpecFormula，點火。</small></p>
+      <p class="lp-cap" data-cap="3">起飛。</p>
+      <p class="lp-say lp-say-ball" aria-hidden="true">三、二、一——！</p>
+      <p class="lp-say lp-say-coomy" aria-hidden="true">歪了 XD</p>
+      <p class="lp-end">一趟從兩個人開始的航程。<br>後來，船上有了更多人。</p>
+      <button class="lp-sound" type="button" aria-pressed="false">SOUND · OFF</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = matchMedia('(max-width: 640px)').matches;
+const canvas = document.getElementById('lp-canvas');
+
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+  catch { return false; }
+}
+if (!reduced && webglOK()) boot();
+
+function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], ss(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 8);
+
+  const hemi = new THREE.HemisphereLight('#fffdfa', '#d8c8ee', 1.45);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight('#fff4ea', 0.8);
+  key.position.set(3, 4, 2.5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
+  key.shadow.camera.left = -7; key.shadow.camera.right = 7;
+  key.shadow.camera.top = 6; key.shadow.camera.bottom = -4;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 20;
+  key.shadow.radius = 6;
+  scene.add(key);
+  const fill = new THREE.DirectionalLight('#e2ecff', 0.3);
+  fill.position.set(-4, -2, -3);
+  scene.add(fill);
+
+  const glowTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  })();
+  const sprite = (color, scale) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.setScalar(scale);
+    scene.add(s);
+    return s;
+  };
+  const solidMat = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.95, metalness: 0, ...opts });
+  const mesh = (geo, mat) => new THREE.Mesh(geo, mat);
+
+  const ground = mesh(new THREE.CircleGeometry(30, 32), new THREE.ShadowMaterial({ opacity: 0.16 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -2.02;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  const casts = (g) => g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+
+  // 飄雲
+  const cloudMat = solidMat('#ffffff', { transparent: true, opacity: 0.85 });
+  const clouds = [];
+  [[-4.2, 2.2, -6], [3.6, 2.9, -7], [0.6, 1.9, -5.2]].forEach(([x, y, z]) => {
+    const c = new THREE.Group();
+    [[0, 0, 0, 0.52], [0.48, 0.09, 0, 0.36], [-0.44, 0.06, 0, 0.3]].forEach(([dx, dy, dz, r]) => {
+      const s = mesh(new THREE.SphereGeometry(r, 8, 6), cloudMat);
+      s.position.set(dx, dy, dz);
+      s.scale.y = 0.72;
+      c.add(s);
+    });
+    c.position.set(x, y, z);
+    scene.add(c);
+    clouds.push(c);
+  });
+
+  // ---------- 水球（粉彩實體版）----------
+  const ball = new THREE.Group();
+  {
+    const body = mesh(new THREE.IcosahedronGeometry(0.56, 2), solidMat('#aadcf8'));
+    body.scale.y = 0.92;
+    ball.add(body);
+    const knot = mesh(new THREE.TorusGeometry(0.09, 0.032, 6, 10), solidMat('#8ec8ee'));
+    knot.position.set(0.04, 0.52, 0);
+    knot.rotation.x = Math.PI / 2.4;
+    ball.add(knot);
+    const bEye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.095, 10, 8), solidMat('#5a3f30', { roughness: 0.35 }));
+      e.scale.z = 0.5;
+      e.position.set(x, 0.1, 0.54);
+      return e;
+    };
+    const bGlint = (x) => {
+      const gl = mesh(new THREE.SphereGeometry(0.03, 6, 5), solidMat('#ffffff', { emissive: '#888888' }));
+      gl.position.set(x + 0.034, 0.14, 0.6);
+      return gl;
+    };
+    ball.add(bEye(-0.2), bEye(0.2), bGlint(-0.2), bGlint(0.2));
+    const mouthArc = (x) => {
+      const m = mesh(new THREE.TorusGeometry(0.055, 0.016, 6, 10, Math.PI), solidMat('#4a3b52'));
+      m.position.set(x, -0.16, 0.56);
+      m.rotation.z = Math.PI;
+      return m;
+    };
+    ball.add(mouthArc(-0.055), mouthArc(0.055));
+    const blush = (x) => {
+      const b = mesh(new THREE.CircleGeometry(0.085, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
+      b.position.set(x, -0.1, 0.53);
+      b.lookAt(x * 3, -0.3, 3);
+      return b;
+    };
+    ball.add(blush(-0.36), blush(0.36));
+  }
+  scene.add(ball);
+  casts(ball);
+
+  // ---------- Coomy（粉彩實體版）----------
+  const coomy = new THREE.Group();
+  {
+    const dress = mesh(new THREE.ConeGeometry(0.36, 0.6, 9), solidMat('#f6efe3'));
+    dress.position.y = -0.22;
+    coomy.add(dress);
+    const head = mesh(new THREE.IcosahedronGeometry(0.34, 2), solidMat('#ffe8dc'));
+    head.position.y = 0.38;
+    coomy.add(head);
+    const hair = mesh(new THREE.SphereGeometry(0.37, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.52), solidMat('#d8ae7e'));
+    hair.position.y = 0.46;
+    hair.position.z = -0.04;
+    const bang = (x, r, y) => {
+      const b = mesh(new THREE.SphereGeometry(r, 8, 6), solidMat('#d8ae7e'));
+      b.position.set(x, y, 0.26);
+      b.scale.y = 1.35;
+      return b;
+    };
+    coomy.add(bang(-0.19, 0.062, 0.585), bang(-0.065, 0.07, 0.6), bang(0.065, 0.07, 0.6), bang(0.19, 0.062, 0.585));
+    const bun = mesh(new THREE.SphereGeometry(0.16, 8, 6), solidMat('#d8ae7e'));
+    bun.position.set(0, 0.6, -0.3);
+    coomy.add(bun);
+    coomy.add(hair);
+    const tuft = mesh(new THREE.ConeGeometry(0.05, 0.17, 5), solidMat('#d8ae7e'));
+    tuft.position.set(0.08, 0.82, 0);
+    tuft.rotation.z = -0.5;
+    coomy.add(tuft);
+    const strand = (side) => {
+      const st = mesh(new THREE.CapsuleGeometry(0.03, 0.24, 3, 6), solidMat('#d8ae7e'));
+      st.position.set(side * 0.3, 0.26, 0.08);
+      st.rotation.z = side * 0.08;
+      return st;
+    };
+    coomy.add(strand(-1), strand(1));
+    const eye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.078, 10, 8), solidMat('#5a3f30', { roughness: 0.35 }));
+      e.scale.z = 0.5;
+      e.position.set(x, 0.39, 0.3);
+      return e;
+    };
+    const glint = (x) => {
+      const gl = mesh(new THREE.SphereGeometry(0.024, 6, 5), solidMat('#ffffff', { emissive: '#888888' }));
+      gl.position.set(x + 0.028, 0.42, 0.36);
+      return gl;
+    };
+    coomy.add(eye(-0.13), eye(0.13), glint(-0.13), glint(0.13));
+    const arm = (side) => {
+      const a = new THREE.Group();
+      const sleeve = mesh(new THREE.CapsuleGeometry(0.055, 0.16, 3, 6), solidMat('#f6efe3'));
+      const hand = mesh(new THREE.SphereGeometry(0.052, 8, 6), solidMat('#ffe8dc'));
+      hand.position.y = -0.13;
+      a.add(sleeve, hand);
+      a.position.set(side * 0.21, -0.14, 0.08);
+      a.rotation.z = side * 0.5;
+      return a;
+    };
+    coomy.add(arm(-1), arm(1));
+    const smileM = mesh(new THREE.TorusGeometry(0.07, 0.016, 6, 12, Math.PI), solidMat('#4a3b52'));
+    smileM.position.set(0, 0.26, 0.33);
+    smileM.rotation.z = Math.PI;
+    coomy.add(smileM);
+    const blush = (x) => {
+      const b = mesh(new THREE.CircleGeometry(0.06, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
+      b.position.set(x, 0.29, 0.31);
+      b.lookAt(x * 3, 0.15, 3);
+      return b;
+    };
+    coomy.add(blush(-0.25), blush(0.25));
+  }
+  scene.add(coomy);
+  casts(coomy);
+
+  const fadeGroup = (grp, op) => {
+    grp.traverse((o) => {
+      if (o.material) { o.material.transparent = true; o.material.opacity = ('_baseOp' in o.material ? o.material._baseOp : 1) * op; }
+    });
+  };
+  const markBase = (grp) => grp.traverse((o) => { if (o.material) o.material._baseOp = o.material.opacity ?? 1; });
+
+  // ---------- 船（SpecFormula 號）----------
+  const ship = new THREE.Group();
+  const wingL = mesh(new THREE.BoxGeometry(0.55, 0.5, 0.06), solidMat('#ffd4a8'));
+  const wingR = wingL.clone();
+  const haloMat = solidMat('#ffd479', { emissive: '#8a6a20', transparent: true, opacity: 0 });
+  {
+    const body = mesh(new THREE.CylinderGeometry(0.42, 0.5, 1.5, 10), solidMat('#f6efe3'));
+    ship.add(body);
+    const nose = mesh(new THREE.ConeGeometry(0.42, 0.7, 10), solidMat('#e8a8b8'));
+    nose.position.y = 1.1;
+    ship.add(nose);
+    const winRim = mesh(new THREE.TorusGeometry(0.17, 0.035, 8, 14), solidMat('#e8a8b8'));
+    winRim.position.set(0, 0.3, 0.44);
+    ship.add(winRim);
+    const winGlass = mesh(new THREE.CircleGeometry(0.15, 14), solidMat('#a5d8f5', { emissive: '#2a4a66' }));
+    winGlass.position.set(0, 0.3, 0.45);
+    ship.add(winGlass);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2 + Math.PI / 6;
+      const fin = mesh(new THREE.BoxGeometry(0.1, 0.5, 0.32), solidMat('#e8a8b8'));
+      fin.position.set(Math.cos(a) * 0.48, -0.72, Math.sin(a) * 0.48);
+      fin.rotation.y = -a;
+      ship.add(fin);
+    }
+    const nozzle = mesh(new THREE.CylinderGeometry(0.26, 0.34, 0.24, 10), solidMat('#b9a898'));
+    nozzle.position.y = -0.85;
+    ship.add(nozzle);
+    // Richard 的油漆
+    const paint = mesh(new THREE.PlaneGeometry(0.34, 0.26), solidMat('#a8d8b8', { transparent: true, opacity: 0 }));
+    paint.position.set(-0.12, -0.15, 0.47);
+    paint.rotation.x = -0.08;
+    ship.userData.paint = paint;
+    ship.add(paint);
+    // 翅膀（點火前才裝上）
+    wingL.position.set(-0.62, -0.1, 0);
+    wingL.rotation.z = 0.5;
+    wingL.scale.setScalar(0.001);
+    wingR.position.set(0.62, -0.1, 0);
+    wingR.rotation.z = -0.5;
+    wingR.scale.setScalar(0.001);
+    ship.add(wingL, wingR);
+    // 光環
+    const halo = mesh(new THREE.TorusGeometry(0.34, 0.035, 8, 20), haloMat);
+    halo.position.y = 1.62;
+    halo.rotation.x = Math.PI / 2.3;
+    ship.add(halo);
+  }
+  ship.position.set(0.85, -1.06, 0);
+  scene.add(ship);
+  markBase(ship);
+  casts(ship);
+  const flame = sprite('#ffb46f', 1.6);
+  const engineGlow = sprite('#ffd479', 1.1);
+
+  // 點子星星（水球丟向船）
+  const ideas = [];
+  for (let i = 0; i < 3; i++) {
+    const st = mesh(new THREE.OctahedronGeometry(0.09, 0), solidMat('#ffd479', { emissive: '#8a6a20', transparent: true, opacity: 0 }));
+    st.scale.z = 0.45;
+    scene.add(st);
+    ideas.push(st);
+  }
+  // Coomy 的小槌子
+  const mallet = new THREE.Group();
+  {
+    const handle = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.34, 6), solidMat('#b98a68'));
+    const headM = mesh(new THREE.BoxGeometry(0.2, 0.12, 0.12), solidMat('#e8a8b8'));
+    headM.position.y = 0.2;
+    mallet.add(handle, headM);
+  }
+  scene.add(mallet);
+  markBase(mallet);
+  casts(mallet);
+
+  // ---------- 團員們 ----------
+  const TEAM = [
+    { color: '#a8e6c8', x: -0.55 },   // Raymond
+    { color: '#ffe0a0', x: 1.95 },    // Richard（拿刷子）
+    { color: '#a8c8f0', x: 0.15 },    // Fish
+    { color: '#ffb0a0', x: 2.35 },    // Ben
+    { color: '#d8b6ff', x: 1.5 },     // ccza
+  ];
+  const minis = TEAM.map((m, i) => {
+    const g = new THREE.Group();
+    const body = mesh(new THREE.CapsuleGeometry(0.17, 0.2, 4, 8), solidMat(m.color));
+    g.add(body);
+    const eyeDot = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.032, 6, 5), solidMat('#4a3b52'));
+      e.position.set(x, 0.1, 0.16);
+      return e;
+    };
+    g.add(eyeDot(-0.06), eyeDot(0.06));
+    const sm = mesh(new THREE.TorusGeometry(0.035, 0.01, 5, 8, Math.PI), solidMat('#4a3b52'));
+    sm.position.set(0, 0.04, 0.17);
+    sm.rotation.z = Math.PI;
+    g.add(sm);
+    if (i === 1) {
+      const brush = new THREE.Group();
+      const bh = mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.24, 5), solidMat('#b98a68'));
+      const bt = mesh(new THREE.BoxGeometry(0.09, 0.09, 0.05), solidMat('#a8d8b8'));
+      bt.position.y = 0.16;
+      brush.add(bh, bt);
+      brush.position.set(0.22, 0.05, 0.1);
+      brush.rotation.z = -0.5;
+      g.add(brush);
+    }
+    scene.add(g);
+    markBase(g);
+    casts(g);
+    return { g, ...m, enter: 0.28 + i * 0.03 };
+  });
+
+  // ---------- SUM 太陽 ----------
+  const sun = new THREE.Group();
+  {
+    const disc = mesh(new THREE.CircleGeometry(0.85, 24), solidMat('#ffd479', { emissive: '#8a6a20' }));
+    sun.add(disc);
+    const sEye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.07, 8, 6), solidMat('#4a3b52'));
+      e.position.set(x, 0.16, 0.05);
+      return e;
+    };
+    sun.add(sEye(-0.28), sEye(0.28));
+    const sm = mesh(new THREE.TorusGeometry(0.2, 0.03, 6, 12, Math.PI), solidMat('#4a3b52'));
+    sm.position.set(0, -0.05, 0.05);
+    sm.rotation.z = Math.PI;
+    sun.add(sm);
+  }
+  scene.add(sun);
+  markBase(sun);
+  const sunGlow = sprite('#ffd479', 4.2);
+
+  // 愛心
+  const heartShape = new THREE.Shape();
+  heartShape.moveTo(0, 0.12);
+  heartShape.bezierCurveTo(0.12, 0.26, 0.3, 0.12, 0.14, -0.08);
+  heartShape.bezierCurveTo(0.06, -0.17, 0, -0.2, 0, -0.2);
+  heartShape.bezierCurveTo(0, -0.2, -0.06, -0.17, -0.14, -0.08);
+  heartShape.bezierCurveTo(-0.3, 0.12, -0.12, 0.26, 0, 0.12);
+  const hearts = [];
+  for (let i = 0; i < 2; i++) {
+    const h = mesh(new THREE.ShapeGeometry(heartShape), solidMat('#ff8fb3', { side: THREE.DoubleSide, transparent: true, opacity: 0 }));
+    scene.add(h);
+    hearts.push(h);
+  }
+
+  // ---------- DOM ----------
+  const caps = [...document.querySelectorAll('.lp-cap')];
+  const sayBall = document.querySelector('.lp-say-ball');
+  const sayCoomy = document.querySelector('.lp-say-coomy');
+  const endEl = document.querySelector('.lp-end');
+  const skyDusk = document.querySelector('.lp-sky-dusk');
+  const skyDawn = document.querySelector('.lp-sky-dawn');
+
+  // ---------- sound ----------
+  const sound = makeSound();
+  const soundBtn = document.querySelector('.lp-sound');
+  let soundOn = false;
+  const setSoundUI = () => {
+    soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  };
+  soundBtn.addEventListener('click', () => {
+    if (soundOn) { sound.stop(); soundOn = false; localStorage.setItem('coomy-sound', 'off'); }
+    else { sound.start(); soundOn = true; localStorage.setItem('coomy-sound', 'on'); }
+    setSoundUI();
+  });
+  setSoundUI();
+  const CUES = [
+    { at: 0.07, fn: () => sound.tickTak() },
+    { at: 0.12, fn: () => sound.tickTak() },
+    { at: 0.17, fn: () => sound.tickTak() },
+    { at: 0.32, fn: () => sound.pop() },
+    { at: 0.54, fn: () => sound.count() },
+    { at: 0.62, fn: () => sound.chord() },
+    { at: 0.71, fn: () => sound.engine() },
+    { at: 0.87, fn: () => sound.wish() },
+  ].map((c) => ({ ...c, fired: false }));
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('lp-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__lpSeek = (p) => { P = p; Psm = p; render(); };
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  const cancelGlide = () => { autoScroll = null; };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.lp-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    if (localStorage.getItem('coomy-sound') !== 'off' && !soundOn) { sound.start(); soundOn = true; setSoundUI(); }
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * 0.06, 2600);
+  });
+  const CH = [0.08, 0.26, 0.46, 0.62, 0.78, 0.94, 1];
+  let lastYs = 0, lastMoveTs = 0, endSeen = false;
+
+  const tmpV = new THREE.Vector3();
+  const clock = new THREE.Clock();
+
+  function update(p, t) {
+    const w = innerWidth, h = innerHeight;
+    const buildQ = ss(0.03, 0.08, p) * (1 - ss(0.22, 0.27, p));
+    const teamQ = ss(0.27, 0.32, p);
+    const igniteQ = ss(0.5, 0.56, p);
+    const launchQ = ss(0.68, 0.72, p);
+    const sunQ = ss(0.84, 0.95, p);
+
+    skyDusk.style.opacity = String(Math.max(ss(0.64, 0.72, p) * (1 - ss(0.82, 0.9, p)), 0));
+    skyDawn.style.opacity = String(ss(0.82, 0.92, p));
+    hemi.intensity = 1.45 - ss(0.64, 0.76, p) * 0.5 + sunQ * 0.35;
+
+    const capW = [
+      ss(0.04, 0.07, p) * (1 - ss(0.2, 0.24, p)),
+      ss(0.29, 0.32, p) * (1 - ss(0.44, 0.48, p)),
+      ss(0.51, 0.54, p) * (1 - ss(0.63, 0.67, p)),
+      ss(0.7, 0.73, p) * (1 - ss(0.8, 0.84, p)),
+    ];
+    caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
+    endEl.style.opacity = String(ss(0.93, 0.97, p));
+
+    // 雲
+    cloudMat.opacity = 0.85 * (1 - ss(0.64, 0.76, p) * 0.5);
+    clouds.forEach((c, i) => {
+      c.position.x += (0.0009 + i * 0.0004);
+      if (c.position.x > 6.5) c.position.x = -6.5;
+    });
+
+    // 船：歪 → 扶正 → 裝備 → 起飛
+    const wobble = buildQ * Math.sin(t * 1.4) * 0.03;
+    ship.rotation.z = 0.26 * (1 - igniteQ) + wobble;
+    const shipY = -1.06 + ss(0.7, 0.84, p) * 6.2;
+    ship.position.set(0.85 + launchQ * 0.15, shipY, 0);
+    ship.visible = p < 0.88;
+    const wingS = 0.001 + igniteQ * 0.999;
+    wingL.scale.setScalar(wingS);
+    wingR.scale.setScalar(wingS);
+    haloMat.opacity = igniteQ;
+    ship.userData.paint.material.opacity = ss(0.34, 0.42, p);
+    // 引擎與火焰
+    const engineOn = Math.max(ss(0.58, 0.62, p) * 0.5, launchQ);
+    engineGlow.position.set(ship.position.x, ship.position.y - 1, 0.2);
+    engineGlow.material.opacity = ship.visible ? engineOn * (0.4 + 0.25 * Math.abs(Math.sin(t * 9))) : 0;
+    flame.position.set(ship.position.x, ship.position.y - 1.45, 0.2);
+    flame.material.opacity = ship.visible ? launchQ * (0.55 + 0.3 * Math.abs(Math.sin(t * 11))) : 0;
+    flame.scale.set(1.1, 1.6 + launchQ * 1.2, 1);
+
+    // 點子星星
+    ideas.forEach((st, i) => {
+      const u = ((t * 0.5 + i / 3) % 1);
+      st.position.set(lerp(-1.6, 0.6, u), -1.15 + Math.sin(u * Math.PI) * 0.9, 0.3);
+      st.rotation.z = t * 2 + i;
+      st.material.opacity = buildQ * Math.sin(u * Math.PI);
+    });
+    // 槌子
+    fadeGroup(mallet, buildQ);
+    mallet.visible = buildQ > 0.02;
+    mallet.position.set(0.05, -1.15 + Math.abs(Math.sin(t * 5)) * 0.12, 0.5);
+    mallet.rotation.z = -0.6 + Math.sin(t * 5) * 0.5;
+
+    // 團員進場
+    minis.forEach((m, i) => {
+      const q = ss(m.enter, m.enter + 0.05, p);
+      m.g.visible = q > 0.02;
+      fadeGroup(m.g, q);
+      const hop = Math.max(ss(0.5, 0.56, p) * (1 - ss(0.62, 0.66, p)), q * (1 - ss(0.4, 0.44, p))) * Math.abs(Math.sin(t * 5 + i)) * 0.14;
+      m.g.position.set(lerp(i % 2 ? 6 : -6, m.x, q), -1.68 + hop, 0.55 + (i % 3) * 0.15);
+    });
+
+    // SUM 日出（臉保持直立）
+    const sunA = lerp(-0.35, 0.95, sunQ);
+    sun.position.set(3.5 * Math.cos(sunA), -2.1 + 3.3 * Math.sin(sunA), -3);
+    fadeGroup(sun, ss(0.84, 0.88, p));
+    sun.visible = p > 0.82;
+    sunGlow.position.copy(sun.position);
+    sunGlow.material.opacity = ss(0.84, 0.92, p) * 0.45;
+
+    // 愛心
+    hearts.forEach((hh, i) => {
+      const u = ((t * 0.18 + i * 0.5) % 1);
+      hh.position.set(-1.6 + i * 0.5 + Math.sin(u * 4 + i) * 0.1, -0.9 + u * 0.9, 0.8);
+      hh.scale.setScalar(0.8 + u * 0.3);
+      hh.material.opacity = sunQ * Math.sin(u * Math.PI) * 0.9;
+    });
+
+    // 兩人
+    const bx = kf(p, [[0, -1.7], [0.5, -1.7], [0.56, -1.35], [0.7, -2.1], [1, -2.1]]);
+    const cx = kf(p, [[0, -0.35], [0.44, -0.35], [0.5, -0.8], [0.56, -0.75], [0.7, -1.45], [1, -1.45]]);
+    const excite = Math.max(ss(0.5, 0.56, p) * (1 - ss(0.64, 0.68, p)), launchQ * (1 - ss(0.84, 0.9, p)));
+    const hopB = excite * Math.abs(Math.sin(t * 5)) * 0.2;
+    const hopC = excite * Math.abs(Math.sin(t * 5 + 1)) * 0.18;
+    ball.position.set(bx, -1.38 + hopB + Math.sin(t * 1.2) * 0.05, 0.6);
+    ball.rotation.z = Math.sin(t * 0.9) * 0.06;
+    coomy.position.set(cx, -1.32 + hopC + Math.sin(t * 1.1 + 1) * 0.04, 0.6);
+    coomy.rotation.z = Math.sin(t * 0.8 + 2) * 0.05;
+
+    // says
+    const sb = ss(0.52, 0.55, p) * (1 - ss(0.6, 0.63, p));
+    const sc = ss(0.1, 0.13, p) * (1 - ss(0.17, 0.2, p));
+    const proj = (obj, el, dy) => {
+      tmpV.copy(obj.position); tmpV.y += dy; tmpV.project(camera);
+      el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+    };
+    proj(ball, sayBall, 0.85);
+    proj(coomy, sayCoomy, 1.0);
+    sayBall.style.opacity = String(sb);
+    sayCoomy.style.opacity = String(sc);
+
+    // 電影運鏡
+    const wideComp = Math.max(1, 3.6 / (0.4663 * camera.aspect) / 10);
+    const camX = kf(p, [[0, 0.1], [0.3, -0.2], [0.52, 0.2], [0.7, 0], [1, 0]]) + Math.sin(t * 0.25) * 0.1;
+    const camY = kf(p, [[0, 0], [0.3, 0.1], [0.52, -0.1], [0.7, 0.5], [0.8, 1.1], [0.9, 0.4], [1, 0.45]]) + Math.sin(t * 0.3) * 0.06;
+    const camZ = kf(p, [[0, 7.9], [0.3, 8.3], [0.52, 7.1], [0.66, 7.3], [0.78, 7.9], [0.9, 7.6], [1, 7.4]]);
+    camera.position.set(camX, camY, camZ * wideComp);
+    const lookY = kf(p, [[0, -0.75], [0.5, -0.65], [0.66, -0.45], [0.78, 0.7], [0.86, 0.1], [1, 0]]);
+    camera.lookAt(0, lookY, 0);
+  }
+
+  function render() {
+    const t = clock.getElapsedTime();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (performance.now() - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, 1 - Math.pow(1 - u, 3)));
+      if (u >= 1) autoScroll = null;
+    }
+    const nowY = scrollY;
+    if (Math.abs(nowY - lastYs) > 2) { lastYs = nowY; lastMoveTs = t; }
+    if (!autoScroll && P > 0.005 && P < 0.995 && !endSeen && t - lastMoveTs > 1.5) {
+      const next = CH.find((c) => c > P + 0.01);
+      if (next) { lastMoveTs = t; glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * next, 3200); }
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm, t);
+    if (soundOn) {
+      CUES.forEach((c) => {
+        if (!c.fired && Psm > c.at) { c.fired = true; c.fn(); }
+        if (c.fired && Psm < c.at - 0.06) c.fired = false;
+      });
+    }
+    renderer.render(scene, camera);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    readScroll();
+  });
+}
+
+/* tiny synthesized soundtrack */
+function makeSound() {
+  let ctx = null, master, twinkleTimer = null;
+  const ensure = () => {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const wn = Math.random() * 2 - 1; last = (last + 0.02 * wn) / 1.02; d[i] = last * 3.2; }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf; noise.loop = true;
+    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 240;
+    const ng = ctx.createGain(); ng.gain.value = 0.03;
+    noise.connect(nf); nf.connect(ng); ng.connect(master); noise.start();
+  };
+  const blip = (f, delay = 0, dur = 0.2, type = 'sine', vol = 0.06) => {
+    if (!ctx) return;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ctx.createGain();
+    const now = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g); g.connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+  };
+  const twinkle = () => {
+    if (!ctx) return;
+    const notes = [1046.5, 1174.7, 1318.5, 1568, 1760];
+    blip(notes[Math.floor(Math.random() * notes.length)], 0, 1.4, 'sine', 0.018 + Math.random() * 0.01);
+  };
+  const schedule = () => { twinkleTimer = setTimeout(() => { twinkle(); schedule(); }, 2000 + Math.random() * 3000); };
+  return {
+    start() { ensure(); ctx.resume(); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1); clearTimeout(twinkleTimer); schedule(); },
+    stop() { if (ctx) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); clearTimeout(twinkleTimer); },
+    tickTak() { blip(620, 0, 0.08, 'square', 0.025); blip(520, 0.12, 0.08, 'square', 0.02); },
+    pop() { blip(740, 0, 0.14, 'sine', 0.06); blip(1100, 0.08, 0.16, 'sine', 0.05); },
+    count() { blip(660, 0, 0.1, 'sine', 0.05); blip(660, 0.4, 0.1, 'sine', 0.05); blip(660, 0.8, 0.1, 'sine', 0.05); blip(990, 1.2, 0.5, 'triangle', 0.06); },
+    chord() { [262, 330, 392, 523].forEach((f, i) => blip(f * 1.5, i * 0.06, 1.4, 'sine', 0.035)); },
+    engine() {
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.025, now + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 200;
+      lp.connect(g); g.connect(master);
+      [70, 71].forEach((f) => { const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f; o.connect(lp); o.start(now); o.stop(now + 2.5); });
+    },
+    wish() { [523, 659, 784, 1047].forEach((f, i) => blip(f, i * 0.12, 2, 'sine', 0.03)); blip(2093, 0.7, 1.6, 'sine', 0.02); },
+  };
+}
+</script>
+
+<div class="film-prose">
+  <p>這是<a href="/life/">我們的日子</a>首頁動畫的<strong>動畫版本</strong>——同一個故事，用<a href="/lab/">動畫實驗室</a>的粉彩畫風重拍：兩個人造一艘歪歪的船、團員們帶著各自的顏色上船、三二一裝上翅膀和光環點火、起飛，然後一起看 SUM 升起。</p>
+  <p>對照原版（幾何線稿）一起看，這是實驗室「把新畫風套回站上角色與場景」的第二次實戰。</p>
+</div>
