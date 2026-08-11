@@ -3,7 +3,7 @@ layout: film
 title: 水球生日・動畫版本
 description: 用動畫實驗室的粉彩畫風，把 2026/8/7 的宜蘭生日再過一次——實體低多邊形的水球與 Coomy、會變色的天空、和同一顆許願星。
 date: 2026-08-12 21:00:00 +0800
-image: /assets/og-bday-pastel6.jpg
+image: /assets/og-bday-pastel7.jpg
 tags: [動畫實驗室, 生日]
 seo:
   type: BlogPosting
@@ -315,8 +315,8 @@ function boot() {
       const hand = mesh(new THREE.SphereGeometry(0.052, 8, 6), solidMat('#ffe8dc'));
       hand.position.y = -0.13;
       a.add(sleeve, hand);
-      a.position.set(side * 0.27, 0.04, 0.05);
-      a.rotation.z = side * 0.65;
+      a.position.set(side * 0.21, -0.14, 0.08);
+      a.rotation.z = side * 0.5;
       return a;
     };
     coomy.add(arm(-1), arm(1));
@@ -346,19 +346,49 @@ function boot() {
   // 蘭城晶英
   const hotel = new THREE.Group();
   {
-    const bodyM = mesh(new THREE.BoxGeometry(2.2, 2.8, 1), solidMat('#f6e8d8'));
+    const bodyM = mesh(new THREE.BoxGeometry(2.4, 3.4, 1), solidMat('#f6e8d8'));
     hotel.add(bodyM);
-    const roof = mesh(new THREE.ConeGeometry(1.7, 0.7, 4), solidMat('#e8a8b8'));
-    roof.position.y = 1.75;
-    roof.rotation.y = Math.PI / 4;
-    hotel.add(roof);
-    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
-      const win = mesh(new THREE.PlaneGeometry(0.34, 0.3), solidMat('#ffd9a0', { emissive: '#a87830' }));
-      win.position.set(-0.66 + c * 0.66, 0.75 - r * 0.75, 0.51);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
+      const win = mesh(new THREE.PlaneGeometry(0.3, 0.26), solidMat('#ffd9a0', { emissive: '#a87830' }));
+      win.position.set(-0.7 + c * 0.7, 1.05 - r * 0.66, 0.51);
       hotel.add(win);
     }
+    const door = mesh(new THREE.PlaneGeometry(0.52, 0.62), solidMat('#b98a68'));
+    door.position.set(0, -1.38, 0.51);
+    hotel.add(door);
+    const canopy = mesh(new THREE.BoxGeometry(0.84, 0.08, 0.5), solidMat('#e8a8b8'));
+    canopy.position.set(0, -1.02, 0.62);
+    hotel.add(canopy);
+    // 頂樓：圍欄
+    const paraF = mesh(new THREE.BoxGeometry(2.5, 0.14, 0.07), solidMat('#e8d8c8'));
+    paraF.position.set(0, 1.77, 0.47);
+    const paraB = paraF.clone(); paraB.position.z = -0.47;
+    const paraL = mesh(new THREE.BoxGeometry(0.07, 0.14, 1.0), solidMat('#e8d8c8'));
+    paraL.position.set(-1.17, 1.77, 0);
+    const paraR = paraL.clone(); paraR.position.x = 1.17;
+    hotel.add(paraF, paraB, paraL, paraR);
+    // 頂樓游泳池
+    const poolRim = mesh(new THREE.BoxGeometry(1.04, 0.1, 0.7), solidMat('#ffffff'));
+    poolRim.position.set(0.55, 1.75, 0.02);
+    const poolWater = mesh(new THREE.BoxGeometry(0.92, 0.08, 0.58), solidMat('#a5dbff', { emissive: '#2a4a66', roughness: 0.25 }));
+    poolWater.position.set(0.55, 1.79, 0.02);
+    hotel.add(poolRim, poolWater);
+    // 空中花園：三棵小樹＋遮陽傘
+    const tree = (x, z, s) => {
+      const trunk = mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.2, 6), solidMat('#b98a68'));
+      trunk.position.set(x, 1.8, z);
+      const leaf = mesh(new THREE.IcosahedronGeometry(0.2 * s, 0), solidMat('#a8d8b8'));
+      leaf.position.set(x, 2 + 0.06 * s, z);
+      hotel.add(trunk, leaf);
+    };
+    tree(-0.85, 0.22, 1); tree(-0.55, -0.24, 0.85); tree(-1, -0.15, 0.7);
+    const pole = mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.42, 6), solidMat('#f6efe3'));
+    pole.position.set(0.05, 1.92, -0.26);
+    const brella = mesh(new THREE.ConeGeometry(0.26, 0.14, 8), solidMat('#ffb6d9'));
+    brella.position.set(0.05, 2.12, -0.26);
+    hotel.add(pole, brella);
   }
-  hotel.position.set(2.4, -0.35, -1.2);
+  hotel.position.set(2.4, -0.32, -1.2);
   scene.add(hotel);
   markBase(hotel);
   casts(hotel);
