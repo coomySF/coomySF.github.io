@@ -3,7 +3,7 @@ layout: film
 title: 水球生日・動畫版本
 description: 用動畫實驗室的粉彩畫風，把 2026/8/7 的宜蘭生日再過一次——實體低多邊形的水球與 Coomy、會變色的天空、和同一顆許願星。
 date: 2026-08-12 21:00:00 +0800
-image: /assets/og-bday-pastel.jpg
+image: /assets/og-bday-pastel2.jpg
 tags: [動畫實驗室, 生日]
 seo:
   type: BlogPosting
@@ -169,41 +169,53 @@ function boot() {
   // ---------- 水球（粉彩實體版）----------
   const ball = new THREE.Group();
   {
-    const body = mesh(new THREE.IcosahedronGeometry(0.56, 1), solidMat('#a5d8f5'));
+    const body = mesh(new THREE.IcosahedronGeometry(0.56, 2), solidMat('#aadcf8'));
     body.scale.y = 0.92;
     ball.add(body);
     const knot = mesh(new THREE.TorusGeometry(0.09, 0.032, 6, 10), solidMat('#8ec8ee'));
-    knot.position.set(0.04, 0.6, 0);
+    knot.position.set(0.04, 0.52, 0);
     knot.rotation.x = Math.PI / 2.4;
     ball.add(knot);
-    const eyeL = sparkle(); eyeL.position.set(-0.2, 0.08, 0.54); ball.add(eyeL);
-    const eyeR = sparkle(); eyeR.position.set(0.2, 0.08, 0.54); ball.add(eyeR);
-    ball.add(lineOf(arcPts(-0.055, -0.2, 0.055, Math.PI * 1.05, Math.PI * 1.95, 8, 0.55), inkMat));
-    ball.add(lineOf(arcPts(0.055, -0.2, 0.055, Math.PI * 1.05, Math.PI * 1.95, 8, 0.55), inkMat));
+    const eyeL = sparkle('#ffcf6f', 0.125); eyeL.position.set(-0.2, 0.1, 0.55); ball.add(eyeL);
+    const eyeR = sparkle('#ffcf6f', 0.125); eyeR.position.set(0.2, 0.1, 0.55); ball.add(eyeR);
+    const mouthArc = (x) => {
+      const m = mesh(new THREE.TorusGeometry(0.055, 0.016, 6, 10, Math.PI), solidMat('#4a3b52'));
+      m.position.set(x, -0.16, 0.56);
+      m.rotation.z = Math.PI;
+      return m;
+    };
+    ball.add(mouthArc(-0.055), mouthArc(0.055));
     const blush = (x) => {
-      const b = mesh(new THREE.CircleGeometry(0.06, 10), solidMat('#ffb6c8', { transparent: true, opacity: 0.75 }));
-      b.position.set(x, -0.12, 0.52);
+      const b = mesh(new THREE.CircleGeometry(0.085, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
+      b.position.set(x, -0.1, 0.53);
+      b.lookAt(x * 3, -0.3, 3);
       return b;
     };
-    ball.add(blush(-0.34), blush(0.34));
+    ball.add(blush(-0.36), blush(0.36));
   }
   scene.add(ball);
 
   // ---------- Coomy（粉彩實體版）----------
   const coomy = new THREE.Group();
   {
-    const dress = mesh(new THREE.ConeGeometry(0.4, 0.76, 9), solidMat('#f6efe3'));
-    dress.position.y = -0.28;
+    const dress = mesh(new THREE.ConeGeometry(0.36, 0.6, 9), solidMat('#f6efe3'));
+    dress.position.y = -0.22;
     coomy.add(dress);
-    const head = mesh(new THREE.IcosahedronGeometry(0.3, 1), solidMat('#ffe3d6'));
-    head.position.y = 0.36;
+    const head = mesh(new THREE.IcosahedronGeometry(0.34, 2), solidMat('#ffe8dc'));
+    head.position.y = 0.38;
     coomy.add(head);
-    const hair = mesh(new THREE.SphereGeometry(0.32, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.52), solidMat('#9a7460'));
-    hair.position.y = 0.44;
-    hair.position.z = -0.03;
+    const hair = mesh(new THREE.SphereGeometry(0.37, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.52), solidMat('#9a7460'));
+    hair.position.y = 0.46;
+    hair.position.z = -0.04;
+    const bang = (x) => {
+      const b = mesh(new THREE.SphereGeometry(0.085, 8, 6), solidMat('#9a7460'));
+      b.position.set(x, 0.6, 0.24);
+      return b;
+    };
+    coomy.add(bang(-0.2), bang(-0.067), bang(0.067), bang(0.2));
     coomy.add(hair);
-    const tuft = mesh(new THREE.ConeGeometry(0.05, 0.16, 5), solidMat('#9a7460'));
-    tuft.position.set(0.07, 0.74, 0);
+    const tuft = mesh(new THREE.ConeGeometry(0.05, 0.17, 5), solidMat('#9a7460'));
+    tuft.position.set(0.08, 0.82, 0);
     tuft.rotation.z = -0.5;
     coomy.add(tuft);
     const strand = (side) => {
@@ -214,20 +226,24 @@ function boot() {
     };
     coomy.add(strand(-1), strand(1));
     const lens = (x) => {
-      const l = mesh(new THREE.TorusGeometry(0.095, 0.014, 6, 14), solidMat('#4a3b52'));
-      l.position.set(x, 0.36, 0.26);
+      const l = mesh(new THREE.TorusGeometry(0.115, 0.016, 6, 16), solidMat('#4a3b52'));
+      l.position.set(x, 0.38, 0.3);
       return l;
     };
-    coomy.add(lens(-0.12), lens(0.12));
-    const eyeL = sparkle('#ffcf6f', 0.055); eyeL.position.set(-0.12, 0.36, 0.29); coomy.add(eyeL);
-    const eyeR = sparkle('#ffcf6f', 0.055); eyeR.position.set(0.12, 0.36, 0.29); coomy.add(eyeR);
-    coomy.add(lineOf(arcPts(0, 0.26, 0.07, Math.PI * 1.15, Math.PI * 1.85, 8, 0.3), inkMat));
+    coomy.add(lens(-0.135), lens(0.135));
+    const eyeL = sparkle('#ffcf6f', 0.08); eyeL.position.set(-0.135, 0.38, 0.33); coomy.add(eyeL);
+    const eyeR = sparkle('#ffcf6f', 0.08); eyeR.position.set(0.135, 0.38, 0.33); coomy.add(eyeR);
+    const smileM = mesh(new THREE.TorusGeometry(0.055, 0.014, 6, 10, Math.PI), solidMat('#4a3b52'));
+    smileM.position.set(0, 0.26, 0.33);
+    smileM.rotation.z = Math.PI;
+    coomy.add(smileM);
     const blush = (x) => {
-      const b = mesh(new THREE.CircleGeometry(0.045, 10), solidMat('#ffb6c8', { transparent: true, opacity: 0.75 }));
-      b.position.set(x, 0.28, 0.28);
+      const b = mesh(new THREE.CircleGeometry(0.06, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
+      b.position.set(x, 0.29, 0.31);
+      b.lookAt(x * 3, 0.15, 3);
       return b;
     };
-    coomy.add(blush(-0.22), blush(0.22));
+    coomy.add(blush(-0.25), blush(0.25));
   }
   scene.add(coomy);
 
