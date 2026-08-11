@@ -3,7 +3,7 @@ layout: film
 title: 水球生日・動畫版本
 description: 用動畫實驗室的粉彩畫風，把 2026/8/7 的宜蘭生日再過一次——實體低多邊形的水球與 Coomy、會變色的天空、和同一顆許願星。
 date: 2026-08-12 21:00:00 +0800
-image: /assets/og-bday-pastel7.jpg
+image: /assets/og-bday-pastel8.jpg
 tags: [動畫實驗室, 生日]
 seo:
   type: BlogPosting
@@ -252,6 +252,18 @@ function boot() {
       return m;
     };
     ball.add(mouthArc(-0.055), mouthArc(0.055));
+    const bEyeClosed = (x) => {
+      const c = mesh(new THREE.TorusGeometry(0.085, 0.018, 5, 10, Math.PI), solidMat('#4a3b52'));
+      c.position.set(x, 0.08, 0.56);
+      c.visible = false;
+      return c;
+    };
+    const bec1 = bEyeClosed(-0.2), bec2 = bEyeClosed(0.2);
+    ball.add(bec1, bec2);
+    const bMouthO = mesh(new THREE.TorusGeometry(0.055, 0.02, 6, 12), solidMat('#4a3b52'));
+    bMouthO.position.set(0, -0.17, 0.56);
+    bMouthO.visible = false;
+    ball.add(bMouthO);
     const blush = (x) => {
       const b = mesh(new THREE.CircleGeometry(0.085, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
       b.position.set(x, -0.1, 0.53);
@@ -259,6 +271,12 @@ function boot() {
       return b;
     };
     ball.add(blush(-0.36), blush(0.36));
+    ball.userData.face = {
+      eyesOpen: ball.children.filter((c) => c.geometry && c.geometry.type === 'SphereGeometry' && Math.abs(c.position.y - 0.1) < 0.06),
+      eyesClosed: [bec1, bec2],
+      mouthW: ball.children.filter((c) => c.geometry && c.geometry.type === 'TorusGeometry' && c.position.y < -0.1 && c !== bMouthO),
+      mouthO: bMouthO,
+    };
   }
   scene.add(ball);
   casts(ball);
@@ -308,7 +326,16 @@ function boot() {
       gl.position.set(x + 0.028, 0.42, 0.36);
       return gl;
     };
-    coomy.add(eye(-0.13), eye(0.13), glint(-0.13), glint(0.13));
+    const eL = eye(-0.13), eR = eye(0.13), gL = glint(-0.13), gR = glint(0.13);
+    coomy.add(eL, eR, gL, gR);
+    const cEyeClosed = (x) => {
+      const c = mesh(new THREE.TorusGeometry(0.065, 0.015, 5, 10, Math.PI), solidMat('#4a3b52'));
+      c.position.set(x, 0.37, 0.33);
+      c.visible = false;
+      return c;
+    };
+    const cec1 = cEyeClosed(-0.13), cec2 = cEyeClosed(0.13);
+    coomy.add(cec1, cec2);
     const arm = (side) => {
       const a = new THREE.Group();
       const sleeve = mesh(new THREE.CapsuleGeometry(0.055, 0.16, 3, 6), solidMat('#f6efe3'));
@@ -324,6 +351,11 @@ function boot() {
     smileM.position.set(0, 0.26, 0.33);
     smileM.rotation.z = Math.PI;
     coomy.add(smileM);
+    const cMouthO = mesh(new THREE.TorusGeometry(0.045, 0.018, 6, 12), solidMat('#4a3b52'));
+    cMouthO.position.set(0, 0.25, 0.33);
+    cMouthO.visible = false;
+    coomy.add(cMouthO);
+    coomy.userData.face = { eyesOpen: [eL, eR, gL, gR], eyesClosed: [cec1, cec2], mouthSmile: smileM, mouthO: cMouthO };
     const blush = (x) => {
       const b = mesh(new THREE.CircleGeometry(0.06, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
       b.position.set(x, 0.29, 0.31);
@@ -741,6 +773,24 @@ function boot() {
     coomy.scale.setScalar(rideScale);
     // 泡湯只露上半身
     // （位置已在 keyframe 內下沉，浴池壁自然遮擋）
+
+    // 表情：賽車打轉大笑／收禮感動／泡湯許願幸福
+    const exprTouch = ss(0.55, 0.6, p) * (1 - ss(0.7, 0.74, p));
+    const exprBath = ss(0.8, 0.84, p);
+    const spinNow = raceQ > 0.5 && crash > 0.7;
+    const cf = coomy.userData.face;
+    const cClosed = spinNow || exprBath > 0.5;
+    cf.eyesOpen.forEach((o) => { o.visible = !cClosed; });
+    cf.eyesClosed.forEach((o) => { o.visible = cClosed; });
+    cf.mouthO.visible = spinNow && exprBath <= 0.5;
+    cf.mouthSmile.visible = !cf.mouthO.visible;
+    const bf = ball.userData.face;
+    const bClosed = exprTouch > 0.5 || exprBath > 0.5;
+    bf.eyesOpen.forEach((o) => { o.visible = !bClosed; });
+    bf.eyesClosed.forEach((o) => { o.visible = bClosed; });
+    const bO = raceQ > 0.5 && !bClosed;
+    bf.mouthO.visible = bO;
+    bf.mouthW.forEach((o) => { o.visible = !bO; });
 
     // says
     const sb = Math.max(
