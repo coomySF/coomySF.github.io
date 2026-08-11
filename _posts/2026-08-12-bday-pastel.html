@@ -344,6 +344,7 @@ function boot() {
 
   // ---------- 場景道具 ----------
   // 蘭城晶英
+  let ferris = null;
   const hotel = new THREE.Group();
   {
     const bodyM = mesh(new THREE.BoxGeometry(2.4, 3.4, 1), solidMat('#f6e8d8'));
@@ -387,6 +388,65 @@ function boot() {
     const brella = mesh(new THREE.ConeGeometry(0.26, 0.14, 8), solidMat('#ffb6d9'));
     brella.position.set(0.05, 2.12, -0.26);
     hotel.add(pole, brella);
+    const pole2 = pole.clone(); pole2.position.set(1.05, 1.92, -0.3);
+    const brella2 = mesh(new THREE.ConeGeometry(0.22, 0.12, 8), solidMat('#a5d8f5'));
+    brella2.position.set(1.05, 2.1, -0.3);
+    hotel.add(pole2, brella2);
+    // 屋頂彩旗串
+    const rod = mesh(new THREE.CylinderGeometry(0.012, 0.012, 2.5, 5), solidMat('#f6efe3'));
+    rod.rotation.z = Math.PI / 2;
+    rod.position.set(0, 2.06, 0.47);
+    hotel.add(rod);
+    const flagCols = ['#ffb6d9', '#a8d8b8', '#a5d8f5', '#ffd4a8', '#c9b6ff', '#ffb6d9'];
+    for (let i = 0; i < 6; i++) {
+      const fl = mesh(new THREE.ConeGeometry(0.07, 0.13, 4), solidMat(flagCols[i]));
+      fl.rotation.x = Math.PI;
+      fl.position.set(-1.05 + i * 0.42, 1.98, 0.47);
+      hotel.add(fl);
+    }
+    // 頂樓小滑梯滑進泳池
+    const slide = mesh(new THREE.BoxGeometry(0.14, 0.05, 0.5), solidMat('#a8d8b8'));
+    slide.position.set(0.55, 1.92, 0.5);
+    slide.rotation.x = -0.55;
+    hotel.add(slide);
+    // 飯店前的地面游泳池
+    const gRim = mesh(new THREE.TorusGeometry(0.52, 0.07, 8, 20), solidMat('#ffffff'));
+    gRim.rotation.x = Math.PI / 2;
+    gRim.position.set(0.15, -1.64, 1.15);
+    const gWater = mesh(new THREE.CircleGeometry(0.5, 18), solidMat('#a5dbff', { emissive: '#2a4a66', roughness: 0.25 }));
+    gWater.rotation.x = -Math.PI / 2;
+    gWater.position.set(0.15, -1.62, 1.15);
+    const floatie = mesh(new THREE.TorusGeometry(0.13, 0.045, 8, 14), solidMat('#ffb6d9'));
+    floatie.rotation.x = Math.PI / 2;
+    floatie.position.set(0.32, -1.6, 1.02);
+    hotel.add(gRim, gWater, floatie);
+    // 旁邊的小遊樂園：摩天輪
+    ferris = new THREE.Group();
+    const ring = mesh(new THREE.TorusGeometry(0.9, 0.05, 8, 26), solidMat('#e8a8b8'));
+    ferris.add(ring);
+    for (let i = 0; i < 4; i++) {
+      const spoke = mesh(new THREE.BoxGeometry(0.045, 1.78, 0.045), solidMat('#e8d8c8'));
+      spoke.rotation.z = (i / 4) * Math.PI;
+      ferris.add(spoke);
+    }
+    const gonCols = ['#ffb6d9', '#a8d8b8', '#a5d8f5', '#ffd4a8', '#c9b6ff', '#ff9db8', '#bfe3ff', '#f6efe3'];
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const gon = mesh(new THREE.SphereGeometry(0.115, 8, 6), solidMat(gonCols[i]));
+      gon.position.set(Math.cos(a) * 0.9, Math.sin(a) * 0.9, 0);
+      ferris.add(gon);
+    }
+    const hub = mesh(new THREE.SphereGeometry(0.09, 8, 6), solidMat('#f6efe3'));
+    ferris.add(hub);
+    ferris.position.set(2.3, -0.45, -0.6);
+    hotel.add(ferris);
+    const legL = mesh(new THREE.BoxGeometry(0.07, 1.35, 0.07), solidMat('#e8d8c8'));
+    legL.position.set(2.05, -1.1, -0.6);
+    legL.rotation.z = 0.22;
+    const legR = legL.clone();
+    legR.position.x = 2.55;
+    legR.rotation.z = -0.22;
+    hotel.add(legL, legR);
   }
   hotel.position.set(2.4, -0.32, -1.2);
   scene.add(hotel);
@@ -578,6 +638,7 @@ function boot() {
 
     // 場景進退（整組隱藏避免隱形道具投影）
     hotel.visible = arriveQ > 0.02;
+    if (ferris) ferris.rotation.z = t * 0.18;
     race.visible = raceQ > 0.02;
     party.visible = partyQ > 0.02;
     gift.visible = partyQ > 0.02;
