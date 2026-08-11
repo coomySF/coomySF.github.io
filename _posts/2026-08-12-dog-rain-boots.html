@@ -1,0 +1,857 @@
+---
+layout: film
+title: 狗的雨鞋
+description: 真人真事：國中的我在愛買問了一個問題，我媽看了我爸一眼，然後我家三條狗在雨天穿上了十二隻「雨鞋」。
+date: 2026-08-12 23:00:00 +0800
+image: /assets/og-dog-boots.jpg
+tags: [我們的日子, 童年]
+seo:
+  type: BlogPosting
+---
+<style>
+  #db-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 620vh; }
+  .db-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .db-sky { position: absolute; inset: 0; }
+  .db-sky-store { background: linear-gradient(180deg, #fff2dc 0%, #ffe0d0 55%, #f0d0e0 100%); }
+  .db-sky-rain { background: linear-gradient(180deg, #a8a8c8 0%, #b8b0d8 55%, #9a94c0 100%); opacity: 0; }
+  .db-sky-eve { background: linear-gradient(180deg, #f0b8a8 0%, #d8a8c8 55%, #a898d0 100%); opacity: 0; }
+  #db-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .db-ui { position: absolute; inset: 0; pointer-events: none; }
+  .db-bar { position: absolute; left: 0; right: 0; height: 7vh; background: #0d0a18; }
+  .db-bar-top { top: 0; }
+  .db-bar-bot { bottom: 0; }
+  .db-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 52%, rgba(30, 20, 40, .35) 100%); }
+  .db-cap {
+    position: absolute; left: 50%; top: 13vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.9; color: #fff; opacity: 0;
+    text-shadow: 0 1px 18px rgba(50, 35, 60, .7);
+  }
+  .db-cap small { display: block; font-size: .78em; opacity: .88; margin-top: 6px; }
+  .db-say {
+    position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 13px;
+    color: #fff; opacity: 0; white-space: nowrap; text-align: center;
+    background: rgba(50, 35, 60, .55); border-radius: 14px; padding: 7px 13px;
+  }
+  .db-end {
+    position: absolute; left: 50%; bottom: 13vh; transform: translateX(-50%);
+    width: max-content; max-width: min(26em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(16px, 2vw, 21px);
+    line-height: 2; color: #fff; opacity: 0;
+    text-shadow: 0 1px 20px rgba(30, 20, 45, .85);
+  }
+  .db-end small { display: block; font-size: .8em; opacity: .85; margin-top: 4px; }
+  .db-start-wrap { text-align: center; margin: 6px 0 46px; }
+  .db-start {
+    cursor: pointer; background: none;
+    border: 1px solid rgba(220, 148, 124, .4); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .34em; text-indent: .34em; color: var(--life-clay);
+    animation: db-drift 2.4s ease-in-out infinite, db-glow 2.4s ease-in-out infinite;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .db-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
+  @keyframes db-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+  .db-sound {
+    position: absolute; right: 26px; bottom: calc(7vh + 18px); pointer-events: auto; cursor: pointer;
+    background: rgba(50, 35, 60, .35); border: 1px solid rgba(255, 255, 255, .4); border-radius: 999px;
+    padding: 10px 20px; font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
+    color: #fff; transition: color .3s ease, border-color .3s ease;
+    animation: db-glow 2.2s ease-in-out infinite;
+  }
+  .db-sound[aria-pressed="true"] { color: rgba(255, 255, 255, .55); border-color: rgba(255, 255, 255, .2); animation: none; }
+  @keyframes db-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+    50% { box-shadow: 0 0 22px rgba(255, 255, 255, .3); }
+  }
+</style>
+
+<p class="db-start-wrap"><button class="db-start" type="button">▶ PLAY</button></p>
+
+<div id="db-film">
+  <div class="db-stage">
+    <div class="db-sky db-sky-store" aria-hidden="true"></div>
+    <div class="db-sky db-sky-rain" aria-hidden="true"></div>
+    <div class="db-sky db-sky-eve" aria-hidden="true"></div>
+    <canvas id="db-canvas" aria-hidden="true"></canvas>
+    <div class="db-ui">
+      <div class="db-vig" aria-hidden="true"></div>
+      <div class="db-bar db-bar-top" aria-hidden="true"></div>
+      <div class="db-bar db-bar-bot" aria-hidden="true"></div>
+      <p class="db-cap" data-cap="0">國中的某天，全家去愛買。<small>推車裡，多了一盒神祕的「家庭號」。</small></p>
+      <p class="db-cap" data-cap="1">先說：我家有三條狗。<small>那天放學，剛好下雨。</small></p>
+      <p class="db-cap" data-cap="2">我把「狗雨鞋」找了出來。<small>超滑。想說大概有潤絲效果，避免狗毛打結吧。</small></p>
+      <p class="db-cap" data-cap="3">三條狗，十二條腿。<small>拆了十二個，一腿一隻，剛剛好。</small></p>
+      <p class="db-cap" data-cap="4">狗雨鞋超難用，走兩步就滑掉。<small>路人的眼神，也怪怪的。</small></p>
+      <p class="db-say" data-say="0" aria-hidden="true">那是什麼？</p>
+      <p class="db-say" data-say="1" aria-hidden="true">那是……狗的雨鞋。</p>
+      <p class="db-say" data-say="2" aria-hidden="true">怎麼滑滑的……</p>
+      <p class="db-say" data-say="3" aria-hidden="true">狗雨鞋超爛！你被騙了！</p>
+      <p class="db-say" data-say="4" aria-hidden="true">……你用了幾個？</p>
+      <p class="db-say" data-say="5" aria-hidden="true">十二個啊！</p>
+      <p class="db-say" data-say="6" aria-hidden="true">好，我知道了。下次別用了。</p>
+      <p class="db-end">——真人真事。<small>媽，我現在懂了。</small></p>
+      <button class="db-sound" type="button" aria-pressed="false">SOUND · OFF</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = matchMedia('(max-width: 640px)').matches;
+const canvas = document.getElementById('db-canvas');
+
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+  catch { return false; }
+}
+if (!reduced && webglOK()) boot();
+
+function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], ss(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 8);
+
+  const hemi = new THREE.HemisphereLight('#fffdfa', '#d8c8ee', 1.4);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight('#fff4ea', 0.75);
+  key.position.set(3, 4, 2.5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
+  key.shadow.camera.left = -7; key.shadow.camera.right = 7;
+  key.shadow.camera.top = 6; key.shadow.camera.bottom = -4;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 20;
+  key.shadow.radius = 6;
+  scene.add(key);
+  const fill = new THREE.DirectionalLight('#e2ecff', 0.3);
+  fill.position.set(-4, -2, -3);
+  scene.add(fill);
+
+  const glowTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  })();
+  const sprite = (color, scale) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.setScalar(scale);
+    scene.add(s);
+    return s;
+  };
+  const solidMat = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.95, metalness: 0, ...opts });
+  const mesh = (geo, mat) => new THREE.Mesh(geo, mat);
+
+  const ground = mesh(new THREE.CircleGeometry(30, 32), new THREE.ShadowMaterial({ opacity: 0.15 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -2.02;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  const casts = (g) => g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  const fadeGroup = (grp, op) => {
+    grp.traverse((o) => {
+      if (o.material) { o.material.transparent = true; o.material.opacity = ('_baseOp' in o.material ? o.material._baseOp : 1) * op; }
+    });
+  };
+  const markBase = (grp) => grp.traverse((o) => { if (o.material) o.material._baseOp = o.material.opacity ?? 1; });
+
+  // ---------- 小 Coomy（國中版：粉彩 Coomy 縮小）----------
+  const coomy = new THREE.Group();
+  {
+    const dress = mesh(new THREE.ConeGeometry(0.36, 0.6, 9), solidMat('#f6efe3'));
+    dress.position.y = -0.22;
+    coomy.add(dress);
+    const head = mesh(new THREE.IcosahedronGeometry(0.34, 2), solidMat('#ffe8dc'));
+    head.position.y = 0.38;
+    coomy.add(head);
+    const hair = mesh(new THREE.SphereGeometry(0.37, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.52), solidMat('#d8ae7e'));
+    hair.position.y = 0.46;
+    hair.position.z = -0.04;
+    coomy.add(hair);
+    const bang = (x, r, y) => {
+      const b = mesh(new THREE.SphereGeometry(r, 8, 6), solidMat('#d8ae7e'));
+      b.position.set(x, y, 0.26);
+      b.scale.y = 1.35;
+      return b;
+    };
+    coomy.add(bang(-0.19, 0.062, 0.585), bang(-0.065, 0.07, 0.6), bang(0.065, 0.07, 0.6), bang(0.19, 0.062, 0.585));
+    const bun = mesh(new THREE.SphereGeometry(0.16, 8, 6), solidMat('#d8ae7e'));
+    bun.position.set(0, 0.6, -0.3);
+    coomy.add(bun);
+    const tuft = mesh(new THREE.ConeGeometry(0.05, 0.17, 5), solidMat('#d8ae7e'));
+    tuft.position.set(0.08, 0.82, 0);
+    tuft.rotation.z = -0.5;
+    coomy.add(tuft);
+    const eye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.078, 10, 8), solidMat('#5a3f30', { roughness: 0.35 }));
+      e.scale.z = 0.5;
+      e.position.set(x, 0.39, 0.3);
+      return e;
+    };
+    const glint = (x) => {
+      const gl = mesh(new THREE.SphereGeometry(0.024, 6, 5), solidMat('#ffffff', { emissive: '#888888' }));
+      gl.position.set(x + 0.028, 0.42, 0.36);
+      return gl;
+    };
+    const eL = eye(-0.13), eR = eye(0.13), gL = glint(-0.13), gR = glint(0.13);
+    coomy.add(eL, eR, gL, gR);
+    const cEyeClosed = (x) => {
+      const c = mesh(new THREE.TorusGeometry(0.065, 0.015, 5, 10, Math.PI), solidMat('#4a3b52'));
+      c.position.set(x, 0.37, 0.33);
+      c.visible = false;
+      return c;
+    };
+    const cec1 = cEyeClosed(-0.13), cec2 = cEyeClosed(0.13);
+    coomy.add(cec1, cec2);
+    const arm = (side) => {
+      const a = new THREE.Group();
+      const sleeve = mesh(new THREE.CapsuleGeometry(0.055, 0.16, 3, 6), solidMat('#f6efe3'));
+      const hand = mesh(new THREE.SphereGeometry(0.052, 8, 6), solidMat('#ffe8dc'));
+      hand.position.y = -0.13;
+      a.add(sleeve, hand);
+      a.position.set(side * 0.21, -0.14, 0.08);
+      a.rotation.z = side * 0.5;
+      return a;
+    };
+    const armL = arm(-1), armR = arm(1);
+    coomy.add(armL, armR);
+    coomy.userData.armR = armR;
+    const smileM = mesh(new THREE.TorusGeometry(0.07, 0.016, 6, 12, Math.PI), solidMat('#4a3b52'));
+    smileM.position.set(0, 0.26, 0.33);
+    smileM.rotation.z = Math.PI;
+    coomy.add(smileM);
+    const cMouthO = mesh(new THREE.TorusGeometry(0.045, 0.018, 6, 12), solidMat('#4a3b52'));
+    cMouthO.position.set(0, 0.25, 0.33);
+    cMouthO.visible = false;
+    coomy.add(cMouthO);
+    coomy.userData.face = { eyesOpen: [eL, eR, gL, gR], eyesClosed: [cec1, cec2], mouthSmile: smileM, mouthO: cMouthO };
+    const blush = (x) => {
+      const b = mesh(new THREE.CircleGeometry(0.06, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
+      b.position.set(x, 0.29, 0.31);
+      b.lookAt(x * 3, 0.15, 3);
+      return b;
+    };
+    coomy.add(blush(-0.25), blush(0.25));
+  }
+  coomy.scale.setScalar(0.88);
+  scene.add(coomy);
+  casts(coomy);
+
+  // ---------- 媽媽與爸爸 ----------
+  const mkParent = (dressCol, hairCol, tall, isMom) => {
+    const g = new THREE.Group();
+    const body = mesh(new THREE.ConeGeometry(0.4, 0.78, 9), solidMat(dressCol));
+    body.position.y = -0.18;
+    g.add(body);
+    const head = mesh(new THREE.IcosahedronGeometry(0.3, 2), solidMat('#ffe8dc'));
+    head.position.y = 0.48;
+    g.add(head);
+    if (isMom) {
+      const hair = mesh(new THREE.SphereGeometry(0.33, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), solidMat(hairCol));
+      hair.position.set(0, 0.54, -0.03);
+      const bun = mesh(new THREE.SphereGeometry(0.15, 8, 6), solidMat(hairCol));
+      bun.position.set(0, 0.78, -0.12);
+      g.add(hair, bun);
+    } else {
+      const hair = mesh(new THREE.SphereGeometry(0.31, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.42), solidMat(hairCol));
+      hair.position.set(0, 0.56, -0.02);
+      const brim = mesh(new THREE.BoxGeometry(0.34, 0.04, 0.2), solidMat('#8ab0c8'));
+      brim.position.set(0, 0.62, 0.22);
+      const dome = mesh(new THREE.SphereGeometry(0.26, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.45), solidMat('#8ab0c8'));
+      dome.position.set(0, 0.6, 0);
+      g.add(hair, brim, dome);
+    }
+    const eyeDot = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.05, 8, 6), solidMat('#5a3f30'));
+      e.scale.z = 0.5;
+      e.position.set(x, 0.5, 0.27);
+      return e;
+    };
+    g.add(eyeDot(-0.1), eyeDot(0.1));
+    const sm = mesh(new THREE.TorusGeometry(0.055, 0.013, 5, 10, Math.PI), solidMat('#4a3b52'));
+    sm.position.set(0, 0.4, 0.28);
+    sm.rotation.z = Math.PI;
+    g.add(sm);
+    g.scale.setScalar(tall);
+    scene.add(g);
+    markBase(g);
+    casts(g);
+    return g;
+  };
+  const mom = mkParent('#e8c0d4', '#6a4a3a', 1.15, true);
+  const dad = mkParent('#c0d0dc', '#4a3b30', 1.2, false);
+
+  // ---------- 推車與神祕盒 ----------
+  const cart = new THREE.Group();
+  {
+    const basket = new THREE.Group();
+    const bw = 1.1, bh = 0.5, bd = 0.6;
+    const frameMat = solidMat('#b9c4d0');
+    [[0, -bh / 2, 0, bw, 0.05, bd]].forEach(([x, y, z, w, h, d]) => {
+      const f = mesh(new THREE.BoxGeometry(w, h, d), frameMat);
+      f.position.set(x, y, z);
+      basket.add(f);
+    });
+    [[-bw / 2, 0, 0, 0.05, bh, bd], [bw / 2, 0, 0, 0.05, bh, bd], [0, 0, -bd / 2, bw, bh, 0.05], [0, 0, bd / 2, bw, bh, 0.05]].forEach(([x, y, z, w, h, d]) => {
+      const f = mesh(new THREE.BoxGeometry(w, h, d), solidMat('#b9c4d0', { transparent: true, opacity: 0.55 }));
+      f.position.set(x, y, z);
+      basket.add(f);
+    });
+    basket.position.y = -0.85;
+    cart.add(basket);
+    const handle = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.62, 6), solidMat('#8a97a8'));
+    handle.rotation.x = Math.PI / 2;
+    handle.position.set(-0.75, -0.62, 0);
+    cart.add(handle);
+    const bar = (x) => {
+      const b = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 6), solidMat('#8a97a8'));
+      b.position.set(lerp(-0.75, -0.55, 0.5), -0.85, x);
+      b.rotation.z = 0.5;
+      return b;
+    };
+    cart.add(bar(-0.25), bar(0.25));
+    const wheel = (x, z) => {
+      const w = mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.05, 10), solidMat('#4a3b52'));
+      w.rotation.x = Math.PI / 2;
+      w.position.set(x, -1.55, z);
+      return w;
+    };
+    cart.add(wheel(-0.45, -0.25), wheel(-0.45, 0.25), wheel(0.45, -0.25), wheel(0.45, 0.25));
+    // 神祕的家庭號
+    const box = mesh(new THREE.BoxGeometry(0.42, 0.2, 0.26), solidMat('#f8e8f0'));
+    box.position.set(0.1, -0.72, 0);
+    box.rotation.y = 0.4;
+    const stripe = mesh(new THREE.BoxGeometry(0.43, 0.06, 0.27), solidMat('#e8a8c8'));
+    stripe.position.copy(box.position);
+    stripe.rotation.copy(box.rotation);
+    cart.add(box, stripe);
+  }
+  cart.position.set(0.4, -0.35, 0);
+  scene.add(cart);
+  markBase(cart);
+  casts(cart);
+  const qMark = sprite('#ffd479', 1);
+
+  // 貨架（超市背景）
+  const shelves = new THREE.Group();
+  [[-2.9, -0.5], [2.9, -0.5]].forEach(([x]) => {
+    const rack = mesh(new THREE.BoxGeometry(1.3, 2.6, 0.5), solidMat('#e8ddd0'));
+    rack.position.set(x, -0.5, -2.2);
+    shelves.add(rack);
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const item = mesh(new THREE.BoxGeometry(0.22, 0.28, 0.2), solidMat(['#ffb6d9', '#a8d8b8', '#a5c8f0', '#ffd4a8'][(r + c) % 4]));
+        item.position.set(x - 0.4 + c * 0.4, 0.35 - r * 0.75, -1.9);
+        shelves.add(item);
+      }
+    }
+  });
+  scene.add(shelves);
+  markBase(shelves);
+  casts(shelves);
+
+  // ---------- 三條狗 ----------
+  const DOGCOLS = ['#f0e0c8', '#c8a888', '#b9b4c4'];
+  const dogs = DOGCOLS.map((col, di) => {
+    const g = new THREE.Group();
+    const body = mesh(new THREE.CapsuleGeometry(0.2, 0.42, 4, 8), solidMat(col));
+    body.rotation.z = Math.PI / 2;
+    body.position.y = 0.05;
+    g.add(body);
+    const head = mesh(new THREE.SphereGeometry(0.2, 10, 8), solidMat(col));
+    head.position.set(0.36, 0.22, 0);
+    g.add(head);
+    const snout = mesh(new THREE.BoxGeometry(0.14, 0.1, 0.12), solidMat('#fff4e8'));
+    snout.position.set(0.5, 0.16, 0);
+    g.add(snout);
+    const nose = mesh(new THREE.SphereGeometry(0.035, 6, 5), solidMat('#4a3b52'));
+    nose.position.set(0.57, 0.18, 0);
+    g.add(nose);
+    const ear = (z) => {
+      const e = mesh(new THREE.CapsuleGeometry(0.05, 0.12, 3, 6), solidMat(col === '#f0e0c8' ? '#d8c0a0' : col));
+      e.position.set(0.3, 0.36, z);
+      e.rotation.x = z > 0 ? 0.7 : -0.7;
+      return e;
+    };
+    g.add(ear(-0.14), ear(0.14));
+    const dEye = (z) => {
+      const e = mesh(new THREE.SphereGeometry(0.035, 6, 5), solidMat('#4a3b52'));
+      e.position.set(0.45, 0.28, z);
+      return e;
+    };
+    g.add(dEye(-0.09), dEye(0.09));
+    const tail = mesh(new THREE.ConeGeometry(0.05, 0.22, 6), solidMat(col));
+    tail.position.set(-0.4, 0.18, 0);
+    tail.rotation.z = -1;
+    g.add(tail);
+    g.userData.tail = tail;
+    const legs = [];
+    [[0.22, -0.12], [0.22, 0.12], [-0.2, -0.12], [-0.2, 0.12]].forEach(([lx, lz]) => {
+      const leg = mesh(new THREE.CapsuleGeometry(0.045, 0.16, 3, 6), solidMat(col));
+      leg.position.set(lx, -0.2, lz);
+      g.add(leg);
+      // 「雨鞋」：半透明小白套
+      const boot = mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.12, 8), solidMat('#fff6fa', { transparent: true, opacity: 0.75 }));
+      boot.position.set(lx, -0.28, lz);
+      boot.visible = false;
+      g.add(boot);
+      legs.push({ leg, boot, phase: Math.random() * Math.PI * 2 });
+    });
+    g.userData.legs = legs;
+    scene.add(g);
+    markBase(g);
+    casts(g);
+    return g;
+  });
+
+  // 掉在路上的雨鞋
+  const dropped = [];
+  for (let i = 0; i < 4; i++) {
+    const d = mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.12, 8), solidMat('#fff6fa', { transparent: true, opacity: 0 }));
+    d.rotation.z = 1.2 + i * 0.5;
+    d.position.set(-2.4 + i * 1.3, -1.95, 0.9 + (i % 2) * 0.4);
+    scene.add(d);
+    dropped.push(d);
+  }
+
+  // 牽繩
+  const leashMat = new THREE.LineBasicMaterial({ color: '#7a4a2a', transparent: true, opacity: 0 });
+  const leashes = dogs.map(() => {
+    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]);
+    const l = new THREE.Line(geo, leashMat);
+    scene.add(l);
+    return l;
+  });
+
+  // 路人（撐傘）
+  const walker = new THREE.Group();
+  {
+    const body = mesh(new THREE.CapsuleGeometry(0.18, 0.42, 4, 8), solidMat('#9ab0a0'));
+    walker.add(body);
+    const wEye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.028, 6, 5), solidMat('#4a3b52'));
+      e.position.set(x, 0.16, 0.17);
+      return e;
+    };
+    walker.add(wEye(-0.055), wEye(0.055));
+    const flat = mesh(new THREE.BoxGeometry(0.08, 0.016, 0.02), solidMat('#4a3b52'));
+    flat.position.set(0, 0.04, 0.18);
+    walker.add(flat);
+    const pole = mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.7, 5), solidMat('#8a7a6a'));
+    pole.position.set(0.2, 0.5, 0);
+    const canopyU = mesh(new THREE.ConeGeometry(0.42, 0.22, 8), solidMat('#a5c8f0'));
+    canopyU.position.set(0.2, 0.9, 0);
+    walker.add(pole, canopyU);
+  }
+  scene.add(walker);
+  markBase(walker);
+  casts(walker);
+  const huhMark = sprite('#ffffff', 0.9);
+
+  // ---------- 雨 ----------
+  const RAIN = small ? 220 : 480;
+  const rp = new Float32Array(RAIN * 3);
+  for (let i = 0; i < RAIN; i++) {
+    rp[i * 3] = (Math.random() - 0.5) * 22;
+    rp[i * 3 + 1] = Math.random() * 14 - 3;
+    rp[i * 3 + 2] = -4 - Math.random() * 6;
+  }
+  const rainGeo = new THREE.BufferGeometry();
+  rainGeo.setAttribute('position', new THREE.BufferAttribute(rp, 3));
+  const rainMat = new THREE.PointsMaterial({ color: '#dce8ff', size: 0.06, transparent: true, opacity: 0, depthWrite: false });
+  const rain = new THREE.Points(rainGeo, rainMat);
+  scene.add(rain);
+
+  // ---------- 電話與媽媽泡泡 ----------
+  const phone = new THREE.Group();
+  {
+    const barP = mesh(new THREE.CapsuleGeometry(0.035, 0.16, 3, 6), solidMat('#e86a6a'));
+    barP.rotation.z = 1.15;
+    const cup = (s) => {
+      const c = mesh(new THREE.SphereGeometry(0.06, 8, 6), solidMat('#e86a6a'));
+      c.position.set(s * 0.12, s * 0.055, 0);
+      return c;
+    };
+    phone.add(barP, cup(-1), cup(1));
+  }
+  scene.add(phone);
+  markBase(phone);
+  const momBubble = new THREE.Group();
+  {
+    const puffMat = solidMat('#ffffff', { transparent: true, opacity: 0.92 });
+    [[0, 0, 0.5], [0.42, 0.1, 0.34], [-0.4, 0.06, 0.3], [0, -0.08, 0.4]].forEach(([x, y, r]) => {
+      const s = mesh(new THREE.SphereGeometry(r, 8, 6), puffMat);
+      s.position.set(x, y, 0);
+      momBubble.add(s);
+    });
+    const mh = mesh(new THREE.SphereGeometry(0.24, 10, 8), solidMat('#ffe8dc'));
+    mh.position.set(0, 0.05, 0.32);
+    momBubble.add(mh);
+    const mhair = mesh(new THREE.SphereGeometry(0.27, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.55), solidMat('#6a4a3a'));
+    mhair.position.set(0, 0.1, 0.3);
+    const mbun = mesh(new THREE.SphereGeometry(0.12, 8, 6), solidMat('#6a4a3a'));
+    mbun.position.set(0, 0.3, 0.22);
+    momBubble.add(mhair, mbun);
+    const mEye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.035, 6, 5), solidMat('#4a3b52'));
+      e.position.set(x, 0.05, 0.55);
+      return e;
+    };
+    momBubble.add(mEye(-0.08), mEye(0.08));
+    const mMouth = mesh(new THREE.BoxGeometry(0.07, 0.014, 0.02), solidMat('#4a3b52'));
+    mMouth.position.set(0, -0.05, 0.55);
+    momBubble.add(mMouth);
+  }
+  momBubble.position.set(-1.7, 0.9, 0.5);
+  scene.add(momBubble);
+  markBase(momBubble);
+
+  // 家裡的燈
+  const lampGlow = sprite('#ffd9a0', 2.6);
+
+  // ---------- DOM ----------
+  const caps = [...document.querySelectorAll('.db-cap')];
+  const says = [...document.querySelectorAll('.db-say')];
+  const endEl = document.querySelector('.db-end');
+  const skyRain = document.querySelector('.db-sky-rain');
+  const skyEve = document.querySelector('.db-sky-eve');
+
+  // ---------- sound ----------
+  const sound = makeSound();
+  const soundBtn = document.querySelector('.db-sound');
+  let soundOn = false;
+  const setSoundUI = () => {
+    soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  };
+  soundBtn.addEventListener('click', () => {
+    if (soundOn) { sound.stop(); soundOn = false; localStorage.setItem('coomy-sound', 'off'); }
+    else { sound.start(); soundOn = true; setSoundUI(); localStorage.setItem('coomy-sound', 'on'); }
+    setSoundUI();
+  });
+  setSoundUI();
+  const CUES = [
+    { at: 0.06, fn: () => sound.pop() },
+    { at: 0.14, fn: () => sound.tickTak() },
+    { at: 0.3, fn: () => sound.pop() },
+    { at: 0.44, fn: () => sound.count() },
+    { at: 0.58, fn: () => sound.slip() },
+    { at: 0.66, fn: () => sound.slip() },
+    { at: 0.74, fn: () => sound.slip() },
+    { at: 0.85, fn: () => sound.ring() },
+    { at: 0.96, fn: () => sound.chord() },
+  ].map((c) => ({ ...c, fired: false }));
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('db-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__dbSeek = (p) => { P = p; Psm = p; render(); };
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  let lastUserMs = performance.now();
+  const cancelGlide = () => { autoScroll = null; lastUserMs = performance.now(); };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.db-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    if (localStorage.getItem('coomy-sound') !== 'off' && !soundOn) { sound.start(); soundOn = true; setSoundUI(); }
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * 0.05, 2600);
+  });
+  let endSeen = false, prevT = 0;
+
+  const tmpV = new THREE.Vector3();
+  const clock = new THREE.Clock();
+
+  function update(p, t) {
+    const w = innerWidth, h = innerHeight;
+    const storeQ = ss(0.03, 0.08, p) * (1 - ss(0.2, 0.26, p));
+    const rainInQ = ss(0.24, 0.3, p);
+    const findQ = ss(0.3, 0.35, p) * (1 - ss(0.4, 0.44, p));
+    const bootQ = ss(0.42, 0.46, p) * (1 - ss(0.52, 0.56, p));
+    const walkQ = ss(0.54, 0.58, p) * (1 - ss(0.76, 0.8, p));
+    const homeQ = ss(0.82, 0.86, p);
+
+    skyRain.style.opacity = String(Math.max(rainInQ * (1 - ss(0.78, 0.84, p)), 0));
+    skyEve.style.opacity = String(homeQ);
+    rainMat.opacity = rainInQ * (1 - ss(0.78, 0.83, p)) * 0.75;
+    hemi.intensity = 1.4 - rainInQ * 0.35 + homeQ * 0.25;
+
+    // 雨落下
+    const rpArr = rainGeo.getAttribute('position');
+    for (let i = 0; i < RAIN; i++) {
+      let y = rpArr.getY(i) - 0.16;
+      if (y < -3) y += 14;
+      rpArr.setY(i, y);
+    }
+    rpArr.needsUpdate = true;
+
+    // captions
+    const capW = [
+      ss(0.04, 0.07, p) * (1 - ss(0.19, 0.23, p)),
+      ss(0.25, 0.28, p) * (1 - ss(0.34, 0.37, p)),
+      ss(0.31, 0.34, p) * (1 - ss(0.4, 0.43, p)) * 0 + ss(0.33, 0.36, p) * (1 - ss(0.41, 0.44, p)),
+      ss(0.43, 0.46, p) * (1 - ss(0.52, 0.55, p)),
+      ss(0.56, 0.59, p) * (1 - ss(0.74, 0.78, p)),
+    ];
+    caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
+    endEl.style.opacity = String(ss(0.955, 0.985, p));
+
+    // 超市
+    cart.visible = storeQ > 0.02;
+    fadeGroup(cart, storeQ);
+    shelves.visible = storeQ > 0.02;
+    fadeGroup(shelves, storeQ);
+    mom.visible = storeQ > 0.02;
+    fadeGroup(mom, storeQ);
+    dad.visible = storeQ > 0.02;
+    fadeGroup(dad, storeQ);
+    mom.position.set(1.5, -0.95, 0.3);
+    dad.position.set(2.5, -0.9, 0.1);
+    // 媽媽瞄爸爸一眼
+    const glanceQ = ss(0.12, 0.135, p) * (1 - ss(0.16, 0.175, p));
+    mom.rotation.y = glanceQ * 0.7;
+    qMark.position.set(0.5, 0.15, 0.3);
+    qMark.material.opacity = storeQ * (0.35 + 0.15 * Math.sin(t * 2.5));
+
+    // 狗登場
+    dogs.forEach((d, i) => {
+      const enterQ = ss(0.26 + i * 0.02, 0.3 + i * 0.02, p);
+      d.visible = enterQ > 0.02 && p < 0.82;
+      fadeGroup(d, enterQ * (1 - ss(0.78, 0.82, p)));
+      const wx = walkQ > 0.01 ? Math.sin(t * 0.32) * 1.6 : 0;
+      const baseX = -1.5 + i * 1.35 + wx;
+      const trot = walkQ * Math.abs(Math.sin(t * 6 + i * 2)) * 0.06;
+      d.position.set(baseX, -1.72 + trot, 0.4 + (i % 2) * 0.3);
+      d.rotation.z = walkQ * Math.sin(t * 6 + i * 2) * 0.04;
+      d.userData.tail.rotation.z = -1 + Math.sin(t * 7 + i) * 0.35;
+      // 雨鞋：穿上與滑掉
+      d.userData.legs.forEach((L, li) => {
+        const wearAt = 0.43 + (i * 4 + li) * 0.006;
+        const worn = ss(wearAt, wearAt + 0.008, p);
+        const cyc = (t * 0.5 + L.phase) % 1;
+        const slipping = walkQ > 0.3 && cyc > 0.75;
+        L.boot.visible = worn > 0.5 && p < 0.78 && !(walkQ > 0.3 && cyc > 0.9);
+        const slipDrop = slipping ? (cyc - 0.75) * 2.2 : 0;
+        L.boot.position.y = -0.28 - slipDrop * 0.5;
+        L.boot.rotation.z = slipDrop * 2.5;
+        L.boot.material.opacity = 0.75 * (1 - slipDrop * 0.6);
+      });
+    });
+
+    // 掉在路上的雨鞋
+    dropped.forEach((d, i) => {
+      d.material.opacity = ss(0.6 + i * 0.04, 0.64 + i * 0.04, p) * (1 - ss(0.78, 0.82, p)) * 0.7;
+    });
+
+    // 牽繩
+    leashMat.opacity = walkQ * 0.85;
+    if (walkQ > 0.01) {
+      dogs.forEach((d, i) => {
+        const hand = tmpV.set(coomy.position.x + 0.2, coomy.position.y + 0.05, coomy.position.z);
+        const mid = new THREE.Vector3((hand.x + d.position.x + 0.3) / 2, Math.min(hand.y, d.position.y + 0.3) - 0.25, (hand.z + d.position.z) / 2);
+        const pts = [hand.clone(), mid, new THREE.Vector3(d.position.x + 0.3, d.position.y + 0.3, d.position.z)];
+        leashes[i].geometry.setFromPoints(pts);
+      });
+    }
+
+    // 路人
+    const walkerQ = ss(0.62, 0.66, p) * (1 - ss(0.74, 0.78, p));
+    walker.visible = walkerQ > 0.02;
+    fadeGroup(walker, walkerQ);
+    walker.position.set(lerp(5.5, -5.5, ss(0.62, 0.78, p)), -1.62 + Math.abs(Math.sin(t * 4)) * 0.04, 1.4);
+    huhMark.position.set(walker.position.x, walker.position.y + 1.35, walker.position.z);
+    huhMark.material.opacity = walkerQ * 0.6;
+
+    // 電話與家
+    phone.visible = homeQ > 0.02;
+    fadeGroup(phone, homeQ);
+    momBubble.visible = homeQ > 0.02;
+    const momTalk = Math.max(ss(0.88, 0.9, p) * (1 - ss(0.92, 0.94, p)), ss(0.955, 0.97, p) * (1 - ss(0.985, 1, p)));
+    fadeGroup(momBubble, homeQ * (0.25 + momTalk * 0.75));
+    momBubble.position.set(-1.7, 0.9 + Math.sin(t * 0.8) * 0.06, 0.5);
+    lampGlow.position.set(2.2, 0.6, -1);
+    lampGlow.material.opacity = homeQ * 0.35;
+
+    // ---------- Coomy ----------
+    const cx = kf(p, [[0, -0.6], [0.2, -0.6], [0.26, -1.2], [0.42, -1.2], [0.46, -0.6], [0.54, -3], [0.58, -3], [0.76, -3], [0.82, 1.3], [1, 1.3]]);
+    const cy = kf(p, [[0, -1.32], [0.54, -1.32], [0.58, -1.35], [1, -1.35]]);
+    const chase = walkQ * Math.abs(Math.sin(t * 0.9)) * 1.1;
+    const hop = Math.max(storeQ * 0.3, bootQ * 0.5) * Math.abs(Math.sin(t * 4.5)) * 0.1;
+    coomy.position.set(cx + chase, cy + hop, 0.7);
+    coomy.rotation.z = walkQ * Math.sin(t * 5) * 0.05;
+    // 穿鞋時蹲一下
+    coomy.scale.setScalar(0.88 * (1 - bootQ * 0.06));
+    // 電話手勢
+    coomy.userData.armR.rotation.z = 0.5 + homeQ * 1.9;
+    phone.position.set(coomy.position.x + 0.18, coomy.position.y + 0.32, coomy.position.z + 0.12);
+
+    // 表情
+    const cf = coomy.userData.face;
+    const exprMad = ss(0.86, 0.89, p) * (1 - ss(0.93, 0.955, p));
+    const exprEnd = ss(0.965, 0.985, p);
+    const cClosed = exprEnd > 0.5;
+    cf.eyesOpen.forEach((o) => { o.visible = !cClosed; });
+    cf.eyesClosed.forEach((o) => { o.visible = cClosed; });
+    cf.mouthO.visible = (storeQ > 0.5 && ss(0.08, 0.1, p) * (1 - ss(0.14, 0.16, p)) > 0.4) || exprMad > 0.5;
+    cf.mouthSmile.visible = !cf.mouthO.visible;
+
+    // says
+    const sayW = [
+      ss(0.085, 0.105, p) * (1 - ss(0.135, 0.155, p)),
+      ss(0.15, 0.17, p) * (1 - ss(0.2, 0.22, p)),
+      ss(0.36, 0.38, p) * (1 - ss(0.41, 0.43, p)),
+      ss(0.86, 0.88, p) * (1 - ss(0.9, 0.915, p)),
+      ss(0.9, 0.92, p) * (1 - ss(0.935, 0.95, p)),
+      ss(0.935, 0.95, p) * (1 - ss(0.96, 0.972, p)),
+      ss(0.958, 0.972, p) * (1 - ss(0.99, 1, p)),
+    ];
+    const anchors = [
+      [coomy, 0.95], [mom, 1.35], [coomy, 0.95],
+      [coomy, 0.95], [momBubble, 0.75], [coomy, 0.95], [momBubble, 0.75],
+    ];
+    says.forEach((el, i) => {
+      const [obj, dy] = anchors[i];
+      tmpV.copy(obj.position); tmpV.y += dy; tmpV.project(camera);
+      el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+      el.style.opacity = String(sayW[i] || 0);
+    });
+
+    // 電影運鏡
+    const wideComp = Math.max(1, 3.6 / (0.4663 * camera.aspect) / 10);
+    const camX = kf(p, [[0, 0.3], [0.24, -0.2], [0.44, -0.5], [0.56, -0.8], [0.76, 0], [0.84, 0.6], [1, 0.4]]) + Math.sin(t * 0.25) * 0.08;
+    const camY = kf(p, [[0, 0], [0.44, -0.25], [0.56, 0.1], [0.84, -0.1], [1, -0.05]]) + Math.sin(t * 0.3) * 0.05;
+    const camZ = kf(p, [[0, 7.6], [0.3, 7.9], [0.44, 6.8], [0.58, 8.2], [0.78, 8], [0.86, 6.9], [1, 6.7]]);
+    camera.position.set(camX, camY, camZ * wideComp);
+    const lookY = kf(p, [[0, -0.65], [0.44, -0.95], [0.56, -0.7], [0.84, -0.5], [1, -0.5]]);
+    camera.lookAt(kf(p, [[0, 0.4], [0.5, -0.6], [0.8, 0], [0.86, 0.6], [1, 0.3]]), lookY, 0);
+  }
+
+  function render() {
+    const t = clock.getElapsedTime();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (performance.now() - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, 1 - Math.pow(1 - u, 3)));
+      if (u >= 1) autoScroll = null;
+    }
+    const dt = Math.min(0.05, Math.max(0, t - prevT));
+    prevT = t;
+    if (!autoScroll && !endSeen && P > 0.002 && P < 0.998 && performance.now() - lastUserMs > 800) {
+      const max = film.offsetHeight - innerHeight;
+      scrollTo(0, Math.min(film.offsetTop + max, scrollY + (max / 58) * dt));
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm, t);
+    if (soundOn) {
+      CUES.forEach((c) => {
+        if (!c.fired && Psm > c.at) { c.fired = true; c.fn(); }
+        if (c.fired && Psm < c.at - 0.06) c.fired = false;
+      });
+    }
+    renderer.render(scene, camera);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    readScroll();
+  });
+}
+
+/* tiny synthesized soundtrack */
+function makeSound() {
+  let ctx = null, master, twinkleTimer = null;
+  const ensure = () => {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const wn = Math.random() * 2 - 1; last = (last + 0.02 * wn) / 1.02; d[i] = last * 3.2; }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf; noise.loop = true;
+    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 240;
+    const ng = ctx.createGain(); ng.gain.value = 0.03;
+    noise.connect(nf); nf.connect(ng); ng.connect(master); noise.start();
+  };
+  const blip = (f, delay = 0, dur = 0.2, type = 'sine', vol = 0.06) => {
+    if (!ctx) return;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ctx.createGain();
+    const now = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g); g.connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+  };
+  const twinkle = () => {
+    if (!ctx) return;
+    const notes = [1046.5, 1174.7, 1318.5, 1568, 1760];
+    blip(notes[Math.floor(Math.random() * notes.length)], 0, 1.4, 'sine', 0.018 + Math.random() * 0.01);
+  };
+  const schedule = () => { twinkleTimer = setTimeout(() => { twinkle(); schedule(); }, 2000 + Math.random() * 3000); };
+  return {
+    start() { ensure(); ctx.resume(); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1); clearTimeout(twinkleTimer); schedule(); },
+    stop() { if (ctx) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); clearTimeout(twinkleTimer); },
+    tickTak() { blip(620, 0, 0.08, 'square', 0.025); blip(520, 0.12, 0.08, 'square', 0.02); },
+    pop() { blip(740, 0, 0.14, 'sine', 0.06); blip(1100, 0.08, 0.16, 'sine', 0.05); },
+    count() { blip(660, 0, 0.1, 'sine', 0.05); blip(660, 0.3, 0.1, 'sine', 0.05); blip(660, 0.6, 0.1, 'sine', 0.05); },
+    slip() {
+      if (!ctx) return;
+      const o = ctx.createOscillator(); o.type = 'sine';
+      const now = ctx.currentTime;
+      o.frequency.setValueAtTime(720, now);
+      o.frequency.exponentialRampToValueAtTime(240, now + 0.35);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.05, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      o.connect(g); g.connect(master);
+      o.start(now); o.stop(now + 0.45);
+    },
+    ring() { blip(880, 0, 0.12, 'square', 0.03); blip(880, 0.18, 0.12, 'square', 0.03); blip(880, 0.5, 0.12, 'square', 0.03); blip(880, 0.68, 0.12, 'square', 0.03); },
+    chord() { [262, 330, 392, 523].forEach((f, i) => blip(f * 1.5, i * 0.06, 1.4, 'sine', 0.035)); },
+  };
+}
+</script>
+
+<div class="film-prose">
+  <p>真人真事，發生在我國中的時候。細節一點都沒有加油添醋——包括那句「你用了幾個？」。</p>
+  <p>後來我才知道，那天在愛買，我媽看我爸的那一眼，到底交換了什麼訊息。至於我家三條狗，牠們在雨中穿著「雨鞋」散步的英姿，希望路過的鄰居們早就忘記了。</p>
+</div>
