@@ -1,13 +1,644 @@
 ---
-layout: post
+layout: film
 title: 主管嘴上要 ownership，卻只允許團隊用 Turn-Based Loop 工作
 description: 從四種 Agent Loop 看 AI 團隊管理——領導者如何依照人、任務與風險，選擇介入、同步與授權的方式。
 date: 2026-08-05 21:00:00 +0800
-tags: [領導, Agent, 團隊]
 image: /assets/og-post-loops.jpg
+tags: [領導, Agent, 團隊]
 seo:
   type: BlogPosting
 ---
+<style>
+  #al-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 620vh; }
+  .al-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  #al-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .al-ui { position: absolute; inset: 0; pointer-events: none; }
+  .al-cap {
+    position: absolute; left: 50%; top: 12vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.9; color: var(--life-ink); opacity: 0;
+    text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
+  }
+  .al-cap small { display: block; font-size: .78em; color: var(--life-muted); margin-top: 6px; }
+  .al-say {
+    position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 13px;
+    opacity: 0; white-space: nowrap;
+  }
+  .al-say-boss { color: var(--life-ink); text-shadow: 0 0 14px rgba(242, 238, 229, .4); }
+  .al-say-m { color: #a5dbff; text-shadow: 0 0 14px rgba(165, 219, 255, .5); }
+  .al-tag {
+    position: absolute; left: 0; top: 0; font-family: var(--mono); font-size: 11px;
+    letter-spacing: .14em; color: var(--life-muted); opacity: 0; white-space: nowrap;
+  }
+  .al-end {
+    position: absolute; left: 50%; bottom: 11vh; transform: translateX(-50%);
+    width: max-content; max-width: min(26em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(16px, 2vw, 21px);
+    line-height: 2; color: var(--life-ink); opacity: 0;
+    text-shadow: 0 2px 30px rgba(11, 16, 14, .9);
+  }
+  .al-start-wrap { text-align: center; margin: 6px 0 46px; }
+  .al-start {
+    cursor: pointer; background: none;
+    border: 1px solid rgba(220, 148, 124, .4); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .34em; text-indent: .34em; color: var(--life-clay);
+    animation: al-drift 2.4s ease-in-out infinite, al-glow 2.4s ease-in-out infinite;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .al-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
+  @keyframes al-drift {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+  .al-sound {
+    position: absolute; right: 26px; bottom: 24px; pointer-events: auto; cursor: pointer;
+    background: none; border: 1px solid rgba(220, 148, 124, .45); border-radius: 999px;
+    padding: 10px 20px; font-family: var(--mono); font-size: 11px; letter-spacing: .26em;
+    color: var(--life-clay); transition: color .3s ease, border-color .3s ease;
+    animation: al-glow 2.2s ease-in-out infinite;
+  }
+  .al-sound[aria-pressed="true"] { color: var(--life-muted); border-color: rgba(226, 221, 207, .25); animation: none; }
+  .al-sound:hover { color: var(--life-clay); border-color: var(--life-clay); }
+  @keyframes al-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(220, 148, 124, 0); }
+    50% { box-shadow: 0 0 22px rgba(220, 148, 124, .3); }
+  }
+</style>
+
+<p class="al-start-wrap"><button class="al-start" type="button">▶ PLAY</button></p>
+
+<div id="al-film">
+  <div class="al-stage">
+    <canvas id="al-canvas" aria-hidden="true"></canvas>
+    <div class="al-ui">
+      <p class="al-cap" data-cap="0">主管在管理專案時，其實一直在替每個人選 Loop。<small>只是我們平常不會這樣說。</small></p>
+      <p class="al-cap" data-cap="1">Turn-Based——我說一步，你做一步。<small>偏差看得早；但如果永遠不結束，等待就成了最合理的選擇。</small></p>
+      <p class="al-cap" data-cap="2">Goal-Based——給出結果，讓他自己選路。<small>前提是資訊、權限、求援訊號都給齊，否則只是把風險丟出去。</small></p>
+      <p class="al-cap" data-cap="3">Time-Based——固定節奏，一起校準。<small>重點不是幾天開一次會，而是有沒有更早看見問題。</small></p>
+      <p class="al-cap" data-cap="4">Proactive——看到問題，自己啟動。<small>不是不等指令，而是知道哪裡不必等。</small></p>
+      <p class="al-cap" data-cap="5">四種 Loop 不是能力等級，也不是排行榜。<small>領導者真正要設計的，是切換的條件。</small></p>
+      <p class="al-say al-say-boss" aria-hidden="true">下一步，做這個</p>
+      <p class="al-say al-say-m" aria-hidden="true">我來！</p>
+      <p class="al-end">你不能把一個人關在 Turn-Based 裡，<br>再用他不夠 Proactive，當作不授權的證據。</p>
+      <button class="al-sound" type="button" aria-pressed="false">SOUND · OFF</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = matchMedia('(max-width: 640px)').matches;
+const canvas = document.getElementById('al-canvas');
+
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+  catch { return false; }
+}
+if (!reduced && webglOK()) boot();
+
+function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], ss(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#0b100e');
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 10);
+
+  const glowTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  })();
+  const sprite = (color, scale) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.setScalar(scale);
+    scene.add(s);
+    return s;
+  };
+
+  // dust
+  const DUST = small ? 300 : 700;
+  const dp = new Float32Array(DUST * 3);
+  for (let i = 0; i < DUST; i++) {
+    dp[i * 3] = (Math.random() - 0.5) * 30; dp[i * 3 + 1] = (Math.random() - 0.5) * 18; dp[i * 3 + 2] = -3 - Math.random() * 12;
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+  const dustMat = new THREE.PointsMaterial({ color: '#d8c8a8', size: 0.035, transparent: true, opacity: 0.5, depthWrite: false });
+  scene.add(new THREE.Points(dustGeo, dustMat));
+
+  const arcPts = (cx, cy, r, a0, a1, n, z = 0.03) => {
+    const pts = [];
+    for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * (i / n); pts.push(new THREE.Vector3(cx + Math.cos(a) * r, cy + Math.sin(a) * r, z)); }
+    return pts;
+  };
+  const lineOf = (pts, mat) => new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat);
+  const segsOf = (pts, mat) => new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), mat);
+
+  // ---------- 主管 ----------
+  const bossMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 1 });
+  const bossSoft = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0.85 });
+  const boss = new THREE.Group();
+  {
+    boss.add(lineOf(arcPts(0, 0.55, 0.3, 0, Math.PI * 2, 26), bossMat));                       // head
+    boss.add(lineOf([
+      new THREE.Vector3(-0.26, 0.24, 0), new THREE.Vector3(-0.36, -0.55, 0),
+      new THREE.Vector3(0.36, -0.55, 0), new THREE.Vector3(0.26, 0.24, 0), new THREE.Vector3(-0.26, 0.24, 0),
+    ], bossMat));                                                                              // jacket
+    boss.add(lineOf([
+      new THREE.Vector3(0, 0.22, 0.02), new THREE.Vector3(-0.07, 0.04, 0.02),
+      new THREE.Vector3(0, -0.14, 0.02), new THREE.Vector3(0.07, 0.04, 0.02), new THREE.Vector3(0, 0.22, 0.02),
+    ], bossSoft));                                                                             // tie
+    boss.add(segsOf([
+      new THREE.Vector3(-0.3, 0.1, 0), new THREE.Vector3(-0.52, -0.12, 0),
+      new THREE.Vector3(0.3, 0.1, 0), new THREE.Vector3(0.52, -0.12, 0),
+    ], bossMat));                                                                              // arms
+    boss.add(segsOf([
+      new THREE.Vector3(-0.1, 0.62, 0.03), new THREE.Vector3(-0.16, 0.6, 0.03),
+      new THREE.Vector3(0.1, 0.62, 0.03), new THREE.Vector3(0.16, 0.6, 0.03),
+    ], bossMat));                                                                              // eyes
+    boss.add(lineOf(arcPts(0, 0.47, 0.09, Math.PI * 1.2, Math.PI * 1.8, 8, 0.03), bossMat));   // smile
+  }
+  boss.position.set(0, -0.9, 0.3);
+  scene.add(boss);
+
+  // ---------- 團員（帶著 agent 小光球）----------
+  const mkMember = (color) => {
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0 });
+    const g = new THREE.Group();
+    g.add(lineOf(arcPts(0, 0.36, 0.24, 0, Math.PI * 2, 22), mat));                             // head
+    g.add(lineOf([
+      new THREE.Vector3(-0.18, 0.14, 0), new THREE.Vector3(-0.22, -0.42, 0),
+      new THREE.Vector3(0.22, -0.42, 0), new THREE.Vector3(0.18, 0.14, 0), new THREE.Vector3(-0.18, 0.14, 0),
+    ], mat));                                                                                  // body
+    g.add(segsOf([
+      new THREE.Vector3(-0.09, 0.42, 0.03), new THREE.Vector3(-0.13, 0.41, 0.03),
+      new THREE.Vector3(0.09, 0.42, 0.03), new THREE.Vector3(0.13, 0.41, 0.03),
+    ], mat));                                                                                  // eyes
+    g.add(lineOf(arcPts(0, 0.3, 0.07, Math.PI * 1.2, Math.PI * 1.8, 8, 0.03), mat));           // smile
+    scene.add(g);
+    return { g, mat };
+  };
+  const m1 = mkMember('#a5dbff');
+  const m2 = mkMember('#7ee0a8');
+  const m3 = mkMember('#c98bff');
+
+  // agent orb: rides with its member
+  const agentMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0 });
+  const agent = new THREE.Group();
+  agent.add(lineOf(arcPts(0, 0, 0.13, 0, Math.PI * 2, 16), agentMat));
+  {
+    const s = 0.055, w = 0.02;
+    agent.add(lineOf([
+      new THREE.Vector3(0, s, 0.01), new THREE.Vector3(w, 0.018, 0.01), new THREE.Vector3(s, 0, 0.01),
+      new THREE.Vector3(w, -0.018, 0.01), new THREE.Vector3(0, -s, 0.01), new THREE.Vector3(-w, -0.018, 0.01),
+      new THREE.Vector3(-s, 0, 0.01), new THREE.Vector3(-w, 0.018, 0.01), new THREE.Vector3(0, s, 0.01),
+    ], agentMat));
+  }
+  scene.add(agent);
+  const agentGlow = sprite('#ffd479', 0.9);
+
+  // ---------- 開場：環繞主管的四個幽靈迴圈 ----------
+  const ringMat = new THREE.LineBasicMaterial({ color: '#8b877b', transparent: true, opacity: 0 });
+  const rings = [];
+  for (let i = 0; i < 4; i++) {
+    const r = lineOf(arcPts(0, 0, 1.1 + i * 0.42, 0, Math.PI * 2, 40), ringMat);
+    r.rotation.x = 0.9 + i * 0.12;
+    scene.add(r);
+    rings.push(r);
+  }
+
+  // ---------- Turn-Based：指令點與回報點 ----------
+  const cmdDot = sprite('#e2ddcf', 0.42);
+  const repDot = sprite('#a5dbff', 0.34);
+  const stepMat = new THREE.LineBasicMaterial({ color: '#a5dbff', transparent: true, opacity: 0 });
+  const stepTrail = segsOf((() => {
+    const pts = [];
+    for (let i = 0; i < 12; i++) pts.push(new THREE.Vector3(0.3 + i * 0.16, -1.5, 0), new THREE.Vector3(0.38 + i * 0.16, -1.5, 0));
+    return pts;
+  })(), stepMat);
+  scene.add(stepTrail);
+
+  // ---------- Goal-Based：山丘、旗子、彎路 ----------
+  const goalMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
+  const flagMat = new THREE.LineBasicMaterial({ color: '#dc947c', transparent: true, opacity: 0 });
+  const hill = lineOf(arcPts(2.2, -3.1, 2.45, Math.PI * 0.28, Math.PI * 0.72, 24), goalMat);
+  scene.add(hill);
+  const flag = new THREE.Group();
+  flag.add(lineOf([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0.75, 0)], flagMat));
+  flag.add(lineOf([new THREE.Vector3(0, 0.75, 0), new THREE.Vector3(0.42, 0.62, 0), new THREE.Vector3(0, 0.5, 0)], flagMat));
+  flag.position.set(2.2, -0.68, 0.1);
+  scene.add(flag);
+  const flagGlow = sprite('#dc947c', 1.2);
+  const PATH_N = 70;
+  const pathPts = [];
+  for (let i = 0; i <= PATH_N; i++) {
+    const u = i / PATH_N;
+    const x = lerp(-1.6, 2.14, u);
+    const y = lerp(-1.35, -0.62, u * u) + Math.sin(u * Math.PI * 2.4) * 0.34 * (1 - u * 0.5);
+    pathPts.push(new THREE.Vector3(x, y, 0.05));
+  }
+  const pathMat = new THREE.LineBasicMaterial({ color: '#a5dbff', transparent: true, opacity: 0 });
+  const pathLine = lineOf(pathPts, pathMat);
+  pathLine.geometry.setDrawRange(0, 0);
+  scene.add(pathLine);
+
+  // ---------- Time-Based：大時鐘 ----------
+  const clockMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
+  const handMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0 });
+  const clockG = new THREE.Group();
+  clockG.add(lineOf(arcPts(0, 0, 0.9, 0, Math.PI * 2, 40), clockMat));
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    clockG.add(lineOf([
+      new THREE.Vector3(Math.cos(a) * 0.8, Math.sin(a) * 0.8, 0),
+      new THREE.Vector3(Math.cos(a) * 0.9, Math.sin(a) * 0.9, 0),
+    ], clockMat));
+  }
+  const hand = lineOf([new THREE.Vector3(0, 0, 0.02), new THREE.Vector3(0, 0.68, 0.02)], handMat);
+  clockG.add(hand);
+  clockG.position.set(0, 1.15, -0.5);
+  scene.add(clockG);
+  const syncGlow = sprite('#ffd479', 2.2);
+
+  // ---------- Proactive：警示火花與授權邊界 ----------
+  const sparkMat = new THREE.LineBasicMaterial({ color: '#ff8d7a', transparent: true, opacity: 0 });
+  const spark = new THREE.Group();
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    spark.add(lineOf([
+      new THREE.Vector3(Math.cos(a) * 0.1, Math.sin(a) * 0.1, 0),
+      new THREE.Vector3(Math.cos(a) * 0.26, Math.sin(a) * 0.26, 0),
+    ], sparkMat));
+  }
+  spark.position.set(2.35, 0.5, 0.1);
+  scene.add(spark);
+  const sparkGlow = sprite('#ff8d7a', 1.3);
+  const boundMat = new THREE.LineBasicMaterial({ color: '#8b877b', transparent: true, opacity: 0 });
+  const bound = segsOf((() => {
+    const pts = [];
+    const seg = (x0, y0, x1, y1, n) => {
+      for (let i = 0; i < n; i++) {
+        const u0 = i / n, u1 = u0 + 0.55 / n;
+        pts.push(new THREE.Vector3(lerp(x0, x1, u0), lerp(y0, y1, u0), 0), new THREE.Vector3(lerp(x0, x1, u1), lerp(y0, y1, u1), 0));
+      }
+    };
+    seg(0.1, 1.3, 3.6, 1.3, 9); seg(3.6, 1.3, 3.6, -2, 8);
+    seg(3.6, -2, 0.1, -2, 9); seg(0.1, -2, 0.1, 1.3, 8);
+    return pts;
+  })(), boundMat);
+  scene.add(bound);
+
+  // ---------- 結尾：四個 Loop 圖示 + 儀表盤 ----------
+  const iconMats = [];
+  const icons = [];
+  const ICON_POS = [[-2.5, 0.7], [-0.95, 1.5], [0.95, 1.5], [2.5, 0.7]];
+  const ICON_LABEL = ['TURN-BASED', 'GOAL-BASED', 'TIME-BASED', 'PROACTIVE'];
+  for (let i = 0; i < 4; i++) {
+    const mat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0 });
+    const g = new THREE.Group();
+    g.add(lineOf(arcPts(0, 0, 0.3, Math.PI * 0.2, Math.PI * 1.9, 20), mat));
+    g.add(lineOf([new THREE.Vector3(0.24, 0.22, 0), new THREE.Vector3(0.31, 0.14, 0), new THREE.Vector3(0.2, 0.1, 0)], mat)); // arrowhead
+    g.position.set(ICON_POS[i][0], ICON_POS[i][1], 0);
+    scene.add(g);
+    icons.push(g);
+    iconMats.push(mat);
+  }
+  const dialMat = new THREE.LineBasicMaterial({ color: '#8b877b', transparent: true, opacity: 0 });
+  const needleMat = new THREE.LineBasicMaterial({ color: '#ffd479', transparent: true, opacity: 0 });
+  const dial = lineOf(arcPts(0, -2.05, 0.75, Math.PI * 0.12, Math.PI * 0.88, 20), dialMat);
+  scene.add(dial);
+  const needle = lineOf([new THREE.Vector3(0, 0, 0.05), new THREE.Vector3(0, 0.65, 0.05)], needleMat);
+  needle.position.set(0, -2.05, 0);
+  scene.add(needle);
+
+  // ---------- DOM ----------
+  const caps = [...document.querySelectorAll('.al-cap')];
+  const sayBoss = document.querySelector('.al-say-boss');
+  const sayM = document.querySelector('.al-say-m');
+  const endEl = document.querySelector('.al-end');
+  const tags = ICON_LABEL.map((label, i) => {
+    const el = document.createElement('p');
+    el.className = 'al-tag';
+    el.textContent = label;
+    document.querySelector('.al-ui').appendChild(el);
+    return { el, x: ICON_POS[i][0], y: ICON_POS[i][1] - 0.55 };
+  });
+
+  // ---------- sound ----------
+  const sound = makeSound();
+  const soundBtn = document.querySelector('.al-sound');
+  let soundOn = false;
+  const setSoundUI = () => {
+    soundBtn.textContent = soundOn ? 'SOUND · ON' : 'SOUND · OFF';
+    soundBtn.setAttribute('aria-pressed', String(soundOn));
+  };
+  soundBtn.addEventListener('click', () => {
+    if (soundOn) { sound.stop(); soundOn = false; localStorage.setItem('coomy-sound', 'off'); }
+    else { sound.start(); soundOn = true; localStorage.setItem('coomy-sound', 'on'); }
+    setSoundUI();
+  });
+  setSoundUI();
+  const CUES = [
+    { at: 0.17, fn: () => sound.tick() },
+    { at: 0.21, fn: () => sound.tick() },
+    { at: 0.25, fn: () => sound.tick() },
+    { at: 0.35, fn: () => sound.pop() },
+    { at: 0.44, fn: () => sound.chime() },
+    { at: 0.56, fn: () => sound.tock() },
+    { at: 0.6, fn: () => sound.chord() },
+    { at: 0.7, fn: () => sound.alarm() },
+    { at: 0.79, fn: () => sound.chime() },
+    { at: 0.9, fn: () => sound.finale() },
+  ].map((c) => ({ ...c, fired: false }));
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('al-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__loopSeek = (p) => { P = p; Psm = p; render(); };
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  const cancelGlide = () => { autoScroll = null; };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.al-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    if (localStorage.getItem('coomy-sound') !== 'off' && !soundOn) { sound.start(); soundOn = true; setSoundUI(); }
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * 0.06, 2600);
+  });
+  const CH = [0.08, 0.2, 0.38, 0.56, 0.74, 0.92, 1];
+  let lastYs = 0, lastMoveTs = 0, endSeen = false;
+
+  const tmpV = new THREE.Vector3();
+  const clock = new THREE.Clock();
+  const qq = (p, a, b) => Math.min(1, Math.max(0, (p - a) / (b - a)));
+
+  function update(p, t) {
+    const w = innerWidth, h = innerHeight;
+    const introQ = ss(0.02, 0.07, p) * (1 - ss(0.12, 0.16, p));
+    const turnQ = ss(0.13, 0.16, p) * (1 - ss(0.29, 0.33, p));
+    const goalQ = ss(0.31, 0.35, p) * (1 - ss(0.47, 0.51, p));
+    const timeQ = ss(0.49, 0.53, p) * (1 - ss(0.65, 0.69, p));
+    const proQ = ss(0.67, 0.71, p) * (1 - ss(0.83, 0.87, p));
+    const endQ = ss(0.87, 0.91, p);
+    const q1 = qq(p, 0.14, 0.3);
+    const q2 = qq(p, 0.33, 0.49);
+    const q3 = qq(p, 0.51, 0.67);
+    const q4 = qq(p, 0.69, 0.85);
+    const q5 = qq(p, 0.89, 1);
+
+    // captions
+    const capW = [
+      ss(0.025, 0.055, p) * (1 - ss(0.11, 0.14, p)),
+      ss(0.15, 0.18, p) * (1 - ss(0.28, 0.31, p)),
+      ss(0.33, 0.36, p) * (1 - ss(0.46, 0.49, p)),
+      ss(0.51, 0.54, p) * (1 - ss(0.64, 0.67, p)),
+      ss(0.69, 0.72, p) * (1 - ss(0.82, 0.85, p)),
+      ss(0.88, 0.91, p) * (1 - ss(0.955, 0.975, p)),
+    ];
+    caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
+    endEl.style.opacity = String(ss(0.96, 0.99, p));
+
+    // intro rings
+    rings.forEach((r, i) => {
+      r.position.copy(boss.position);
+      r.rotation.z = t * (0.14 + i * 0.05) * (i % 2 ? 1 : -1);
+      r.material = ringMat;
+    });
+    ringMat.opacity = introQ * 0.4;
+
+    // boss walks: center → left → back to center
+    const bossX = kf(p, [[0, 0], [0.13, -2.45], [0.49, -2.45], [0.53, -2.55], [0.67, -2.55], [0.71, -2.75], [0.87, 0], [1, 0]]);
+    boss.position.set(bossX, -0.9 + Math.sin(t * 1.1) * 0.05, 0.3);
+    boss.rotation.z = Math.sin(t * 0.9) * 0.03;
+
+    // ---- Turn-Based ----
+    stepMat.opacity = turnQ * 0.5;
+    const m1TurnX = kf(q1, [[0, 0.35], [0.18, 0.35], [0.26, 0.95], [0.42, 0.95], [0.5, 1.55], [0.66, 1.55], [0.74, 2.15], [1, 2.15]]);
+    const cmdU = (q1 * 3) % 1;
+    const cmdGo = Math.min(1, cmdU * 2.2);
+    cmdDot.position.set(lerp(-2.1, m1TurnX, cmdGo), lerp(-0.6, -0.9, cmdGo), 0.4);
+    cmdDot.material.opacity = turnQ * (cmdU < 0.46 ? 0.8 : 0);
+    const repU = Math.max(0, (cmdU - 0.55) * 2.2);
+    repDot.position.set(lerp(m1TurnX, -2.1, repU), lerp(-1.1, -0.75, repU), 0.4);
+    repDot.material.opacity = turnQ * (cmdU > 0.55 && repU < 1 ? 0.7 : 0);
+
+    // ---- Goal-Based ----
+    goalMat.opacity = goalQ;
+    const flagPop = ss(0.06, 0.16, q2);
+    flagMat.opacity = goalQ * flagPop;
+    flag.scale.setScalar(0.5 + flagPop * 0.5);
+    flagGlow.position.set(2.2, -0.2, 0.1);
+    flagGlow.material.opacity = goalQ * flagPop * 0.25;
+    const walkQ = ss(0.2, 0.88, q2);
+    pathMat.opacity = goalQ * 0.55;
+    pathLine.geometry.setDrawRange(0, Math.floor(walkQ * PATH_N) + 1);
+    const pathIdx = Math.min(PATH_N, Math.floor(walkQ * PATH_N));
+    const arrived = ss(0.9, 0.97, q2);
+
+    // ---- Time-Based ----
+    clockMat.opacity = timeQ;
+    handMat.opacity = timeQ;
+    hand.rotation.z = -q3 * Math.PI * 4;
+    const syncPulse = ss(0.42, 0.5, q3) * (1 - ss(0.6, 0.68, q3));
+    syncGlow.position.copy(clockG.position);
+    syncGlow.material.opacity = timeQ * syncPulse * 0.35;
+
+    // ---- Proactive ----
+    boundMat.opacity = proQ * 0.5;
+    const flick = 0.55 + 0.45 * Math.abs(Math.sin(t * 6));
+    const resolved = ss(0.62, 0.75, q4);
+    sparkMat.opacity = proQ * (1 - resolved) * flick;
+    sparkMat.color.setStyle(resolved > 0.5 ? '#ffd479' : '#ff8d7a');
+    spark.rotation.z = t * 0.8;
+    sparkGlow.position.copy(spark.position);
+    sparkGlow.material.opacity = proQ * lerp(flick * 0.4, 0.25, resolved);
+    sparkGlow.material.color.setStyle(resolved > 0.5 ? '#ffd479' : '#ff8d7a');
+    const m1ProX = lerp(0.8, 2.0, ss(0.18, 0.45, q4));
+    const m1ProY = lerp(-1.3, -0.1, ss(0.18, 0.45, q4));
+    const m2ProX = lerp(-0.7, 1.45, ss(0.5, 0.75, q4));
+    const m2ProY = lerp(-1.5, -0.55, ss(0.5, 0.75, q4));
+
+    // ---- members: 位置與出場，依幕切換 ----
+    m1.mat.opacity = Math.max(turnQ, goalQ, timeQ, proQ);
+    const m1Pos = [
+      [turnQ, m1TurnX, -1.05 + Math.abs(Math.sin(q1 * 26)) * turnQ * 0.05],
+      [goalQ, pathPts[pathIdx].x, pathPts[pathIdx].y + 0.35 + arrived * Math.abs(Math.sin(t * 5)) * 0.14],
+      [timeQ, lerp(-1.7, -0.55, syncPulse), lerp(-1.25, -0.85, syncPulse)],
+      [proQ, m1ProX, m1ProY],
+    ];
+    let mx = 0, my = -1.1, mw = 0;
+    m1Pos.forEach(([wt, x, y]) => { if (wt > mw) { mw = wt; mx = x; my = y; } });
+    m1.g.position.set(mx, my + Math.sin(t * 1.3) * 0.04, 0.4);
+    m2.mat.opacity = Math.max(timeQ, proQ);
+    m2.g.position.set(
+      timeQ > proQ ? lerp(0.6, 0.2, syncPulse) : m2ProX,
+      (timeQ > proQ ? lerp(-1.35, -0.9, syncPulse) : m2ProY) + Math.sin(t * 1.1 + 1) * 0.04,
+      0.4
+    );
+    m3.mat.opacity = timeQ;
+    m3.g.position.set(lerp(2.0, 0.95, syncPulse), lerp(-1.2, -0.9, syncPulse) + Math.sin(t * 1.2 + 2) * 0.04, 0.4);
+
+    // agent orb follows m1
+    agentMat.opacity = Math.max(turnQ, goalQ, proQ) * 0.95;
+    const orbSpin = proQ > 0.3 ? t * 4 : t * 1.6;
+    agent.position.set(m1.g.position.x + Math.cos(orbSpin) * 0.5, m1.g.position.y + 0.55 + Math.sin(orbSpin) * 0.16, 0.45);
+    agentGlow.position.copy(agent.position);
+    agentGlow.material.opacity = agentMat.opacity * 0.3;
+
+    // ---- ending ----
+    dialMat.opacity = endQ * 0.7;
+    needleMat.opacity = endQ;
+    const needleA = kf(q5, [[0.05, 0.62], [0.3, 0.24], [0.55, -0.24], [0.8, -0.62], [1, 0]]);
+    needle.rotation.z = needleA;
+    const hot = [ss(0.0, 0.1, q5) * (1 - ss(0.25, 0.32, q5)), ss(0.25, 0.32, q5) * (1 - ss(0.5, 0.57, q5)), ss(0.5, 0.57, q5) * (1 - ss(0.75, 0.82, q5)), ss(0.75, 0.82, q5) * (1 - ss(0.93, 0.98, q5))];
+    icons.forEach((ic, i) => {
+      iconMats[i].opacity = endQ * (0.4 + hot[i] * 0.6);
+      iconMats[i].color.setStyle(hot[i] > 0.5 ? '#ffd479' : '#e2ddcf');
+      ic.scale.setScalar(1 + hot[i] * 0.22);
+      ic.rotation.z = -t * 0.7;
+    });
+    tags.forEach((tg, i) => {
+      tmpV.set(tg.x, tg.y, 0).project(camera);
+      tg.el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+      tg.el.style.opacity = String(endQ * (0.5 + hot[i] * 0.5));
+    });
+
+    // says
+    const sb = Math.max(
+      ss(0.16, 0.18, p) * (1 - ss(0.21, 0.23, p)),
+      ss(0.23, 0.25, p) * (1 - ss(0.27, 0.29, p))
+    );
+    const sm = ss(0.7, 0.73, p) * (1 - ss(0.77, 0.8, p));
+    const proj = (obj, el, dy) => {
+      tmpV.copy(obj.position); tmpV.y += dy; tmpV.project(camera);
+      el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
+    };
+    proj(boss, sayBoss, 1.15);
+    proj(m1.g, sayM, 0.95);
+    sayBoss.style.opacity = String(sb);
+    sayM.style.opacity = String(sm);
+
+    camera.position.x = Math.sin(t * 0.25) * 0.12;
+    camera.position.y = Math.sin(t * 0.3) * 0.08;
+    camera.position.z = (10 - p * 1.2) * Math.max(1, 4.0 / (0.4663 * camera.aspect) / 10);
+    camera.lookAt(0, -0.2, 0);
+  }
+
+  function render() {
+    const t = clock.getElapsedTime();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (performance.now() - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, 1 - Math.pow(1 - u, 3)));
+      if (u >= 1) autoScroll = null;
+    }
+    const nowY = scrollY;
+    if (Math.abs(nowY - lastYs) > 2) { lastYs = nowY; lastMoveTs = t; }
+    if (!autoScroll && P > 0.005 && P < 0.995 && !endSeen && t - lastMoveTs > 1.5) {
+      const next = CH.find((c) => c > P + 0.01);
+      if (next) { lastMoveTs = t; glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * next, 3200); }
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm, t);
+    if (soundOn) {
+      CUES.forEach((c) => {
+        if (!c.fired && Psm > c.at) { c.fired = true; c.fn(); }
+        if (c.fired && Psm < c.at - 0.06) c.fired = false;
+      });
+    }
+    renderer.render(scene, camera);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    readScroll();
+  });
+}
+
+/* tiny synthesized soundtrack */
+function makeSound() {
+  let ctx = null, master, twinkleTimer = null;
+  const ensure = () => {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const wn = Math.random() * 2 - 1; last = (last + 0.02 * wn) / 1.02; d[i] = last * 3.2; }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf; noise.loop = true;
+    const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 220;
+    const ng = ctx.createGain(); ng.gain.value = 0.025;
+    noise.connect(nf); nf.connect(ng); ng.connect(master); noise.start();
+  };
+  const blip = (f, delay = 0, dur = 0.2, type = 'sine', vol = 0.06) => {
+    if (!ctx) return;
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
+    const g = ctx.createGain();
+    const now = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g); g.connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+  };
+  const twinkle = () => {
+    if (!ctx) return;
+    const notes = [1046.5, 1174.7, 1318.5, 1568];
+    blip(notes[Math.floor(Math.random() * notes.length)], 0, 1.4, 'sine', 0.014 + Math.random() * 0.008);
+  };
+  const schedule = () => { twinkleTimer = setTimeout(() => { twinkle(); schedule(); }, 2600 + Math.random() * 3400); };
+  return {
+    start() { ensure(); ctx.resume(); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1); clearTimeout(twinkleTimer); schedule(); },
+    stop() { if (ctx) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); clearTimeout(twinkleTimer); },
+    tick() { blip(520, 0, 0.1, 'square', 0.02); },
+    tock() { blip(660, 0, 0.12, 'sine', 0.04); blip(440, 0.5, 0.12, 'sine', 0.04); blip(660, 1, 0.12, 'sine', 0.04); },
+    pop() { blip(740, 0, 0.14, 'sine', 0.06); blip(1100, 0.08, 0.16, 'sine', 0.05); },
+    chime() { [660, 830, 990].forEach((f, i) => blip(f, i * 0.09, 0.4, 'triangle', 0.045)); },
+    chord() { [262, 330, 392, 523].forEach((f, i) => blip(f * 1.5, i * 0.06, 1.2, 'sine', 0.03)); },
+    alarm() { blip(880, 0, 0.09, 'square', 0.025); blip(880, 0.18, 0.09, 'square', 0.025); },
+    finale() { [523, 659, 784, 1047].forEach((f, i) => blip(f, i * 0.12, 1.8, 'sine', 0.03)); },
+  };
+}
+</script>
+
+<div class="film-prose" markdown="1">
 
 我最近看到一個把 Agent Loop 分成四類的框架：Turn-Based、Goal-Based、Time-Based 和 Proactive。
 
@@ -172,7 +803,7 @@ Gagné 與 Deci 在工作動機的自我決定理論回顧中，把支持自主�
 
 它比較像是：知道現在需要哪一種 Loop，也願意在條件改變時，把團隊切換到更適合當下條件的工作方式。
 
-因為你不能把一個人關在 Turn-Based 裡，再用他不夠 Proactive，當作不授權給他的證據。
+因為你不能把一個人關在 Turn-Based 裡，再用他不夠 Proactive，當作不授權的證據。
 
 ## 參考資料
 
@@ -181,3 +812,5 @@ Gagné 與 Deci 在工作動機的自我決定理論回顧中，把支持自主�
 - [Gagné & Deci, 2005：Self-determination theory and work motivation](https://selfdeterminationtheory.org/wp-content/uploads/2014/04/2005_GagneDeci_JOB_SDTtheory.pdf)
 - [Muecke & Iseke, 2019：How Does Job Autonomy Influence Job Performance?](https://doi.org/10.5465/AMBPP.2019.145)
 - [Schwaber & Sutherland, 2020：The Scrum Guide](https://scrumguides.org/docs/scrumguide/v2020/2020-Scrum-Guide-US.pdf)
+
+</div>

@@ -305,3 +305,20 @@ html.life-static .life-stage { position: static; height: auto; padding: 90px 0 3
 html.life-static .life-title { position: static; transform: none; margin: 0 auto; }
 html.life-static .life-start, html.life-static .life-keep, html.life-static .life-say, html.life-static .life-caption,
 html.life-static .life-sf, html.life-static .life-chapter, html.life-static .life-tag { display: none; }
+
+/* long-form prose inside a film post (dark theme article body) */
+.film-prose { max-width: 720px; margin: 0 auto; padding: 56px 24px 20px; }
+.film-prose p, .film-prose li { line-height: 2.1; font-size: 16px; color: var(--life-ink); }
+.film-prose h2 { font-family: var(--serif); font-size: 24px; margin: 56px 0 18px; color: var(--life-ink); }
+.film-prose ul, .film-prose ol { padding-left: 24px; margin: 18px 0; }
+.film-prose li { margin: 8px 0; }
+.film-prose a { color: var(--life-clay); text-underline-offset: 3px; }
+.film-prose strong { color: var(--life-ink); }
+.film-prose blockquote { border-left: 2px solid var(--life-clay); margin: 24px 0; padding: 4px 0 4px 18px; color: var(--life-muted); }
+.film-prose blockquote p { color: var(--life-muted); }
+.film-prose table { border-collapse: collapse; width: 100%; margin: 24px 0; font-size: 14px; display: block; overflow-x: auto; }
+.film-prose th, .film-prose td { border: 1px solid rgba(226, 221, 207, .22); padding: 10px 14px; text-align: left; line-height: 1.8; }
+.film-prose th { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: var(--life-muted); }
+.film-prose figure { margin: 28px 0; }
+.film-prose figure img { max-width: 100%; border-radius: 10px; }
+.film-prose figcaption { color: var(--life-muted); font-size: 13px; line-height: 1.9; margin-top: 10px; }
