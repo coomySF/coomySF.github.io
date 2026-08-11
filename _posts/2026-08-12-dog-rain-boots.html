@@ -531,6 +531,19 @@ function boot() {
   // 家裡的燈
   const lampGlow = sprite('#ffd9a0', 2.6);
 
+  // 喜劇道具：媽媽的冷汗、Coomy 手上的白套、頭上的暈圈
+  const sweat = mesh(new THREE.SphereGeometry(0.06, 8, 6), solidMat('#a5d8f5', { transparent: true, opacity: 0 }));
+  sweat.scale.set(0.8, 1.3, 0.8);
+  scene.add(sweat);
+  const handBoot = mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.12, 8), solidMat('#fff6fa', { transparent: true, opacity: 0 }));
+  scene.add(handBoot);
+  const dizzy = [];
+  for (let i = 0; i < 3; i++) {
+    const d = mesh(new THREE.SphereGeometry(0.035, 6, 5), solidMat('#c8c0d8', { transparent: true, opacity: 0 }));
+    scene.add(d);
+    dizzy.push(d);
+  }
+
   // ---------- DOM ----------
   const caps = [...document.querySelectorAll('.db-cap')];
   const says = [...document.querySelectorAll('.db-say')];
@@ -554,6 +567,7 @@ function boot() {
   setSoundUI();
   const CUES = [
     { at: 0.06, fn: () => sound.pop() },
+    { at: 0.13, fn: () => sound.slip() },
     { at: 0.14, fn: () => sound.tickTak() },
     { at: 0.3, fn: () => sound.pop() },
     { at: 0.44, fn: () => sound.count() },
@@ -561,6 +575,7 @@ function boot() {
     { at: 0.66, fn: () => sound.slip() },
     { at: 0.74, fn: () => sound.slip() },
     { at: 0.85, fn: () => sound.ring() },
+    { at: 0.925, fn: () => sound.pop() },
     { at: 0.96, fn: () => sound.chord() },
   ].map((c) => ({ ...c, fired: false }));
 
@@ -638,9 +653,22 @@ function boot() {
     fadeGroup(dad, storeQ);
     mom.position.set(1.5, -0.95, 0.3);
     dad.position.set(2.5, -0.9, 0.1);
-    // 媽媽瞄爸爸一眼
-    const glanceQ = ss(0.12, 0.135, p) * (1 - ss(0.16, 0.175, p));
-    mom.rotation.y = glanceQ * 0.7;
+    // 媽媽瞄爸爸一眼（特寫級演出：快轉頭＋歪頭＋冷汗滑落）
+    const glanceQ = ss(0.12, 0.13, p) * (1 - ss(0.165, 0.18, p));
+    mom.rotation.y = glanceQ * 1.05;
+    mom.rotation.z = glanceQ * 0.07;
+    sweat.position.set(1.78, -0.34 - glanceQ * 0.14, 0.62);
+    sweat.material.opacity = glanceQ * 0.9;
+    // Coomy 拿著白套困惑（歪頭＋頭上暈圈）
+    coomy.rotation.x = findQ * Math.sin(t * 1.2) * 0.05;
+    handBoot.position.set(coomy.position.x + 0.26, coomy.position.y + 0.02, coomy.position.z + 0.16);
+    handBoot.rotation.z = 0.5 + Math.sin(t * 2) * 0.25;
+    handBoot.material.opacity = findQ * 0.85;
+    dizzy.forEach((d, i) => {
+      const a = t * 2.2 + (i / 3) * Math.PI * 2;
+      d.position.set(coomy.position.x + Math.cos(a) * 0.42, coomy.position.y + 0.95 + Math.sin(a) * 0.08, coomy.position.z + Math.sin(a) * 0.2);
+      d.material.opacity = findQ * (0.5 + 0.3 * Math.sin(a * 2));
+    });
     qMark.position.set(0.5, 0.15, 0.3);
     qMark.material.opacity = storeQ * (0.35 + 0.15 * Math.sin(t * 2.5));
 
@@ -660,12 +688,17 @@ function boot() {
         const wearAt = 0.43 + (i * 4 + li) * 0.006;
         const worn = ss(wearAt, wearAt + 0.008, p);
         const cyc = (t * 0.5 + L.phase) % 1;
-        const slipping = walkQ > 0.3 && cyc > 0.75;
-        L.boot.visible = worn > 0.5 && p < 0.78 && !(walkQ > 0.3 && cyc > 0.9);
-        const slipDrop = slipping ? (cyc - 0.75) * 2.2 : 0;
-        L.boot.position.y = -0.28 - slipDrop * 0.5;
-        L.boot.rotation.z = slipDrop * 2.5;
-        L.boot.material.opacity = 0.75 * (1 - slipDrop * 0.6);
+        const slipping = walkQ > 0.3 && cyc > 0.72;
+        L.boot.visible = worn > 0.5 && p < 0.78;
+        const fu = slipping ? Math.min(1, (cyc - 0.72) * 3.6) : 0;
+        // 穿上時彈一下
+        const wearPop = 1 + (1 - ss(0.001, 0.014, p - (0.43 + (i * 4 + li) * 0.006))) * 0.7;
+        L.boot.scale.setScalar(worn > 0.5 ? wearPop : 1);
+        // 噴飛：往上彈、往後噴、空中旋轉
+        L.boot.position.x = L.leg.position.x - fu * 0.55;
+        L.boot.position.y = -0.28 + Math.sin(fu * Math.PI) * 0.42 - fu * 0.18;
+        L.boot.rotation.z = fu * 7;
+        L.boot.material.opacity = 0.75 * (fu > 0.7 ? (1 - fu) / 0.3 : 1);
       });
     });
 
@@ -709,7 +742,7 @@ function boot() {
     const chase = walkQ * Math.abs(Math.sin(t * 0.9)) * 1.1;
     const hop = Math.max(storeQ * 0.3, bootQ * 0.5) * Math.abs(Math.sin(t * 4.5)) * 0.1;
     coomy.position.set(cx + chase, cy + hop, 0.7);
-    coomy.rotation.z = walkQ * Math.sin(t * 5) * 0.05;
+    coomy.rotation.z = walkQ * Math.sin(t * 5) * 0.05 + findQ * (0.12 + Math.sin(t * 1.6) * 0.05);
     // 穿鞋時蹲一下
     coomy.scale.setScalar(0.88 * (1 - bootQ * 0.06));
     // 電話手勢
@@ -747,14 +780,51 @@ function boot() {
       el.style.opacity = String(sayW[i] || 0);
     });
 
-    // 電影運鏡
+    // 電影運鏡：wide 與特寫交錯（喜劇節奏）
     const wideComp = Math.max(1, 3.6 / (0.4663 * camera.aspect) / 10);
-    const camX = kf(p, [[0, 0.3], [0.24, -0.2], [0.44, -0.5], [0.56, -0.8], [0.76, 0], [0.84, 0.6], [1, 0.4]]) + Math.sin(t * 0.25) * 0.08;
-    const camY = kf(p, [[0, 0], [0.44, -0.25], [0.56, 0.1], [0.84, -0.1], [1, -0.05]]) + Math.sin(t * 0.3) * 0.05;
-    const camZ = kf(p, [[0, 7.6], [0.3, 7.9], [0.44, 6.8], [0.58, 8.2], [0.78, 8], [0.86, 6.9], [1, 6.7]]);
+    const lookX = kf(p, [
+      [0.05, 0.4], [0.065, 0.5], [0.1, 0.5],          // 特寫：神祕盒
+      [0.115, 0.2], [0.128, 1.55], [0.17, 1.55],      // 特寫：媽媽的眼神
+      [0.2, 0.4], [0.26, -0.3],
+      [0.34, -0.3], [0.355, -1.15], [0.41, -1.15],    // 特寫：滑滑的白套
+      [0.43, -1.5], [0.52, -1.5],                     // 特寫：狗腿穿鞋
+      [0.56, -0.6], [0.6, 0], [0.65, 0],              // 特寫：噴飛
+      [0.665, 0.9], [0.72, 0.2],                      // 特寫：路人
+      [0.76, 0], [0.84, 0.6],
+      [0.885, -1.6], [0.912, -1.6],                   // 特寫：媽媽泡泡
+      [0.925, 1.3], [0.948, 1.3],                     // 特寫：十二個啊
+      [0.958, -1.6], [0.99, -1.6], [1, 0.3],          // 慢推：下次別用了
+    ]) ;
+    const lookY = kf(p, [
+      [0.05, -0.65], [0.065, -0.85], [0.1, -0.85],
+      [0.115, -0.5], [0.128, -0.32], [0.17, -0.32],
+      [0.2, -0.65], [0.26, -0.9],
+      [0.34, -0.9], [0.355, -0.85], [0.41, -0.85],
+      [0.43, -1.6], [0.52, -1.6],
+      [0.56, -0.9], [0.6, -1.5], [0.65, -1.5],
+      [0.665, -0.85], [0.72, -0.9],
+      [0.76, -0.7], [0.84, -0.5],
+      [0.885, 0.95], [0.912, 0.95],
+      [0.925, -0.7], [0.948, -0.7],
+      [0.958, 0.95], [0.99, 0.95], [1, -0.4],
+    ]);
+    const camZ = kf(p, [
+      [0.05, 7.6], [0.065, 4.4], [0.1, 4.4],
+      [0.115, 6], [0.128, 3.5], [0.17, 3.5],
+      [0.2, 7.6], [0.26, 7.9],
+      [0.34, 7.4], [0.355, 3.9], [0.41, 3.9],
+      [0.43, 3.4], [0.52, 3.4],
+      [0.56, 8.2], [0.6, 3.8], [0.65, 3.8],
+      [0.665, 3.5], [0.72, 6],
+      [0.76, 8], [0.84, 6.9],
+      [0.885, 4.2], [0.912, 4.2],
+      [0.925, 4.2], [0.948, 4.2],
+      [0.958, 4.8], [0.99, 3.8], [1, 6.7],
+    ]);
+    const camX = lookX * 0.75 + Math.sin(t * 0.25) * 0.06;
+    const camY = lookY * 0.45 + 0.15 + Math.sin(t * 0.3) * 0.04;
     camera.position.set(camX, camY, camZ * wideComp);
-    const lookY = kf(p, [[0, -0.65], [0.44, -0.95], [0.56, -0.7], [0.84, -0.5], [1, -0.5]]);
-    camera.lookAt(kf(p, [[0, 0.4], [0.5, -0.6], [0.8, 0], [0.86, 0.6], [1, 0.3]]), lookY, 0);
+    camera.lookAt(lookX, lookY, 0);
   }
 
   function render() {
