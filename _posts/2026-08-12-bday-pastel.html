@@ -3,7 +3,7 @@ layout: film
 title: 水球生日・動畫版本
 description: 用動畫實驗室的粉彩畫風，把 2026/8/7 的宜蘭生日再過一次——實體低多邊形的水球與 Coomy、會變色的天空、和同一顆許願星。
 date: 2026-08-12 21:00:00 +0800
-image: /assets/og-bday-pastel4.jpg
+image: /assets/og-bday-pastel5.jpg
 tags: [動畫實驗室, 生日]
 seo:
   type: BlogPosting
@@ -299,6 +299,17 @@ function boot() {
       return gl;
     };
     coomy.add(eye(-0.13), eye(0.13), glint(-0.13), glint(0.13));
+    const arm = (side) => {
+      const a = new THREE.Group();
+      const sleeve = mesh(new THREE.CapsuleGeometry(0.055, 0.16, 3, 6), solidMat('#f6efe3'));
+      const hand = mesh(new THREE.SphereGeometry(0.052, 8, 6), solidMat('#ffe8dc'));
+      hand.position.y = -0.13;
+      a.add(sleeve, hand);
+      a.position.set(side * 0.27, 0.04, 0.05);
+      a.rotation.z = side * 0.65;
+      return a;
+    };
+    coomy.add(arm(-1), arm(1));
     const smileM = mesh(new THREE.TorusGeometry(0.07, 0.016, 6, 12, Math.PI), solidMat('#4a3b52'));
     smileM.position.set(0, 0.26, 0.33);
     smileM.rotation.z = Math.PI;
