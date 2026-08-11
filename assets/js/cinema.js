@@ -184,14 +184,14 @@ function boot() {
   // ---------- glow texture ----------
   const glowTex = (() => {
     const c = document.createElement('canvas');
-    c.width = c.height = 64;
+    c.width = c.height = 256;
     const g = c.getContext('2d');
-    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
     grad.addColorStop(0, 'rgba(255,255,255,.9)');
     grad.addColorStop(0.45, 'rgba(255,255,255,.28)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
-    g.fillRect(0, 0, 64, 64);
+    g.fillRect(0, 0, 256, 256);
     return new THREE.CanvasTexture(c);
   })();
 
@@ -391,7 +391,9 @@ function boot() {
       }
     `,
   });
-  if (!small) composer.addPass(grain);
+  // the grain also dithers away 8-bit banding in the dark glow falloff —
+  // without it phone OLEDs show the bands as dirty rings
+  composer.addPass(grain);
 
   // ---------- HTML overlays ----------
   const titleEl = document.querySelector('.film-title');
@@ -971,8 +973,7 @@ function boot() {
     // ---- the scene breathes with each act ----
     const act = Math.max(env, aiEnv);
     // color grade: station acts tint the night; the AI act is a red alert
-    // (small screens skip the grain pass and render hotter — tint gently there)
-    const gradeMix = (gradeIdx === 3 ? gradeAmt * (0.5 + Math.sin(t * 3.2) * 0.1) : gradeAmt * 0.3) * (small ? 0.4 : 1);
+    const gradeMix = gradeIdx === 3 ? gradeAmt * (0.5 + Math.sin(t * 3.2) * 0.1) : gradeAmt * 0.3;
     gradeCol.copy(baseBg);
     if (gradeIdx >= 0) gradeCol.lerp(stationBgCols[gradeIdx], gradeMix);
     scene.background.copy(gradeCol);

@@ -52,14 +52,14 @@ function boot() {
   // ---------- glow texture ----------
   const glowTex = (() => {
     const c = document.createElement('canvas');
-    c.width = c.height = 64;
+    c.width = c.height = 256;
     const g = c.getContext('2d');
-    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
     grad.addColorStop(0, 'rgba(255,255,255,.9)');
     grad.addColorStop(0.45, 'rgba(255,255,255,.28)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
-    g.fillRect(0, 0, 64, 64);
+    g.fillRect(0, 0, 256, 256);
     return new THREE.CanvasTexture(c);
   })();
 
