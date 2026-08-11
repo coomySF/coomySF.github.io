@@ -14,7 +14,7 @@ seo:
   .db-sky { position: absolute; inset: 0; }
   .db-sky-store { background: linear-gradient(180deg, #fff2dc 0%, #ffe0d0 55%, #f0d0e0 100%); }
   .db-sky-rain { background: linear-gradient(180deg, #a8a8c8 0%, #b8b0d8 55%, #9a94c0 100%); opacity: 0; }
-  .db-sky-eve { background: linear-gradient(180deg, #f0b8a8 0%, #d8a8c8 55%, #a898d0 100%); opacity: 0; }
+  .db-sky-eve { background: linear-gradient(180deg, #e8dcd4 0%, #d4c8cc 55%, #a8a0b8 100%); opacity: 0; }
   #db-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
   .db-ui { position: absolute; inset: 0; pointer-events: none; }
   .db-bar { position: absolute; left: 0; right: 0; height: 7vh; background: #0d0a18; }
@@ -81,16 +81,19 @@ seo:
       <div class="db-bar db-bar-bot" aria-hidden="true"></div>
       <p class="db-cap" data-cap="0">國中的某天，全家去愛買。<small>推車裡，多了一盒神祕的「家庭號」。</small></p>
       <p class="db-cap" data-cap="1">先說：我家有三條狗。<small>那天放學，剛好下雨。</small></p>
-      <p class="db-cap" data-cap="2">我把「狗雨鞋」找了出來。<small>超滑。想說大概有潤絲效果，避免狗毛打結吧。</small></p>
-      <p class="db-cap" data-cap="3">三條狗，十二條腿。<small>拆了十二個，一腿一隻，剛剛好。</small></p>
-      <p class="db-cap" data-cap="4">狗雨鞋超難用，走兩步就滑掉。<small>路人的眼神，也怪怪的。</small></p>
+      <p class="db-cap" data-cap="2">我想起了那盒「狗的雨鞋」。<small>爸媽房間，翻箱倒櫃。</small></p>
+      <p class="db-cap" data-cap="3">拆開第一個。超滑。<small>想說大概是防打結的潤絲設計吧。</small></p>
+      <p class="db-cap" data-cap="4">三條狗，十二條腿。<small>拆了十二個，一腿一隻，剛剛好。</small></p>
+      <p class="db-cap" data-cap="5">狗雨鞋超難用，走兩步就滑掉。<small>路人的眼神，也怪怪的。</small></p>
+      <p class="db-cap" data-cap="6">我媽不關心狗雨鞋好不好用。<small>她只關心——</small></p>
       <p class="db-say" data-say="0" aria-hidden="true">那是什麼？</p>
       <p class="db-say" data-say="1" aria-hidden="true">那是……狗的雨鞋。</p>
-      <p class="db-say" data-say="2" aria-hidden="true">怎麼滑滑的……</p>
-      <p class="db-say" data-say="3" aria-hidden="true">狗雨鞋超爛！你被騙了！</p>
-      <p class="db-say" data-say="4" aria-hidden="true">……你用了幾個？</p>
-      <p class="db-say" data-say="5" aria-hidden="true">十二個啊！</p>
-      <p class="db-say" data-say="6" aria-hidden="true">好，我知道了。下次別用了。</p>
+      <p class="db-say" data-say="2" aria-hidden="true">找到了！</p>
+      <p class="db-say" data-say="3" aria-hidden="true">怎麼滑滑的……是潤絲嗎？</p>
+      <p class="db-say" data-say="4" aria-hidden="true">狗雨鞋超爛！超難用！你被騙了！</p>
+      <p class="db-say" data-say="5" aria-hidden="true">那……你用了幾個？！</p>
+      <p class="db-say" data-say="6" aria-hidden="true">十二個啊！</p>
+      <p class="db-say" data-say="7" aria-hidden="true">……好，我知道了。下次別用ㄌㄜˊ</p>
       <p class="db-end">——真人真事。<small>媽，我現在懂了。</small></p>
       <button class="db-sound" type="button" aria-pressed="false">SOUND · OFF</button>
     </div>
@@ -246,7 +249,11 @@ function boot() {
     cMouthO.position.set(0, 0.25, 0.33);
     cMouthO.visible = false;
     coomy.add(cMouthO);
-    coomy.userData.face = { eyesOpen: [eL, eR, gL, gR], eyesClosed: [cec1, cec2], mouthSmile: smileM, mouthO: cMouthO };
+    const cFlat = mesh(new THREE.BoxGeometry(0.1, 0.016, 0.02), solidMat('#4a3b52'));
+    cFlat.position.set(0, 0.26, 0.33);
+    cFlat.visible = false;
+    coomy.add(cFlat);
+    coomy.userData.face = { eyesOpen: [eL, eR, gL, gR], eyesClosed: [cec1, cec2], mouthSmile: smileM, mouthO: cMouthO, mouthFlat: cFlat };
     const blush = (x) => {
       const b = mesh(new THREE.CircleGeometry(0.06, 12), solidMat('#ff9db8', { transparent: true, opacity: 0.85 }));
       b.position.set(x, 0.29, 0.31);
@@ -289,11 +296,27 @@ function boot() {
       e.position.set(x, 0.5, 0.27);
       return e;
     };
-    g.add(eyeDot(-0.1), eyeDot(0.1));
+    const pArm = (side) => {
+      const a = new THREE.Group();
+      const sleeve = mesh(new THREE.CapsuleGeometry(0.06, 0.18, 3, 6), solidMat(dressCol));
+      const hand = mesh(new THREE.SphereGeometry(0.055, 8, 6), solidMat('#ffe8dc'));
+      hand.position.y = -0.14;
+      a.add(sleeve, hand);
+      a.position.set(side * 0.24, -0.02, 0.08);
+      a.rotation.z = side * 0.45;
+      return a;
+    };
+    const pArmL = pArm(-1), pArmR = pArm(1);
+    g.add(pArmL, pArmR);
+    g.userData.armL = pArmL;
+    g.userData.armR = pArmR;
+    const ed1 = eyeDot(-0.1), ed2 = eyeDot(0.1);
+    g.add(ed1, ed2);
     const sm = mesh(new THREE.TorusGeometry(0.055, 0.013, 5, 10, Math.PI), solidMat('#4a3b52'));
     sm.position.set(0, 0.4, 0.28);
     sm.rotation.z = Math.PI;
     g.add(sm);
+    g.userData.baseFace = { eyes: [ed1, ed2], mouth: sm };
     g.scale.setScalar(tall);
     scene.add(g);
     markBase(g);
@@ -302,6 +325,36 @@ function boot() {
   };
   const mom = mkParent('#e8c0d4', '#6a4a3a', 1.15, true);
   const dad = mkParent('#c0d0dc', '#4a3b30', 1.2, false);
+  {
+    const sclera = (x) => {
+      const s = mesh(new THREE.CircleGeometry(0.09, 12), solidMat('#ffffff'));
+      s.position.set(x, 0.5, 0.29);
+      s.visible = false;
+      return s;
+    };
+    const pupil = (x) => {
+      const s = mesh(new THREE.SphereGeometry(0.028, 6, 5), solidMat('#4a3b52'));
+      s.position.set(x, 0.5, 0.32);
+      s.visible = false;
+      return s;
+    };
+    const scL = sclera(-0.1), scR = sclera(0.1), puL = pupil(-0.1), puR = pupil(0.1);
+    const mO = mesh(new THREE.TorusGeometry(0.06, 0.022, 6, 12), solidMat('#4a3b52'));
+    mO.position.set(0, 0.37, 0.3);
+    mO.visible = false;
+    const mFlat = mesh(new THREE.BoxGeometry(0.11, 0.018, 0.02), solidMat('#4a3b52'));
+    mFlat.position.set(0, 0.39, 0.3);
+    mFlat.visible = false;
+    const proudArc = (x) => {
+      const a = mesh(new THREE.TorusGeometry(0.055, 0.014, 5, 10, Math.PI), solidMat('#4a3b52'));
+      a.position.set(x, 0.49, 0.3);
+      a.visible = false;
+      return a;
+    };
+    const arL = proudArc(-0.1), arR = proudArc(0.1);
+    mom.add(scL, scR, puL, puR, mO, mFlat, arL, arR);
+    mom.userData.expr = { scL, scR, puL, puR, mouthO: mO, mouthFlat: mFlat, arcL: arL, arcR: arR };
+  }
 
   // ---------- 推車與神祕盒 ----------
   const cart = new THREE.Group();
@@ -347,6 +400,22 @@ function boot() {
     stripe.position.copy(box.position);
     stripe.rotation.copy(box.rotation);
     cart.add(box, stripe);
+    const labelTexC = document.createElement('canvas');
+    labelTexC.width = 256; labelTexC.height = 128;
+    const lg = labelTexC.getContext('2d');
+    lg.fillStyle = '#fff4f8'; lg.fillRect(0, 0, 256, 128);
+    lg.strokeStyle = '#e8a8c8'; lg.lineWidth = 6; lg.strokeRect(4, 4, 248, 120);
+    lg.fillStyle = '#c86a92'; lg.textAlign = 'center';
+    lg.font = 'bold 46px sans-serif';
+    lg.fillText('家庭號', 128, 54);
+    lg.fillText('保險套', 128, 106);
+    const labelTex = new THREE.CanvasTexture(labelTexC);
+    const label = mesh(new THREE.PlaneGeometry(0.38, 0.17), new THREE.MeshBasicMaterial({ map: labelTex, transparent: true }));
+    label.position.set(0.156, -0.72, 0.135);
+    label.rotation.y = 0.4;
+    cart.add(label);
+    cart.userData.box = [box, stripe, label];
+    cart.userData.labelTex = labelTex;
   }
   cart.position.set(0.4, -0.35, 0);
   scene.add(cart);
@@ -354,23 +423,67 @@ function boot() {
   casts(cart);
   const qMark = sprite('#ffd479', 1);
 
-  // 貨架（超市背景）
+  // 大賣場背景：兩排貨架＋吊牌＋水果攤＋室內地板
   const shelves = new THREE.Group();
-  [[-2.9, -0.5], [2.9, -0.5]].forEach(([x]) => {
-    const rack = mesh(new THREE.BoxGeometry(1.3, 2.6, 0.5), solidMat('#e8ddd0'));
-    rack.position.set(x, -0.5, -2.2);
+  const floor = mesh(new THREE.BoxGeometry(14, 0.06, 7), solidMat('#f0e8e0'));
+  floor.position.set(0, -2.05, -1.5);
+  floor.receiveShadow = true;
+  shelves.add(floor);
+  [[-4.4], [-1.6], [1.6], [4.4]].forEach(([x]) => {
+    const rack = mesh(new THREE.BoxGeometry(1.4, 2.7, 0.5), solidMat('#e8ddd0'));
+    rack.position.set(x, -0.55, -2.4);
     shelves.add(rack);
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
-        const item = mesh(new THREE.BoxGeometry(0.22, 0.28, 0.2), solidMat(['#ffb6d9', '#a8d8b8', '#a5c8f0', '#ffd4a8'][(r + c) % 4]));
-        item.position.set(x - 0.4 + c * 0.4, 0.35 - r * 0.75, -1.9);
+        const item = mesh(new THREE.BoxGeometry(0.24, 0.3, 0.2), solidMat(['#ffb6d9', '#a8d8b8', '#a5c8f0', '#ffd4a8', '#c9b6ff'][(r + c + Math.abs(x) | 0) % 5]));
+        item.position.set(x - 0.42 + c * 0.42, 0.32 - r * 0.78, -2.05);
         shelves.add(item);
       }
     }
   });
+  // 遠景第二排（做出賣場縱深）
+  [[-3, -4.6], [0, -4.6], [3, -4.6]].forEach(([x, z]) => {
+    const far = mesh(new THREE.BoxGeometry(1.8, 2.2, 0.4), solidMat('#ded4c8'));
+    far.position.set(x, -0.8, z);
+    shelves.add(far);
+  });
+  // 吊掛的走道招牌
+  [[-2.4, '#a5c8f0'], [1.2, '#ffb6d9'], [4, '#a8d8b8']].forEach(([x, col]) => {
+    const sign = mesh(new THREE.BoxGeometry(0.9, 0.36, 0.05), solidMat(col));
+    sign.position.set(x, 1.9, -1.6);
+    const rod1 = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 4), solidMat('#b9b0a0'));
+    rod1.position.set(x - 0.3, 2.3, -1.6);
+    const rod2 = rod1.clone();
+    rod2.position.x = x + 0.3;
+    shelves.add(sign, rod1, rod2);
+  });
+  // 水果攤
+  {
+    const bin = mesh(new THREE.BoxGeometry(1.1, 0.5, 0.7), solidMat('#c8a888'));
+    bin.position.set(-3.1, -1.72, -0.6);
+    shelves.add(bin);
+    for (let i = 0; i < 6; i++) {
+      const fruit = mesh(new THREE.SphereGeometry(0.11, 8, 6), solidMat(i % 2 ? '#ff9d7a' : '#a8d8b8'));
+      fruit.position.set(-3.4 + (i % 3) * 0.32, -1.42, -0.75 + Math.floor(i / 3) * 0.3);
+      shelves.add(fruit);
+    }
+  }
   scene.add(shelves);
   markBase(shelves);
   casts(shelves);
+  // 媽媽從貨架拿的那一盒
+  const shelfBox = new THREE.Group();
+  {
+    const b1 = mesh(new THREE.BoxGeometry(0.42, 0.2, 0.26), solidMat('#f8e8f0'));
+    const b2 = mesh(new THREE.BoxGeometry(0.43, 0.06, 0.27), solidMat('#e8a8c8'));
+    shelfBox.add(b1, b2);
+    const sLabel = mesh(new THREE.PlaneGeometry(0.38, 0.17), new THREE.MeshBasicMaterial({ map: cart.userData.labelTex, transparent: true }));
+    sLabel.position.set(0, 0, 0.14);
+    shelfBox.add(sLabel);
+  }
+  scene.add(shelfBox);
+  markBase(shelfBox);
+  casts(shelfBox);
 
   // ---------- 三條狗 ----------
   const DOGCOLS = ['#f0e0c8', '#c8a888', '#b9b4c4'];
@@ -484,52 +597,73 @@ function boot() {
   const rain = new THREE.Points(rainGeo, rainMat);
   scene.add(rain);
 
-  // ---------- 電話與媽媽泡泡 ----------
-  const phone = new THREE.Group();
+  // ---------- 爸媽房間（翻箱倒櫃）----------
+  const room = new THREE.Group();
   {
-    const barP = mesh(new THREE.CapsuleGeometry(0.035, 0.16, 3, 6), solidMat('#e86a6a'));
-    barP.rotation.z = 1.15;
-    const cup = (s) => {
-      const c = mesh(new THREE.SphereGeometry(0.06, 8, 6), solidMat('#e86a6a'));
-      c.position.set(s * 0.12, s * 0.055, 0);
-      return c;
-    };
-    phone.add(barP, cup(-1), cup(1));
+    const bed = mesh(new THREE.BoxGeometry(1.9, 0.42, 0.95), solidMat('#d8c8e8'));
+    bed.position.set(-1.3, -1.75, -0.5);
+    const pillow = mesh(new THREE.BoxGeometry(0.5, 0.16, 0.4), solidMat('#ffffff'));
+    pillow.position.set(-2, -1.46, -0.5);
+    const stand = mesh(new THREE.BoxGeometry(0.62, 0.58, 0.52), solidMat('#c8a888'));
+    stand.position.set(0.15, -1.7, -0.2);
+    const drawer = mesh(new THREE.BoxGeometry(0.52, 0.2, 0.44), solidMat('#b89878'));
+    drawer.position.set(0.15, -1.58, 0.2);
+    room.add(bed, pillow, stand, drawer);
   }
-  scene.add(phone);
-  markBase(phone);
-  const momBubble = new THREE.Group();
+  scene.add(room);
+  markBase(room);
+  casts(room);
+  // 翻找時飛出來的雜物
+  const flyItems = [
+    mesh(new THREE.CapsuleGeometry(0.05, 0.14, 3, 6), solidMat('#a5c8f0', { transparent: true, opacity: 0 })),
+    mesh(new THREE.CapsuleGeometry(0.05, 0.12, 3, 6), solidMat('#ffd4a8', { transparent: true, opacity: 0 })),
+    mesh(new THREE.BoxGeometry(0.2, 0.05, 0.14), solidMat('#a8d8b8', { transparent: true, opacity: 0 })),
+  ];
+  flyItems.forEach((f) => scene.add(f));
+  // 舉高高的家庭號
+  const heldBox = new THREE.Group();
   {
-    const puffMat = solidMat('#ffffff', { transparent: true, opacity: 0.92 });
-    [[0, 0, 0.5], [0.42, 0.1, 0.34], [-0.4, 0.06, 0.3], [0, -0.08, 0.4]].forEach(([x, y, r]) => {
-      const s = mesh(new THREE.SphereGeometry(r, 8, 6), puffMat);
-      s.position.set(x, y, 0);
-      momBubble.add(s);
-    });
-    const mh = mesh(new THREE.SphereGeometry(0.24, 10, 8), solidMat('#ffe8dc'));
-    mh.position.set(0, 0.05, 0.32);
-    momBubble.add(mh);
-    const mhair = mesh(new THREE.SphereGeometry(0.27, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.55), solidMat('#6a4a3a'));
-    mhair.position.set(0, 0.1, 0.3);
-    const mbun = mesh(new THREE.SphereGeometry(0.12, 8, 6), solidMat('#6a4a3a'));
-    mbun.position.set(0, 0.3, 0.22);
-    momBubble.add(mhair, mbun);
-    const mEye = (x) => {
-      const e = mesh(new THREE.SphereGeometry(0.035, 6, 5), solidMat('#4a3b52'));
-      e.position.set(x, 0.05, 0.55);
-      return e;
-    };
-    momBubble.add(mEye(-0.08), mEye(0.08));
-    const mMouth = mesh(new THREE.BoxGeometry(0.07, 0.014, 0.02), solidMat('#4a3b52'));
-    mMouth.position.set(0, -0.05, 0.55);
-    momBubble.add(mMouth);
+    const bx = mesh(new THREE.BoxGeometry(0.42, 0.2, 0.26), solidMat('#f8e8f0'));
+    const stripe2 = mesh(new THREE.BoxGeometry(0.43, 0.06, 0.27), solidMat('#e8a8c8'));
+    heldBox.add(bx, stripe2);
   }
-  momBubble.position.set(-1.7, 0.9, 0.5);
-  scene.add(momBubble);
-  markBase(momBubble);
-
-  // 家裡的燈
-  const lampGlow = sprite('#ffd9a0', 2.6);
+  scene.add(heldBox);
+  markBase(heldBox);
+  casts(heldBox);
+  const foundGlow = sprite('#ffd479', 1.6);
+  // 拆下的包裝紙屑
+  const wrappers = [];
+  for (let i = 0; i < 5; i++) {
+    const wpc = mesh(new THREE.PlaneGeometry(0.09, 0.09), solidMat(['#e8a8c8', '#f8e8f0'][i % 2], { side: THREE.DoubleSide, transparent: true, opacity: 0 }));
+    scene.add(wpc);
+    wrappers.push(wpc);
+  }
+  // 漫畫記號：問號×3、驚嘆號
+  const mkQ = () => {
+    const g = new THREE.Group();
+    const arc = mesh(new THREE.TorusGeometry(0.09, 0.026, 6, 12, Math.PI * 1.5), solidMat('#ffffff'));
+    arc.rotation.z = Math.PI * 0.75;
+    const dot = mesh(new THREE.SphereGeometry(0.035, 6, 5), solidMat('#ffffff'));
+    dot.position.set(0, -0.2, 0);
+    g.add(arc, dot);
+    scene.add(g);
+    markBase(g);
+    return g;
+  };
+  const qMarks = [mkQ(), mkQ(), mkQ()];
+  const excl = new THREE.Group();
+  {
+    const barE = mesh(new THREE.BoxGeometry(0.09, 0.34, 0.04), solidMat('#ffd479'));
+    barE.position.y = 0.12;
+    const dotE = mesh(new THREE.SphereGeometry(0.05, 6, 5), solidMat('#ffd479'));
+    dotE.position.y = -0.18;
+    excl.add(barE, dotE);
+  }
+  scene.add(excl);
+  markBase(excl);
+  const sweat2 = mesh(new THREE.SphereGeometry(0.055, 8, 6), solidMat('#a5d8f5', { transparent: true, opacity: 0 }));
+  sweat2.scale.set(0.8, 1.3, 0.8);
+  scene.add(sweat2);
 
   // 喜劇道具：媽媽的冷汗、Coomy 手上的白套、頭上的暈圈
   const sweat = mesh(new THREE.SphereGeometry(0.06, 8, 6), solidMat('#a5d8f5', { transparent: true, opacity: 0 }));
@@ -566,17 +700,21 @@ function boot() {
   });
   setSoundUI();
   const CUES = [
-    { at: 0.06, fn: () => sound.pop() },
-    { at: 0.13, fn: () => sound.slip() },
-    { at: 0.14, fn: () => sound.tickTak() },
-    { at: 0.3, fn: () => sound.pop() },
-    { at: 0.44, fn: () => sound.count() },
-    { at: 0.58, fn: () => sound.slip() },
-    { at: 0.66, fn: () => sound.slip() },
-    { at: 0.74, fn: () => sound.slip() },
-    { at: 0.85, fn: () => sound.ring() },
-    { at: 0.925, fn: () => sound.pop() },
-    { at: 0.96, fn: () => sound.chord() },
+    { at: 0.05, fn: () => sound.pop() },
+    { at: 0.096, fn: () => sound.pop() },
+    { at: 0.152, fn: () => sound.slip() },
+    { at: 0.32, fn: () => sound.tickTak() },
+    { at: 0.35, fn: () => sound.tickTak() },
+    { at: 0.39, fn: () => sound.pop() },
+    { at: 0.47, fn: () => sound.slip() },
+    { at: 0.57, fn: () => sound.count() },
+    { at: 0.7, fn: () => sound.slip() },
+    { at: 0.76, fn: () => sound.slip() },
+    { at: 0.86, fn: () => sound.pop() },
+    { at: 0.905, fn: () => sound.gasp() },
+    { at: 0.94, fn: () => sound.pop() },
+    { at: 0.965, fn: () => sound.slip() },
+    { at: 0.985, fn: () => sound.chord() },
   ].map((c) => ({ ...c, fired: false }));
 
   // ---------- scroll + autoplay ----------
@@ -610,17 +748,20 @@ function boot() {
 
   function update(p, t) {
     const w = innerWidth, h = innerHeight;
-    const storeQ = ss(0.03, 0.08, p) * (1 - ss(0.2, 0.26, p));
-    const rainInQ = ss(0.24, 0.3, p);
-    const findQ = ss(0.3, 0.35, p) * (1 - ss(0.4, 0.44, p));
-    const bootQ = ss(0.42, 0.46, p) * (1 - ss(0.52, 0.56, p));
-    const walkQ = ss(0.54, 0.58, p) * (1 - ss(0.76, 0.8, p));
-    const homeQ = ss(0.82, 0.86, p);
+    const storeQ = ss(0.03, 0.07, p) * (1 - ss(0.22, 0.26, p));
+    const rainInQ = ss(0.235, 0.28, p);
+    const searchQ = ss(0.27, 0.31, p) * (1 - ss(0.41, 0.45, p));
+    const digQ = ss(0.31, 0.34, p) * (1 - ss(0.375, 0.4, p));
+    const foundQ = ss(0.385, 0.405, p) * (1 - ss(0.43, 0.45, p));
+    const unpackQ = ss(0.45, 0.49, p) * (1 - ss(0.53, 0.56, p));
+    const bootQ = ss(0.55, 0.58, p) * (1 - ss(0.63, 0.66, p));
+    const walkQ = ss(0.65, 0.68, p) * (1 - ss(0.8, 0.83, p));
+    const homeQ = ss(0.85, 0.88, p);
 
-    skyRain.style.opacity = String(Math.max(rainInQ * (1 - ss(0.78, 0.84, p)), 0));
+    skyRain.style.opacity = String(Math.max(rainInQ * (1 - ss(0.83, 0.87, p)), 0));
     skyEve.style.opacity = String(homeQ);
-    rainMat.opacity = rainInQ * (1 - ss(0.78, 0.83, p)) * 0.75;
-    hemi.intensity = 1.4 - rainInQ * 0.35 + homeQ * 0.25;
+    rainMat.opacity = rainInQ * (1 - ss(0.82, 0.86, p)) * 0.75;
+    hemi.intensity = 1.4 - rainInQ * 0.3 + homeQ * 0.2;
 
     // 雨落下
     const rpArr = rainGeo.getAttribute('position');
@@ -633,11 +774,13 @@ function boot() {
 
     // captions
     const capW = [
-      ss(0.04, 0.07, p) * (1 - ss(0.19, 0.23, p)),
-      ss(0.25, 0.28, p) * (1 - ss(0.34, 0.37, p)),
-      ss(0.31, 0.34, p) * (1 - ss(0.4, 0.43, p)) * 0 + ss(0.33, 0.36, p) * (1 - ss(0.41, 0.44, p)),
-      ss(0.43, 0.46, p) * (1 - ss(0.52, 0.55, p)),
-      ss(0.56, 0.59, p) * (1 - ss(0.74, 0.78, p)),
+      ss(0.04, 0.07, p) * (1 - ss(0.2, 0.24, p)),
+      ss(0.245, 0.27, p) * (1 - ss(0.295, 0.315, p)),
+      ss(0.3, 0.33, p) * (1 - ss(0.4, 0.43, p)),
+      ss(0.46, 0.49, p) * (1 - ss(0.53, 0.56, p)),
+      ss(0.56, 0.59, p) * (1 - ss(0.63, 0.66, p)),
+      ss(0.67, 0.7, p) * (1 - ss(0.78, 0.81, p)),
+      ss(0.885, 0.905, p) * (1 - ss(0.925, 0.94, p)),
     ];
     caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
     endEl.style.opacity = String(ss(0.955, 0.985, p));
@@ -651,32 +794,93 @@ function boot() {
     fadeGroup(mom, storeQ);
     dad.visible = storeQ > 0.02;
     fadeGroup(dad, storeQ);
-    mom.position.set(1.5, -0.95, 0.3);
-    dad.position.set(2.5, -0.9, 0.1);
-    // 媽媽瞄爸爸一眼（特寫級演出：快轉頭＋歪頭＋冷汗滑落）
-    const glanceQ = ss(0.12, 0.13, p) * (1 - ss(0.165, 0.18, p));
-    mom.rotation.y = glanceQ * 1.05;
-    mom.rotation.z = glanceQ * 0.07;
-    sweat.position.set(1.78, -0.34 - glanceQ * 0.14, 0.62);
-    sweat.material.opacity = glanceQ * 0.9;
+    // 媽媽：散步 → 走到貨架 → 左右瞄一眼 → 拿盒 → 走回推車放進去
+    const momX = kf(p, [[0.03, 1.5], [0.048, 1.5], [0.06, 2.45], [0.08, 2.45], [0.094, 1.5], [1, 1.5]]);
+    if (storeQ > 0.02) mom.position.set(momX, -0.95, 0.3);
+    dad.position.set(3.3, -0.9, 0.1);
+    // 左右瞄（確認沒人看到）——先算好，於三段演出處合併
+    const peekQ = ss(0.06, 0.064, p) * (1 - ss(0.074, 0.078, p));
+    const peekRot = Math.sin(t * 9) * 0.5 * peekQ;
+    // 伸手拿盒
+    const reachQ = ss(0.055, 0.061, p) * (1 - ss(0.076, 0.084, p));
+    mom.userData.armR.rotation.z = 0.45 + reachQ * 1.05;
+    // 盒子：貨架 → 媽媽手上 → 拋進推車
+    const carryQ = ss(0.058, 0.064, p);
+    const placeQ = ss(0.088, 0.097, p);
+    const sbx = lerp(lerp(2.45, momX - 0.3, carryQ), 0.55, placeQ);
+    const sby = lerp(lerp(-0.75, -0.5, carryQ), -1.12, placeQ) + Math.sin(placeQ * Math.PI) * 0.55;
+    shelfBox.position.set(sbx, sby, lerp(-0.35, 0.12, Math.max(carryQ, placeQ)));
+    shelfBox.rotation.z = placeQ * Math.PI * 0.4;
+    shelfBox.visible = storeQ > 0.02 && p < 0.099;
+    fadeGroup(shelfBox, storeQ);
+    cart.userData.box.forEach((b) => { b.visible = p > 0.097; });
+    // 媽媽三段演出：尷尬停頓 → 得意回答 → 回答完轉頭炫耀
+    const momAwk1 = ss(0.15, 0.158, p) * (1 - ss(0.168, 0.176, p));
+    const momProud = ss(0.172, 0.182, p) * (1 - ss(0.215, 0.23, p));
+    const glanceQ = ss(0.192, 0.202, p) * (1 - ss(0.215, 0.23, p));
+    if (storeQ > 0.02) {
+      mom.rotation.y = glanceQ * 1.05 + peekRot;
+      mom.rotation.z = glanceQ * 0.06;
+      mom.rotation.x = -momProud * 0.09;
+      mom.scale.setScalar(1.15 * (1 + momProud * 0.03));
+    }
+    sweat.position.set(1.78, -0.34 - momAwk1 * 0.14, 0.62);
+    sweat.material.opacity = storeQ > 0.02 ? momAwk1 * 0.9 : sweat.material.opacity;
     // Coomy 拿著白套困惑（歪頭＋頭上暈圈）
-    coomy.rotation.x = findQ * Math.sin(t * 1.2) * 0.05;
+    
     handBoot.position.set(coomy.position.x + 0.26, coomy.position.y + 0.02, coomy.position.z + 0.16);
     handBoot.rotation.z = 0.5 + Math.sin(t * 2) * 0.25;
-    handBoot.material.opacity = findQ * 0.85;
+    handBoot.material.opacity = unpackQ * 0.85;
     dizzy.forEach((d, i) => {
       const a = t * 2.2 + (i / 3) * Math.PI * 2;
       d.position.set(coomy.position.x + Math.cos(a) * 0.42, coomy.position.y + 0.95 + Math.sin(a) * 0.08, coomy.position.z + Math.sin(a) * 0.2);
-      d.material.opacity = findQ * (0.5 + 0.3 * Math.sin(a * 2));
+      d.material.opacity = unpackQ * (0.5 + 0.3 * Math.sin(a * 2));
     });
     qMark.position.set(0.5, 0.15, 0.3);
-    qMark.material.opacity = storeQ * (0.35 + 0.15 * Math.sin(t * 2.5));
+    qMark.material.opacity = storeQ * ss(0.1, 0.112, p) * (0.4 + 0.15 * Math.sin(t * 2.5));
+
+    // 房間：翻箱倒櫃 → 找到家庭號
+    room.visible = searchQ > 0.02;
+    fadeGroup(room, searchQ);
+    flyItems.forEach((f, i) => {
+      const u = ((t * 0.9 + i / 3) % 1);
+      f.position.set(0.15 - u * (0.7 + i * 0.3), -1.5 + Math.sin(u * Math.PI) * (0.8 + i * 0.15), 0.3 + i * 0.12);
+      f.rotation.z = t * 4 + i * 2;
+      f.material.opacity = digQ * Math.sin(u * Math.PI);
+    });
+    heldBox.visible = Math.max(foundQ, unpackQ) > 0.02;
+    fadeGroup(heldBox, Math.max(foundQ, unpackQ * 0.9));
+    const raise = ss(0.385, 0.4, p);
+    heldBox.position.set(
+      coomy.position.x + 0.1 + unpackQ * 0.38,
+      lerp(coomy.position.y + 0.1, coomy.position.y + 1.25, raise) - unpackQ * 1.2,
+      coomy.position.z + 0.2
+    );
+    heldBox.rotation.z = Math.sin(t * 2) * 0.1 * foundQ;
+    foundGlow.position.set(heldBox.position.x, heldBox.position.y + 0.1, heldBox.position.z);
+    foundGlow.material.opacity = foundQ * 0.5;
+    // 拆開：包裝紙屑飄落＋問號亂冒
+    wrappers.forEach((wp, i) => {
+      const u = ((t * 0.5 + i / 5) % 1);
+      wp.position.set(coomy.position.x + 0.35 + Math.sin(u * 6 + i) * 0.15, coomy.position.y + 0.5 - u * 1.1, coomy.position.z + 0.25);
+      wp.rotation.set(t * 3 + i, t * 2, i);
+      wp.material.opacity = unpackQ * Math.sin(u * Math.PI) * 0.9;
+    });
+    qMarks.forEach((q, i) => {
+      const a = t * 1.4 + i * 2.1;
+      q.position.set(coomy.position.x + Math.cos(a) * 0.55, coomy.position.y + 1.05 + Math.sin(a * 1.3) * 0.15, coomy.position.z + 0.2);
+      q.rotation.z = Math.sin(a) * 0.25;
+      const qOp = unpackQ * (0.55 + 0.35 * Math.sin(a * 2));
+      fadeGroup(q, Math.max(0, qOp));
+      q.visible = unpackQ > 0.02;
+    });
 
     // 狗登場
     dogs.forEach((d, i) => {
-      const enterQ = ss(0.26 + i * 0.02, 0.3 + i * 0.02, p);
-      d.visible = enterQ > 0.02 && p < 0.82;
-      fadeGroup(d, enterQ * (1 - ss(0.78, 0.82, p)));
+      const introQ = ss(0.24 + i * 0.012, 0.27 + i * 0.012, p);
+      const enterQ = Math.max(introQ * (1 - ss(0.285, 0.31, p)), ss(0.53, 0.56, p));
+      d.visible = enterQ > 0.02 && p < 0.84;
+      fadeGroup(d, enterQ * (1 - ss(0.8, 0.84, p)));
       const wx = walkQ > 0.01 ? Math.sin(t * 0.32) * 1.6 : 0;
       const baseX = -1.5 + i * 1.35 + wx;
       const trot = walkQ * Math.abs(Math.sin(t * 6 + i * 2)) * 0.06;
@@ -685,14 +889,14 @@ function boot() {
       d.userData.tail.rotation.z = -1 + Math.sin(t * 7 + i) * 0.35;
       // 雨鞋：穿上與滑掉
       d.userData.legs.forEach((L, li) => {
-        const wearAt = 0.43 + (i * 4 + li) * 0.006;
+        const wearAt = 0.565 + (i * 4 + li) * 0.004;
         const worn = ss(wearAt, wearAt + 0.008, p);
         const cyc = (t * 0.5 + L.phase) % 1;
         const slipping = walkQ > 0.3 && cyc > 0.72;
-        L.boot.visible = worn > 0.5 && p < 0.78;
+        L.boot.visible = worn > 0.5 && p < 0.82;
         const fu = slipping ? Math.min(1, (cyc - 0.72) * 3.6) : 0;
         // 穿上時彈一下
-        const wearPop = 1 + (1 - ss(0.001, 0.014, p - (0.43 + (i * 4 + li) * 0.006))) * 0.7;
+        const wearPop = 1 + (1 - ss(0.001, 0.014, p - wearAt)) * 0.7;
         L.boot.scale.setScalar(worn > 0.5 ? wearPop : 1);
         // 噴飛：往上彈、往後噴、空中旋轉
         L.boot.position.x = L.leg.position.x - fu * 0.55;
@@ -704,7 +908,7 @@ function boot() {
 
     // 掉在路上的雨鞋
     dropped.forEach((d, i) => {
-      d.material.opacity = ss(0.6 + i * 0.04, 0.64 + i * 0.04, p) * (1 - ss(0.78, 0.82, p)) * 0.7;
+      d.material.opacity = ss(0.7 + i * 0.03, 0.73 + i * 0.03, p) * (1 - ss(0.8, 0.84, p)) * 0.7;
     });
 
     // 牽繩
@@ -719,59 +923,99 @@ function boot() {
     }
 
     // 路人
-    const walkerQ = ss(0.62, 0.66, p) * (1 - ss(0.74, 0.78, p));
+    const walkerQ = ss(0.72, 0.75, p) * (1 - ss(0.79, 0.82, p));
     walker.visible = walkerQ > 0.02;
     fadeGroup(walker, walkerQ);
-    walker.position.set(lerp(5.5, -5.5, ss(0.62, 0.78, p)), -1.62 + Math.abs(Math.sin(t * 4)) * 0.04, 1.4);
+    walker.position.set(lerp(5.5, -5.5, ss(0.72, 0.82, p)), -1.62 + Math.abs(Math.sin(t * 4)) * 0.04, 1.4);
     huhMark.position.set(walker.position.x, walker.position.y + 1.35, walker.position.z);
     huhMark.material.opacity = walkerQ * 0.6;
 
-    // 電話與家
-    phone.visible = homeQ > 0.02;
-    fadeGroup(phone, homeQ);
-    momBubble.visible = homeQ > 0.02;
-    const momTalk = Math.max(ss(0.88, 0.9, p) * (1 - ss(0.92, 0.94, p)), ss(0.955, 0.97, p) * (1 - ss(0.985, 1, p)));
-    fadeGroup(momBubble, homeQ * (0.25 + momTalk * 0.75));
-    momBubble.position.set(-1.7, 0.9 + Math.sin(t * 0.8) * 0.06, 0.5);
-    lampGlow.position.set(2.2, 0.6, -1);
-    lampGlow.material.opacity = homeQ * 0.35;
+    // 回家對質：媽媽本人在場
+    mom.visible = storeQ > 0.02 || homeQ > 0.02;
+    fadeGroup(mom, Math.max(storeQ, homeQ));
+    if (homeQ > 0.02) mom.position.set(1.6, -0.95, 0.3);
+    const shockQ = ss(0.9, 0.915, p) * (1 - ss(0.935, 0.95, p));
+    const awkQ = ss(0.955, 0.97, p);
+    // 驚訝：彈跳＋後仰；尷尬：身體別開
+    mom.rotation.y = homeQ > 0.02 ? -0.5 + awkQ * 0.9 : mom.rotation.y;
+    mom.rotation.z = homeQ > 0.02 ? -shockQ * 0.1 : mom.rotation.z;
+    if (homeQ > 0.02) mom.position.y = -0.95 + shockQ * Math.abs(Math.sin(t * 8)) * 0.12;
+    // 媽媽表情切換（超市尷尬/得意＋結尾驚訝/尷尬）
+    const me = mom.userData.expr;
+    const mb = mom.userData.baseFace;
+    const momShocked = shockQ > 0.4;
+    const momAwk = awkQ > 0.4 || momAwk1 > 0.4;
+    const momProudFace = momProud > 0.4 && !momAwk;
+    me.scL.visible = momShocked || momAwk;
+    me.scR.visible = momShocked || momAwk;
+    me.puL.visible = momShocked || momAwk;
+    me.puR.visible = momShocked || momAwk;
+    me.arcL.visible = momProudFace;
+    me.arcR.visible = momProudFace;
+    // 驚訝瞳孔縮小置中；尷尬眼神飄向旁邊
+    const puOff = momAwk ? 0.045 : 0;
+    me.puL.position.set(-0.1 + puOff, 0.5 + (momAwk ? 0.015 : 0), 0.32);
+    me.puR.position.set(0.1 + puOff, 0.5 + (momAwk ? 0.015 : 0), 0.32);
+    me.puL.scale.setScalar(momShocked ? 0.7 : 1);
+    me.puR.scale.setScalar(momShocked ? 0.7 : 1);
+    mb.eyes.forEach((e) => { e.visible = !(momShocked || momAwk || momProudFace); });
+    me.mouthO.visible = momShocked;
+    me.mouthFlat.visible = momAwk;
+    mb.mouth.visible = !(momShocked || momAwk);
+    // 驚訝雙手舉高；尷尬垂回
+    if (homeQ > 0.02) {
+      mom.userData.armL.rotation.z = -0.45 - shockQ * 2.3;
+      mom.userData.armR.rotation.z = 0.45 + shockQ * 2.3 - awkQ * 0.15;
+    }
+
+    // 驚嘆號＋雙冷汗
+    excl.visible = shockQ > 0.05;
+    fadeGroup(excl, shockQ);
+    excl.position.set(mom.position.x + 0.45, mom.position.y + 1.55 + shockQ * Math.abs(Math.sin(t * 9)) * 0.1, mom.position.z + 0.2);
+    sweat.position.set(mom.position.x + 0.32, mom.position.y + 0.62 - Math.max(shockQ, awkQ) * 0.12, mom.position.z + 0.4);
+    sweat.material.opacity = homeQ > 0.02 ? Math.max(shockQ, awkQ) * 0.9 : sweat.material.opacity;
+    sweat2.position.set(mom.position.x - 0.28, mom.position.y + 0.55 - awkQ * 0.1, mom.position.z + 0.4);
+    sweat2.material.opacity = awkQ * 0.85;
 
     // ---------- Coomy ----------
-    const cx = kf(p, [[0, -0.6], [0.2, -0.6], [0.26, -1.2], [0.42, -1.2], [0.46, -0.6], [0.54, -3], [0.58, -3], [0.76, -3], [0.82, 1.3], [1, 1.3]]);
-    const cy = kf(p, [[0, -1.32], [0.54, -1.32], [0.58, -1.35], [1, -1.35]]);
+    const cx = kf(p, [[0, -0.6], [0.15, -0.6], [0.2, -1.2], [0.26, -1.2], [0.29, -0.35], [0.44, -0.35], [0.47, -0.4], [0.55, -0.9], [0.63, -0.9], [0.66, -3], [0.8, -3], [0.85, -0.6], [1, -0.6]]);
+    const cy = kf(p, [[0, -1.32], [1, -1.32]]);
     const chase = walkQ * Math.abs(Math.sin(t * 0.9)) * 1.1;
-    const hop = Math.max(storeQ * 0.3, bootQ * 0.5) * Math.abs(Math.sin(t * 4.5)) * 0.1;
-    coomy.position.set(cx + chase, cy + hop, 0.7);
-    coomy.rotation.z = walkQ * Math.sin(t * 5) * 0.05 + findQ * (0.12 + Math.sin(t * 1.6) * 0.05);
-    // 穿鞋時蹲一下
+    const hop = Math.max(storeQ * 0.3, bootQ * 0.5, foundQ * 0.8) * Math.abs(Math.sin(t * 4.5)) * 0.12;
+    const stomp = ss(0.85, 0.87, p) * (1 - ss(0.89, 0.91, p)) * Math.abs(Math.sin(t * 7)) * 0.12;
+    coomy.position.set(cx + chase, cy + hop + stomp, 0.7);
+    // 翻找時彎腰；拆開時歪頭
+    coomy.rotation.x = digQ * (0.45 + Math.sin(t * 6) * 0.06);
+    coomy.rotation.z = walkQ * Math.sin(t * 5) * 0.05 + unpackQ * (0.16 + Math.sin(t * 1.6) * 0.06);
     coomy.scale.setScalar(0.88 * (1 - bootQ * 0.06));
-    // 電話手勢
-    coomy.userData.armR.rotation.z = 0.5 + homeQ * 1.9;
-    phone.position.set(coomy.position.x + 0.18, coomy.position.y + 0.32, coomy.position.z + 0.12);
+    // 抱怨時雙手往上揮
+    const askQ = ss(0.102, 0.112, p) * (1 - ss(0.14, 0.152, p));
+    coomy.userData.armR.rotation.z = 0.5 + askQ * 1.05 + Math.max(ss(0.85, 0.87, p) * (1 - ss(0.94, 0.96, p)), 0) * (1.6 + Math.sin(t * 6) * 0.3) + foundQ * 1.8;
 
     // 表情
     const cf = coomy.userData.face;
-    const exprMad = ss(0.86, 0.89, p) * (1 - ss(0.93, 0.955, p));
-    const exprEnd = ss(0.965, 0.985, p);
-    const cClosed = exprEnd > 0.5;
-    cf.eyesOpen.forEach((o) => { o.visible = !cClosed; });
-    cf.eyesClosed.forEach((o) => { o.visible = cClosed; });
-    cf.mouthO.visible = (storeQ > 0.5 && ss(0.08, 0.1, p) * (1 - ss(0.14, 0.16, p)) > 0.4) || exprMad > 0.5;
-    cf.mouthSmile.visible = !cf.mouthO.visible;
+    const exprMad = ss(0.855, 0.875, p) * (1 - ss(0.93, 0.95, p));
+    const exprDead = ss(0.935, 0.95, p) * (1 - ss(0.985, 1, p));
+    cf.eyesOpen.forEach((o) => { o.visible = true; });
+    cf.eyesClosed.forEach((o) => { o.visible = false; });
+    cf.mouthO.visible = (storeQ > 0.5 && askQ > 0.4) || exprMad > 0.5 || foundQ > 0.5;
+    cf.mouthFlat.visible = !cf.mouthO.visible && (exprDead > 0.5 || unpackQ > 0.5);
+    cf.mouthSmile.visible = !cf.mouthO.visible && !cf.mouthFlat.visible;
 
     // says
     const sayW = [
-      ss(0.085, 0.105, p) * (1 - ss(0.135, 0.155, p)),
-      ss(0.15, 0.17, p) * (1 - ss(0.2, 0.22, p)),
-      ss(0.36, 0.38, p) * (1 - ss(0.41, 0.43, p)),
-      ss(0.86, 0.88, p) * (1 - ss(0.9, 0.915, p)),
-      ss(0.9, 0.92, p) * (1 - ss(0.935, 0.95, p)),
-      ss(0.935, 0.95, p) * (1 - ss(0.96, 0.972, p)),
-      ss(0.958, 0.972, p) * (1 - ss(0.99, 1, p)),
+      ss(0.104, 0.116, p) * (1 - ss(0.14, 0.152, p)),
+      ss(0.176, 0.188, p) * (1 - ss(0.212, 0.226, p)),
+      ss(0.39, 0.405, p) * (1 - ss(0.43, 0.445, p)),
+      ss(0.47, 0.49, p) * (1 - ss(0.525, 0.545, p)),
+      ss(0.855, 0.875, p) * (1 - ss(0.895, 0.91, p)),
+      ss(0.905, 0.92, p) * (1 - ss(0.935, 0.948, p)),
+      ss(0.938, 0.952, p) * (1 - ss(0.965, 0.978, p)),
+      ss(0.962, 0.976, p) * (1 - ss(0.992, 1, p)),
     ];
     const anchors = [
-      [coomy, 0.95], [mom, 1.35], [coomy, 0.95],
-      [coomy, 0.95], [momBubble, 0.75], [coomy, 0.95], [momBubble, 0.75],
+      [coomy, 0.95], [mom, 1.35], [coomy, 1.5], [coomy, 0.95],
+      [coomy, 0.95], [mom, 1.35], [coomy, 0.95], [mom, 1.35],
     ];
     says.forEach((el, i) => {
       const [obj, dy] = anchors[i];
@@ -783,43 +1027,52 @@ function boot() {
     // 電影運鏡：wide 與特寫交錯（喜劇節奏）
     const wideComp = Math.max(1, 3.6 / (0.4663 * camera.aspect) / 10);
     const lookX = kf(p, [
-      [0.05, 0.4], [0.065, 0.5], [0.1, 0.5],          // 特寫：神祕盒
-      [0.115, 0.2], [0.128, 1.55], [0.17, 1.55],      // 特寫：媽媽的眼神
-      [0.2, 0.4], [0.26, -0.3],
-      [0.34, -0.3], [0.355, -1.15], [0.41, -1.15],    // 特寫：滑滑的白套
-      [0.43, -1.5], [0.52, -1.5],                     // 特寫：狗腿穿鞋
-      [0.56, -0.6], [0.6, 0], [0.65, 0],              // 特寫：噴飛
-      [0.665, 0.9], [0.72, 0.2],                      // 特寫：路人
-      [0.76, 0], [0.84, 0.6],
-      [0.885, -1.6], [0.912, -1.6],                   // 特寫：媽媽泡泡
-      [0.925, 1.3], [0.948, 1.3],                     // 特寫：十二個啊
-      [0.958, -1.6], [0.99, -1.6], [1, 0.3],          // 慢推：下次別用了
-    ]) ;
+      [0.04, 0.4], [0.052, 2.4], [0.082, 2.4],        // 跟拍：媽媽到貨架拿盒
+      [0.09, 0.55], [0.14, 0.55],                     // 特寫：盒子（指著問「那是什麼？」）
+      [0.148, 1.55], [0.212, 1.55],                   // 特寫：媽媽尷尬→得意→轉頭炫耀
+      [0.232, 0.4], [0.26, -0.3],
+      [0.28, -0.6], [0.32, -0.1], [0.38, -0.1],       // 特寫：翻抽屜
+      [0.39, -0.3], [0.43, -0.3],                     // 舉盒
+      [0.45, -0.35], [0.52, -0.35],                   // MEGA 特寫：拆開困惑
+      [0.555, -1.5], [0.63, -1.5],                    // 特寫：狗腿穿鞋
+      [0.66, -0.6], [0.7, 0], [0.74, 0],              // 特寫：噴飛
+      [0.75, 0.6], [0.79, 0],                         // 特寫：路人
+      [0.82, 0], [0.86, 0.4],
+      [0.9, 1.6], [0.935, 1.6],                       // 特寫：媽媽驚訝
+      [0.945, -0.6], [0.958, -0.6],                   // 特寫：十二個啊
+      [0.965, 1.6], [0.99, 1.6], [1, 0.4],            // 慢推：尷尬的媽媽
+    ]);
     const lookY = kf(p, [
-      [0.05, -0.65], [0.065, -0.85], [0.1, -0.85],
-      [0.115, -0.5], [0.128, -0.32], [0.17, -0.32],
-      [0.2, -0.65], [0.26, -0.9],
-      [0.34, -0.9], [0.355, -0.85], [0.41, -0.85],
-      [0.43, -1.6], [0.52, -1.6],
-      [0.56, -0.9], [0.6, -1.5], [0.65, -1.5],
-      [0.665, -0.85], [0.72, -0.9],
-      [0.76, -0.7], [0.84, -0.5],
-      [0.885, 0.95], [0.912, 0.95],
-      [0.925, -0.7], [0.948, -0.7],
-      [0.958, 0.95], [0.99, 0.95], [1, -0.4],
+      [0.04, -0.65], [0.052, -0.55], [0.082, -0.55],
+      [0.09, -1.0], [0.14, -1.0],
+      [0.148, -0.32], [0.212, -0.32],
+      [0.232, -0.65], [0.26, -0.9],
+      [0.28, -1.2], [0.32, -1.4], [0.38, -1.4],
+      [0.39, -0.5], [0.43, -0.5],
+      [0.45, -0.7], [0.52, -0.7],
+      [0.555, -1.6], [0.63, -1.6],
+      [0.66, -0.9], [0.7, -1.5], [0.74, -1.5],
+      [0.75, -0.85], [0.79, -0.9],
+      [0.82, -0.7], [0.86, -0.6],
+      [0.9, -0.3], [0.935, -0.3],
+      [0.945, -0.7], [0.958, -0.7],
+      [0.965, -0.35], [0.99, -0.35], [1, -0.5],
     ]);
     const camZ = kf(p, [
-      [0.05, 7.6], [0.065, 4.4], [0.1, 4.4],
-      [0.115, 6], [0.128, 3.5], [0.17, 3.5],
-      [0.2, 7.6], [0.26, 7.9],
-      [0.34, 7.4], [0.355, 3.9], [0.41, 3.9],
-      [0.43, 3.4], [0.52, 3.4],
-      [0.56, 8.2], [0.6, 3.8], [0.65, 3.8],
-      [0.665, 3.5], [0.72, 6],
-      [0.76, 8], [0.84, 6.9],
-      [0.885, 4.2], [0.912, 4.2],
-      [0.925, 4.2], [0.948, 4.2],
-      [0.958, 4.8], [0.99, 3.8], [1, 6.7],
+      [0.04, 7.6], [0.052, 5.6], [0.082, 5.6],
+      [0.09, 4.2], [0.104, 4.2], [0.118, 3.1], [0.14, 3.1],
+      [0.148, 3.5], [0.212, 3.5],
+      [0.232, 7.6], [0.26, 7.9],
+      [0.28, 6], [0.32, 4.2], [0.38, 4.2],
+      [0.39, 5], [0.43, 5],
+      [0.45, 3], [0.52, 3],
+      [0.555, 3.4], [0.63, 3.4],
+      [0.66, 8.2], [0.7, 3.8], [0.74, 3.8],
+      [0.75, 3.5], [0.79, 6],
+      [0.82, 8], [0.86, 6.3],
+      [0.9, 3.3], [0.935, 3.3],
+      [0.945, 3.8], [0.958, 3.8],
+      [0.965, 4.6], [0.99, 3.4], [1, 6.7],
     ]);
     const camX = lookX * 0.75 + Math.sin(t * 0.25) * 0.06;
     const camY = lookY * 0.45 + 0.15 + Math.sin(t * 0.3) * 0.04;
@@ -898,7 +1151,7 @@ function makeSound() {
   };
   const schedule = () => { twinkleTimer = setTimeout(() => { twinkle(); schedule(); }, 2000 + Math.random() * 3000); };
   return {
-    start() { ensure(); ctx.resume(); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1); clearTimeout(twinkleTimer); schedule(); },
+    start() { ensure(); ctx.resume(); master.gain.linearRampToValueAtTime(1, ctx.currentTime + 1); },
     stop() { if (ctx) master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); clearTimeout(twinkleTimer); },
     tickTak() { blip(620, 0, 0.08, 'square', 0.025); blip(520, 0.12, 0.08, 'square', 0.02); },
     pop() { blip(740, 0, 0.14, 'sine', 0.06); blip(1100, 0.08, 0.16, 'sine', 0.05); },
@@ -915,7 +1168,7 @@ function makeSound() {
       o.connect(g); g.connect(master);
       o.start(now); o.stop(now + 0.45);
     },
-    ring() { blip(880, 0, 0.12, 'square', 0.03); blip(880, 0.18, 0.12, 'square', 0.03); blip(880, 0.5, 0.12, 'square', 0.03); blip(880, 0.68, 0.12, 'square', 0.03); },
+    gasp() { blip(392, 0, 0.1, 'triangle', 0.05); blip(660, 0.09, 0.12, 'triangle', 0.055); blip(932, 0.18, 0.22, 'triangle', 0.06); },
     chord() { [262, 330, 392, 523].forEach((f, i) => blip(f * 1.5, i * 0.06, 1.4, 'sine', 0.035)); },
   };
 }
