@@ -83,7 +83,7 @@ seo:
       <div class="lp-vig" aria-hidden="true"></div>
       <div class="lp-bar lp-bar-top" aria-hidden="true"></div>
       <div class="lp-bar lp-bar-bot" aria-hidden="true"></div>
-      <p class="lp-cap" data-cap="0">一開始，只有我們兩個。<small>水球丟點子，我敲敲打打——歪了也沒關係。</small></p>
+      <p class="lp-cap" data-cap="0">一開始，只有我們兩個。<small>水球一顆一顆冒出點子，我照著藍圖，把火箭一件一件敲出來。</small></p>
       <p class="lp-cap" data-cap="1">Raymond 和 Richard 先跳上船。<small>一個來回搬零件補結構，一個拿刷子給船上色。</small></p>
       <p class="lp-cap" data-cap="2">Fish、Ben、ccza 鑽進引擎室。<small>把引擎調出呼嚕呼嚕的聲音。</small></p>
       <p class="lp-cap" data-cap="3">然後大家一起，把歪歪的船推正。<small>裝上翅膀和光環——SpecFormula，點火。</small></p>
@@ -315,25 +315,31 @@ function boot() {
   {
     const body = mesh(new THREE.CylinderGeometry(0.42, 0.5, 1.5, 10), solidMat('#f6efe3'));
     ship.add(body);
+    ship.userData.body = body;
     const nose = mesh(new THREE.ConeGeometry(0.42, 0.7, 10), solidMat('#e8a8b8'));
     nose.position.y = 1.1;
     ship.add(nose);
+    ship.userData.nose = nose;
     const winRim = mesh(new THREE.TorusGeometry(0.17, 0.035, 8, 14), solidMat('#e8a8b8'));
     winRim.position.set(0, 0.3, 0.44);
     ship.add(winRim);
     const winGlass = mesh(new THREE.CircleGeometry(0.15, 14), solidMat('#a5d8f5', { emissive: '#2a4a66' }));
     winGlass.position.set(0, 0.3, 0.45);
     ship.add(winGlass);
+    ship.userData.win = [winRim, winGlass];
+    ship.userData.fins = [];
     for (let i = 0; i < 3; i++) {
       const a = (i / 3) * Math.PI * 2 + Math.PI / 6;
       const fin = mesh(new THREE.BoxGeometry(0.1, 0.5, 0.32), solidMat('#e8a8b8'));
       fin.position.set(Math.cos(a) * 0.48, -0.72, Math.sin(a) * 0.48);
       fin.rotation.y = -a;
       ship.add(fin);
+      ship.userData.fins.push(fin);
     }
     const nozzle = mesh(new THREE.CylinderGeometry(0.26, 0.34, 0.24, 10), solidMat('#b9a898'));
     nozzle.position.y = -0.85;
     ship.add(nozzle);
+    ship.userData.nozzle = nozzle;
     // Richard 的油漆
     const paint = mesh(new THREE.PlaneGeometry(0.34, 0.26), solidMat('#a8d8b8', { transparent: true, opacity: 0 }));
     paint.position.set(-0.12, -0.15, 0.47);
@@ -360,6 +366,55 @@ function boot() {
   casts(ship);
   const flame = sprite('#ffb46f', 1.6);
   const engineGlow = sprite('#ffd479', 1.1);
+
+  // 水球的想法泡泡（白雲泡泡＋金星）
+  const thought = new THREE.Group();
+  {
+    const puffMat = solidMat('#ffffff', { transparent: true, opacity: 0.92 });
+    [[0, 0, 0.26], [0.22, 0.05, 0.18], [-0.2, 0.03, 0.16]].forEach(([x, y, r]) => {
+      const s = mesh(new THREE.SphereGeometry(r, 8, 6), puffMat);
+      s.position.set(x, y, 0);
+      thought.add(s);
+    });
+    const tStar = mesh(new THREE.OctahedronGeometry(0.1, 0), solidMat('#ffd479', { emissive: '#8a6a20' }));
+    tStar.scale.z = 0.45;
+    tStar.position.set(0, 0.04, 0.24);
+    thought.add(tStar);
+    thought.userData.star = tStar;
+  }
+  scene.add(thought);
+  markBase(thought);
+
+  // Coomy 的藍圖小板
+  const blueprint = new THREE.Group();
+  {
+    const sheet = mesh(new THREE.PlaneGeometry(0.52, 0.38), solidMat('#a5c8f0'));
+    blueprint.add(sheet);
+    const lineM = solidMat('#f0f6ff');
+    const rocketLine = mesh(new THREE.PlaneGeometry(0.1, 0.2), lineM);
+    rocketLine.position.set(-0.08, 0.02, 0.01);
+    const noseLine = mesh(new THREE.PlaneGeometry(0.07, 0.06), lineM);
+    noseLine.position.set(-0.08, 0.16, 0.01);
+    const note1 = mesh(new THREE.PlaneGeometry(0.16, 0.025), lineM);
+    note1.position.set(0.12, 0.08, 0.01);
+    const note2 = mesh(new THREE.PlaneGeometry(0.13, 0.025), lineM);
+    note2.position.set(0.12, 0.02, 0.01);
+    const note3 = mesh(new THREE.PlaneGeometry(0.15, 0.025), lineM);
+    note3.position.set(0.12, -0.04, 0.01);
+    blueprint.add(rocketLine, noseLine, note1, note2, note3);
+    const leg = (side) => {
+      const l = mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.42, 5), solidMat('#b98a68'));
+      l.position.set(side * 0.18, -0.36, -0.04);
+      l.rotation.x = 0.18;
+      return l;
+    };
+    blueprint.add(leg(-1), leg(1));
+  }
+  blueprint.position.set(-1.05, -1.5, 0.75);
+  blueprint.rotation.y = 0.35;
+  scene.add(blueprint);
+  markBase(blueprint);
+  casts(blueprint);
 
   // 工作火花：引擎口與刷漆處
   const engSpark = sprite('#ffd479', 0.5);
@@ -588,8 +643,20 @@ function boot() {
     });
 
     // 船：歪 → 扶正 → 裝備 → 起飛
+    // 逐件組裝子時間軸
+    const bq = Math.min(1, Math.max(0, (p - 0.03) / 0.15));
+    const u = ship.userData;
+    const bodyQ = ss(0.05, 0.3, bq);
+    u.body.scale.set(1, 0.05 + 0.95 * bodyQ, 1);
+    u.body.position.y = -0.71 * (1 - bodyQ);
+    u.nose.visible = bq > 0.32;
+    u.nose.position.y = kf(bq, [[0.32, 3.4], [0.46, 1.02], [0.5, 1.2], [0.55, 1.1]]);
+    const winQ = Math.max(0.001, ss(0.56, 0.64, bq));
+    u.win.forEach((wm) => wm.scale.setScalar(winQ));
+    u.fins.forEach((f, i) => f.scale.setScalar(Math.max(0.001, ss(0.66 + i * 0.05, 0.72 + i * 0.05, bq))));
+    u.nozzle.scale.setScalar(Math.max(0.001, ss(0.82, 0.89, bq)));
     const wobble = buildQ * Math.sin(t * 1.4) * 0.03;
-    ship.rotation.z = 0.26 * (1 - igniteQ) + wobble;
+    ship.rotation.z = 0.26 * ss(0.9, 0.98, bq) * (1 - igniteQ) + wobble;
     const shipY = -1.06 + ss(0.74, 0.86, p) * 6.2;
     ship.position.set(0.85 + launchQ * 0.15, shipY, 0);
     ship.visible = p < 0.9;
@@ -606,13 +673,28 @@ function boot() {
     flame.material.opacity = ship.visible ? launchQ * (0.55 + 0.3 * Math.abs(Math.sin(t * 11))) : 0;
     flame.scale.set(1.1, 1.6 + launchQ * 1.2, 1);
 
-    // 點子星星
+    // 想法泡泡：泡泡脹起 → 金星飛向工地
+    const cyc = (t * 0.55) % 1;
+    thought.position.set(ball.position.x + 0.15, ball.position.y + 1.05, 0.5);
+    const bubbleQ = ss(0.02, 0.2, cyc) * (1 - ss(0.42, 0.5, cyc));
+    fadeGroup(thought, buildQ * bubbleQ);
+    thought.visible = buildQ > 0.02;
+    thought.scale.setScalar(0.5 + bubbleQ * 0.55);
+    // 點子星星（從泡泡飛向火箭）
     ideas.forEach((st, i) => {
-      const u = ((t * 0.5 + i / 3) % 1);
-      st.position.set(lerp(-1.6, 0.6, u), -1.15 + Math.sin(u * Math.PI) * 0.9, 0.3);
+      const iu = Math.max(0, (cyc - 0.45) / 0.55) - i * 0.12;
+      const fu = Math.min(1, Math.max(0, iu * 1.4));
+      st.position.set(
+        lerp(ball.position.x + 0.15, 0.85, fu),
+        lerp(ball.position.y + 1.05, -1.2, fu) + Math.sin(fu * Math.PI) * 0.7,
+        0.4
+      );
       st.rotation.z = t * 2 + i;
-      st.material.opacity = buildQ * Math.sin(u * Math.PI);
+      st.material.opacity = buildQ * (fu > 0 && fu < 1 ? Math.sin(fu * Math.PI) : 0);
     });
+    // 藍圖
+    fadeGroup(blueprint, buildQ);
+    blueprint.visible = buildQ > 0.02;
     // 槌子握在右手，跟著手臂一起揮
     fadeGroup(mallet, buildQ);
     mallet.visible = buildQ > 0.02;
@@ -687,7 +769,7 @@ function boot() {
 
     // says
     const sb = ss(0.575, 0.6, p) * (1 - ss(0.65, 0.68, p));
-    const sc = ss(0.09, 0.12, p) * (1 - ss(0.15, 0.18, p));
+    const sc = ss(0.172, 0.19, p) * (1 - ss(0.23, 0.26, p));
     const proj = (obj, el, dy) => {
       tmpV.copy(obj.position); tmpV.y += dy; tmpV.project(camera);
       el.style.transform = `translate(-50%, -100%) translate(${(tmpV.x * 0.5 + 0.5) * w}px, ${(-tmpV.y * 0.5 + 0.5) * h}px)`;
