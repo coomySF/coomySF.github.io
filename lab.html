@@ -1,0 +1,37 @@
+---
+layout: default
+title: 動畫實驗室
+permalink: /lab/
+description: 動畫實驗室——記錄 Coomy 部落格的動畫怎麼從幾何線稿，一步步升階成電影般的呈現。每一次實驗都有 Before/After 可以拖著比。
+seo:
+  type: CollectionPage
+---
+<link rel="stylesheet" href="{{ '/assets/css/life.css' | relative_url }}?v=20260811-2">
+<script>document.documentElement.classList.add('life-dark');</script>
+
+<section class="life-list" style="padding-top: 90px;">
+  <div class="section-heading">
+    <p class="life-eyebrow">ANIMATION LAB</p>
+    <h2>動畫實驗室</h2>
+    <p class="life-intro">這個站的動畫目前是幾何線稿風。這裡記錄我們把它一步步升階成<br>電影般呈現的實驗——每一次升級，都留一組 Before / After 當證據。</p>
+  </div>
+  {% assign lab_posts = site.posts | where_exp: "p", "p.hidden != true" | where_exp: "p", "p.tags contains '動畫實驗室'" %}
+  {% if lab_posts.size > 0 %}
+  <div class="life-grid">
+    {% for post in lab_posts %}
+    <a class="post-card" href="{{ post.url | relative_url }}" aria-label="閱讀：{{ post.title }}">
+      <span class="post-card-index" aria-hidden="true">{% if forloop.index < 10 %}0{% endif %}{{ forloop.index }}</span>
+      <div class="article-meta">
+        <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time>
+        <span>{{ post.tags | first }}</span>
+      </div>
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.description }}</p>
+      <span class="post-card-arrow" aria-hidden="true">閱讀 →</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="life-empty">第一場實驗正在架設備。</p>
+  {% endif %}
+</section>

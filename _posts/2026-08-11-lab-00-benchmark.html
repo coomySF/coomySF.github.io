@@ -1,0 +1,249 @@
+---
+layout: film
+title: 實驗 00：立一座 Before / After 基準
+description: 同一顆星形多面體、同一顆鏡頭——左邊是部落格現在的線稿風，右邊是我們要抵達的粉彩電影感。中間那條線，可以拖。
+date: 2026-08-11 21:00:00 +0800
+image: /assets/og-lab-00.jpg
+tags: [動畫實驗室, Three.js]
+seo:
+  type: BlogPosting
+---
+<style>
+  #lab-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 320vh; }
+  .lab-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .lab-sky {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, #f7c7e3 0%, #d9b8f0 48%, #b8a8e8 100%);
+  }
+  #lab-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .lab-ui { position: absolute; inset: 0; pointer-events: none; }
+  .lab-cap {
+    position: absolute; left: 50%; top: 11vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center; font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px);
+    line-height: 1.9; color: #fff; opacity: 0;
+    text-shadow: 0 1px 18px rgba(40, 20, 60, .55);
+  }
+  .lab-cap small { display: block; font-size: .78em; opacity: .82; margin-top: 6px; }
+  .lab-tagline {
+    position: absolute; top: 24px; font-family: var(--mono); font-size: 11px;
+    letter-spacing: .22em; padding: 8px 14px; border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .35); color: #fff;
+    background: rgba(20, 14, 30, .28); backdrop-filter: blur(4px);
+  }
+  .lab-tag-before { left: 24px; }
+  .lab-tag-after { right: 24px; }
+  .lab-divider {
+    position: absolute; top: 0; bottom: 0; width: 44px; margin-left: -22px;
+    pointer-events: auto; cursor: ew-resize; touch-action: none;
+  }
+  .lab-divider::before {
+    content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+    margin-left: -1px; background: rgba(255, 255, 255, .85);
+    box-shadow: 0 0 18px rgba(255, 255, 255, .5);
+  }
+  .lab-divider::after {
+    content: '◂ ▸'; position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px; letter-spacing: .1em; color: #6a4a7a;
+    background: #fff; border-radius: 999px; padding: 9px 12px;
+    box-shadow: 0 2px 14px rgba(40, 20, 60, .35); white-space: nowrap;
+  }
+</style>
+
+<div id="lab-film">
+  <div class="lab-stage">
+    <div class="lab-sky" aria-hidden="true"></div>
+    <canvas id="lab-canvas" aria-hidden="true"></canvas>
+    <div class="lab-ui">
+      <p class="lab-cap" data-cap="0">同一顆多面體，同一顆鏡頭。<small>左邊是這個站現在的線稿，右邊是我們要去的地方。中間那條線，拖拖看。</small></p>
+      <p class="lab-cap" data-cap="1">差距不在幾何，在光。<small>實體網格＋flat shading＋粉彩頂點色＋兩盞柔光＋一片漸層天空。</small></p>
+      <p class="lab-cap" data-cap="2">實驗 00：基準立好了。<small>之後的每一次升級——材質、陰影、後製、運鏡——都回到這裡量。</small></p>
+      <span class="lab-tagline lab-tag-before">BEFORE ・ 線稿</span>
+      <span class="lab-tagline lab-tag-after">AFTER ・ 電影感</span>
+      <div class="lab-divider" role="slider" aria-label="Before/After 分割線" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = matchMedia('(max-width: 640px)').matches;
+const canvas = document.getElementById('lab-canvas');
+
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+  catch { return false; }
+}
+if (!reduced && webglOK()) boot();
+
+function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.autoClear = false;
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  camera.position.set(0, 0, 6);
+
+  // ---------- 共同幾何：星形多面體（20 面體每面拉出一根尖刺）----------
+  const spikyGeometry = (spike) => {
+    const base = new THREE.IcosahedronGeometry(1.18, 1).toNonIndexed();
+    const p = base.getAttribute('position');
+    const verts = [], cols = [];
+    const va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+    const col = new THREE.Color();
+    for (let f = 0; f < p.count / 3; f++) {
+      va.fromBufferAttribute(p, f * 3);
+      vb.fromBufferAttribute(p, f * 3 + 1);
+      vc.fromBufferAttribute(p, f * 3 + 2);
+      const cen = va.clone().add(vb).add(vc).divideScalar(3);
+      const apex = cen.clone().multiplyScalar(1 + spike);
+      // 粉彩：色相跟著面的朝向連續變化，亮度拉高、飽和壓低
+      const dir = cen.clone().normalize();
+      col.setHSL((0.62 + dir.x * 0.13 + dir.y * 0.2 + dir.z * 0.05 + 1) % 1, 0.62, 0.76);
+      col.convertSRGBToLinear();
+      [[va, vb, apex], [vb, vc, apex], [vc, va, apex]].forEach((tri) => {
+        tri.forEach((v) => { verts.push(v.x, v.y, v.z); cols.push(col.r, col.g, col.b); });
+      });
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    g.computeVertexNormals();
+    return g;
+  };
+  const geo = spikyGeometry(0.26);
+
+  // ---------- BEFORE：線稿世界 ----------
+  const sceneA = new THREE.Scene();
+  const wireMat = new THREE.LineBasicMaterial({ color: '#e2ddcf', transparent: true, opacity: 0.9 });
+  const wire = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 1), wireMat);
+  sceneA.add(wire);
+  const DUST = small ? 250 : 600;
+  const dp = new Float32Array(DUST * 3);
+  for (let i = 0; i < DUST; i++) {
+    dp[i * 3] = (Math.random() - 0.5) * 24; dp[i * 3 + 1] = (Math.random() - 0.5) * 14; dp[i * 3 + 2] = -3 - Math.random() * 10;
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
+  sceneA.add(new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: '#d8c8a8', size: 0.03, transparent: true, opacity: 0.55, depthWrite: false })));
+
+  // ---------- AFTER：粉彩實體世界 ----------
+  const sceneB = new THREE.Scene();
+  const solid = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, metalness: 0 }));
+  sceneB.add(solid);
+  sceneB.add(new THREE.HemisphereLight('#fffdfa', '#cbb8ea', 1.55));
+  const key = new THREE.DirectionalLight('#fff4ea', 0.75);
+  key.position.set(3, 4, 2.5);
+  sceneB.add(key);
+  const fill = new THREE.DirectionalLight('#e2ecff', 0.3);
+  fill.position.set(-4, -2, -3);
+  sceneB.add(fill);
+
+  // ---------- 分割線 ----------
+  const divider = document.querySelector('.lab-divider');
+  let split = 0.5, userSplit = false;
+  const setSplit = (clientX) => {
+    split = Math.min(0.88, Math.max(0.12, clientX / innerWidth));
+    divider.setAttribute('aria-valuenow', String(Math.round(split * 100)));
+  };
+  divider.addEventListener('pointerdown', (e) => {
+    userSplit = true;
+    divider.setPointerCapture(e.pointerId);
+    setSplit(e.clientX);
+  });
+  divider.addEventListener('pointermove', (e) => { if (e.buttons) setSplit(e.clientX); });
+
+  // ---------- captions ----------
+  const caps = [...document.querySelectorAll('.lab-cap')];
+
+  // ---------- scroll ----------
+  const film = document.getElementById('lab-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__labSeek = (p) => { P = p; Psm = p; render(); };
+  window.__labSplit = (s) => { split = s; userSplit = true; render(); };
+
+  const clock = new THREE.Clock();
+
+  function update(p, t) {
+    const spin = t * 0.35 + p * Math.PI * 2.2;
+    wire.rotation.set(Math.sin(t * 0.18) * 0.25 + p * 1.2, spin, 0);
+    solid.rotation.copy(wire.rotation);
+    const bob = Math.sin(t * 0.8) * 0.08;
+    wire.position.y = bob;
+    solid.position.y = bob;
+
+    const capW = [
+      ss(0.02, 0.08, p) * (1 - ss(0.3, 0.36, p)),
+      ss(0.36, 0.42, p) * (1 - ss(0.62, 0.68, p)),
+      ss(0.7, 0.76, p),
+    ];
+    caps.forEach((c, i) => { c.style.opacity = String(capW[i] || 0); });
+
+    if (!userSplit) split = 0.5 + Math.sin(t * 0.32) * 0.2;
+    divider.style.left = `${split * 100}%`;
+
+    camera.position.x = Math.sin(t * 0.2) * 0.15;
+    camera.position.y = Math.sin(t * 0.26) * 0.1;
+    camera.position.z = (6 - p * 1.1) * Math.max(1, 2.6 / (0.4663 * camera.aspect) / 10);
+    camera.lookAt(0, 0, 0);
+  }
+
+  function render() {
+    const t = clock.getElapsedTime();
+    Psm += (P - Psm) * 0.12;
+    update(Psm, t);
+    const w = Math.floor(innerWidth * devicePixelRatio > 0 ? innerWidth : innerWidth);
+    const sp = Math.floor(split * w);
+    renderer.setScissorTest(false);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, true);
+    // AFTER：整幅透明底（露出 CSS 漸層天空）
+    renderer.render(sceneB, camera);
+    // BEFORE：左側用不透明深色蓋掉
+    renderer.setScissorTest(true);
+    renderer.setScissor(0, 0, sp, innerHeight);
+    renderer.setClearColor('#0b100e', 1);
+    renderer.clear(true, true);
+    renderer.render(sceneA, camera);
+    renderer.setScissorTest(false);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    readScroll();
+  });
+}
+</script>
+
+<div class="film-prose">
+  <p>這個站到目前為止的每一部動畫——首頁的宇宙救援、我們的日子、水球的生日、Agent Loop——都是同一種畫法：<strong>幾何線稿</strong>。線條、光點、加法混合的光暈，在深色背景上勾出形狀。它很輕、很有識別度，但離「電影般的呈現」還有一段距離。</p>
+  <p>動畫實驗室要記錄的，就是跨過這段距離的過程。方法是工程師的老習慣：先立基準（benchmark），再逐項升級，每一步都回來量。</p>
+  <p>上面這一幕就是基準。同一顆星形多面體、同一顆鏡頭、同一段旋轉——左邊維持現在的線稿畫法，右邊是第一階段的目標畫風：</p>
+  <ul>
+    <li><strong>實體網格</strong>取代線框——面會遮擋、會受光，物體開始有體積。</li>
+    <li><strong>Flat shading</strong>——保留低多邊形的切面感，每一面一個亮度，是這種夢幻低多邊形風的靈魂。</li>
+    <li><strong>粉彩頂點色</strong>——薄荷、天藍、薰衣草、粉紅、蜜桃五色輪替，用頂點色而不是貼圖。</li>
+    <li><strong>柔光組合</strong>——一盞暖主光＋一盞冷補光＋半球環境光，沒有硬陰影。</li>
+    <li><strong>漸層天空</strong>——粉紫漸層直接用 CSS 畫在畫布後面，3D 只負責物體。</li>
+  </ul>
+  <p>接下來的實驗會沿著這條路往上疊：柔和陰影、環境光遮蔽、景深與霧、材質質感（次表面散射的近似）、以及把這套畫風套回站上的角色與場景。每一篇實驗都會像這頁一樣，留一條可以拖的分割線當證據。</p>
+</div>

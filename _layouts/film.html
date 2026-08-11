@@ -14,11 +14,15 @@ layout: default
 
 {% assign is_life = false %}
 {% if page.tags contains '我們的日子' %}{% assign is_life = true %}{% endif %}
+{% assign is_lab = false %}
+{% if page.tags contains '動畫實驗室' %}{% assign is_lab = true %}{% endif %}
 
 <article class="film-post">
   <header class="film-post-head">
     {% if is_life %}
     <a class="film-post-back" href="{{ '/life/' | relative_url }}">← 我們的日子</a>
+    {% elsif is_lab %}
+    <a class="film-post-back" href="{{ '/lab/' | relative_url }}">← 動畫實驗室</a>
     {% else %}
     <a class="film-post-back" href="{{ '/writing/' | relative_url }}">← 書庫</a>
     {% endif %}
@@ -38,6 +42,8 @@ layout: default
   <footer class="film-post-end">
     {% if is_life %}
     <a href="{{ '/life/' | relative_url }}">回到我們的日子 →</a>
+    {% elsif is_lab %}
+    <a href="{{ '/lab/' | relative_url }}">回到動畫實驗室 →</a>
     {% else %}
     <a href="{{ '/writing/' | relative_url }}">回到書庫 →</a>
     {% endif %}
