@@ -738,7 +738,7 @@
     const scores = readStorage(storageKeys.scores, []);
     scores.push(entry);
     scores.sort((a, b) => b.score - a.score);
-    writeStorage(storageKeys.scores, scores.slice(0, 20));
+    writeStorage(storageKeys.scores, scores);
     renderLeaderboard();
     const model = state.lastBattleModel;
     const riskCopy = model ? `擊飛風險：你 ${Math.round(model.playerRingOutChance * 100)}% ／ 對手 ${Math.round(model.enemyRingOutChance * 100)}%。` : '';
@@ -756,7 +756,7 @@
     if (!els.leaderboard) return;
     const bot = { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true };
     const scores = Array.isArray(serverScores) ? serverScores : readStorage(storageKeys.scores, []);
-    const ranked = [bot, ...scores].sort((a, b) => b.score - a.score).slice(0, 5);
+    const ranked = [bot, ...scores].sort((a, b) => b.score - a.score);
     state.ranked = ranked;
     els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${escapeHTML(entry.avatar || '⚡')}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">PK</button></li>`).join('');
     els.leaderboard.querySelectorAll('[data-challenge]').forEach(button => button.addEventListener('click', () => {
