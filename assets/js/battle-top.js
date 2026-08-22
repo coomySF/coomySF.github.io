@@ -528,9 +528,8 @@
     }
 
     const start = performance.now();
-    const duration = 3200;
+    const duration = 4200;
     const easeOut = t => 1 - Math.pow(1 - t, 3);
-    const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     let impactOne = false, impactTwo = false, previousFrame = start, trailFrame = 0;
     const frame = now => {
       const t = Math.min(1, (now - start) / duration);
@@ -539,31 +538,25 @@
       p.rotation = (p.rotation + (28.8 + t * 5.4) * dt) % 360;
       e.rotation = (e.rotation - (27.4 + t * 5) * dt) % 360;
       trailFrame += 1;
-      if (trailFrame % 5 === 0) { speedTrail(p); speedTrail(e); }
-      if (t < .3) {
-        const k = easeInOut(t / .3);
-        const orbitFade = 1 - k;
-        p.x = 325 + 132 * k + Math.sin(k * Math.PI * 4) * 78 * orbitFade;
-        e.x = 635 - 132 * k - Math.sin(k * Math.PI * 4 + .8) * 72 * orbitFade;
-        p.y = 365 - Math.sin(k * Math.PI * 3) * 88 * orbitFade;
-        e.y = 365 + Math.sin(k * Math.PI * 3 + .65) * 82 * orbitFade;
-      } else if (t < .46) {
-        if (!impactOne) { burst(480, 362, '#ffffff', 1.15); lightningStrike(480, 350); defenseShield(state.player.stats.defense >= state.enemy.stats.defense ? p : e); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
-        const k = easeOut((t - .3) / .16);
-        p.x = 457 - 92 * k; e.x = 503 + 96 * k; p.y = 329 + 54 * k; e.y = 393 - 45 * k;
-        p.wobble = 4 * (1 - k); e.wobble = 5 * (1 - k);
-      } else if (t < .76) {
-        const k = easeInOut((t - .46) / .3);
-        const winner = playerWon ? p : e, loser = playerWon ? e : p;
-        const direction = playerWon ? 1 : -1;
-        winner.x = (playerWon ? 365 : 599) + direction * 95 * k + Math.sin(k * Math.PI * 4) * 48;
-        winner.y = 383 - Math.sin(k * Math.PI) * 118 + Math.sin(k * Math.PI * 3) * 28;
-        loser.x = (playerWon ? 599 : 365) - direction * 72 * k - Math.sin(k * Math.PI * 3) * 42;
-        loser.y = 348 + Math.sin(k * Math.PI) * 82 - Math.sin(k * Math.PI * 4) * 24;
-        loser.wobble = 3 + k * 5;
+      if (trailFrame % 3 === 0) { speedTrail(p); speedTrail(e); }
+      if (t < .78) {
+        const phase = t * Math.PI * 12;
+        const collisionPulse = mark => Math.exp(-Math.pow((t - mark) / .026, 2));
+        const collision = Math.max(collisionPulse(.32), collisionPulse(.62));
+        const px = 480 + 205 * Math.sin(phase) + 35 * Math.sin(phase * 2.73 + .4);
+        const py = 365 + 112 * Math.sin(phase * 1.57 + .55) + 18 * Math.cos(phase * 3.1);
+        const ex = 480 + 210 * Math.sin(phase * 1.13 + Math.PI) + 32 * Math.cos(phase * 2.41);
+        const ey = 365 + 108 * Math.sin(phase * 1.71 + 2.2) + 20 * Math.sin(phase * 2.9);
+        p.x = px * (1 - collision) + 468 * collision;
+        p.y = py * (1 - collision) + 360 * collision;
+        e.x = ex * (1 - collision) + 492 * collision;
+        e.y = ey * (1 - collision) + 370 * collision;
+        p.wobble = collision * 5;
+        e.wobble = collision * 6;
+        if (t >= .32 && !impactOne) { burst(480, 365, '#ffffff', 1.2); lightningStrike(480, 350); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
+        if (t >= .62 && !impactTwo) { elementalClash(480, 360, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1); defenseShield(state.player.stats.defense >= state.enemy.stats.defense ? p : e); playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 80); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 320); impactTwo = true; }
       } else {
-        if (!impactTwo) { elementalClash(480, 360, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1); playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 80); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 320); impactTwo = true; }
-        const k = easeOut((t - .76) / .24);
+        const k = easeOut((t - .78) / .22);
         const winner = playerWon ? p : e, loser = playerWon ? e : p;
         winner.x = (playerWon ? 460 : 500) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
         winner.y = 365 + Math.sin(k * Math.PI) * 18;
