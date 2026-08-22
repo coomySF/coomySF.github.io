@@ -82,6 +82,10 @@
 @keyframes join-pulse { to { transform:translateY(-3px) scale(1.025); box-shadow:0 0 0 11px rgba(202,255,61,.06),0 0 65px rgba(202,255,61,.5); } }
 
 .arena-hero { position: relative; min-height: 100svh; padding: 130px clamp(20px, 5vw, 76px) 58px; display: grid; grid-template-columns: minmax(190px,.65fr) minmax(440px,1.6fr) minmax(280px,.82fr); gap: clamp(18px,3vw,52px); align-items: center; isolation: isolate; }
+.arena-hero:has(.leaderboard-card:not([hidden])),
+.arena-hero:has(.opponent-detail-modal:not([hidden])),
+.arena-hero:has(.battle-collection-picker:not([hidden])),
+.arena-hero:has(.battle-result.is-visible) { z-index:30; }
 .arena-hero::before { content:""; position:absolute; inset:0; z-index:-2; background: radial-gradient(circle at 57% 48%, rgba(29,245,225,.12), transparent 29%), radial-gradient(circle at 56% 54%, rgba(114,31,255,.12), transparent 46%), linear-gradient(115deg,#030507,#0a1117 52%,#030507); }
 .arena-hero::after { content:""; position:absolute; inset:0; z-index:-1; opacity:.22; background-image: linear-gradient(rgba(67,255,240,.09) 1px,transparent 1px),linear-gradient(90deg,rgba(67,255,240,.09) 1px,transparent 1px); background-size:80px 80px; mask-image:linear-gradient(to bottom,transparent 4%,black 40%,transparent 96%); }
 .arena-kicker,.section-index,.build-eyebrow { color:var(--arena-cyan); font-size:10px; letter-spacing:.21em; text-transform:uppercase; }
