@@ -181,6 +181,7 @@
 .avatar-picker button { position:relative; display:grid; place-items:center; min-width:72px; min-height:72px; aspect-ratio:1; padding:0; border:2px solid var(--arena-line); border-radius:16px; background:rgba(255,255,255,.035); font-size:36px; cursor:pointer; touch-action:manipulation; transition:border-color .18s ease,background .18s ease,box-shadow .18s ease,transform .18s ease; }
 .avatar-picker button:hover,.avatar-picker button.is-selected { border-color:var(--arena-lime); background:rgba(202,255,61,.14); box-shadow:0 0 0 4px rgba(202,255,61,.08),0 0 28px rgba(202,255,61,.2); transform:translateY(-2px); }
 .avatar-picker button.is-selected::after { content:'✓'; position:absolute; right:-6px; bottom:-6px; display:grid; place-items:center; width:28px; height:28px; border:3px solid #071006; border-radius:50%; background:var(--arena-lime); color:#061006; font:1000 15px/1 system-ui,sans-serif; }
+.avatar-picker img { width:100%; height:100%; border-radius:14px; object-fit:cover; }
 .pilot-name { display:block; margin-bottom:6px; color:#7d9398; font-size:8px; letter-spacing:.12em; }
 .pilot-name-input { width:100%; min-height:38px; padding:8px 10px; border:1px solid var(--arena-line); border-radius:0; outline:0; background:#05090d; color:var(--arena-paper); font:600 11px/1 "IBM Plex Mono",monospace; }
 .pilot-name-input:focus { border-color:var(--arena-cyan); box-shadow:0 0 0 2px rgba(40,244,232,.08); }
@@ -194,6 +195,7 @@
 .leaderboard-list li.is-target { margin-inline:-7px; padding-inline:7px; background:rgba(255,77,103,.07); }
 .leaderboard-list li>span { color:#5f7379; font-size:9px; }
 .leaderboard-list li>i { display:grid; place-items:center; width:28px; height:28px; border:1px solid rgba(151,255,245,.14); border-radius:50%; background:rgba(255,255,255,.035); font-style:normal; font-size:14px; }
+.leaderboard-list li>i img,.join-rival i img,.opponent-visual>span img,.opponent-detail-modal__identity>span img { width:100%; height:100%; border-radius:inherit; object-fit:cover; }
 .leaderboard-list li div { display:grid; min-width:0; }
 .leaderboard-list strong { overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
 .leaderboard-list small { overflow:hidden; color:#64787e; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }

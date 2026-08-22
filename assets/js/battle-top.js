@@ -6,6 +6,8 @@
   const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
+  const avatarAssets = new Set(['nova', 'kai', 'rin', 'leo', 'mika', 'zane', 'astra', 'jett', 'luna', 'onyx', 'skye', 'blaze'].map(name => `/assets/images/battle-top/avatars/${name}.svg`));
+  const legacyAvatarMap = { '⚡': 'nova', '🔥': 'blaze', '🐉': 'kai', '🦈': 'skye', '🦁': 'leo', '🌙': 'luna' };
 
   const productCatalog = [
     { id: 'BX-01', name: 'Dran Sword 3-60F', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX01_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx01.html', parts: 'Dran Sword · 3-60 · Flat', skill: '高衝刺力的 Flat 軸尖，鎖定 Xtreme Dash 發動強攻。', color: '#258dff', accent: '#ff334f', stats: { attack: 110, defense: 49, stamina: 36, burst: 80, xdash: 35 }, teeth: 3, core: 3 },
@@ -50,6 +52,16 @@
   function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function pick(list) { return list[randomInt(0, list.length - 1)]; }
   function makeId() { return `${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 5)}`.toUpperCase(); }
+  function normalizeAvatar(value) {
+    if (avatarAssets.has(value)) return value;
+    const migrated = Object.prototype.hasOwnProperty.call(legacyAvatarMap, value) ? legacyAvatarMap[value] : '';
+    return migrated ? `/assets/images/battle-top/avatars/${migrated}.svg` : value || '/assets/images/battle-top/avatars/nova.svg';
+  }
+  function avatarMarkup(value) {
+    const avatar = normalizeAvatar(value);
+    return avatarAssets.has(avatar) ? `<img src="${avatar}" alt="">` : escapeHTML(avatar);
+  }
+  function paintAvatar(element, value) { if (element) element.innerHTML = avatarMarkup(value); }
 
   function getAudio() {
     if (!state.sound) return null;
@@ -554,7 +566,7 @@
   function openOpponentDetail() {
     const top = state.enemy || findProduct(state.opponent.top) || productCatalog[1];
     const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
-    els.opponentDetailAvatar.textContent = state.opponent.avatar || '⚡';
+    paintAvatar(els.opponentDetailAvatar, state.opponent.avatar);
     els.opponentDetailPlayer.textContent = state.opponent.name;
     els.opponentDetailScore.textContent = `${Number(state.opponent.score).toLocaleString('zh-TW')} PTS`;
     els.opponentDetailImage.src = top.image;
@@ -706,7 +718,7 @@
 
   function readProfile() {
     const saved = readStorage(storageKeys.profile, {});
-    return { avatar: saved.avatar || '⚡', name: String(saved.name || '').trim().slice(0, 10) };
+    return { avatar: normalizeAvatar(saved.avatar), name: String(saved.name || '').trim().slice(0, 10) };
   }
 
   function initProfile() {
@@ -753,7 +765,7 @@
   function renderJoinRivals() {
     if (!els.joinRivals) return;
     const rivals = state.ranked.length ? state.ranked.slice(0, 3) : [state.opponent];
-    els.joinRivals.innerHTML = rivals.map((entry, index) => `<button type="button" class="join-rival${state.opponent.id === entry.id ? ' is-selected' : ''}" data-join-rival="${index}"><span><i>${escapeHTML(entry.avatar || '⚡')}</i><strong>${escapeHTML(entry.name)}</strong></span><b>${Number(entry.score).toLocaleString('zh-TW')} PTS</b></button>`).join('');
+    els.joinRivals.innerHTML = rivals.map((entry, index) => `<button type="button" class="join-rival${state.opponent.id === entry.id ? ' is-selected' : ''}" data-join-rival="${index}"><span><i>${avatarMarkup(entry.avatar)}</i><strong>${escapeHTML(entry.name)}</strong></span><b>${Number(entry.score).toLocaleString('zh-TW')} PTS</b></button>`).join('');
     els.joinRivals.querySelectorAll('[data-join-rival]').forEach(button => button.addEventListener('click', () => {
       setOpponent(rivals[Number(button.dataset.joinRival)]);
       renderJoinRivals();
@@ -884,7 +896,7 @@
     const scores = Array.isArray(serverScores) ? serverScores : readStorage(storageKeys.scores, []);
     const ranked = [bot, ...scores].sort((a, b) => b.score - a.score);
     state.ranked = ranked;
-    els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${escapeHTML(entry.avatar || '⚡')}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">PK</button></li>`).join('');
+    els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${avatarMarkup(entry.avatar)}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">PK</button></li>`).join('');
     els.leaderboard.querySelectorAll('[data-challenge]').forEach(button => button.addEventListener('click', () => {
       setOpponent(ranked[Number(button.dataset.challenge)]);
       closeLeaderboard();
@@ -904,7 +916,7 @@
     if (!entry || state.battling) return;
     state.opponent = { ...entry, score: Number(entry.score) || 1000 };
     state.enemy = cloneProduct(findProduct(entry.top) || productCatalog[1]);
-    els.opponentAvatar.textContent = entry.avatar || '⚡';
+    paintAvatar(els.opponentAvatar, entry.avatar);
     els.opponentName.textContent = entry.name;
     els.opponentTop.textContent = state.enemy.name;
     els.opponentImage.src = state.enemy.image;

@@ -51,7 +51,18 @@ keywords:
       <section class="player-profile" aria-labelledby="player-profile-title">
         <div class="player-profile__heading"><p>YOUR PILOT</p><h3 id="player-profile-title">選你的頭像</h3></div>
         <div class="avatar-picker" id="avatar-picker" aria-label="選擇戰隊頭像">
-          <button type="button" data-avatar="⚡" aria-label="閃電戰隊">⚡</button><button type="button" data-avatar="🔥" aria-label="烈焰戰隊">🔥</button><button type="button" data-avatar="🐉" aria-label="飛龍戰隊">🐉</button><button type="button" data-avatar="🦈" aria-label="幽鯊戰隊">🦈</button><button type="button" data-avatar="🦁" aria-label="獅王戰隊">🦁</button><button type="button" data-avatar="🌙" aria-label="月影戰隊">🌙</button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/nova.svg" aria-label="選擇 Nova"><img src="{{ '/assets/images/battle-top/avatars/nova.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/kai.svg" aria-label="選擇 Kai"><img src="{{ '/assets/images/battle-top/avatars/kai.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/rin.svg" aria-label="選擇 Rin"><img src="{{ '/assets/images/battle-top/avatars/rin.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/leo.svg" aria-label="選擇 Leo"><img src="{{ '/assets/images/battle-top/avatars/leo.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/mika.svg" aria-label="選擇 Mika"><img src="{{ '/assets/images/battle-top/avatars/mika.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/zane.svg" aria-label="選擇 Zane"><img src="{{ '/assets/images/battle-top/avatars/zane.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/astra.svg" aria-label="選擇 Astra"><img src="{{ '/assets/images/battle-top/avatars/astra.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/jett.svg" aria-label="選擇 Jett"><img src="{{ '/assets/images/battle-top/avatars/jett.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/luna.svg" aria-label="選擇 Luna"><img src="{{ '/assets/images/battle-top/avatars/luna.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/onyx.svg" aria-label="選擇 Onyx"><img src="{{ '/assets/images/battle-top/avatars/onyx.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/skye.svg" aria-label="選擇 Skye"><img src="{{ '/assets/images/battle-top/avatars/skye.svg' | relative_url }}" alt=""></button>
+          <button type="button" data-avatar="/assets/images/battle-top/avatars/blaze.svg" aria-label="選擇 Blaze"><img src="{{ '/assets/images/battle-top/avatars/blaze.svg' | relative_url }}" alt=""></button>
         </div>
         <label class="pilot-name" for="pilot-name">你的名字</label>
         <input id="pilot-name" class="pilot-name-input" type="text" maxlength="10" autocomplete="nickname" placeholder="輸入暱稱">
@@ -217,4 +228,4 @@ keywords:
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-39" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-40" defer></script>
