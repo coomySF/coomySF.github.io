@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-8">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-9">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -35,6 +35,14 @@ keywords:
       <p class="arena-kicker"><span></span> SPECFORMULA EXPERIMENT 01</p>
       <h1 id="arena-title" aria-label="戰鬥陀螺模擬器：旋核競技場"><span>旋核</span><br>競技場</h1>
       <p class="arena-lead">命運已經選好你的核心。<br>召喚它，然後讓它上場。</p>
+      <section class="leaderboard-card" aria-labelledby="leaderboard-title">
+        <div class="leaderboard-card__heading">
+          <p>CHOOSE YOUR RIVAL</p>
+          <h2 id="leaderboard-title">選擇對手</h2>
+        </div>
+        <ol class="leaderboard-list" id="leaderboard-list"></ol>
+        <p class="leaderboard-note">點「挑戰」鎖定魔王或榜上玩家，再按發射開始戰鬥。</p>
+      </section>
     </div>
 
     <div class="arena-stage-wrap">
@@ -109,14 +117,6 @@ keywords:
       <small>請使用暱稱，不要輸入真實姓名。</small>
     </section>
 
-    <section class="leaderboard-card" aria-labelledby="leaderboard-title">
-      <div class="leaderboard-card__heading">
-        <p>ARENA RECORDS</p>
-        <h2 id="leaderboard-title">玩家排行</h2>
-      </div>
-      <ol class="leaderboard-list" id="leaderboard-list"></ol>
-      <p class="leaderboard-note">點「挑戰」鎖定魔王或其他玩家的最高紀錄，把他從榜上擠下去。</p>
-    </section>
     </aside>
 
     <p class="scroll-cue" aria-hidden="true">SCROLL TO THE WISH LAB <span>↓</span></p>
