@@ -23,7 +23,8 @@
     leaderboardClose: document.querySelector('#leaderboard-modal-close'),
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
-    resultCopy: document.querySelector('#battle-result-copy'), name: document.querySelector('#top-name'),
+    resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
+    resultRetry: document.querySelector('#battle-result-retry'), name: document.querySelector('#top-name'),
     className: document.querySelector('#top-class'), rarity: document.querySelector('#top-rarity'),
     code: document.querySelector('#top-code'), skill: document.querySelector('#top-skill'),
     stats: document.querySelector('#stat-grid'), summon: document.querySelector('#summon-button'),
@@ -481,14 +482,18 @@
     syncSaveButton();
   }
 
-  function hideResult() { els.result.classList.remove('is-visible'); }
+  function hideResult() { els.result.classList.remove('is-visible', 'is-win', 'is-lose'); }
   function showResult(playerWon) {
-    els.resultTitle.textContent = playerWon ? `擊破 ${state.opponent.name}` : `${state.opponent.name} 守住紀錄`;
+    els.result.classList.toggle('is-win', playerWon);
+    els.result.classList.toggle('is-lose', !playerWon);
+    els.resultOutcome.textContent = playerWon ? '🏆' : '💥';
+    els.resultTitle.textContent = playerWon ? '你贏了！' : '你輸了！';
     const model = state.lastBattleModel;
     const playerRisk = model ? Math.round(model.playerRingOutChance * 100) : 0;
     const enemyRisk = model ? Math.round(model.enemyRingOutChance * 100) : 0;
     els.resultCopy.textContent = `${playerWon ? '對手被撞出場！' : '你被撞出場！'} 本場擊飛風險：你 ${playerRisk}% ／ 對手 ${enemyRisk}%。`;
     els.result.classList.add('is-visible');
+    setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
   }
 
   async function battle() {
@@ -846,6 +851,7 @@
 
   els.summon?.addEventListener('click', summon);
   els.battle?.addEventListener('click', () => { state.sound = true; getAudio(); battle(); });
+  els.resultRetry?.addEventListener('click', () => { hideResult(); battle(); });
   els.joinButton?.addEventListener('click', openJoinSetup);
   els.joinClose?.addEventListener('click', closeJoinSetup);
   els.enterArena?.addEventListener('click', enterArena);
