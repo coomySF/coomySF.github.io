@@ -261,6 +261,7 @@
     spin.circle(56).center(0, 0).fill(top.color).opacity(.22).stroke({ color: top.accent, width: 2 });
     spin.polygon(polarPoints(top.core, 24, 12)).fill(top.accent).stroke({ color: '#efffff', width: 1.5 });
     spin.circle(8).center(0, 0).fill('#efffff').attr({ filter: 'url(#coreGlow)' });
+    spin.circle(11).center(43, -13).fill('#ffffff').opacity(.95).attr({ filter: 'url(#coreGlow)' });
     spin.circle(120).center(0, 0).fill('none').stroke({ color: top.color, width: 2, opacity: .25, dasharray: '4 8' });
 
     stage.attr({ style: `filter:drop-shadow(0 0 8px ${top.color}) drop-shadow(0 0 20px ${top.color}88)` });
@@ -327,8 +328,8 @@
     const tick = now => {
       const dt = Math.min(32, now - previous); previous = now;
       if (!state.battling && state.scene) {
-        state.scene.player.rotation += .22 * dt;
-        state.scene.enemy.rotation -= .2 * dt;
+        state.scene.player.rotation += .58 * dt;
+        state.scene.enemy.rotation -= .53 * dt;
         state.scene.player.wobble *= .96;
         state.scene.enemy.wobble *= .96;
         renderPose();
@@ -516,11 +517,12 @@
     const duration = 5000;
     const easeOut = t => 1 - Math.pow(1 - t, 3);
     const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    let impactOne = false, impactTwo = false;
+    let impactOne = false, impactTwo = false, previousFrame = start;
     const frame = now => {
       const t = Math.min(1, (now - start) / duration);
+      const dt = Math.min(32, now - previousFrame); previousFrame = now;
       const p = state.scene.player, e = state.scene.enemy;
-      p.rotation += 42 + t * 18; e.rotation -= 39 + t * 17;
+      p.rotation += (1.12 + t * .38) * dt; e.rotation -= (1.04 + t * .35) * dt;
       if (t < .3) {
         const k = easeInOut(t / .3);
         p.x = 325 + 132 * k; e.x = 635 - 132 * k;
