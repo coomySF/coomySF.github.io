@@ -167,9 +167,9 @@
   function startSpinSound() {
     const audio = getAudio(); if (!audio) return;
     const oscillator = audio.createOscillator(), gain = audio.createGain(), now = audio.currentTime;
-    oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(105, now); oscillator.frequency.linearRampToValueAtTime(72, now + 5.2);
-    gain.gain.setValueAtTime(.018, now); gain.gain.linearRampToValueAtTime(.008, now + 5.2);
-    oscillator.connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(now + 5.25); state.spinAudio = oscillator;
+    oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(168, now); oscillator.frequency.linearRampToValueAtTime(104, now + 3.35);
+    gain.gain.setValueAtTime(.022, now); gain.gain.linearRampToValueAtTime(.007, now + 3.35);
+    oscillator.connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(now + 3.4); state.spinAudio = oscillator;
   }
 
   function initTabletActionDock() {
@@ -328,8 +328,8 @@
     const tick = now => {
       const dt = Math.min(32, now - previous); previous = now;
       if (!state.battling && state.scene) {
-        state.scene.player.rotation += .58 * dt;
-        state.scene.enemy.rotation -= .53 * dt;
+        state.scene.player.rotation = (state.scene.player.rotation + 3.6 * dt) % 360;
+        state.scene.enemy.rotation = (state.scene.enemy.rotation - 3.35 * dt) % 360;
         state.scene.player.wobble *= .96;
         state.scene.enemy.wobble *= .96;
         renderPose();
@@ -353,6 +353,12 @@
     }
     const flash = state.scene.impact.polygon(polarPoints(12, 55 * power, 10)).center(x, y).fill('#ffffff').opacity(.85);
     flash.animate(180).ease('>').size(190 * power, 190 * power).center(x, y).rotate(35).opacity(0).after(() => flash.remove());
+  }
+
+  function speedTrail(actor) {
+    if (!state.scene || reducedMotion || !actor) return;
+    const trail = state.scene.impact.ellipse(128, 42).center(actor.x, actor.y + 24).fill(actor.top.color).opacity(.2).attr({ filter: 'url(#speedGlow)' });
+    trail.animate(190).ease('>').size(72, 24).center(actor.x, actor.y + 24).opacity(0).after(() => trail.remove());
   }
 
   function spinHalo(x, y, color) {
@@ -514,19 +520,25 @@
     }
 
     const start = performance.now();
-    const duration = 5000;
+    const duration = 3200;
     const easeOut = t => 1 - Math.pow(1 - t, 3);
     const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    let impactOne = false, impactTwo = false, previousFrame = start;
+    let impactOne = false, impactTwo = false, previousFrame = start, trailFrame = 0;
     const frame = now => {
       const t = Math.min(1, (now - start) / duration);
       const dt = Math.min(32, now - previousFrame); previousFrame = now;
       const p = state.scene.player, e = state.scene.enemy;
-      p.rotation += (1.12 + t * .38) * dt; e.rotation -= (1.04 + t * .35) * dt;
+      p.rotation = (p.rotation + (7.2 + t * 1.8) * dt) % 360;
+      e.rotation = (e.rotation - (6.8 + t * 1.7) * dt) % 360;
+      trailFrame += 1;
+      if (trailFrame % 5 === 0) { speedTrail(p); speedTrail(e); }
       if (t < .3) {
         const k = easeInOut(t / .3);
-        p.x = 325 + 132 * k; e.x = 635 - 132 * k;
-        p.y = 365 - Math.sin(k * Math.PI) * 36; e.y = 365 + Math.sin(k * Math.PI) * 28;
+        const orbitFade = 1 - k;
+        p.x = 325 + 132 * k + Math.sin(k * Math.PI * 4) * 78 * orbitFade;
+        e.x = 635 - 132 * k - Math.sin(k * Math.PI * 4 + .8) * 72 * orbitFade;
+        p.y = 365 - Math.sin(k * Math.PI * 3) * 88 * orbitFade;
+        e.y = 365 + Math.sin(k * Math.PI * 3 + .65) * 82 * orbitFade;
       } else if (t < .46) {
         if (!impactOne) { burst(480, 362, '#ffffff', 1.15); lightningStrike(480, 350); defenseShield(state.player.stats.defense >= state.enemy.stats.defense ? p : e); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
         const k = easeOut((t - .3) / .16);
@@ -536,10 +548,10 @@
         const k = easeInOut((t - .46) / .3);
         const winner = playerWon ? p : e, loser = playerWon ? e : p;
         const direction = playerWon ? 1 : -1;
-        winner.x = (playerWon ? 365 : 599) + direction * 95 * k;
-        winner.y = 383 - Math.sin(k * Math.PI) * 100;
-        loser.x = (playerWon ? 599 : 365) - direction * 72 * k;
-        loser.y = 348 + Math.sin(k * Math.PI) * 65;
+        winner.x = (playerWon ? 365 : 599) + direction * 95 * k + Math.sin(k * Math.PI * 4) * 48;
+        winner.y = 383 - Math.sin(k * Math.PI) * 118 + Math.sin(k * Math.PI * 3) * 28;
+        loser.x = (playerWon ? 599 : 365) - direction * 72 * k - Math.sin(k * Math.PI * 3) * 42;
+        loser.y = 348 + Math.sin(k * Math.PI) * 82 - Math.sin(k * Math.PI * 4) * 24;
         loser.wobble = 3 + k * 5;
       } else {
         if (!impactTwo) { elementalClash(480, 360, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1); playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 80); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 320); impactTwo = true; }
