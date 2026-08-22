@@ -25,7 +25,7 @@
     { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -36,7 +36,7 @@
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
     rankUp: document.querySelector('#battle-rank-up'), rankHeadline: document.querySelector('#battle-rank-headline'), rankChange: document.querySelector('#battle-rank-change'),
-    resultRetry: document.querySelector('#battle-result-retry'), name: document.querySelector('#top-name'),
+    resultRetry: document.querySelector('#battle-result-retry'), resultShare: document.querySelector('#battle-result-share'), resultShareComposer: document.querySelector('#battle-share-composer'), resultShareMessage: document.querySelector('#battle-share-message'), resultShareCopy: document.querySelector('#battle-share-copy'), resultShareStatus: document.querySelector('#battle-result-share-status'), name: document.querySelector('#top-name'),
     className: document.querySelector('#top-class'), rarity: document.querySelector('#top-rarity'),
     code: document.querySelector('#top-code'), skill: document.querySelector('#top-skill'),
     stats: document.querySelector('#stat-grid'), summon: document.querySelector('#summon-button'),
@@ -595,6 +595,8 @@
   function hideResult() { els.result.classList.remove('is-visible', 'is-win', 'is-lose'); }
   function showResult(playerWon) {
     els.rankUp.hidden = true;
+    els.resultShareComposer.hidden = true;
+    els.resultShareStatus.textContent = '';
     els.result.classList.toggle('is-win', playerWon);
     els.result.classList.toggle('is-lose', !playerWon);
     els.resultOutcome.textContent = playerWon ? '🏆' : '💥';
@@ -610,6 +612,56 @@
     els.resultCopy.textContent = `${outcomeCopy} ${typeCopy} 六項因素均已換算。${rankBonusCopy}`;
     els.result.classList.add('is-visible');
     setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
+  }
+
+  function challengeURL() {
+    const base = window.location.origin && window.location.origin !== 'null'
+      ? new URL('/battle-top/', window.location.origin)
+      : new URL('https://coomysf.github.io/battle-top/');
+    if (state.lastScoreEntry?.id) base.searchParams.set('challenge', state.lastScoreEntry.id);
+    return base.toString();
+  }
+
+  function challengeMessage() {
+    const profile = readProfile();
+    const entry = state.lastScoreEntry;
+    return entry
+      ? `我用 ${entry.top} 打上 ${Number(entry.score).toLocaleString('zh-TW')} 分！\n敢不敢來挑戰 ${profile.name || '旋核手'}？\n${challengeURL()}\n\n#戰鬥陀螺 #旋核競技場`
+      : `敢不敢來挑戰我的戰鬥陀螺？\n${challengeURL()}\n\n#戰鬥陀螺 #旋核競技場`;
+  }
+
+  function openShareComposer() {
+    els.resultShareMessage.value = challengeMessage();
+    els.resultShareStatus.textContent = '';
+    els.resultShareComposer.hidden = false;
+    requestAnimationFrame(() => {
+      els.resultShareMessage.focus({ preventScroll: true });
+      els.resultShareMessage.select();
+    });
+  }
+
+  async function copyChallengePost() {
+    const message = els.resultShareMessage.value;
+    let copied = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message);
+        copied = true;
+      }
+    } catch (error) { /* Fall through to selection copy. */ }
+    if (!copied) {
+      els.resultShareMessage.focus();
+      els.resultShareMessage.select();
+      copied = document.execCommand('copy');
+    }
+    if (copied) {
+      els.resultShareStatus.textContent = '貼文複製好了，去 Threads 貼上吧！';
+      els.resultShareCopy.textContent = '已複製 ✓';
+      setTimeout(() => { els.resultShareCopy.textContent = '複製貼文'; }, 1800);
+      if (window.dataLayer) window.dataLayer.push({ event: 'battle_top_challenge_share', challenge_record_id: state.lastScoreEntry?.id || '' });
+    } else {
+      els.resultShareStatus.textContent = '沒有自動複製，請長按上面的文字複製。';
+    }
   }
 
   async function battle() {
@@ -903,6 +955,7 @@
     const previousRankIndex = state.ranked.findIndex(entry => `${String(entry.name || '').trim().toLocaleLowerCase()}::${entry.avatar}` === playerKey);
     const previousRank = previousRankIndex >= 0 ? previousRankIndex + 1 : null;
     const entry = { id: makeId(), name: playerName, avatar: avatarId(profile.avatar), top: state.player.name, score: points, won, createdAt: Date.now() };
+    state.lastScoreEntry = entry;
     const scores = readStorage(storageKeys.scores, []);
     scores.push(entry);
     scores.sort((a, b) => b.score - a.score);
@@ -914,6 +967,8 @@
         .then(data => {
           if (!Array.isArray(data.scores)) return;
           renderLeaderboard(data.scores);
+          const ownRecord = data.scores.find(score => identityKey(score.name, score.avatar) === playerKey);
+          if (ownRecord) state.lastScoreEntry = ownRecord;
           showRankProgress(previousRank, playerKey);
         })
         .catch(() => { els.resultCopy.textContent += ' 全站排行榜暫時無法更新。'; });
@@ -971,7 +1026,14 @@
     if (!scoreEndpoint) return;
     fetch(scoreEndpoint)
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard request failed')))
-      .then(data => { if (Array.isArray(data.scores)) renderLeaderboard(data.scores); })
+      .then(data => {
+        if (!Array.isArray(data.scores)) return;
+        renderLeaderboard(data.scores);
+        if (!state.requestedChallengeId) return;
+        const challengedPlayer = data.scores.find(entry => String(entry.id) === state.requestedChallengeId);
+        if (challengedPlayer) setOpponent(challengedPlayer);
+        state.requestedChallengeId = '';
+      })
       .catch(() => { /* local leaderboard remains available when the backend is unavailable */ });
   }
 
@@ -1036,6 +1098,8 @@
   els.summon?.addEventListener('click', summon);
   els.battle?.addEventListener('click', () => { state.sound = true; getAudio(); battle(); });
   els.resultRetry?.addEventListener('click', returnToArena);
+  els.resultShare?.addEventListener('click', openShareComposer);
+  els.resultShareCopy?.addEventListener('click', copyChallengePost);
   els.joinButton?.addEventListener('click', openJoinSetup);
   els.playerIdentity?.addEventListener('click', openJoinSetup);
   els.joinClose?.addEventListener('click', closeJoinSetup);

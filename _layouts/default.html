@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="{{ site.lang | default: 'zh-TW' }}">
   <head>
+    {% unless page.disable_tracking %}
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -8,6 +9,7 @@
     'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
     })(window,document,'script','dataLayer','GTM-T277CMLJ');</script>
     <!-- End Google Tag Manager -->
+    {% endunless %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% seo %}
@@ -27,10 +29,12 @@
     </script>
   </head>
   <body>
+    {% unless page.disable_tracking %}
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-T277CMLJ"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
+    {% endunless %}
     <div class="reading-progress" aria-hidden="true"><span></span></div>
     <div class="paper-noise" aria-hidden="true"></div>
     <div class="cursor-aura" aria-hidden="true"></div>
@@ -44,7 +48,7 @@
         <a href="{{ '/life/' | relative_url }}">我們的日子</a>
         <a href="{{ '/battle-top/' | relative_url }}">戰鬥陀螺</a>
         <a href="{{ '/lab/' | relative_url }}">實驗室</a>
-        <a href="{{ '/' | relative_url }}#about">關於</a>
+        <a href="{{ '/about/' | relative_url }}">關於</a>
         <a href="{{ '/feed.xml' | relative_url }}">RSS</a>
       </nav>
     </header>
