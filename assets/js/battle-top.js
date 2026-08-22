@@ -31,7 +31,7 @@
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
     enterArena: document.querySelector('#enter-arena-button'), joinRivals: document.querySelector('#join-rival-list'),
     changeRival: document.querySelector('#change-rival-button'), leaderboardModal: document.querySelector('#leaderboard-modal'),
-    leaderboardClose: document.querySelector('#leaderboard-modal-close'),
+    leaderboardClose: document.querySelector('#leaderboard-modal-close'), leaderboardRefresh: document.querySelector('#leaderboard-refresh'), leaderboardRefreshStatus: document.querySelector('#leaderboard-refresh-status'),
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
@@ -1022,9 +1022,17 @@
     renderJoinRivals();
   }
 
-  function loadLeaderboard() {
-    if (!scoreEndpoint) return;
-    fetch(scoreEndpoint)
+  function loadLeaderboard(manual = false) {
+    if (!scoreEndpoint) {
+      if (manual) els.leaderboardRefreshStatus.textContent = '排行榜目前沒有連上。';
+      return Promise.resolve(false);
+    }
+    if (manual) {
+      els.leaderboardRefresh.disabled = true;
+      els.leaderboardRefresh.classList.add('is-loading');
+      els.leaderboardRefreshStatus.textContent = '正在抓最新排名…';
+    }
+    return fetch(scoreEndpoint, { cache: 'no-store' })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard request failed')))
       .then(data => {
         if (!Array.isArray(data.scores)) return;
@@ -1033,8 +1041,18 @@
         const challengedPlayer = data.scores.find(entry => String(entry.id) === state.requestedChallengeId);
         if (challengedPlayer) setOpponent(challengedPlayer);
         state.requestedChallengeId = '';
+        if (manual) els.leaderboardRefreshStatus.textContent = `刷新完成，共 ${data.scores.length} 位玩家。`;
+        return true;
       })
-      .catch(() => { /* local leaderboard remains available when the backend is unavailable */ });
+      .catch(() => {
+        if (manual) els.leaderboardRefreshStatus.textContent = '刷新失敗，請再按一次。';
+        return false;
+      })
+      .finally(() => {
+        if (!manual) return;
+        els.leaderboardRefresh.disabled = false;
+        els.leaderboardRefresh.classList.remove('is-loading');
+      });
   }
 
   function setOpponent(entry) {
@@ -1109,6 +1127,7 @@
   els.opponentDetailClose?.addEventListener('click', closeOpponentDetail);
   els.opponentDetail?.addEventListener('click', event => { if (event.target === els.opponentDetail) closeOpponentDetail(); });
   els.leaderboardClose?.addEventListener('click', closeLeaderboard);
+  els.leaderboardRefresh?.addEventListener('click', () => loadLeaderboard(true));
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);

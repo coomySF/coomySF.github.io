@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260823-46">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260823-47">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -90,10 +90,14 @@ keywords:
       <section class="leaderboard-card" id="leaderboard-modal" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" hidden>
         <div class="leaderboard-modal__panel">
         <button type="button" class="leaderboard-modal__close" id="leaderboard-modal-close" aria-label="關閉排行榜">×</button>
+        <button type="button" class="leaderboard-modal__refresh" id="leaderboard-refresh" aria-label="刷新排行榜" title="刷新排行榜">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        </button>
         <div class="leaderboard-card__heading">
           <p>CHOOSE YOUR RIVAL</p>
           <h2 id="leaderboard-title">選擇對手</h2>
         </div>
+        <p class="leaderboard-refresh-status" id="leaderboard-refresh-status" role="status" aria-live="polite"></p>
         <ol class="leaderboard-list" id="leaderboard-list"></ol>
         </div>
       </section>
@@ -246,4 +250,4 @@ keywords:
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-46" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-47" defer></script>
