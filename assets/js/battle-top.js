@@ -60,13 +60,52 @@
     source.connect(filter).connect(gain).connect(audio.destination); source.start();
   }
 
+  function metalImpact(intensity = 1) {
+    const audio = getAudio(); if (!audio) return;
+    const now = audio.currentTime;
+    const master = audio.createGain();
+    const compressor = audio.createDynamicsCompressor();
+    master.gain.setValueAtTime(.0001, now);
+    master.gain.exponentialRampToValueAtTime(.18 * intensity, now + .004);
+    master.gain.exponentialRampToValueAtTime(.0001, now + .72);
+    compressor.threshold.value = -18;
+    compressor.knee.value = 8;
+    compressor.ratio.value = 6;
+    master.connect(compressor).connect(audio.destination);
+
+    [173, 287, 419, 673, 947].forEach((frequency, index) => {
+      const oscillator = audio.createOscillator();
+      const partial = audio.createGain();
+      oscillator.type = index < 2 ? 'square' : 'triangle';
+      oscillator.frequency.setValueAtTime(frequency, now);
+      oscillator.frequency.exponentialRampToValueAtTime(frequency * .72, now + .55);
+      partial.gain.setValueAtTime(.12 / (index + 1), now);
+      partial.gain.exponentialRampToValueAtTime(.0001, now + .18 + index * .1);
+      oscillator.connect(partial).connect(master);
+      oscillator.start(now + index * .002);
+      oscillator.stop(now + .75);
+    });
+
+    const length = Math.floor(audio.sampleRate * .16);
+    const buffer = audio.createBuffer(1, length, audio.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 4);
+    const strike = audio.createBufferSource();
+    const highpass = audio.createBiquadFilter();
+    strike.buffer = buffer;
+    highpass.type = 'highpass';
+    highpass.frequency.value = 1450;
+    strike.connect(highpass).connect(master);
+    strike.start(now);
+  }
+
   function playCue(name) {
     if (!state.sound) return;
     if (name === 'tap') tone(520, .06, 'square', .035, 720);
     if (name === 'summon') { tone(170, .32, 'sawtooth', .06, 880); setTimeout(() => tone(920, .16, 'square', .04, 1320), 170); }
     if (name === 'count') tone(260, .1, 'square', .055, 220);
     if (name === 'shoot') { noise(.22, .09); tone(110, .38, 'sawtooth', .08, 520); }
-    if (name === 'impact') { noise(.2, .13); tone(90, .2, 'square', .08, 42); }
+    if (name === 'impact') metalImpact(1);
     if (name === 'win') { [523,659,784,1047].forEach((f,i) => setTimeout(() => tone(f,.22,'triangle',.055,f*1.04),i*105)); }
     if (name === 'lose') { tone(240,.42,'sawtooth',.045,70); }
   }
@@ -85,10 +124,23 @@
     els.soundToggle.setAttribute('aria-label', state.sound ? '關閉遊戲音效' : '開啟遊戲音效');
   }
 
+  function initTabletActionDock() {
+    const hero = document.querySelector('.arena-hero');
+    const game = document.querySelector('.top-game');
+    if (!hero || !game || typeof IntersectionObserver !== 'function') return;
+    const observer = new IntersectionObserver(([entry]) => {
+      game.classList.toggle('is-arena-active', entry.isIntersecting);
+    }, { threshold: .08 });
+    observer.observe(hero);
+  }
+
   function cloneProduct(product) { return { ...product, stats: { ...product.stats } }; }
   function findProduct(name) { return productCatalog.find(product => product.name === name) || null; }
   function createTop(isEnemy = false) {
-    const product = isEnemy ? (findProduct(state.opponent.top) || productCatalog[1]) : pick(productCatalog);
+    const choices = !isEnemy && state.player && productCatalog.length > 1
+      ? productCatalog.filter(product => product.id !== state.player.id)
+      : productCatalog;
+    const product = isEnemy ? (findProduct(state.opponent.top) || productCatalog[1]) : pick(choices);
     return cloneProduct(product);
   }
 
@@ -238,6 +290,10 @@
     state.player = createTop(false);
     state.enemy = createTop(true);
     hideResult();
+    const card = els.productImage?.closest('.core-card');
+    card?.classList.remove('is-summoning');
+    void card?.offsetWidth;
+    card?.classList.add('is-summoning');
     updateCard();
     renderCollection();
     buildScene();
@@ -247,8 +303,9 @@
     actor.stage.animate(reducedMotion ? 1 : 760).ease('>')
       .opacity(1).transform({ translateX: 325, translateY: 365, scale: 1 });
     burst(325, 365, state.player.color, .8);
+    setTimeout(() => card?.classList.remove('is-summoning'), 760);
     els.battle.disabled = false; els.save.disabled = false;
-    els.summon.textContent = '🎲 再換一顆';
+    els.summon.textContent = '🎲 換一顆新陀螺！';
   }
 
   function updateCard() {
@@ -414,7 +471,7 @@
     els.status.textContent = 'COLLECTION CORE EQUIPPED';
     els.battle.disabled = false; els.save.disabled = false;
     syncSaveButton();
-    els.summon.textContent = '隨機換一顆';
+    els.summon.textContent = '🎲 隨機換一顆！';
     closeCollectionPicker();
     document.querySelector('.arena-hero')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
   }
@@ -577,8 +634,8 @@
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
   els.soundToggle?.addEventListener('click', () => { state.sound = !state.sound; writeStorage(storageKeys.sound, state.sound); paintSoundToggle(); playCue('tap'); });
-  renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes();
+  renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
-  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '🎲 再換一顆'; paintSoundToggle();
+  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '🎲 換一顆新陀螺！'; paintSoundToggle();
   els.status.textContent = 'CORE SYNCHRONIZED';
 })();
