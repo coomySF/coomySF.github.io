@@ -278,24 +278,36 @@
     const shadow = stage.ellipse(160, 32).center(0, 60).fill('#000').opacity(.48);
     shadow.attr({ filter: 'blur(8px)' });
 
-    spin.circle(178).center(0, 0).fill(top.color).opacity(.1).attr({ filter: 'url(#speedGlow)' });
-    spin.circle(166).center(0, 0).fill(top.color).opacity(.08).addClass('rotor-speed-disc');
+    spin.circle(178).center(0, 0).fill(top.color).opacity(.06).attr({ filter: 'url(#speedGlow)' });
+    spin.circle(166).center(0, 0).fill(top.color).opacity(.035).addClass('rotor-speed-disc');
     spin.circle(148).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 12, opacity: .08 }).addClass('rotor-speed-ring');
     spin.circle(132).center(0, 0).fill('none').stroke({ color: top.accent, width: 16, opacity: .06, dasharray: '28 5' }).addClass('rotor-speed-band');
     spin.circle(104).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 9, opacity: .05, dasharray: '14 4' }).addClass('rotor-speed-band').addClass('rotor-speed-band--inner');
+    const echoes = spin.group().addClass('rotor-motion-echoes');
+    [-18, 14, 31].forEach((offset, index) => {
+      echoes.polygon(polarPoints(top.teeth, 84 - index * 2, 58 - index)).fill(index === 1 ? top.accent : top.color).opacity(.045).rotate(offset, 0, 0).addClass('rotor-motion-echo');
+    });
     const details = spin.group().addClass('rotor-details');
     details.circle(154).center(0, 0).fill('none').stroke({ color: top.color, width: 5, opacity: .48, dasharray: '36 12' }).attr({ filter: 'url(#coreGlow)' });
     details.circle(137).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 2, opacity: .42, dasharray: '8 18' });
     details.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .78 }).attr({ filter: 'url(#rotorShine)' });
+    details.polygon(polarPoints(top.teeth, 76, 57)).fill('none').stroke({ color: '#ffffff', width: 5, opacity: .18 }).rotate(7, 0, 0);
     details.polygon(polarPoints(top.teeth, 67, 48)).fill('#0c1720').stroke({ color: top.accent, width: 5, opacity: .88 }).rotate(180 / top.teeth);
     for (let i = 0; i < top.teeth; i += 1) {
       const angle = (360 / top.teeth) * i;
       const blade = details.path('M 0 -56 C 15 -58 28 -49 36 -34 L 25 -27 C 17 -38 10 -42 0 -42 Z')
         .fill(top.accent).opacity(i % 2 ? .5 : .82).rotate(angle, 0, 0);
       blade.stroke({ color: '#fff', width: .7, opacity: .35 });
+      details.path('M 2 -52 C 12 -52 21 -47 28 -39').fill('none').stroke({ color: '#ffffff', width: 2.2, opacity: .42, linecap: 'round' }).rotate(angle, 0, 0);
     }
     details.circle(82).center(0, 0).fill('#081016').stroke({ color: top.color, width: 4 });
+    details.circle(72).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 1.5, opacity: .24, dasharray: '3 5' });
+    for (let i = 0; i < 6; i += 1) {
+      const angle = (Math.PI * 2 * i) / 6;
+      details.circle(7).center(Math.cos(angle) * 34, Math.sin(angle) * 34).fill('#cfe4e7').stroke({ color: '#071017', width: 1.2 }).opacity(.78);
+    }
     details.circle(56).center(0, 0).fill(top.color).opacity(.22).stroke({ color: top.accent, width: 2 });
+    details.circle(42).center(0, 0).fill('#101c25').stroke({ color: '#ffffff', width: 1.5, opacity: .52 });
     details.polygon(polarPoints(top.core, 24, 12)).fill(top.accent).stroke({ color: '#efffff', width: 1.5 });
     details.circle(8).center(0, 0).fill('#efffff').attr({ filter: 'url(#coreGlow)' });
     details.circle(11).center(43, -13).fill('#ffffff').opacity(.95).attr({ filter: 'url(#coreGlow)' });
