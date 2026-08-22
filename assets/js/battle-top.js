@@ -35,7 +35,8 @@
     countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
     productImage: document.querySelector('#top-product-image'), productLink: document.querySelector('#top-product-link'), parts: document.querySelector('#top-parts'),
-    opponentAvatar: document.querySelector('#opponent-avatar'), opponentName: document.querySelector('#opponent-name'), opponentTop: document.querySelector('#opponent-top'), opponentScore: document.querySelector('#opponent-score'), opponentImage: document.querySelector('#opponent-product-image')
+    opponentBadge: document.querySelector('#opponent-badge'), opponentAvatar: document.querySelector('#opponent-avatar'), opponentName: document.querySelector('#opponent-name'), opponentTop: document.querySelector('#opponent-top'), opponentScore: document.querySelector('#opponent-score'), opponentImage: document.querySelector('#opponent-product-image'),
+    opponentDetail: document.querySelector('#opponent-detail-modal'), opponentDetailClose: document.querySelector('#opponent-detail-close'), opponentDetailAvatar: document.querySelector('#opponent-detail-avatar'), opponentDetailPlayer: document.querySelector('#opponent-detail-player'), opponentDetailScore: document.querySelector('#opponent-detail-score'), opponentDetailImage: document.querySelector('#opponent-detail-image'), opponentDetailName: document.querySelector('#opponent-detail-name'), opponentDetailType: document.querySelector('#opponent-detail-type'), opponentDetailStats: document.querySelector('#opponent-detail-stats')
   };
 
   function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -484,6 +485,26 @@
     syncSaveButton();
   }
 
+  function openOpponentDetail() {
+    const top = state.enemy || findProduct(state.opponent.top) || productCatalog[1];
+    const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
+    els.opponentDetailAvatar.textContent = state.opponent.avatar || '⚡';
+    els.opponentDetailPlayer.textContent = state.opponent.name;
+    els.opponentDetailScore.textContent = `${Number(state.opponent.score).toLocaleString('zh-TW')} PTS`;
+    els.opponentDetailImage.src = top.image;
+    els.opponentDetailImage.alt = `${top.name} 官方商品圖`;
+    els.opponentDetailName.textContent = top.name;
+    els.opponentDetailType.textContent = `${top.type} · ${top.parts}`;
+    els.opponentDetailStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><b>${value}</b><i><em style="width:${Math.min(100, value / 120 * 100)}%"></em></i></div>`).join('');
+    els.opponentDetail.hidden = false;
+    els.opponentDetailClose.focus({ preventScroll: true });
+  }
+
+  function closeOpponentDetail() {
+    els.opponentDetail.hidden = true;
+    els.opponentBadge.focus({ preventScroll: true });
+  }
+
   function hideResult() { els.result.classList.remove('is-visible', 'is-win', 'is-lose'); }
   function showResult(playerWon) {
     els.result.classList.toggle('is-win', playerWon);
@@ -862,6 +883,9 @@
   els.joinClose?.addEventListener('click', closeJoinSetup);
   els.enterArena?.addEventListener('click', enterArena);
   els.changeRival?.addEventListener('click', openLeaderboard);
+  els.opponentBadge?.addEventListener('click', openOpponentDetail);
+  els.opponentDetailClose?.addEventListener('click', closeOpponentDetail);
+  els.opponentDetail?.addEventListener('click', event => { if (event.target === els.opponentDetail) closeOpponentDetail(); });
   els.leaderboardClose?.addEventListener('click', closeLeaderboard);
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
@@ -869,6 +893,7 @@
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !els.joinModal.hidden) closeJoinSetup();
     else if (event.key === 'Escape' && !els.leaderboardModal.hidden) closeLeaderboard();
+    else if (event.key === 'Escape' && !els.opponentDetail.hidden) closeOpponentDetail();
   });
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();

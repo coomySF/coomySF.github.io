@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-29">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-32">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -63,10 +63,18 @@ keywords:
 
   <section class="arena-hero" aria-label="戰鬥陀螺競技場">
     <div class="arena-copy">
-      <div class="opponent-badge" id="opponent-badge" aria-live="polite">
-        <div class="opponent-visual"><img id="opponent-product-image" src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png" alt="Hells Scythe 4-60T 官方商品圖"><span id="opponent-avatar">👹</span></div>
-        <div class="opponent-copy"><small>YOUR RIVAL</small><strong id="opponent-name">魔王</strong><em id="opponent-top">Hells Scythe 4-60T</em><b id="opponent-score">1,000 PTS</b></div>
-      </div>
+      <button type="button" class="opponent-badge" id="opponent-badge" aria-live="polite" aria-haspopup="dialog" aria-controls="opponent-detail-modal">
+        <span class="opponent-visual"><img id="opponent-product-image" src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png" alt="Hells Scythe 4-60T 官方商品圖"><span id="opponent-avatar">👹</span></span>
+        <span class="opponent-copy"><small>YOUR RIVAL</small><strong id="opponent-name">魔王</strong><em id="opponent-top">Hells Scythe 4-60T</em><b id="opponent-score">1,000 PTS</b></span>
+      </button>
+      <section class="opponent-detail-modal" id="opponent-detail-modal" role="dialog" aria-modal="true" aria-labelledby="opponent-detail-name" hidden>
+        <div class="opponent-detail-modal__panel">
+          <button type="button" class="opponent-detail-modal__close" id="opponent-detail-close" aria-label="關閉對手資料">×</button>
+          <div class="opponent-detail-modal__identity"><span id="opponent-detail-avatar">👹</span><small>RIVAL DATA</small><strong id="opponent-detail-player">魔王</strong><b id="opponent-detail-score">1,000 PTS</b></div>
+          <img class="opponent-detail-modal__image" id="opponent-detail-image" src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png" alt="Hells Scythe 4-60T 官方商品圖">
+          <div class="opponent-detail-modal__data"><small>BATTLE TOP</small><h2 id="opponent-detail-name">Hells Scythe 4-60T</h2><p id="opponent-detail-type">平衡型</p><div class="opponent-detail-stats" id="opponent-detail-stats"></div></div>
+        </div>
+      </section>
       <button type="button" class="change-rival-button" id="change-rival-button">換對手</button>
       <section class="leaderboard-card" id="leaderboard-modal" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" hidden>
         <div class="leaderboard-modal__panel">
@@ -208,4 +216,4 @@ keywords:
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-31" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-32" defer></script>
