@@ -17,7 +17,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260823-47">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260823-49">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -100,6 +100,7 @@ keywords:
       </section>
       <button type="button" class="change-rival-button" id="change-rival-button">換對手</button>
       <a class="wish-pool-shortcut" href="#wish-pool">不夠玩？去逼我加功能 <span aria-hidden="true">↓</span></a>
+      <p class="arena-online-count" id="arena-online-count" role="status" aria-live="polite" hidden></p>
       <section class="leaderboard-card" id="leaderboard-modal" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" hidden>
         <div class="leaderboard-modal__panel">
         <button type="button" class="leaderboard-modal__close" id="leaderboard-modal-close" aria-label="關閉排行榜">×</button>
@@ -110,6 +111,11 @@ keywords:
           <p>CHOOSE YOUR RIVAL</p>
           <h2 id="leaderboard-title">選擇對手</h2>
         </div>
+        <label class="leaderboard-search" for="leaderboard-search">
+          <span aria-hidden="true">⌕</span>
+          <input type="search" id="leaderboard-search" autocomplete="off" maxlength="30" placeholder="搜玩家或陀螺" aria-describedby="leaderboard-search-status">
+        </label>
+        <p class="leaderboard-search-status" id="leaderboard-search-status" role="status" aria-live="polite"></p>
         <p class="leaderboard-refresh-status" id="leaderboard-refresh-status" role="status" aria-live="polite"></p>
         <ol class="leaderboard-list" id="leaderboard-list"></ol>
         </div>
@@ -261,6 +267,9 @@ keywords:
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-48" defer></script>
+<script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
+<script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-52" defer></script>

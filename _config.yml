@@ -45,3 +45,5 @@ exclude:
 
 battle_top_wish_endpoint: https://mzobbjuhoddruekmxzoe.supabase.co/functions/v1/battle-top-wish
 battle_top_score_endpoint: https://mzobbjuhoddruekmxzoe.supabase.co/functions/v1/battle-top-score
+battle_top_supabase_url: https://mzobbjuhoddruekmxzoe.supabase.co
+battle_top_supabase_publishable_key: sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg

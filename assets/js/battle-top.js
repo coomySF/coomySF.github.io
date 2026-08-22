@@ -3,9 +3,11 @@
 
   const SVG_NS_READY = typeof window.SVG === 'function';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1' };
+  const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', presence: 'coomy-top-presence-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
+  const supabaseUrl = window.BATTLE_TOP_SUPABASE_URL || '';
+  const supabasePublishableKey = window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY || '';
   const avatarNames = new Set(['nova', 'kai', 'rin', 'leo', 'mika', 'zane', 'astra', 'jett', 'luna', 'onyx', 'skye', 'blaze']);
   const avatarAssets = new Set([...avatarNames].map(name => `/assets/images/battle-top/avatars/${name}.svg`));
   const legacyAvatarMap = { '⚡': 'nova', '🔥': 'blaze', '🐉': 'kai', '🦈': 'skye', '🦁': 'leo', '🌙': 'luna' };
@@ -31,13 +33,13 @@
     { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], leaderboardQuery: '', leaderboardLoaded: false, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
     enterArena: document.querySelector('#enter-arena-button'), joinRivals: document.querySelector('#join-rival-list'),
-    changeRival: document.querySelector('#change-rival-button'), leaderboardModal: document.querySelector('#leaderboard-modal'),
-    leaderboardClose: document.querySelector('#leaderboard-modal-close'), leaderboardRefresh: document.querySelector('#leaderboard-refresh'), leaderboardRefreshStatus: document.querySelector('#leaderboard-refresh-status'),
+    changeRival: document.querySelector('#change-rival-button'), onlineCount: document.querySelector('#arena-online-count'), leaderboardModal: document.querySelector('#leaderboard-modal'),
+    leaderboardClose: document.querySelector('#leaderboard-modal-close'), leaderboardRefresh: document.querySelector('#leaderboard-refresh'), leaderboardRefreshStatus: document.querySelector('#leaderboard-refresh-status'), leaderboardSearch: document.querySelector('#leaderboard-search'), leaderboardSearchStatus: document.querySelector('#leaderboard-search-status'),
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
@@ -77,6 +79,36 @@
     return avatarAssets.has(avatar) ? `<img src="${avatar}" alt="">` : escapeHTML(avatar);
   }
   function paintAvatar(element, value) { if (element) element.innerHTML = avatarMarkup(value); }
+
+  function presenceId() {
+    let id = readStorage(storageKeys.presence, '');
+    if (id) return id;
+    id = window.crypto?.randomUUID?.() || `arena-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    writeStorage(storageKeys.presence, id);
+    return id;
+  }
+
+  function initOnlinePresence() {
+    if (!els.onlineCount || !supabaseUrl || !supabasePublishableKey || !window.supabase?.createClient) {
+      if (els.onlineCount) els.onlineCount.hidden = true;
+      return;
+    }
+    const client = window.supabase.createClient(supabaseUrl, supabasePublishableKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+    });
+    const channel = client.channel('battle-top-online', { config: { presence: { key: presenceId() } } });
+    const paint = () => {
+      const online = Object.keys(channel.presenceState()).length;
+      els.onlineCount.hidden = online === 0;
+      els.onlineCount.innerHTML = online ? `<span aria-hidden="true"></span>目前 ${online.toLocaleString('zh-TW')} 人正在競技場` : '';
+    };
+    channel
+      .on('presence', { event: 'sync' }, paint)
+      .subscribe(async status => {
+        if (status === 'SUBSCRIBED') await channel.track({ joined_at: new Date().toISOString() });
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') els.onlineCount.hidden = true;
+      });
+  }
 
   function getAudio() {
     if (!state.sound) return null;
@@ -1031,11 +1063,30 @@
   function renderLeaderboard(serverScores) {
     if (!els.leaderboard) return;
     const bot = { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true };
-    if (Array.isArray(serverScores)) state.globalScores = serverScores;
+    if (Array.isArray(serverScores)) {
+      state.globalScores = serverScores;
+      state.leaderboardLoaded = true;
+    }
     const scores = state.globalScores;
     const ranked = [bot, ...scores].sort((a, b) => b.score - a.score);
     state.ranked = ranked;
-    els.leaderboard.innerHTML = ranked.map((entry, index) => {
+    const query = state.leaderboardQuery.trim().toLocaleLowerCase();
+    const visibleEntries = ranked
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => !query || `${entry.name || ''} ${entry.top || ''}`.toLocaleLowerCase().includes(query));
+    const playerCount = scores.length;
+    if (state.leaderboardLoaded) els.changeRival.textContent = `換對手（${playerCount.toLocaleString('zh-TW')}）`;
+    els.leaderboardSearchStatus.textContent = !state.leaderboardLoaded
+      ? '正在讀取全站玩家…'
+      : query
+        ? `找到 ${visibleEntries.length} 筆紀錄 · 全站 ${playerCount.toLocaleString('zh-TW')} 位玩家`
+        : `全站共 ${playerCount.toLocaleString('zh-TW')} 位玩家`;
+    if (!visibleEntries.length) {
+      els.leaderboard.innerHTML = '<li class="leaderboard-empty"><strong>找不到。</strong><small>換個名字或陀螺試試！</small></li>';
+      renderJoinRivals();
+      return;
+    }
+    els.leaderboard.innerHTML = visibleEntries.map(({ entry, index }) => {
       const ownRecord = isCurrentPlayer(entry);
       return `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}${ownRecord ? ' is-player' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${avatarMarkup(entry.avatar)}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}" ${ownRecord ? 'disabled' : ''}>${ownRecord ? '你' : 'PK'}</button></li>`;
     }).join('');
@@ -1157,6 +1208,10 @@
   els.opponentDetail?.addEventListener('click', event => { if (event.target === els.opponentDetail) closeOpponentDetail(); });
   els.leaderboardClose?.addEventListener('click', closeLeaderboard);
   els.leaderboardRefresh?.addEventListener('click', () => loadLeaderboard(true));
+  els.leaderboardSearch?.addEventListener('input', event => {
+    state.leaderboardQuery = event.target.value;
+    renderLeaderboard();
+  });
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
@@ -1165,7 +1220,7 @@
     else if (event.key === 'Escape' && !els.leaderboardModal.hidden) closeLeaderboard();
     else if (event.key === 'Escape' && !els.opponentDetail.hidden) closeOpponentDetail();
   });
-  renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
+  renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initOnlinePresence(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
   els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '抽陀螺';
   els.status.textContent = 'CORE SYNCHRONIZED';
