@@ -585,6 +585,15 @@
     }
   }
 
+  function returnToArena() {
+    hideResult();
+    buildScene();
+    els.status.textContent = 'READY TO BATTLE';
+    els.battle.disabled = false;
+    els.summon.disabled = false;
+    els.summon.focus({ preventScroll: true });
+  }
+
   function readStorage(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (_) { return fallback; }
   }
@@ -848,7 +857,7 @@
 
   els.summon?.addEventListener('click', summon);
   els.battle?.addEventListener('click', () => { state.sound = true; getAudio(); battle(); });
-  els.resultRetry?.addEventListener('click', () => { hideResult(); battle(); });
+  els.resultRetry?.addEventListener('click', returnToArena);
   els.joinButton?.addEventListener('click', openJoinSetup);
   els.joinClose?.addEventListener('click', closeJoinSetup);
   els.enterArena?.addEventListener('click', enterArena);
