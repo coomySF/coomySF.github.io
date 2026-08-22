@@ -273,10 +273,17 @@
 
   function createRotor(root, top, label) {
     const stage = root.group().attr({ id: `${label}-stage` });
+    const shadow = stage.ellipse(172, 38).center(0, 66).fill('#000').opacity(.58);
+    shadow.attr({ filter: 'blur(9px)' });
     const tilt = stage.group().attr({ id: `${label}-tilt` });
     const spin = tilt.group().attr({ id: `${label}-rotor` });
-    const shadow = stage.ellipse(160, 32).center(0, 60).fill('#000').opacity(.48);
-    shadow.attr({ filter: 'blur(8px)' });
+
+    const depth = spin.group().addClass('rotor-depth');
+    depth.polygon(polarPoints(top.teeth, 84, 61)).fill('#020407').stroke({ color: '#010203', width: 11, linejoin: 'round' }).translate(0, 14).addClass('rotor-depth-outline');
+    depth.polygon(polarPoints(top.teeth, 82, 60)).fill('#09131a').stroke({ color: top.color, width: 5, opacity: .72, linejoin: 'round' }).translate(0, 11).addClass('rotor-depth-side');
+    depth.polygon(polarPoints(top.teeth, 70, 51)).fill(top.accent).opacity(.32).translate(0, 8);
+    depth.ellipse(74, 34).center(0, 21).fill('#020609').stroke({ color: '#aee7e5', width: 2, opacity: .35 });
+    depth.ellipse(42, 21).center(0, 27).fill('#010305').stroke({ color: top.color, width: 3, opacity: .58 });
 
     spin.circle(178).center(0, 0).fill(top.color).opacity(.06).attr({ filter: 'url(#speedGlow)' });
     spin.circle(166).center(0, 0).fill(top.color).opacity(.035).addClass('rotor-speed-disc');
@@ -290,6 +297,7 @@
     const details = spin.group().addClass('rotor-details');
     details.circle(154).center(0, 0).fill('none').stroke({ color: top.color, width: 5, opacity: .48, dasharray: '36 12' }).attr({ filter: 'url(#coreGlow)' });
     details.circle(137).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 2, opacity: .42, dasharray: '8 18' });
+    details.polygon(polarPoints(top.teeth, 85, 62)).fill('#020406').stroke({ color: '#010203', width: 9, opacity: .96, linejoin: 'round' }).addClass('rotor-cartoon-outline');
     details.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .78 }).attr({ filter: 'url(#rotorShine)' });
     details.polygon(polarPoints(top.teeth, 76, 57)).fill('none').stroke({ color: '#ffffff', width: 5, opacity: .18 }).rotate(7, 0, 0);
     details.polygon(polarPoints(top.teeth, 67, 48)).fill('#0c1720').stroke({ color: top.accent, width: 5, opacity: .88 }).rotate(180 / top.teeth);
@@ -312,6 +320,8 @@
     details.circle(8).center(0, 0).fill('#efffff').attr({ filter: 'url(#coreGlow)' });
     details.circle(11).center(43, -13).fill('#ffffff').opacity(.95).attr({ filter: 'url(#coreGlow)' });
     details.circle(120).center(0, 0).fill('none').stroke({ color: top.color, width: 2, opacity: .25, dasharray: '4 8' });
+    details.path('M -55 -42 C -25 -70 24 -70 54 -42 C 22 -54 -20 -54 -55 -42 Z').fill('#ffffff').opacity(.32).addClass('rotor-cel-highlight');
+    details.path('M -62 35 C -25 62 27 62 64 32 C 28 47 -27 48 -62 35 Z').fill('#000000').opacity(.3).addClass('rotor-cel-shadow');
 
     stage.attr({ style: `filter:drop-shadow(0 0 8px ${top.color}) drop-shadow(0 0 20px ${top.color}88)` });
     return { stage, tilt, spin, shadow, top, x: 0, y: 0, rotation: 0, speed: 0, wobble: 0 };
@@ -366,7 +376,7 @@
     ['player', 'enemy'].forEach(key => {
       const actor = scene[key];
       actor.stage.transform({ translateX: actor.x, translateY: actor.y });
-      actor.tilt.transform({ rotate: Math.sin(actor.rotation * .035) * actor.wobble, origin: [0, 0], scaleX: 1 + actor.wobble * .004, scaleY: 1 - actor.wobble * .002 });
+      actor.tilt.transform({ rotate: Math.sin(actor.rotation * .035) * actor.wobble, origin: [0, 0], scaleX: 1.04 + actor.wobble * .004, scaleY: .82 - actor.wobble * .002 });
       actor.spin.transform({ rotate: actor.rotation, origin: [0, 0] });
     });
   }
@@ -391,6 +401,10 @@
   function burst(x, y, color, power = 1) {
     if (!state.scene) return;
     const group = state.scene.impact.group();
+    const comicBack = group.polygon(polarPoints(12, 72 * power, 31 * power)).center(x + 7, y + 8).fill('#020305').stroke({ color: '#020305', width: 10, linejoin: 'round' }).opacity(.88);
+    const comicHit = group.polygon(polarPoints(12, 66 * power, 27 * power)).center(x, y).fill('#fff23d').stroke({ color: '#ffffff', width: 4, linejoin: 'round' }).opacity(.92);
+    comicBack.animate(240).ease('>').size(220 * power, 220 * power).center(x + 8, y + 10).rotate(-24).opacity(0).after(() => comicBack.remove());
+    comicHit.animate(210).ease('>').size(195 * power, 195 * power).center(x, y).rotate(28).opacity(0).after(() => comicHit.remove());
     const ring = group.circle(20).center(x, y).fill('none').stroke({ color, width: 5, opacity: .9 });
     ring.animate(420).ease('>').size(150 * power, 150 * power).center(x, y).opacity(0).after(() => ring.remove());
     for (let i = 0; i < 15; i += 1) {
@@ -408,6 +422,13 @@
     if (!state.scene || reducedMotion || !actor) return;
     const trail = state.scene.impact.ellipse(128, 42).center(actor.x, actor.y + 24).fill(actor.top.color).opacity(.2).attr({ filter: 'url(#speedGlow)' });
     trail.animate(190).ease('>').size(72, 24).center(actor.x, actor.y + 24).opacity(0).after(() => trail.remove());
+    for (let i = 0; i < 3; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const start = 72 + i * 13;
+      const line = state.scene.impact.line(actor.x + Math.cos(angle) * start, actor.y + Math.sin(angle) * start * .55, actor.x + Math.cos(angle) * (start + 24), actor.y + Math.sin(angle) * (start + 24) * .55)
+        .stroke({ color: i === 0 ? '#ffffff' : actor.top.color, width: i === 0 ? 4 : 2, opacity: .72, linecap: 'round' });
+      line.animate(150).ease('>').dmove(Math.cos(angle) * 45, Math.sin(angle) * 25).opacity(0).after(() => line.remove());
+    }
   }
 
   function spinHalo(x, y, color) {
