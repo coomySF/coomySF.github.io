@@ -97,6 +97,53 @@
     highpass.frequency.value = 1450;
     strike.connect(highpass).connect(master);
     strike.start(now);
+
+    const screech = audio.createOscillator();
+    const screechGain = audio.createGain();
+    screech.type = 'sine';
+    screech.frequency.setValueAtTime(1850, now);
+    screech.frequency.exponentialRampToValueAtTime(3450, now + .065);
+    screech.frequency.exponentialRampToValueAtTime(1280, now + .34);
+    screechGain.gain.setValueAtTime(.0001, now);
+    screechGain.gain.exponentialRampToValueAtTime(.075 * intensity, now + .008);
+    screechGain.gain.exponentialRampToValueAtTime(.0001, now + .36);
+    screech.connect(screechGain).connect(compressor);
+    screech.start(now); screech.stop(now + .38);
+
+    const rumble = audio.createOscillator();
+    const rumbleGain = audio.createGain();
+    rumble.type = 'sawtooth';
+    rumble.frequency.setValueAtTime(62, now);
+    rumble.frequency.exponentialRampToValueAtTime(34, now + .92);
+    rumbleGain.gain.setValueAtTime(.07 * intensity, now);
+    rumbleGain.gain.exponentialRampToValueAtTime(.0001, now + .95);
+    rumble.connect(rumbleGain).connect(compressor);
+    rumble.start(now); rumble.stop(now + .98);
+  }
+
+  function fireWhoosh() {
+    const audio = getAudio(); if (!audio) return;
+    const now = audio.currentTime;
+    const length = Math.floor(audio.sampleRate * .7);
+    const buffer = audio.createBuffer(1, length, audio.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) data[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / length);
+    const source = audio.createBufferSource();
+    const filter = audio.createBiquadFilter();
+    const gain = audio.createGain();
+    source.buffer = buffer; filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(260, now);
+    filter.frequency.exponentialRampToValueAtTime(1350, now + .18);
+    filter.frequency.exponentialRampToValueAtTime(190, now + .7);
+    filter.Q.value = .7;
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(.12, now + .06);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + .7);
+    source.connect(filter).connect(gain).connect(audio.destination); source.start(now);
+  }
+
+  function electricZap() {
+    [2100, 2850, 3600, 2450].forEach((frequency, index) => setTimeout(() => tone(frequency, .055, 'square', .025, frequency * .58), index * 32));
   }
 
   function playCue(name) {
@@ -106,6 +153,8 @@
     if (name === 'count') tone(260, .1, 'square', .055, 220);
     if (name === 'shoot') { noise(.22, .09); tone(110, .38, 'sawtooth', .08, 520); }
     if (name === 'impact') metalImpact(1);
+    if (name === 'fire') fireWhoosh();
+    if (name === 'zap') electricZap();
     if (name === 'win') { [523,659,784,1047].forEach((f,i) => setTimeout(() => tone(f,.22,'triangle',.055,f*1.04),i*105)); }
     if (name === 'lose') { tone(240,.42,'sawtooth',.045,70); }
   }
@@ -262,6 +311,57 @@
     flash.animate(180).ease('>').size(190 * power, 190 * power).center(x, y).rotate(35).opacity(0).after(() => flash.remove());
   }
 
+  function spinHalo(x, y, color) {
+    if (!state.scene || reducedMotion) return;
+    const group = state.scene.impact.group().attr({ id: `fx-spin-halo-${makeId()}` });
+    [0, 1, 2].forEach(index => {
+      const ring = group.circle(120 + index * 24).center(x, y).fill('none').stroke({ color: index === 1 ? '#ffffff' : color, width: 3 - index * .6, opacity: .7 - index * .14, dasharray: `${18 + index * 6} ${9 + index * 5}` });
+      ring.animate(720 + index * 130).ease('>').rotate(index % 2 ? -210 : 240, x, y).size(220 + index * 38, 220 + index * 38).center(x, y).opacity(0);
+    });
+    setTimeout(() => group.remove(), 1200);
+  }
+
+  function lightningStrike(x, y, color = '#82f7ff') {
+    if (!state.scene || reducedMotion) return;
+    const group = state.scene.impact.group().attr({ id: `fx-lightning-${makeId()}` });
+    for (let branch = 0; branch < 4; branch += 1) {
+      const points = [[x + randomInt(-35, 35), y - 175]];
+      for (let step = 1; step <= 7; step += 1) points.push([x + randomInt(-62, 62), y - 175 + step * 27]);
+      const glow = group.polyline(points).fill('none').stroke({ color, width: branch ? 4 : 8, opacity: branch ? .9 : .42, linecap: 'round', linejoin: 'round' });
+      glow.attr({ filter: 'url(#coreGlow)' });
+      glow.animate(90 + branch * 20).ease('-').opacity(1).animate(240).ease('>').opacity(0);
+    }
+    const core = group.circle(34).center(x, y).fill('#ffffff').opacity(.95).attr({ filter: 'url(#coreGlow)' });
+    core.animate(260).ease('>').size(180, 180).center(x, y).opacity(0);
+    setTimeout(() => group.remove(), 520);
+  }
+
+  function flameBurst(x, y, direction = 1) {
+    if (!state.scene || reducedMotion) return;
+    const group = state.scene.impact.group().attr({ id: `fx-fire-${makeId()}` });
+    const colors = ['#fff4a8', '#ffd23f', '#ff8a18', '#ff3b18'];
+    for (let i = 0; i < 24; i += 1) {
+      const size = randomInt(18, 48);
+      const startX = x + randomInt(-35, 35), startY = y + randomInt(-20, 30);
+      const travelX = direction * randomInt(55, 185) + randomInt(-35, 35);
+      const travelY = -randomInt(45, 145);
+      const flame = group.ellipse(size * .58, size).center(startX, startY).fill(colors[i % colors.length]).opacity(.92);
+      if (i % 3 === 0) flame.attr({ filter: 'url(#coreGlow)' });
+      flame.rotate(randomInt(-35, 35));
+      flame.animate(randomInt(360, 680), i * 7, 'now').ease('>').dmove(travelX, travelY).size(2, 2).opacity(0);
+    }
+    const wave = group.path(`M ${x - 22} ${y + 25} C ${x - 5} ${y - 95}, ${x + direction * 90} ${y - 125}, ${x + direction * 175} ${y - 35} C ${x + direction * 92} ${y - 55}, ${x + 20} ${y + 5}, ${x - 22} ${y + 25} Z`).fill('#ff6a18').opacity(.68).attr({ filter: 'url(#coreGlow)' });
+    wave.animate(480).ease('>').dmove(direction * 48, -28).opacity(0);
+    setTimeout(() => group.remove(), 900);
+  }
+
+  function elementalClash(x, y, winnerColor, direction) {
+    burst(x, y, winnerColor, 1.55);
+    lightningStrike(x, y - 10, '#78f8ff');
+    flameBurst(x, y + 24, direction);
+    spinHalo(x, y, winnerColor);
+  }
+
   function runCountdown() {
     if (reducedMotion) { els.countdown.textContent = 'SHOOT!'; playCue('shoot'); return new Promise(resolve => setTimeout(() => { els.countdown.textContent = ''; resolve(); }, 180)); }
     const beats = ['3', '2', '1', 'SHOOT!'];
@@ -340,6 +440,8 @@
     els.battle.disabled = true; els.summon.disabled = true;
     await runCountdown();
     startSpinSound();
+    spinHalo(325, 365, state.player.color);
+    setTimeout(() => spinHalo(635, 365, state.enemy.color), 130);
     els.status.textContent = 'BATTLE IN PROGRESS';
     const playerScore = score(state.player), enemyScore = score(state.enemy);
     const rawScore = Math.max(100, Math.round(1000 + (playerScore - enemyScore) * 18));
@@ -365,7 +467,7 @@
         p.x = 325 + 132 * k; e.x = 635 - 132 * k;
         p.y = 365 - Math.sin(k * Math.PI) * 36; e.y = 365 + Math.sin(k * Math.PI) * 28;
       } else if (t < .46) {
-        if (!impactOne) { burst(480, 362, '#ffffff', 1.15); playCue('impact'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
+        if (!impactOne) { burst(480, 362, '#ffffff', 1.15); lightningStrike(480, 350); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
         const k = easeOut((t - .3) / .16);
         p.x = 457 - 92 * k; e.x = 503 + 96 * k; p.y = 329 + 54 * k; e.y = 393 - 45 * k;
         p.wobble = 4 * (1 - k); e.wobble = 5 * (1 - k);
@@ -379,7 +481,7 @@
         loser.y = 348 + Math.sin(k * Math.PI) * 65;
         loser.wobble = 3 + k * 5;
       } else {
-        if (!impactTwo) { burst(480, 360, playerWon ? state.player.color : state.enemy.color, 1.45); playCue('impact'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactTwo = true; }
+        if (!impactTwo) { elementalClash(480, 360, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1); playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 80); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 320); impactTwo = true; }
         const k = easeOut((t - .76) / .24);
         const winner = playerWon ? p : e, loser = playerWon ? e : p;
         winner.x = (playerWon ? 460 : 500) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
@@ -450,9 +552,9 @@
   function saveTop() {
     if (!state.player) return;
     const collection = readCollection();
-    if (collection.some(item => item.id === state.player.id)) { syncSaveButton(); return; }
+    if (collection.some(item => item.id === state.player.id)) { syncSaveButton(); openCollectionPicker(); return; }
     collection.unshift(state.player); writeStorage(storageKeys.collection, collection.slice(0, 5));
-    syncSaveButton(); renderCollection();
+    syncSaveButton(); renderCollection(); openCollectionPicker();
   }
 
   function equipTop(productId) {
@@ -480,7 +582,7 @@
     }
     els.collectionPickerList.innerHTML = products.map(top => {
       const equipped = state.player?.id === top.id;
-      return `<button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.id} · ${escapeHTML(top.type)}</small><strong>${escapeHTML(top.name)}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button>`;
+      return `<article class="battle-collection-choice-row"><button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.id} · ${escapeHTML(top.type)}</small><strong>${escapeHTML(top.name)}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button><a class="battle-collection-buy" href="${top.source}" target="_blank" rel="noopener">商品／購買資訊 ↗</a></article>`;
     }).join('');
     els.collectionPickerList.querySelectorAll('[data-picker-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.pickerEquip)));
   }
