@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-9">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-10">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -35,6 +35,23 @@ keywords:
       <p class="arena-kicker"><span></span> SPECFORMULA EXPERIMENT 01</p>
       <h1 id="arena-title" aria-label="戰鬥陀螺模擬器：旋核競技場"><span>旋核</span><br>競技場</h1>
       <p class="arena-lead">命運已經選好你的核心。<br>召喚它，然後讓它上場。</p>
+      <section class="player-profile" aria-labelledby="player-profile-title">
+        <div class="player-profile__heading">
+          <p>YOUR PILOT</p>
+          <h2 id="player-profile-title">玩家身份</h2>
+        </div>
+        <div class="avatar-picker" id="avatar-picker" aria-label="選擇戰隊頭像">
+          <button type="button" data-avatar="⚡" aria-label="閃電戰隊">⚡</button>
+          <button type="button" data-avatar="🔥" aria-label="烈焰戰隊">🔥</button>
+          <button type="button" data-avatar="🐉" aria-label="飛龍戰隊">🐉</button>
+          <button type="button" data-avatar="🦈" aria-label="幽鯊戰隊">🦈</button>
+          <button type="button" data-avatar="🦁" aria-label="獅王戰隊">🦁</button>
+          <button type="button" data-avatar="🌙" aria-label="月影戰隊">🌙</button>
+        </div>
+        <label class="pilot-name" for="pilot-name">玩家暱稱</label>
+        <input id="pilot-name" class="pilot-name-input" type="text" maxlength="10" autocomplete="nickname" placeholder="輸入暱稱，最多 10 個字">
+        <small>請使用暱稱，不要輸入真實姓名。</small>
+      </section>
       <section class="leaderboard-card" aria-labelledby="leaderboard-title">
         <div class="leaderboard-card__heading">
           <p>CHOOSE YOUR RIVAL</p>
@@ -98,24 +115,6 @@ keywords:
       </div>
       <div class="battle-collection-picker__list" id="battle-collection-picker-list"></div>
     </div>
-
-    <section class="player-profile" aria-labelledby="player-profile-title">
-      <div class="player-profile__heading">
-        <p>YOUR PILOT</p>
-        <h2 id="player-profile-title">選擇你的戰隊身份</h2>
-      </div>
-      <div class="avatar-picker" id="avatar-picker" aria-label="選擇戰隊頭像">
-        <button type="button" data-avatar="⚡" aria-label="閃電戰隊">⚡</button>
-        <button type="button" data-avatar="🔥" aria-label="烈焰戰隊">🔥</button>
-        <button type="button" data-avatar="🐉" aria-label="飛龍戰隊">🐉</button>
-        <button type="button" data-avatar="🦈" aria-label="幽鯊戰隊">🦈</button>
-        <button type="button" data-avatar="🦁" aria-label="獅王戰隊">🦁</button>
-        <button type="button" data-avatar="🌙" aria-label="月影戰隊">🌙</button>
-      </div>
-      <label class="pilot-name" for="pilot-name">戰隊暱稱</label>
-      <input id="pilot-name" class="pilot-name-input" type="text" maxlength="10" autocomplete="nickname" placeholder="輸入暱稱，最多 10 個字">
-      <small>請使用暱稱，不要輸入真實姓名。</small>
-    </section>
 
     </aside>
 

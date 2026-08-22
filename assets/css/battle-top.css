@@ -36,7 +36,8 @@
 .arena-copy h1 span { color:transparent; -webkit-text-stroke:1px var(--arena-cyan); }
 .arena-lead { color:#a9b9bd; font:500 13px/2 "Noto Serif TC",serif; }
 .arena-copy { min-width:0; }
-.arena-copy .leaderboard-card { margin-top:30px; }
+.arena-copy .player-profile { margin-top:26px; text-align:left; }
+.arena-copy .leaderboard-card { margin-top:12px; }
 .arena-copy .leaderboard-card__heading { display:grid; justify-content:stretch; gap:7px; }
 .arena-copy .leaderboard-card__heading h2 { white-space:nowrap; }
 
@@ -213,6 +214,7 @@
   .arena-hero { padding-top:110px; grid-template-columns:1fr; }
   .arena-copy { text-align:center; }
   .arena-copy .leaderboard-card { max-width:560px; margin:28px auto 0; text-align:left; }
+  .arena-copy .player-profile { max-width:560px; margin:28px auto 0; }
   .arena-copy h1 { font-size:clamp(60px,18vw,100px); }
   .arena-lead { margin-bottom:0; }
   .arena-stage { min-height:300px; }
