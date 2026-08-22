@@ -25,7 +25,7 @@
     { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -45,6 +45,7 @@
     collectionPickerClose: document.querySelector('#collection-picker-close'), collectionPickerList: document.querySelector('#battle-collection-picker-list'),
     countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
+    playerIdentity: document.querySelector('#player-identity-badge'), playerIdentityAvatar: document.querySelector('#player-identity-avatar'), playerIdentityName: document.querySelector('#player-identity-name'),
     productImage: document.querySelector('#top-product-image'), productLink: document.querySelector('#top-product-link'), parts: document.querySelector('#top-parts'),
     opponentBadge: document.querySelector('#opponent-badge'), opponentAvatar: document.querySelector('#opponent-avatar'), opponentName: document.querySelector('#opponent-name'), opponentTop: document.querySelector('#opponent-top'), opponentScore: document.querySelector('#opponent-score'), opponentImage: document.querySelector('#opponent-product-image'),
     opponentDetail: document.querySelector('#opponent-detail-modal'), opponentDetailClose: document.querySelector('#opponent-detail-close'), opponentDetailAvatar: document.querySelector('#opponent-detail-avatar'), opponentDetailPlayer: document.querySelector('#opponent-detail-player'), opponentDetailScore: document.querySelector('#opponent-detail-score'), opponentDetailImage: document.querySelector('#opponent-detail-image'), opponentDetailName: document.querySelector('#opponent-detail-name'), opponentDetailType: document.querySelector('#opponent-detail-type'), opponentDetailStats: document.querySelector('#opponent-detail-stats')
@@ -731,6 +732,11 @@
   function initProfile() {
     const profile = readProfile();
     els.pilotName.value = profile.name;
+    const paintIdentity = () => {
+      const current = readProfile();
+      paintAvatar(els.playerIdentityAvatar, current.avatar);
+      els.playerIdentityName.textContent = current.name || '旋核手';
+    };
     const paint = () => {
       const selected = readProfile().avatar;
       els.avatarPicker.querySelectorAll('[data-avatar]').forEach(button => {
@@ -741,15 +747,17 @@
     };
     els.avatarPicker.querySelectorAll('[data-avatar]').forEach(button => button.addEventListener('click', () => {
       writeStorage(storageKeys.profile, { ...readProfile(), avatar: button.dataset.avatar });
-      paint(); renderLeaderboard();
+      paint(); paintIdentity(); renderLeaderboard();
     }));
     els.pilotName.addEventListener('input', () => {
       writeStorage(storageKeys.profile, { ...readProfile(), name: els.pilotName.value.trim().slice(0, 10) });
+      paintIdentity();
     });
-    paint();
+    paint(); paintIdentity();
   }
 
   function openJoinSetup() {
+    state.setupReturnPhase = els.game.dataset.phase === 'game' ? 'game' : 'intro';
     els.game.dataset.phase = 'setup';
     els.joinModal.hidden = false;
     renderJoinRivals();
@@ -758,8 +766,8 @@
 
   function closeJoinSetup() {
     els.joinModal.hidden = true;
-    els.game.dataset.phase = 'intro';
-    els.joinButton?.focus();
+    els.game.dataset.phase = state.setupReturnPhase;
+    (state.setupReturnPhase === 'game' ? els.playerIdentity : els.joinButton)?.focus();
   }
 
   function enterArena() {
@@ -981,6 +989,7 @@
   els.battle?.addEventListener('click', () => { state.sound = true; getAudio(); battle(); });
   els.resultRetry?.addEventListener('click', returnToArena);
   els.joinButton?.addEventListener('click', openJoinSetup);
+  els.playerIdentity?.addEventListener('click', openJoinSetup);
   els.joinClose?.addEventListener('click', closeJoinSetup);
   els.enterArena?.addEventListener('click', enterArena);
   els.changeRival?.addEventListener('click', openLeaderboard);

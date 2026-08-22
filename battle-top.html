@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-38">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-39">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -120,6 +120,11 @@ keywords:
 
     <aside class="arena-side">
     <article class="core-card" id="core-card" aria-live="polite">
+      <button class="player-identity-badge" id="player-identity-badge" type="button" aria-label="修改我的頭像和暱稱">
+        <span class="player-identity-badge__avatar" id="player-identity-avatar"><img src="{{ '/assets/images/battle-top/avatars/nova.svg' | relative_url }}" alt=""></span>
+        <span class="player-identity-badge__copy"><small>YOUR PILOT</small><strong id="player-identity-name">旋核手</strong></span>
+        <span class="player-identity-badge__edit" aria-hidden="true">✎</span>
+      </button>
       <div class="core-card__topline">
         <span id="top-rarity">BX SERIES</span>
         <span id="top-code">PRODUCT // ----</span>
@@ -226,4 +231,4 @@ keywords:
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-41" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-42" defer></script>
