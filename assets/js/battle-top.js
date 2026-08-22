@@ -14,7 +14,7 @@
     { id: 'BX-04', name: 'Knight Shield 3-80N', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX04_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx04.html', parts: 'Knight Shield · 3-80 · Needle', skill: '吸收衝擊的盾形刃與 Needle 軸尖，專門抵抗場外擊飛。', color: '#4c63c7', accent: '#e9b339', stats: { attack: 45, defense: 112, stamina: 63, burst: 30, xdash: 10 }, teeth: 3, core: 6 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -197,6 +197,38 @@
     return s.attack * .28 + s.defense * .22 + s.stamina * .25 + s.burst * .13 + s.xdash * .12 + Math.random() * 22;
   }
 
+  function clamp(min, max, value) { return Math.max(min, Math.min(max, value)); }
+
+  function ringOutResistance(top) {
+    return top.stats.defense * .85 + top.stats.stamina * .1 + top.stats.burst * .05;
+  }
+
+  function ringOutChance(attacker, defender) {
+    const impactForce = attacker.stats.attack * .55 + attacker.stats.xdash * .3 + attacker.stats.burst * .15;
+    return clamp(.06, .76, .26 + (impactForce - ringOutResistance(defender)) / 150);
+  }
+
+  function simulateKnockoutBattle(player, enemy) {
+    const playerRingOutChance = ringOutChance(enemy, player);
+    const enemyRingOutChance = ringOutChance(player, enemy);
+    let playerWon = false, decided = false, decidingImpact = 3;
+    for (let impact = 1; impact <= 3; impact += 1) {
+      const enemyOutMargin = enemyRingOutChance - Math.random();
+      const playerOutMargin = playerRingOutChance - Math.random();
+      if (enemyOutMargin > 0 || playerOutMargin > 0) {
+        playerWon = enemyOutMargin > playerOutMargin;
+        decided = true; decidingImpact = impact; break;
+      }
+    }
+    if (!decided) {
+      const playerResistance = ringOutResistance(player);
+      const enemyResistance = ringOutResistance(enemy);
+      const playerEnduranceChance = clamp(.15, .85, playerResistance / (playerResistance + enemyResistance));
+      playerWon = Math.random() < playerEnduranceChance;
+    }
+    return { playerWon, playerRingOutChance, enemyRingOutChance, decidingImpact };
+  }
+
   function polarPoints(count, outer, inner) {
     const points = [];
     for (let i = 0; i < count * 2; i += 1) {
@@ -214,7 +246,10 @@
     const shadow = stage.ellipse(160, 32).center(0, 60).fill('#000').opacity(.48);
     shadow.attr({ filter: 'blur(8px)' });
 
-    spin.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .62 });
+    spin.circle(178).center(0, 0).fill(top.color).opacity(.1).attr({ filter: 'url(#speedGlow)' });
+    spin.circle(154).center(0, 0).fill('none').stroke({ color: top.color, width: 5, opacity: .48, dasharray: '36 12' }).attr({ filter: 'url(#coreGlow)' });
+    spin.circle(137).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 2, opacity: .42, dasharray: '8 18' });
+    spin.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .78 }).attr({ filter: 'url(#rotorShine)' });
     spin.polygon(polarPoints(top.teeth, 67, 48)).fill('#0c1720').stroke({ color: top.accent, width: 5, opacity: .88 }).rotate(180 / top.teeth);
     for (let i = 0; i < top.teeth; i += 1) {
       const angle = (360 / top.teeth) * i;
@@ -228,6 +263,7 @@
     spin.circle(8).center(0, 0).fill('#efffff').attr({ filter: 'url(#coreGlow)' });
     spin.circle(120).center(0, 0).fill('none').stroke({ color: top.color, width: 2, opacity: .25, dasharray: '4 8' });
 
+    stage.attr({ style: `filter:drop-shadow(0 0 8px ${top.color}) drop-shadow(0 0 20px ${top.color}88)` });
     return { stage, tilt, spin, shadow, top, x: 0, y: 0, rotation: 0, speed: 0, wobble: 0 };
   }
 
@@ -241,6 +277,8 @@
     const defs = draw.defs();
     defs.node.innerHTML += `
       <filter id="coreGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="speedGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="16"/></filter>
+      <filter id="rotorShine" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="soft"/><feMerge><feMergeNode in="soft"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       <filter id="arenaBlur"><feGaussianBlur stdDeviation="12"/></filter>
       <radialGradient id="floorGlow"><stop offset="0" stop-color="#28f4e8" stop-opacity=".16"/><stop offset=".5" stop-color="#123343" stop-opacity=".12"/><stop offset="1" stop-color="#020407" stop-opacity="0"/></radialGradient>`;
 
@@ -289,8 +327,8 @@
     const tick = now => {
       const dt = Math.min(32, now - previous); previous = now;
       if (!state.battling && state.scene) {
-        state.scene.player.rotation += .055 * dt;
-        state.scene.enemy.rotation -= .05 * dt;
+        state.scene.player.rotation += .22 * dt;
+        state.scene.enemy.rotation -= .2 * dt;
         state.scene.player.wobble *= .96;
         state.scene.enemy.wobble *= .96;
         renderPose();
@@ -324,6 +362,18 @@
       ring.animate(720 + index * 130).ease('>').rotate(index % 2 ? -210 : 240, x, y).size(220 + index * 38, 220 + index * 38).center(x, y).opacity(0);
     });
     setTimeout(() => group.remove(), 1200);
+  }
+
+  function defenseShield(actor) {
+    if (!state.scene || reducedMotion || !actor) return;
+    const group = state.scene.impact.group().attr({ id: `fx-defense-${makeId()}` });
+    const strength = clamp(.45, 1, actor.top.stats.defense / 120);
+    const shield = group.polygon(polarPoints(8, 105 + strength * 28, 96 + strength * 24)).center(actor.x, actor.y)
+      .fill(actor.top.color).opacity(.12).stroke({ color: '#bffff8', width: 5, opacity: .9 }).attr({ filter: 'url(#coreGlow)' });
+    const ring = group.circle(185 + strength * 45).center(actor.x, actor.y).fill('none').stroke({ color: actor.top.color, width: 7, opacity: .72, dasharray: '24 11' });
+    shield.transform({ scale: .55, origin: [actor.x, actor.y] }).animate(150).ease('>').opacity(.7).transform({ scale: 1.08, origin: [actor.x, actor.y] }).animate(420).ease('>').opacity(0).transform({ scale: 1.28, origin: [actor.x, actor.y] });
+    ring.animate(620).ease('>').rotate(230, actor.x, actor.y).size(280, 280).center(actor.x, actor.y).opacity(0);
+    setTimeout(() => group.remove(), 760);
   }
 
   function lightningStrike(x, y, color = '#82f7ff') {
@@ -427,7 +477,10 @@
   function hideResult() { els.result.classList.remove('is-visible'); }
   function showResult(playerWon) {
     els.resultTitle.textContent = playerWon ? `擊破 ${state.opponent.name}` : `${state.opponent.name} 守住紀錄`;
-    els.resultCopy.textContent = playerWon ? '你的核心撐過了最後一次撞擊。' : '重新召喚核心，再來挑戰這筆紀錄。';
+    const model = state.lastBattleModel;
+    const playerRisk = model ? Math.round(model.playerRingOutChance * 100) : 0;
+    const enemyRisk = model ? Math.round(model.enemyRingOutChance * 100) : 0;
+    els.resultCopy.textContent = `${playerWon ? '對手被撞出場！' : '你被撞出場！'} 本場擊飛風險：你 ${playerRisk}% ／ 對手 ${enemyRisk}%。`;
     els.result.classList.add('is-visible');
   }
 
@@ -448,10 +501,11 @@
     spinHalo(325, 365, state.player.color);
     setTimeout(() => spinHalo(635, 365, state.enemy.color), 130);
     els.status.textContent = 'BATTLE IN PROGRESS';
-    const playerScore = score(state.player), enemyScore = score(state.enemy);
-    const rawScore = Math.max(100, Math.round(1000 + (playerScore - enemyScore) * 18));
-    const playerWon = rawScore >= Number(state.opponent.score || 1000);
-    const recordScore = rawScore + (playerWon ? 150 : 0);
+    const model = simulateKnockoutBattle(state.player, state.enemy);
+    state.lastBattleModel = model;
+    const playerWon = model.playerWon;
+    const survivalEdge = model.enemyRingOutChance - model.playerRingOutChance;
+    const recordScore = Math.max(100, Math.round(1000 + survivalEdge * 900 + (playerWon ? 180 : 0) + Math.random() * 45));
     if (reducedMotion) {
       burst(480, 365, playerWon ? state.player.color : state.enemy.color, 1.1);
       setTimeout(() => finishBattle(playerWon, recordScore), 180);
@@ -466,13 +520,13 @@
     const frame = now => {
       const t = Math.min(1, (now - start) / duration);
       const p = state.scene.player, e = state.scene.enemy;
-      p.rotation += 22 + t * 10; e.rotation -= 20 + t * 9;
+      p.rotation += 42 + t * 18; e.rotation -= 39 + t * 17;
       if (t < .3) {
         const k = easeInOut(t / .3);
         p.x = 325 + 132 * k; e.x = 635 - 132 * k;
         p.y = 365 - Math.sin(k * Math.PI) * 36; e.y = 365 + Math.sin(k * Math.PI) * 28;
       } else if (t < .46) {
-        if (!impactOne) { burst(480, 362, '#ffffff', 1.15); lightningStrike(480, 350); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
+        if (!impactOne) { burst(480, 362, '#ffffff', 1.15); lightningStrike(480, 350); defenseShield(state.player.stats.defense >= state.enemy.stats.defense ? p : e); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
         const k = easeOut((t - .3) / .16);
         p.x = 457 - 92 * k; e.x = 503 + 96 * k; p.y = 329 + 54 * k; e.y = 393 - 45 * k;
         p.wobble = 4 * (1 - k); e.wobble = 5 * (1 - k);
@@ -492,10 +546,10 @@
         winner.x = (playerWon ? 460 : 500) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
         winner.y = 365 + Math.sin(k * Math.PI) * 18;
         const loserStartX = playerWon ? 527 : 433;
-        loser.x = loserStartX + (playerWon ? 1 : -1) * 150 * k;
-        loser.y = 365 - 72 * Math.sin(k * Math.PI) - 18 * k;
-        loser.wobble = 10 + k * 8;
-        loser.stage.opacity(Math.max(.32, 1 - k * .68));
+        loser.x = loserStartX + (playerWon ? 1 : -1) * 365 * k;
+        loser.y = 365 - 155 * Math.sin(k * Math.PI) + 54 * k;
+        loser.wobble = 10 + k * 14;
+        loser.stage.opacity(Math.max(.04, 1 - k * .96));
       }
       renderPose();
       if (t < 1) requestAnimationFrame(frame); else finishBattle(playerWon, recordScore);
@@ -684,7 +738,9 @@
     scores.sort((a, b) => b.score - a.score);
     writeStorage(storageKeys.scores, scores.slice(0, 20));
     renderLeaderboard();
-    els.resultCopy.textContent = `${won ? '勝利' : '挑戰完成'} · 本場 ${points.toLocaleString('zh-TW')} 分，紀錄已送上排行榜。`;
+    const model = state.lastBattleModel;
+    const riskCopy = model ? `擊飛風險：你 ${Math.round(model.playerRingOutChance * 100)}% ／ 對手 ${Math.round(model.enemyRingOutChance * 100)}%。` : '';
+    els.resultCopy.textContent = `${won ? '對手被撞出場！' : '你被撞出場！'} ${riskCopy} 本場 ${points.toLocaleString('zh-TW')} 分。`;
     if (scoreEndpoint) {
       fetch(scoreEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) })
         .then(response => response.ok ? response.json() : Promise.reject(new Error('score request failed')))
