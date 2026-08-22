@@ -774,7 +774,7 @@
     if (!els.save || !state.player) return;
     const isSaved = readCollection().some(item => item.id === state.player.id);
     els.save.disabled = false;
-    els.save.textContent = isSaved ? '已收藏 ✓' : '收藏這顆';
+    els.save.textContent = isSaved ? '已經有了 ✓' : '我要這顆';
     els.save.classList.toggle('is-saved', isSaved);
   }
 
@@ -806,7 +806,7 @@
       .map(saved => findProduct(saved.name) || productCatalog.find(item => item.id === saved.id))
       .filter(Boolean);
     if (!products.length) {
-      els.collectionPickerList.innerHTML = '<p class="battle-collection-picker__empty">還沒有收藏。先關閉這裡，再按「收藏這顆」。</p>';
+      els.collectionPickerList.innerHTML = '<p class="battle-collection-picker__empty">還沒有陀螺。先關閉這裡，再按「我要這顆」。</p>';
       return;
     }
     els.collectionPickerList.innerHTML = products.map(top => {
