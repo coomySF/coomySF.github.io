@@ -3,7 +3,7 @@
 
   const SVG_NS_READY = typeof window.SVG === 'function';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', sound: 'coomy-top-sound-v1' };
+  const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
 
@@ -14,7 +14,7 @@
     { id: 'BX-04', name: 'Knight Shield 3-80N', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX04_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx04.html', parts: 'Knight Shield · 3-80 · Needle', skill: '吸收衝擊的盾形刃與 Needle 軸尖，專門抵抗場外擊飛。', color: '#4c63c7', accent: '#e9b339', stats: { attack: 45, defense: 112, stamina: 63, burst: 30, xdash: 10 }, teeth: 3, core: 6 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, draw: null, scene: null, battling: false, raf: 0, sound: readStorage('coomy-top-sound-v1', false), audio: null, spinAudio: null };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null };
   const els = {
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
@@ -26,7 +26,7 @@
     collection: document.querySelector('#core-collection'), leaderboard: document.querySelector('#leaderboard-list'),
     collectionPickerButton: document.querySelector('#collection-picker-button'), collectionPicker: document.querySelector('#battle-collection-picker'),
     collectionPickerClose: document.querySelector('#collection-picker-close'), collectionPickerList: document.querySelector('#battle-collection-picker-list'),
-    soundToggle: document.querySelector('#sound-toggle'), countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
+    countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
     productImage: document.querySelector('#top-product-image'), productLink: document.querySelector('#top-product-link'), parts: document.querySelector('#top-parts'),
     opponentAvatar: document.querySelector('#opponent-avatar'), opponentName: document.querySelector('#opponent-name'), opponentTop: document.querySelector('#opponent-top'), opponentScore: document.querySelector('#opponent-score'), opponentImage: document.querySelector('#opponent-product-image')
@@ -116,12 +116,6 @@
     oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(105, now); oscillator.frequency.linearRampToValueAtTime(72, now + 5.2);
     gain.gain.setValueAtTime(.018, now); gain.gain.linearRampToValueAtTime(.008, now + 5.2);
     oscillator.connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(now + 5.25); state.spinAudio = oscillator;
-  }
-
-  function paintSoundToggle() {
-    els.soundToggle.textContent = state.sound ? '🔊 SOUND ON' : '🔇 SOUND OFF';
-    els.soundToggle.setAttribute('aria-pressed', state.sound ? 'true' : 'false');
-    els.soundToggle.setAttribute('aria-label', state.sound ? '關閉遊戲音效' : '開啟遊戲音效');
   }
 
   function initTabletActionDock() {
@@ -405,7 +399,7 @@
   function finishBattle(playerWon, recordScore) {
     state.battling = false; els.status.textContent = 'BATTLE COMPLETE';
     els.battle.disabled = false; els.summon.disabled = false;
-    els.battle.textContent = '⚡ 再戰一場'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
+    els.battle.textContent = 'START'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
     submitScore(recordScore, playerWon);
     if (state.scene) {
       const winner = playerWon ? state.scene.player : state.scene.enemy;
@@ -629,13 +623,12 @@
   }
 
   els.summon?.addEventListener('click', summon);
-  els.battle?.addEventListener('click', battle);
+  els.battle?.addEventListener('click', () => { state.sound = true; getAudio(); battle(); });
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
-  els.soundToggle?.addEventListener('click', () => { state.sound = !state.sound; writeStorage(storageKeys.sound, state.sound); paintSoundToggle(); playCue('tap'); });
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
-  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '🎲 換一顆新陀螺！'; paintSoundToggle();
+  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '🎲 換一顆新陀螺！';
   els.status.textContent = 'CORE SYNCHRONIZED';
 })();
