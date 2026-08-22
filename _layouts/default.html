@@ -11,6 +11,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% seo %}
+    {% if page.keywords %}
+    <meta name="keywords" content="{{ page.keywords | join: ', ' | escape }}">
+    {% endif %}
     <meta name="theme-color" content="#f2eee5">
     <link rel="icon" type="image/png" sizes="256x256" href="{{ '/assets/favicon.png' | relative_url }}">
     <link rel="apple-touch-icon" href="{{ '/assets/favicon.png' | relative_url }}">
@@ -39,6 +42,7 @@
       <nav aria-label="主要選單">
         <a href="{{ '/writing/' | relative_url }}">文章</a>
         <a href="{{ '/life/' | relative_url }}">我們的日子</a>
+        <a href="{{ '/battle-top/' | relative_url }}">戰鬥陀螺</a>
         <a href="{{ '/lab/' | relative_url }}">實驗室</a>
         <a href="{{ '/' | relative_url }}#about">關於</a>
         <a href="{{ '/feed.xml' | relative_url }}">RSS</a>

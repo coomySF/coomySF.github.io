@@ -1,13 +1,31 @@
 ---
 layout: default
-title: 旋核競技場
+title: 戰鬥陀螺模擬器｜旋核競技場
 permalink: /battle-top/
-description: 召喚真實商品戰鬥陀螺，建立收藏並挑戰魔王與玩家排行榜。
+description: 免費線上戰鬥陀螺模擬器。召喚真實 BEYBLADE X 商品陀螺、建立收藏，挑戰魔王與玩家排行榜。
 image: /assets/images/battle-top/og-arena.svg
 disable_tracking: true
+keywords:
+  - 戰鬥陀螺
+  - 戰鬥陀螺模擬器
+  - 戰鬥陀螺遊戲
+  - BEYBLADE X
+  - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-7">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-8">
 <script>document.documentElement.classList.add('battle-top-page');</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "戰鬥陀螺模擬器｜旋核競技場",
+  "description": "免費線上戰鬥陀螺模擬器，可召喚真實 BEYBLADE X 商品陀螺、建立收藏並挑戰排行榜。",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "isAccessibleForFree": true,
+  "url": "{{ '/battle-top/' | absolute_url }}"
+}
+</script>
 
 <div class="top-game" id="top-game">
   <div class="top-game__noise" aria-hidden="true"></div>
@@ -15,7 +33,7 @@ disable_tracking: true
   <section class="arena-hero" aria-labelledby="arena-title">
     <div class="arena-copy">
       <p class="arena-kicker"><span></span> SPECFORMULA EXPERIMENT 01</p>
-      <h1 id="arena-title"><span>旋核</span><br>競技場</h1>
+      <h1 id="arena-title" aria-label="戰鬥陀螺模擬器：旋核競技場"><span>旋核</span><br>競技場</h1>
       <p class="arena-lead">命運已經選好你的核心。<br>召喚它，然後讓它上場。</p>
     </div>
 
