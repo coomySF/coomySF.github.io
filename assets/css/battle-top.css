@@ -229,6 +229,7 @@
   .action-button,.wish-button { min-height:56px; padding:15px 18px; font-size:13px; }
   .action-button--battle { min-height:68px; font-size:16px; }
   .action-button--quiet { min-height:52px; }
+  .top-game.is-arena-active .core-card { clip-path:none; }
   .top-game.is-arena-active .core-actions { position:fixed; left:16px; right:16px; bottom:16px; z-index:40; grid-template-columns:1.35fr 1fr 1fr .72fr; gap:10px; margin:0; padding:10px; border:1px solid rgba(151,255,245,.28); background:rgba(3,7,10,.92); box-shadow:0 14px 50px #000,0 0 30px rgba(40,244,232,.1); backdrop-filter:blur(16px); }
   .top-game.is-arena-active .core-actions .action-button { min-width:0; }
   .battle-collection-picker__heading button { width:52px; height:52px; }
