@@ -281,22 +281,25 @@
     spin.circle(178).center(0, 0).fill(top.color).opacity(.1).attr({ filter: 'url(#speedGlow)' });
     spin.circle(166).center(0, 0).fill(top.color).opacity(.08).addClass('rotor-speed-disc');
     spin.circle(148).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 12, opacity: .08 }).addClass('rotor-speed-ring');
-    spin.circle(154).center(0, 0).fill('none').stroke({ color: top.color, width: 5, opacity: .48, dasharray: '36 12' }).attr({ filter: 'url(#coreGlow)' });
-    spin.circle(137).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 2, opacity: .42, dasharray: '8 18' });
-    spin.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .78 }).attr({ filter: 'url(#rotorShine)' });
-    spin.polygon(polarPoints(top.teeth, 67, 48)).fill('#0c1720').stroke({ color: top.accent, width: 5, opacity: .88 }).rotate(180 / top.teeth);
+    spin.circle(132).center(0, 0).fill('none').stroke({ color: top.accent, width: 16, opacity: .06, dasharray: '28 5' }).addClass('rotor-speed-band');
+    spin.circle(104).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 9, opacity: .05, dasharray: '14 4' }).addClass('rotor-speed-band').addClass('rotor-speed-band--inner');
+    const details = spin.group().addClass('rotor-details');
+    details.circle(154).center(0, 0).fill('none').stroke({ color: top.color, width: 5, opacity: .48, dasharray: '36 12' }).attr({ filter: 'url(#coreGlow)' });
+    details.circle(137).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 2, opacity: .42, dasharray: '8 18' });
+    details.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .78 }).attr({ filter: 'url(#rotorShine)' });
+    details.polygon(polarPoints(top.teeth, 67, 48)).fill('#0c1720').stroke({ color: top.accent, width: 5, opacity: .88 }).rotate(180 / top.teeth);
     for (let i = 0; i < top.teeth; i += 1) {
       const angle = (360 / top.teeth) * i;
-      const blade = spin.path('M 0 -56 C 15 -58 28 -49 36 -34 L 25 -27 C 17 -38 10 -42 0 -42 Z')
+      const blade = details.path('M 0 -56 C 15 -58 28 -49 36 -34 L 25 -27 C 17 -38 10 -42 0 -42 Z')
         .fill(top.accent).opacity(i % 2 ? .5 : .82).rotate(angle, 0, 0);
       blade.stroke({ color: '#fff', width: .7, opacity: .35 });
     }
-    spin.circle(82).center(0, 0).fill('#081016').stroke({ color: top.color, width: 4 });
-    spin.circle(56).center(0, 0).fill(top.color).opacity(.22).stroke({ color: top.accent, width: 2 });
-    spin.polygon(polarPoints(top.core, 24, 12)).fill(top.accent).stroke({ color: '#efffff', width: 1.5 });
-    spin.circle(8).center(0, 0).fill('#efffff').attr({ filter: 'url(#coreGlow)' });
-    spin.circle(11).center(43, -13).fill('#ffffff').opacity(.95).attr({ filter: 'url(#coreGlow)' });
-    spin.circle(120).center(0, 0).fill('none').stroke({ color: top.color, width: 2, opacity: .25, dasharray: '4 8' });
+    details.circle(82).center(0, 0).fill('#081016').stroke({ color: top.color, width: 4 });
+    details.circle(56).center(0, 0).fill(top.color).opacity(.22).stroke({ color: top.accent, width: 2 });
+    details.polygon(polarPoints(top.core, 24, 12)).fill(top.accent).stroke({ color: '#efffff', width: 1.5 });
+    details.circle(8).center(0, 0).fill('#efffff').attr({ filter: 'url(#coreGlow)' });
+    details.circle(11).center(43, -13).fill('#ffffff').opacity(.95).attr({ filter: 'url(#coreGlow)' });
+    details.circle(120).center(0, 0).fill('none').stroke({ color: top.color, width: 2, opacity: .25, dasharray: '4 8' });
 
     stage.attr({ style: `filter:drop-shadow(0 0 8px ${top.color}) drop-shadow(0 0 20px ${top.color}88)` });
     return { stage, tilt, spin, shadow, top, x: 0, y: 0, rotation: 0, speed: 0, wobble: 0 };
