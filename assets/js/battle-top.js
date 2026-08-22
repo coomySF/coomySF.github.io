@@ -329,8 +329,8 @@
     const tick = now => {
       const dt = Math.min(32, now - previous); previous = now;
       if (!state.battling && state.scene) {
-        state.scene.player.rotation = (state.scene.player.rotation + 3.6 * dt) % 360;
-        state.scene.enemy.rotation = (state.scene.enemy.rotation - 3.35 * dt) % 360;
+        state.scene.player.rotation = (state.scene.player.rotation + 7.1 * dt) % 360;
+        state.scene.enemy.rotation = (state.scene.enemy.rotation - 6.65 * dt) % 360;
         state.scene.player.wobble *= .96;
         state.scene.enemy.wobble *= .96;
         renderPose();
@@ -533,8 +533,8 @@
       const t = Math.min(1, (now - start) / duration);
       const dt = Math.min(32, now - previousFrame); previousFrame = now;
       const p = state.scene.player, e = state.scene.enemy;
-      p.rotation = (p.rotation + (7.2 + t * 1.8) * dt) % 360;
-      e.rotation = (e.rotation - (6.8 + t * 1.7) * dt) % 360;
+      p.rotation = (p.rotation + (14.2 + t * 3.2) * dt) % 360;
+      e.rotation = (e.rotation - (13.5 + t * 3) * dt) % 360;
       trailFrame += 1;
       if (trailFrame % 5 === 0) { speedTrail(p); speedTrail(e); }
       if (t < .3) {
