@@ -35,6 +35,7 @@
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
+    rankUp: document.querySelector('#battle-rank-up'), rankHeadline: document.querySelector('#battle-rank-headline'), rankChange: document.querySelector('#battle-rank-change'),
     resultRetry: document.querySelector('#battle-result-retry'), name: document.querySelector('#top-name'),
     className: document.querySelector('#top-class'), rarity: document.querySelector('#top-rarity'),
     code: document.querySelector('#top-code'), skill: document.querySelector('#top-skill'),
@@ -593,6 +594,7 @@
 
   function hideResult() { els.result.classList.remove('is-visible', 'is-win', 'is-lose'); }
   function showResult(playerWon) {
+    els.rankUp.hidden = true;
     els.result.classList.toggle('is-win', playerWon);
     els.result.classList.toggle('is-lose', !playerWon);
     els.resultOutcome.textContent = playerWon ? '🏆' : '💥';
@@ -889,7 +891,11 @@
 
   function submitScore(points, won) {
     const profile = readProfile();
-    const entry = { id: makeId(), name: profile.name || `旋核手${randomInt(100, 999)}`, avatar: avatarId(profile.avatar), top: state.player.name, score: points, won, createdAt: Date.now() };
+    const playerName = profile.name || `旋核手${randomInt(100, 999)}`;
+    const playerKey = `${playerName.trim().toLocaleLowerCase()}::${avatarId(profile.avatar)}`;
+    const previousRankIndex = state.ranked.findIndex(entry => `${String(entry.name || '').trim().toLocaleLowerCase()}::${entry.avatar}` === playerKey);
+    const previousRank = previousRankIndex >= 0 ? previousRankIndex + 1 : null;
+    const entry = { id: makeId(), name: playerName, avatar: avatarId(profile.avatar), top: state.player.name, score: points, won, createdAt: Date.now() };
     const scores = readStorage(storageKeys.scores, []);
     scores.push(entry);
     scores.sort((a, b) => b.score - a.score);
@@ -898,10 +904,33 @@
     if (scoreEndpoint) {
       fetch(scoreEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) })
         .then(response => response.ok ? response.json() : Promise.reject(new Error('score request failed')))
-        .then(data => { if (Array.isArray(data.scores)) renderLeaderboard(data.scores); })
+        .then(data => {
+          if (!Array.isArray(data.scores)) return;
+          renderLeaderboard(data.scores);
+          showRankProgress(previousRank, playerKey);
+        })
         .catch(() => { els.resultCopy.textContent += ' 全站排行榜暫時無法更新。'; });
     }
     if (window.dataLayer) window.dataLayer.push({ event: 'battle_top_score', battle_score: points, battle_won: won });
+  }
+
+  function showRankProgress(previousRank, playerKey) {
+    const currentRankIndex = state.ranked.findIndex(entry => `${String(entry.name || '').trim().toLocaleLowerCase()}::${entry.avatar}` === playerKey);
+    if (currentRankIndex < 0) return;
+    const currentRank = currentRankIndex + 1;
+    if (previousRank !== null && currentRank >= previousRank) return;
+    els.rankUp.hidden = false;
+    if (currentRank === 1) {
+      els.rankHeadline.textContent = '👑 新王者！';
+    } else if (previousRank === null) {
+      els.rankHeadline.textContent = '初次上榜！';
+    } else {
+      els.rankHeadline.textContent = `上升 ${previousRank - currentRank} 名！`;
+    }
+    els.rankChange.innerHTML = previousRank === null
+      ? `<b>NEW</b><i>→</i><b>#${currentRank}</b>`
+      : `<b>#${previousRank}</b><i>→</i><b>#${currentRank}</b>`;
+    playCue('win');
   }
 
   function renderLeaderboard(serverScores) {

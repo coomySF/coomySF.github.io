@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-40">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260823-41">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -114,6 +114,11 @@ keywords:
         <span class="battle-result__outcome" id="battle-result-outcome" aria-hidden="true">🏆</span>
         <strong id="battle-result-title">準備戰鬥</strong>
         <small id="battle-result-copy">召喚你的陀螺，挑戰競技場魔王。</small>
+        <div class="battle-rank-up" id="battle-rank-up" hidden>
+          <span>RANK UP</span>
+          <strong id="battle-rank-headline">排名上升！</strong>
+          <p id="battle-rank-change"></p>
+        </div>
         <button type="button" class="battle-result__retry" id="battle-result-retry">再戰一次</button>
       </div>
     </div>
@@ -231,4 +236,4 @@ keywords:
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-42" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-43" defer></script>
