@@ -209,34 +209,56 @@
 
   function clamp(min, max, value) { return Math.max(min, Math.min(max, value)); }
 
+  function typeEdge(attacker, defender) {
+    const winsAgainst = { '攻擊型': '持久型', '持久型': '防禦型', '防禦型': '攻擊型' };
+    if (winsAgainst[attacker.type] === defender.type) return .1;
+    if (winsAgainst[defender.type] === attacker.type) return -.1;
+    return 0;
+  }
+
   function ringOutResistance(top) {
-    return top.stats.defense * .85 + top.stats.stamina * .1 + top.stats.burst * .05;
+    return top.stats.defense * .7 + top.stats.stamina * .2 + top.stats.burst * .1;
   }
 
   function ringOutChance(attacker, defender) {
-    const impactForce = attacker.stats.attack * .55 + attacker.stats.xdash * .3 + attacker.stats.burst * .15;
-    return clamp(.06, .76, .26 + (impactForce - ringOutResistance(defender)) / 150);
+    const impactForce = (attacker.stats.attack * .62 + attacker.stats.xdash * .38) * (1 + typeEdge(attacker, defender));
+    return clamp(.04, .68, .19 + (impactForce - ringOutResistance(defender)) / 165);
+  }
+
+  function burstChance(attacker, defender) {
+    const burstPressure = (attacker.stats.attack * .48 + attacker.stats.xdash * .22) * (1 + typeEdge(attacker, defender) * .7);
+    const burstResistance = defender.stats.burst * .72 + defender.stats.defense * .18 + defender.stats.stamina * .1;
+    return clamp(.015, .34, .08 + (burstPressure - burstResistance) / 230);
+  }
+
+  function spinScore(top, rival) {
+    return (top.stats.stamina * .7 + top.stats.defense * .18 + top.stats.burst * .12) * (1 + typeEdge(top, rival) * .45);
   }
 
   function simulateKnockoutBattle(player, enemy) {
     const playerRingOutChance = ringOutChance(enemy, player);
     const enemyRingOutChance = ringOutChance(player, enemy);
-    let playerWon = false, decided = false, decidingImpact = 3;
+    const playerBurstChance = burstChance(enemy, player);
+    const enemyBurstChance = burstChance(player, enemy);
+    const playerSpin = spinScore(player, enemy);
+    const enemySpin = spinScore(enemy, player);
+    const playerWinChance = clamp(.12, .88, (1 + enemyRingOutChance + enemyBurstChance + playerSpin / 120) / (2 + playerRingOutChance + enemyRingOutChance + playerBurstChance + enemyBurstChance + (playerSpin + enemySpin) / 120));
+    let playerWon = false, outcome = 'spin', decidingImpact = 3;
     for (let impact = 1; impact <= 3; impact += 1) {
-      const enemyOutMargin = enemyRingOutChance - Math.random();
-      const playerOutMargin = playerRingOutChance - Math.random();
-      if (enemyOutMargin > 0 || playerOutMargin > 0) {
-        playerWon = enemyOutMargin > playerOutMargin;
-        decided = true; decidingImpact = impact; break;
+      const events = [
+        { margin: enemyRingOutChance - Math.random(), playerWon: true, outcome: 'over' },
+        { margin: playerRingOutChance - Math.random(), playerWon: false, outcome: 'over' },
+        { margin: enemyBurstChance - Math.random(), playerWon: true, outcome: 'burst' },
+        { margin: playerBurstChance - Math.random(), playerWon: false, outcome: 'burst' }
+      ].filter(event => event.margin > 0).sort((a, b) => b.margin - a.margin);
+      if (events.length) {
+        ({ playerWon, outcome } = events[0]);
+        decidingImpact = impact;
+        break;
       }
     }
-    if (!decided) {
-      const playerResistance = ringOutResistance(player);
-      const enemyResistance = ringOutResistance(enemy);
-      const playerEnduranceChance = clamp(.15, .85, playerResistance / (playerResistance + enemyResistance));
-      playerWon = Math.random() < playerEnduranceChance;
-    }
-    return { playerWon, playerRingOutChance, enemyRingOutChance, decidingImpact };
+    if (outcome === 'spin') playerWon = Math.random() < clamp(.12, .88, playerSpin / (playerSpin + enemySpin));
+    return { playerWon, outcome, playerRingOutChance, enemyRingOutChance, playerBurstChance, enemyBurstChance, playerWinChance, decidingImpact, typeEdge: typeEdge(player, enemy) };
   }
 
   function polarPoints(count, outer, inner) {
@@ -520,9 +542,13 @@
     els.resultOutcome.textContent = playerWon ? '🏆' : '💥';
     els.resultTitle.textContent = playerWon ? '你贏了！' : '你輸了！';
     const model = state.lastBattleModel;
-    const playerRisk = model ? Math.round(model.playerRingOutChance * 100) : 0;
-    const enemyRisk = model ? Math.round(model.enemyRingOutChance * 100) : 0;
-    els.resultCopy.textContent = `${playerWon ? '對手被撞出場！' : '你被撞出場！'} 本場擊飛風險：你 ${playerRisk}% ／ 對手 ${enemyRisk}%。`;
+    const outcomeCopy = model?.outcome === 'burst'
+      ? (playerWon ? '對手爆裂了！' : '你的陀螺爆裂了！')
+      : model?.outcome === 'spin'
+        ? (playerWon ? '對手先停止旋轉！' : '你的陀螺先停止旋轉！')
+        : (playerWon ? '對手被撞出場！' : '你被撞出場！');
+    const typeCopy = model?.typeEdge > 0 ? '你有類型優勢。' : model?.typeEdge < 0 ? '對手有類型優勢。' : '本場沒有類型加成。';
+    els.resultCopy.textContent = `${outcomeCopy} ${typeCopy} 六項因素均已換算。`;
     els.result.classList.add('is-visible');
     setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
   }
@@ -548,8 +574,7 @@
     const model = simulateKnockoutBattle(state.player, state.enemy);
     state.lastBattleModel = model;
     const playerWon = model.playerWon;
-    const survivalEdge = model.enemyRingOutChance - model.playerRingOutChance;
-    const recordScore = Math.max(100, Math.round(1000 + survivalEdge * 900 + (playerWon ? 180 : 0) + Math.random() * 45));
+    const recordScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 180 : 0) + Math.random() * 45));
     if (reducedMotion) {
       burst(480, 365, playerWon ? state.player.color : state.enemy.color, 1.1);
       setTimeout(() => finishBattle(playerWon, recordScore), 180);
@@ -564,8 +589,11 @@
       const t = Math.min(1, (now - start) / duration);
       const dt = Math.min(32, now - previousFrame); previousFrame = now;
       const p = state.scene.player, e = state.scene.enemy;
-      p.rotation = (p.rotation + (28.8 + t * 5.4) * dt) % 360;
-      e.rotation = (e.rotation - (27.4 + t * 5) * dt) % 360;
+      const stopFactor = model.outcome === 'spin' && t > .78 ? Math.max(.025, 1 - (t - .78) / .22) : 1;
+      const playerSpinFactor = !playerWon ? stopFactor : 1;
+      const enemySpinFactor = playerWon ? stopFactor : 1;
+      p.rotation = (p.rotation + (28.8 + t * 5.4) * dt * playerSpinFactor) % 360;
+      e.rotation = (e.rotation - (27.4 + t * 5) * dt * enemySpinFactor) % 360;
       trailFrame += 1;
       if (trailFrame % 3 === 0) { speedTrail(p); speedTrail(e); }
       if (t < .78) {
@@ -589,11 +617,23 @@
         const winner = playerWon ? p : e, loser = playerWon ? e : p;
         winner.x = (playerWon ? 460 : 500) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
         winner.y = 365 + Math.sin(k * Math.PI) * 18;
-        const loserStartX = playerWon ? 527 : 433;
-        loser.x = loserStartX + (playerWon ? 1 : -1) * 365 * k;
-        loser.y = 365 - 155 * Math.sin(k * Math.PI) + 54 * k;
-        loser.wobble = 10 + k * 14;
-        loser.stage.opacity(Math.max(.04, 1 - k * .96));
+        if (model.outcome === 'over') {
+          const loserStartX = playerWon ? 527 : 433;
+          loser.x = loserStartX + (playerWon ? 1 : -1) * 365 * k;
+          loser.y = 365 - 155 * Math.sin(k * Math.PI) + 54 * k;
+          loser.wobble = 10 + k * 14;
+          loser.stage.opacity(Math.max(.04, 1 - k * .96));
+        } else if (model.outcome === 'burst') {
+          loser.x = (playerWon ? 535 : 425) + Math.sin(k * Math.PI * 12) * 26 * (1 - k);
+          loser.y = 378 + Math.cos(k * Math.PI * 10) * 18 * (1 - k);
+          loser.wobble = 12 + k * 18;
+          loser.stage.opacity(Math.max(.08, 1 - k * .92));
+        } else {
+          loser.x = playerWon ? 555 : 405;
+          loser.y = 382 + Math.sin(k * Math.PI * 8) * 8 * (1 - k);
+          loser.wobble = 5 + k * 19;
+          loser.stage.opacity(1);
+        }
       }
       renderPose();
       if (t < 1) requestAnimationFrame(frame); else finishBattle(playerWon, recordScore);
@@ -792,9 +832,7 @@
     scores.sort((a, b) => b.score - a.score);
     writeStorage(storageKeys.scores, scores);
     renderLeaderboard();
-    const model = state.lastBattleModel;
-    const riskCopy = model ? `擊飛風險：你 ${Math.round(model.playerRingOutChance * 100)}% ／ 對手 ${Math.round(model.enemyRingOutChance * 100)}%。` : '';
-    els.resultCopy.textContent = `${won ? '對手被撞出場！' : '你被撞出場！'} ${riskCopy} 本場 ${points.toLocaleString('zh-TW')} 分。`;
+    els.resultCopy.textContent += ` 本場 ${points.toLocaleString('zh-TW')} 分。`;
     if (scoreEndpoint) {
       fetch(scoreEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) })
         .then(response => response.ok ? response.json() : Promise.reject(new Error('score request failed')))
