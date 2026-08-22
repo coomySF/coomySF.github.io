@@ -2,7 +2,7 @@
 layout: default
 title: 旋核競技場
 permalink: /battle-top/
-description: 隨機召喚你的原創戰鬥陀螺，帶著它進入霓虹競技場。
+description: 召喚真實商品戰鬥陀螺，建立收藏並挑戰魔王與玩家排行榜。
 image: /assets/images/battle-top/og-arena.svg
 disable_tracking: true
 ---
@@ -20,7 +20,9 @@ disable_tracking: true
     </div>
 
     <div class="arena-stage-wrap">
-      <div id="arena-stage" class="arena-stage" role="img" aria-label="兩顆原創戰鬥陀螺在霓虹競技場中對戰"></div>
+      <div id="arena-stage" class="arena-stage" role="img" aria-label="玩家與對手的兩顆戰鬥陀螺在霓虹競技場中對戰"></div>
+      <button class="sound-toggle" id="sound-toggle" type="button" aria-pressed="false" aria-label="開啟遊戲音效">🔇 SOUND OFF</button>
+      <div class="launch-countdown" id="launch-countdown" aria-live="assertive" aria-atomic="true"></div>
       <div class="arena-hud" aria-hidden="true">
         <span>ARENA // 01</span>
         <span id="arena-status">AWAITING CORE</span>
@@ -56,9 +58,9 @@ disable_tracking: true
       <p class="core-skill"><span>PRODUCT CHARACTER</span><strong id="top-skill">——</strong></p>
       <p class="product-source">數值為商品零件標示值加總，並非實測勝率。非官方同人模擬器；商品名稱與圖片 © TOMY。</p>
       <div class="core-actions">
-        <button class="action-button action-button--primary" id="summon-button" type="button">召喚我的陀螺</button>
+        <button class="action-button action-button--battle" id="battle-button" type="button" disabled>⚡ 發射！開始戰鬥</button>
+        <button class="action-button action-button--primary" id="summon-button" type="button">🎲 重新召喚</button>
         <button class="action-button action-button--collection" id="collection-picker-button" type="button">從收藏選擇出戰陀螺</button>
-        <button class="action-button" id="battle-button" type="button" disabled>進入戰鬥</button>
         <button class="action-button action-button--quiet" id="save-button" type="button" disabled>收藏這顆</button>
       </div>
     </article>
@@ -175,4 +177,4 @@ disable_tracking: true
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-12" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-13" defer></script>

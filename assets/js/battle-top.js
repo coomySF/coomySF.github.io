@@ -3,7 +3,7 @@
 
   const SVG_NS_READY = typeof window.SVG === 'function';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1' };
+  const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', sound: 'coomy-top-sound-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
 
@@ -14,7 +14,7 @@
     { id: 'BX-04', name: 'Knight Shield 3-80N', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX04_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx04.html', parts: 'Knight Shield · 3-80 · Needle', skill: '吸收衝擊的盾形刃與 Needle 軸尖，專門抵抗場外擊飛。', color: '#4c63c7', accent: '#e9b339', stats: { attack: 45, defense: 112, stamina: 63, burst: 30, xdash: 10 }, teeth: 3, core: 6 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, draw: null, scene: null, battling: false, raf: 0 };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, draw: null, scene: null, battling: false, raf: 0, sound: readStorage('coomy-top-sound-v1', false), audio: null, spinAudio: null };
   const els = {
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
@@ -26,6 +26,7 @@
     collection: document.querySelector('#core-collection'), leaderboard: document.querySelector('#leaderboard-list'),
     collectionPickerButton: document.querySelector('#collection-picker-button'), collectionPicker: document.querySelector('#battle-collection-picker'),
     collectionPickerClose: document.querySelector('#collection-picker-close'), collectionPickerList: document.querySelector('#battle-collection-picker-list'),
+    soundToggle: document.querySelector('#sound-toggle'), countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
     productImage: document.querySelector('#top-product-image'), productLink: document.querySelector('#top-product-link'), parts: document.querySelector('#top-parts'),
     opponentAvatar: document.querySelector('#opponent-avatar'), opponentName: document.querySelector('#opponent-name'), opponentTop: document.querySelector('#opponent-top'), opponentScore: document.querySelector('#opponent-score'), opponentImage: document.querySelector('#opponent-product-image')
@@ -34,6 +35,55 @@
   function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
   function pick(list) { return list[randomInt(0, list.length - 1)]; }
   function makeId() { return `${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 5)}`.toUpperCase(); }
+
+  function getAudio() {
+    if (!state.sound) return null;
+    if (!state.audio) state.audio = new (window.AudioContext || window.webkitAudioContext)();
+    if (state.audio.state === 'suspended') state.audio.resume();
+    return state.audio;
+  }
+
+  function tone(frequency, duration = .1, type = 'square', volume = .055, endFrequency = frequency) {
+    const audio = getAudio(); if (!audio) return;
+    const now = audio.currentTime, oscillator = audio.createOscillator(), gain = audio.createGain();
+    oscillator.type = type; oscillator.frequency.setValueAtTime(frequency, now); oscillator.frequency.exponentialRampToValueAtTime(Math.max(30, endFrequency), now + duration);
+    gain.gain.setValueAtTime(.0001, now); gain.gain.exponentialRampToValueAtTime(volume, now + .012); gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+    oscillator.connect(gain).connect(audio.destination); oscillator.start(now); oscillator.stop(now + duration + .02);
+  }
+
+  function noise(duration = .18, volume = .08) {
+    const audio = getAudio(); if (!audio) return;
+    const length = Math.floor(audio.sampleRate * duration), buffer = audio.createBuffer(1, length, audio.sampleRate), data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i += 1) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2);
+    const source = audio.createBufferSource(), filter = audio.createBiquadFilter(), gain = audio.createGain();
+    source.buffer = buffer; filter.type = 'bandpass'; filter.frequency.value = 820; gain.gain.value = volume;
+    source.connect(filter).connect(gain).connect(audio.destination); source.start();
+  }
+
+  function playCue(name) {
+    if (!state.sound) return;
+    if (name === 'tap') tone(520, .06, 'square', .035, 720);
+    if (name === 'summon') { tone(170, .32, 'sawtooth', .06, 880); setTimeout(() => tone(920, .16, 'square', .04, 1320), 170); }
+    if (name === 'count') tone(260, .1, 'square', .055, 220);
+    if (name === 'shoot') { noise(.22, .09); tone(110, .38, 'sawtooth', .08, 520); }
+    if (name === 'impact') { noise(.2, .13); tone(90, .2, 'square', .08, 42); }
+    if (name === 'win') { [523,659,784,1047].forEach((f,i) => setTimeout(() => tone(f,.22,'triangle',.055,f*1.04),i*105)); }
+    if (name === 'lose') { tone(240,.42,'sawtooth',.045,70); }
+  }
+
+  function startSpinSound() {
+    const audio = getAudio(); if (!audio) return;
+    const oscillator = audio.createOscillator(), gain = audio.createGain(), now = audio.currentTime;
+    oscillator.type = 'sawtooth'; oscillator.frequency.setValueAtTime(105, now); oscillator.frequency.linearRampToValueAtTime(72, now + 5.2);
+    gain.gain.setValueAtTime(.018, now); gain.gain.linearRampToValueAtTime(.008, now + 5.2);
+    oscillator.connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(now + 5.25); state.spinAudio = oscillator;
+  }
+
+  function paintSoundToggle() {
+    els.soundToggle.textContent = state.sound ? '🔊 SOUND ON' : '🔇 SOUND OFF';
+    els.soundToggle.setAttribute('aria-pressed', state.sound ? 'true' : 'false');
+    els.soundToggle.setAttribute('aria-label', state.sound ? '關閉遊戲音效' : '開啟遊戲音效');
+  }
 
   function cloneProduct(product) { return { ...product, stats: { ...product.stats } }; }
   function findProduct(name) { return productCatalog.find(product => product.name === name) || null; }
@@ -162,10 +212,29 @@
         .stroke({ color: i % 3 ? color : '#ffffff', width: randomInt(2, 5), opacity: .95, linecap: 'round' });
       spark.animate(randomInt(260, 520)).ease('>').plot(x, y, x + Math.cos(angle) * length, y + Math.sin(angle) * length).opacity(0).after(() => spark.remove());
     }
+    const flash = state.scene.impact.polygon(polarPoints(12, 55 * power, 10)).center(x, y).fill('#ffffff').opacity(.85);
+    flash.animate(180).ease('>').size(190 * power, 190 * power).center(x, y).rotate(35).opacity(0).after(() => flash.remove());
+  }
+
+  function runCountdown() {
+    if (reducedMotion) { els.countdown.textContent = 'SHOOT!'; playCue('shoot'); return new Promise(resolve => setTimeout(() => { els.countdown.textContent = ''; resolve(); }, 180)); }
+    const beats = ['3', '2', '1', 'SHOOT!'];
+    return new Promise(resolve => {
+      let index = 0;
+      const next = () => {
+        const beat = beats[index]; els.countdown.textContent = beat; els.countdown.classList.remove('is-beat'); void els.countdown.offsetWidth; els.countdown.classList.add('is-beat');
+        if (beat === 'SHOOT!') { playCue('shoot'); els.stageWrap.classList.add('is-launching'); } else playCue('count');
+        index += 1;
+        if (index < beats.length) setTimeout(next, beat === 'SHOOT!' ? 350 : 520);
+        else setTimeout(() => { els.countdown.textContent = ''; els.countdown.classList.remove('is-beat'); els.stageWrap.classList.remove('is-launching'); resolve(); }, 420);
+      };
+      next();
+    });
   }
 
   function summon() {
     if (state.battling) return;
+    playCue('summon');
     state.player = createTop(false);
     state.enemy = createTop(true);
     hideResult();
@@ -175,11 +244,11 @@
     const actor = state.scene.player;
     els.status.textContent = 'CORE SYNCHRONIZED';
     actor.stage.opacity(0).transform({ translateX: 480, translateY: 220, scale: .15 });
-    actor.stage.animate(reducedMotion ? 1 : 760).ease(window.SVG.easing.beziere(.16, 1, .3, 1))
+    actor.stage.animate(reducedMotion ? 1 : 760).ease('>')
       .opacity(1).transform({ translateX: 325, translateY: 365, scale: 1 });
     burst(325, 365, state.player.color, .8);
     els.battle.disabled = false; els.save.disabled = false;
-    els.summon.textContent = '重新召喚';
+    els.summon.textContent = '🎲 再換一顆';
   }
 
   function updateCard() {
@@ -206,7 +275,7 @@
     els.result.classList.add('is-visible');
   }
 
-  function battle() {
+  async function battle() {
     if (!state.player || state.battling) return;
     state.enemy = cloneProduct(findProduct(state.opponent.top) || state.enemy || productCatalog[1]);
     buildScene();
@@ -216,8 +285,11 @@
     state.scene.player.x = 325; state.scene.player.y = 365;
     state.scene.enemy.x = 635; state.scene.enemy.y = 365;
     renderPose();
-    state.battling = true; hideResult(); els.status.textContent = 'BATTLE IN PROGRESS';
+    state.battling = true; hideResult(); els.status.textContent = 'LAUNCH SEQUENCE';
     els.battle.disabled = true; els.summon.disabled = true;
+    await runCountdown();
+    startSpinSound();
+    els.status.textContent = 'BATTLE IN PROGRESS';
     const playerScore = score(state.player), enemyScore = score(state.enemy);
     const rawScore = Math.max(100, Math.round(1000 + (playerScore - enemyScore) * 18));
     const playerWon = rawScore >= Number(state.opponent.score || 1000);
@@ -242,7 +314,7 @@
         p.x = 325 + 132 * k; e.x = 635 - 132 * k;
         p.y = 365 - Math.sin(k * Math.PI) * 36; e.y = 365 + Math.sin(k * Math.PI) * 28;
       } else if (t < .46) {
-        if (!impactOne) { burst(480, 362, '#ffffff', 1.15); impactOne = true; }
+        if (!impactOne) { burst(480, 362, '#ffffff', 1.15); playCue('impact'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
         const k = easeOut((t - .3) / .16);
         p.x = 457 - 92 * k; e.x = 503 + 96 * k; p.y = 329 + 54 * k; e.y = 393 - 45 * k;
         p.wobble = 4 * (1 - k); e.wobble = 5 * (1 - k);
@@ -256,7 +328,7 @@
         loser.y = 348 + Math.sin(k * Math.PI) * 65;
         loser.wobble = 3 + k * 5;
       } else {
-        if (!impactTwo) { burst(480, 360, playerWon ? state.player.color : state.enemy.color, 1.45); impactTwo = true; }
+        if (!impactTwo) { burst(480, 360, playerWon ? state.player.color : state.enemy.color, 1.45); playCue('impact'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactTwo = true; }
         const k = easeOut((t - .76) / .24);
         const winner = playerWon ? p : e, loser = playerWon ? e : p;
         winner.x = (playerWon ? 460 : 500) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
@@ -276,7 +348,7 @@
   function finishBattle(playerWon, recordScore) {
     state.battling = false; els.status.textContent = 'BATTLE COMPLETE';
     els.battle.disabled = false; els.summon.disabled = false;
-    els.battle.textContent = '再次戰鬥'; showResult(playerWon);
+    els.battle.textContent = '⚡ 再戰一場'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
     submitScore(recordScore, playerWon);
     if (state.scene) {
       const winner = playerWon ? state.scene.player : state.scene.enemy;
@@ -318,7 +390,7 @@
 
   function syncSaveButton() {
     if (!els.save || !state.player) return;
-    const isSaved = readStorage(storageKeys.collection, []).some(item => item.id === state.player.id);
+    const isSaved = readCollection().some(item => item.id === state.player.id);
     els.save.disabled = false;
     els.save.textContent = isSaved ? '已收藏 ✓' : '收藏這顆';
     els.save.classList.toggle('is-saved', isSaved);
@@ -326,7 +398,7 @@
 
   function saveTop() {
     if (!state.player) return;
-    const collection = readStorage(storageKeys.collection, []);
+    const collection = readCollection();
     if (collection.some(item => item.id === state.player.id)) { syncSaveButton(); return; }
     collection.unshift(state.player); writeStorage(storageKeys.collection, collection.slice(0, 5));
     syncSaveButton(); renderCollection();
@@ -334,7 +406,7 @@
 
   function equipTop(productId) {
     if (state.battling) return;
-    const saved = readStorage(storageKeys.collection, []).find(item => item.id === productId);
+    const saved = readCollection().find(item => item.id === productId);
     const product = findProduct(saved?.name) || productCatalog.find(item => item.id === productId);
     if (!product) return;
     state.player = cloneProduct(product);
@@ -348,7 +420,7 @@
   }
 
   function renderBattleCollectionPicker() {
-    const products = readStorage(storageKeys.collection, [])
+    const products = readCollection()
       .map(saved => findProduct(saved.name) || productCatalog.find(item => item.id === saved.id))
       .filter(Boolean);
     if (!products.length) {
@@ -375,7 +447,7 @@
   }
 
   function renderCollection() {
-    const collection = readStorage(storageKeys.collection, []);
+    const collection = readCollection();
     if (!collection.length) { els.collection.innerHTML = '<p class="collection-empty">還沒有收藏。先回競技場召喚第一顆吧。</p>'; return; }
     els.collection.innerHTML = collection.map(saved => {
       const top = findProduct(saved.name) || saved;
@@ -384,13 +456,26 @@
     }).join('');
     els.collection.querySelectorAll('[data-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.equip)));
     els.collection.querySelectorAll('[data-remove]').forEach(button => button.addEventListener('click', () => {
-      const next = readStorage(storageKeys.collection, []).filter(top => top.id !== button.dataset.remove);
+      const next = readCollection().filter(top => top.id !== button.dataset.remove);
       writeStorage(storageKeys.collection, next); renderCollection(); syncSaveButton();
     }));
   }
 
   function scoreWithoutLuck(top) {
     const s = top.stats; return s.attack * .28 + s.defense * .22 + s.stamina * .25 + s.burst * .13 + s.xdash * .12;
+  }
+
+  function readCollection() {
+    const raw = readStorage(storageKeys.collection, []);
+    let migrated = false;
+    const normalized = raw.map((saved, index) => {
+      const current = findProduct(saved?.name) || productCatalog.find(product => product.id === saved?.id);
+      if (current) return cloneProduct(current);
+      migrated = true;
+      return cloneProduct(productCatalog[index % productCatalog.length]);
+    }).filter((product, index, list) => list.findIndex(item => item.id === product.id) === index).slice(0, 5);
+    if (migrated || normalized.length !== raw.length) writeStorage(storageKeys.collection, normalized);
+    return normalized;
   }
 
   function submitScore(points, won) {
@@ -491,8 +576,9 @@
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
+  els.soundToggle?.addEventListener('click', () => { state.sound = !state.sound; writeStorage(storageKeys.sound, state.sound); paintSoundToggle(); playCue('tap'); });
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
-  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '重新召喚';
+  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '🎲 再換一顆'; paintSoundToggle();
   els.status.textContent = 'CORE SYNCHRONIZED';
 })();
