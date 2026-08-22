@@ -248,6 +248,8 @@
     shadow.attr({ filter: 'blur(8px)' });
 
     spin.circle(178).center(0, 0).fill(top.color).opacity(.1).attr({ filter: 'url(#speedGlow)' });
+    spin.circle(166).center(0, 0).fill(top.color).opacity(.08).addClass('rotor-speed-disc');
+    spin.circle(148).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 12, opacity: .08 }).addClass('rotor-speed-ring');
     spin.circle(154).center(0, 0).fill('none').stroke({ color: top.color, width: 5, opacity: .48, dasharray: '36 12' }).attr({ filter: 'url(#coreGlow)' });
     spin.circle(137).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 2, opacity: .42, dasharray: '8 18' });
     spin.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .78 }).attr({ filter: 'url(#rotorShine)' });
@@ -329,8 +331,8 @@
     const tick = now => {
       const dt = Math.min(32, now - previous); previous = now;
       if (!state.battling && state.scene) {
-        state.scene.player.rotation = (state.scene.player.rotation + 7.1 * dt) % 360;
-        state.scene.enemy.rotation = (state.scene.enemy.rotation - 6.65 * dt) % 360;
+        state.scene.player.rotation = (state.scene.player.rotation + 10.8 * dt) % 360;
+        state.scene.enemy.rotation = (state.scene.enemy.rotation - 10.1 * dt) % 360;
         state.scene.player.wobble *= .96;
         state.scene.enemy.wobble *= .96;
         renderPose();
@@ -513,6 +515,7 @@
     spinHalo(325, 365, state.player.color);
     setTimeout(() => spinHalo(635, 365, state.enemy.color), 130);
     els.status.textContent = 'BATTLE IN PROGRESS';
+    els.stageWrap.classList.add('is-high-speed');
     const model = simulateKnockoutBattle(state.player, state.enemy);
     state.lastBattleModel = model;
     const playerWon = model.playerWon;
@@ -533,8 +536,8 @@
       const t = Math.min(1, (now - start) / duration);
       const dt = Math.min(32, now - previousFrame); previousFrame = now;
       const p = state.scene.player, e = state.scene.enemy;
-      p.rotation = (p.rotation + (14.2 + t * 3.2) * dt) % 360;
-      e.rotation = (e.rotation - (13.5 + t * 3) * dt) % 360;
+      p.rotation = (p.rotation + (28.8 + t * 5.4) * dt) % 360;
+      e.rotation = (e.rotation - (27.4 + t * 5) * dt) % 360;
       trailFrame += 1;
       if (trailFrame % 5 === 0) { speedTrail(p); speedTrail(e); }
       if (t < .3) {
@@ -578,6 +581,7 @@
 
   function finishBattle(playerWon, recordScore) {
     state.battling = false; els.status.textContent = 'BATTLE COMPLETE';
+    els.stageWrap.classList.remove('is-high-speed');
     els.battle.disabled = false; els.summon.disabled = false;
     els.battle.textContent = '戰鬥開始'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
     submitScore(recordScore, playerWon);
