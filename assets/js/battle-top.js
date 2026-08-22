@@ -605,8 +605,9 @@
       : model?.outcome === 'spin'
         ? (playerWon ? '對手先停止旋轉！' : '你的陀螺先停止旋轉！')
         : (playerWon ? '對手被撞出場！' : '你被撞出場！');
-    const typeCopy = model?.typeEdge > 0 ? '你有類型優勢。' : model?.typeEdge < 0 ? '對手有類型優勢。' : '本場沒有類型加成。';
-    els.resultCopy.textContent = `${outcomeCopy} ${typeCopy} 六項因素均已換算。`;
+    const typeCopy = model?.typeEdge > 0 ? '你克制對手！' : model?.typeEdge < 0 ? '對手克制你！' : '沒有類型克制。';
+    const rankBonusCopy = model?.rankBonus > 0 ? ` 擊敗高分對手，排名加成 +${model.rankBonus}！` : '';
+    els.resultCopy.textContent = `${outcomeCopy} ${typeCopy} 六項因素均已換算。${rankBonusCopy}`;
     els.result.classList.add('is-visible');
     setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
   }
@@ -632,7 +633,13 @@
     const model = simulateKnockoutBattle(state.player, state.enemy);
     state.lastBattleModel = model;
     const playerWon = model.playerWon;
-    const recordScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 180 : 0) + Math.random() * 45));
+    const modelScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 180 : 0) + Math.random() * 45));
+    const opponentScore = Number(state.opponent.score) || 1000;
+    const challengeScore = playerWon && !state.opponent.bot && !isCurrentPlayer(state.opponent)
+      ? Math.min(2999, opponentScore + randomInt(6, 18))
+      : 0;
+    const recordScore = Math.max(modelScore, challengeScore);
+    model.rankBonus = Math.max(0, recordScore - modelScore);
     if (reducedMotion) {
       burst(480, 365, playerWon ? state.player.color : state.enemy.color, 1.1);
       setTimeout(() => finishBattle(playerWon, recordScore), 180);
@@ -933,6 +940,15 @@
     playCue('win');
   }
 
+  function identityKey(name, avatar) {
+    return `${String(name || '').trim().toLocaleLowerCase()}::${avatarId(avatar)}`;
+  }
+
+  function isCurrentPlayer(entry) {
+    const profile = readProfile();
+    return Boolean(profile.name) && identityKey(entry?.name, entry?.avatar) === identityKey(profile.name, profile.avatar);
+  }
+
   function renderLeaderboard(serverScores) {
     if (!els.leaderboard) return;
     const bot = { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true };
@@ -940,7 +956,10 @@
     const scores = state.globalScores;
     const ranked = [bot, ...scores].sort((a, b) => b.score - a.score);
     state.ranked = ranked;
-    els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${avatarMarkup(entry.avatar)}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">PK</button></li>`).join('');
+    els.leaderboard.innerHTML = ranked.map((entry, index) => {
+      const ownRecord = isCurrentPlayer(entry);
+      return `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}${ownRecord ? ' is-player' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${avatarMarkup(entry.avatar)}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}" ${ownRecord ? 'disabled' : ''}>${ownRecord ? '你' : 'PK'}</button></li>`;
+    }).join('');
     els.leaderboard.querySelectorAll('[data-challenge]').forEach(button => button.addEventListener('click', () => {
       setOpponent(ranked[Number(button.dataset.challenge)]);
       closeLeaderboard();
@@ -957,7 +976,7 @@
   }
 
   function setOpponent(entry) {
-    if (!entry || state.battling) return;
+    if (!entry || state.battling || isCurrentPlayer(entry)) return;
     state.opponent = { ...entry, score: Number(entry.score) || 1000 };
     state.enemy = cloneProduct(findProduct(entry.top) || productCatalog[1]);
     paintAvatar(els.opponentAvatar, entry.avatar);

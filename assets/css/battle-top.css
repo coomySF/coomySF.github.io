@@ -243,6 +243,7 @@
 .leaderboard-list small { margin-top:3px; font-size:8px; }
 .leaderboard-list b { align-self:start; color:var(--arena-lime); font-size:17px; text-align:right; }
 .leaderboard-list button { grid-column:3; align-self:end; min-width:82px; min-height:42px; padding:8px; border:2px solid var(--arena-cyan); background:var(--arena-cyan); color:#04100f; font:1000 18px/1 system-ui,sans-serif; letter-spacing:.04em; }
+.leaderboard-list button:disabled { border-color:#52666a; background:#162328; color:#91a3a7; cursor:default; }
 .leaderboard-list .is-target button { border-color:var(--arena-red); background:var(--arena-red); color:#fff; }
 .leaderboard-list .is-bot strong::after { font-size:8px; }
 .leaderboard-note { display:none; }
