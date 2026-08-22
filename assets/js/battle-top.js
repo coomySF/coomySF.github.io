@@ -10,6 +10,12 @@
   const avatarAssets = new Set([...avatarNames].map(name => `/assets/images/battle-top/avatars/${name}.svg`));
   const legacyAvatarMap = { '⚡': 'nova', '🔥': 'blaze', '🐉': 'kai', '🦈': 'skye', '🦁': 'leo', '🌙': 'luna' };
 
+  function trackEvent(name, parameters = {}) {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function gtag() { window.dataLayer.push(arguments); };
+    window.gtag('event', name, { send_to: 'G-6MLTVNFYPV', ...parameters });
+  }
+
   const productCatalog = [
     { id: 'BX-01', name: 'Dran Sword 3-60F', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX01_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx01.html', parts: 'Dran Sword · 3-60 · Flat', skill: '高衝刺力的 Flat 軸尖，鎖定 Xtreme Dash 發動強攻。', color: '#258dff', accent: '#ff334f', stats: { attack: 110, defense: 49, stamina: 36, burst: 80, xdash: 35 }, teeth: 3, core: 3 },
     { id: 'BX-02', name: 'Hells Scythe 4-60T', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx02.html', parts: 'Hells Scythe · 4-60 · Taper', skill: '攻防兼備的鐮刀刃與 Taper 軸尖，能依碰撞改變節奏。', color: '#e33a32', accent: '#ffb128', stats: { attack: 76, defense: 68, stamina: 61, burst: 80, xdash: 25 }, teeth: 4, core: 4 },
@@ -552,6 +558,7 @@
     burst(325, 365, state.player.color, .8);
     setTimeout(() => card?.classList.remove('is-summoning'), 760);
     els.battle.disabled = false; els.save.disabled = false;
+    trackEvent('battle_top_summon', { top_id: state.player.id, top_name: state.player.name, top_type: state.player.type });
     els.summon.textContent = '抽陀螺';
   }
 
@@ -658,7 +665,10 @@
       els.resultShareStatus.textContent = '貼文複製好了，去 Threads 貼上吧！';
       els.resultShareCopy.textContent = '已複製 ✓';
       setTimeout(() => { els.resultShareCopy.textContent = '複製貼文'; }, 1800);
-      if (window.dataLayer) window.dataLayer.push({ event: 'battle_top_challenge_share', challenge_record_id: state.lastScoreEntry?.id || '' });
+      trackEvent('battle_top_challenge_share', {
+        top_name: state.lastScoreEntry?.top || state.player?.name || '',
+        battle_score: Number(state.lastScoreEntry?.score) || 0
+      });
     } else {
       els.resultShareStatus.textContent = '沒有自動複製，請長按上面的文字複製。';
     }
@@ -667,6 +677,11 @@
   async function battle() {
     if (!state.player || state.battling) return;
     state.enemy = cloneProduct(findProduct(state.opponent.top) || state.enemy || productCatalog[1]);
+    trackEvent('battle_top_battle_start', {
+      player_top: state.player.name,
+      opponent_top: state.enemy.name,
+      opponent_type: state.opponent.bot ? 'bot' : 'player'
+    });
     buildScene();
     if (!state.scene) return;
     state.scene.player.stage.opacity(1);
@@ -836,6 +851,7 @@
     els.game.dataset.phase = 'game';
     document.querySelector('.arena-hero')?.scrollIntoView({ block: 'start' });
     requestAnimationFrame(() => buildScene());
+    trackEvent('battle_top_enter_arena', { opponent_type: state.opponent.bot ? 'bot' : 'player' });
   }
 
   function renderJoinRivals() {
@@ -871,6 +887,7 @@
     const collection = readCollection();
     if (collection.some(item => item.id === state.player.id)) { syncSaveButton(); openCollectionPicker(); return; }
     collection.unshift(state.player); writeStorage(storageKeys.collection, collection.slice(0, 5));
+    trackEvent('battle_top_collection_save', { top_id: state.player.id, top_name: state.player.name, top_type: state.player.type });
     syncSaveButton(); renderCollection(); openCollectionPicker();
   }
 
@@ -973,7 +990,14 @@
         })
         .catch(() => { els.resultCopy.textContent += ' 全站排行榜暫時無法更新。'; });
     }
-    if (window.dataLayer) window.dataLayer.push({ event: 'battle_top_score', battle_score: points, battle_won: won });
+    trackEvent('battle_top_score', {
+      battle_score: points,
+      battle_result: won ? 'win' : 'loss',
+      battle_outcome: state.lastBattleModel?.outcome || 'unknown',
+      player_top: state.player.name,
+      opponent_top: state.enemy?.name || '',
+      opponent_type: state.opponent.bot ? 'bot' : 'player'
+    });
   }
 
   function showRankProgress(previousRank, playerKey) {
@@ -1067,6 +1091,11 @@
     els.opponentScore.textContent = `${state.opponent.score.toLocaleString('zh-TW')} PTS`;
     els.status.textContent = 'TARGET LOCKED';
     hideResult(); buildScene(); renderLeaderboard();
+    trackEvent('battle_top_rival_select', {
+      opponent_type: state.opponent.bot ? 'bot' : 'player',
+      opponent_top: state.enemy.name,
+      opponent_score: state.opponent.score
+    });
   }
 
   function escapeHTML(value) {
@@ -1093,7 +1122,7 @@
             .then(data => { if (Number.isFinite(data.count)) { count = data.count; paint(); } })
             .catch(() => { /* keep the optimistic local vote when the backend is unavailable */ });
         }
-        if (window.dataLayer) window.dataLayer.push({ event: 'battle_top_wish', wish_feature: id });
+        trackEvent('battle_top_wish', { wish_feature: id });
       });
     });
     if (wishEndpoint) {
