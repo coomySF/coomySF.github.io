@@ -404,7 +404,7 @@
     burst(325, 365, state.player.color, .8);
     setTimeout(() => card?.classList.remove('is-summoning'), 760);
     els.battle.disabled = false; els.save.disabled = false;
-    els.summon.textContent = 'CHANGE';
+    els.summon.textContent = '抽陀螺';
   }
 
   function updateCard() {
@@ -506,7 +506,7 @@
   function finishBattle(playerWon, recordScore) {
     state.battling = false; els.status.textContent = 'BATTLE COMPLETE';
     els.battle.disabled = false; els.summon.disabled = false;
-    els.battle.textContent = 'START'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
+    els.battle.textContent = '戰鬥開始'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
     submitScore(recordScore, playerWon);
     if (state.scene) {
       const winner = playerWon ? state.scene.player : state.scene.enemy;
@@ -612,7 +612,7 @@
     els.status.textContent = 'COLLECTION CORE EQUIPPED';
     els.battle.disabled = false; els.save.disabled = false;
     syncSaveButton();
-    els.summon.textContent = 'CHANGE';
+    els.summon.textContent = '抽陀螺';
     closeCollectionPicker();
     document.querySelector('.arena-hero')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
   }
@@ -790,6 +790,6 @@
   });
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
-  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = 'CHANGE';
+  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '抽陀螺';
   els.status.textContent = 'CORE SYNCHRONIZED';
 })();

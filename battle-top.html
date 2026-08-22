@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-21">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-22">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -83,8 +83,8 @@ keywords:
     <div class="arena-stage-wrap">
       <div id="arena-stage" class="arena-stage" role="img" aria-label="玩家與對手的兩顆戰鬥陀螺在霓虹競技場中對戰"></div>
       <div class="arena-primary-actions" aria-label="主要戰鬥操作">
-        <button class="action-button action-button--battle" id="battle-button" type="button" disabled>START</button>
-        <button class="action-button action-button--primary" id="summon-button" type="button">CHANGE</button>
+        <button class="action-button action-button--battle" id="battle-button" type="button" disabled>戰鬥開始</button>
+        <button class="action-button action-button--primary" id="summon-button" type="button">抽陀螺</button>
       </div>
       <div class="launch-countdown" id="launch-countdown" aria-live="assertive" aria-atomic="true"></div>
       <div class="arena-hud" aria-hidden="true">
@@ -206,4 +206,4 @@ keywords:
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-21" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-22" defer></script>
