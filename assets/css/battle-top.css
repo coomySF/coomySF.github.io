@@ -169,6 +169,16 @@
 .leaderboard-list .is-target button { border-color:var(--arena-red); background:var(--arena-red); color:#fff; }
 .leaderboard-list .is-bot strong::after { font-size:8px; }
 .leaderboard-note { display:none; }
+.change-rival-button { width:100%; min-height:68px; border:2px solid var(--arena-cyan); background:rgba(40,244,232,.08); color:var(--arena-cyan); font:1000 20px/1 system-ui,sans-serif; letter-spacing:.12em; cursor:pointer; box-shadow:inset 0 0 24px rgba(40,244,232,.06),0 0 24px rgba(40,244,232,.08); }
+.change-rival-button:hover { background:var(--arena-cyan); color:#04100f; }
+.leaderboard-card[hidden] { display:none!important; }
+.arena-copy .leaderboard-card { position:fixed; inset:0; z-index:90; display:grid; place-items:center; width:100%; max-width:none!important; margin:0!important; padding:20px; border:0; background:rgba(1,3,5,.88); backdrop-filter:blur(16px); }
+.leaderboard-modal__panel { position:relative; width:min(820px,100%); max-height:calc(100svh - 40px); padding:clamp(22px,4vw,42px); overflow:auto; border:1px solid rgba(40,244,232,.4); background:linear-gradient(145deg,#0c171f,#05080c 72%); box-shadow:0 0 80px rgba(40,244,232,.13); }
+.leaderboard-modal__close { position:absolute; right:14px; top:14px; z-index:2; width:54px; height:54px; border:1px solid var(--arena-line); background:#05090c; color:#fff; font-size:28px; cursor:pointer; }
+.leaderboard-modal__panel .leaderboard-card__heading { padding-right:64px; }
+.leaderboard-modal__panel .leaderboard-card__heading h2 { font-size:clamp(26px,4vw,42px); }
+.leaderboard-modal__panel .leaderboard-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.leaderboard-modal__panel .leaderboard-list li { min-height:102px; }
 .core-card::before { content:""; position:absolute; top:0; right:24px; width:60px; height:2px; background:var(--arena-cyan); box-shadow:0 0 15px var(--arena-cyan); }
 .core-card.is-summoning { animation:core-summon-card .72s cubic-bezier(.16,1,.3,1); }
 .core-card.is-summoning .product-visual img { animation:core-summon-product .72s cubic-bezier(.16,1,.3,1); }
@@ -341,6 +351,7 @@
   .entry-clash { width:84px; flex:0 0 84px; }
   #join-rival-list { grid-template-columns:1fr; }
   .join-rival { min-height:80px; }
+  .leaderboard-modal__panel .leaderboard-list { grid-template-columns:1fr; }
 }
 @media (max-width:520px) {
   .arena-hero { padding-left:14px; padding-right:14px; }

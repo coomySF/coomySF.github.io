@@ -19,6 +19,8 @@
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
     enterArena: document.querySelector('#enter-arena-button'), joinRivals: document.querySelector('#join-rival-list'),
+    changeRival: document.querySelector('#change-rival-button'), leaderboardModal: document.querySelector('#leaderboard-modal'),
+    leaderboardClose: document.querySelector('#leaderboard-modal-close'),
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), name: document.querySelector('#top-name'),
@@ -574,6 +576,16 @@
     }));
   }
 
+  function openLeaderboard() {
+    els.leaderboardModal.hidden = false;
+    els.leaderboardClose.focus();
+  }
+
+  function closeLeaderboard() {
+    els.leaderboardModal.hidden = true;
+    els.changeRival.focus();
+  }
+
   function syncSaveButton() {
     if (!els.save || !state.player) return;
     const isSaved = readCollection().some(item => item.id === state.player.id);
@@ -689,7 +701,10 @@
     const ranked = [bot, ...scores].sort((a, b) => b.score - a.score).slice(0, 5);
     state.ranked = ranked;
     els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${escapeHTML(entry.avatar || '⚡')}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">PK</button></li>`).join('');
-    els.leaderboard.querySelectorAll('[data-challenge]').forEach(button => button.addEventListener('click', () => setOpponent(ranked[Number(button.dataset.challenge)])));
+    els.leaderboard.querySelectorAll('[data-challenge]').forEach(button => button.addEventListener('click', () => {
+      setOpponent(ranked[Number(button.dataset.challenge)]);
+      closeLeaderboard();
+    }));
     renderJoinRivals();
   }
 
@@ -764,11 +779,14 @@
   els.joinButton?.addEventListener('click', openJoinSetup);
   els.joinClose?.addEventListener('click', closeJoinSetup);
   els.enterArena?.addEventListener('click', enterArena);
+  els.changeRival?.addEventListener('click', openLeaderboard);
+  els.leaderboardClose?.addEventListener('click', closeLeaderboard);
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !els.joinModal.hidden) closeJoinSetup();
+    else if (event.key === 'Escape' && !els.leaderboardModal.hidden) closeLeaderboard();
   });
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
