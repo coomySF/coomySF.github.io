@@ -1,0 +1,178 @@
+---
+layout: default
+title: 旋核競技場
+permalink: /battle-top/
+description: 隨機召喚你的原創戰鬥陀螺，帶著它進入霓虹競技場。
+image: /assets/images/battle-top/og-arena.svg
+disable_tracking: true
+---
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-7">
+<script>document.documentElement.classList.add('battle-top-page');</script>
+
+<div class="top-game" id="top-game">
+  <div class="top-game__noise" aria-hidden="true"></div>
+
+  <section class="arena-hero" aria-labelledby="arena-title">
+    <div class="arena-copy">
+      <p class="arena-kicker"><span></span> SPECFORMULA EXPERIMENT 01</p>
+      <h1 id="arena-title"><span>旋核</span><br>競技場</h1>
+      <p class="arena-lead">命運已經選好你的核心。<br>召喚它，然後讓它上場。</p>
+    </div>
+
+    <div class="arena-stage-wrap">
+      <div id="arena-stage" class="arena-stage" role="img" aria-label="兩顆原創戰鬥陀螺在霓虹競技場中對戰"></div>
+      <div class="arena-hud" aria-hidden="true">
+        <span>ARENA // 01</span>
+        <span id="arena-status">AWAITING CORE</span>
+      </div>
+      <div class="opponent-badge" id="opponent-badge" aria-live="polite">
+        <div class="opponent-visual">
+          <img id="opponent-product-image" src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png" alt="Hells Scythe 4-60T 官方商品圖">
+          <span id="opponent-avatar">👹</span>
+        </div>
+        <div class="opponent-copy"><small>NOW CHALLENGING</small><strong id="opponent-name">魔王</strong><em id="opponent-top">Hells Scythe 4-60T</em><b id="opponent-score">1,000 PTS</b></div>
+      </div>
+      <div class="battle-result" id="battle-result" aria-live="polite">
+        <span class="battle-result__label">BATTLE RESULT</span>
+        <strong id="battle-result-title">準備戰鬥</strong>
+        <small id="battle-result-copy">召喚你的陀螺，挑戰競技場魔王。</small>
+      </div>
+    </div>
+
+    <aside class="arena-side">
+    <article class="core-card" id="core-card" aria-live="polite">
+      <div class="core-card__topline">
+        <span id="top-rarity">BX SERIES</span>
+        <span id="top-code">PRODUCT // ----</span>
+      </div>
+      <a class="product-visual" id="top-product-link" href="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx01.html" target="_blank" rel="noopener">
+        <img id="top-product-image" src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX01_list.png" alt="Dran Sword 3-60F 官方商品圖">
+        <span>OFFICIAL PRODUCT IMAGE ↗</span>
+      </a>
+      <h2 id="top-name">等待召喚</h2>
+      <p id="top-class">尚未偵測到戰鬥核心</p>
+      <p class="product-parts" id="top-parts">Blade · Ratchet · Bit</p>
+      <div class="stat-grid" id="stat-grid"></div>
+      <p class="core-skill"><span>PRODUCT CHARACTER</span><strong id="top-skill">——</strong></p>
+      <p class="product-source">數值為商品零件標示值加總，並非實測勝率。非官方同人模擬器；商品名稱與圖片 © TOMY。</p>
+      <div class="core-actions">
+        <button class="action-button action-button--primary" id="summon-button" type="button">召喚我的陀螺</button>
+        <button class="action-button action-button--collection" id="collection-picker-button" type="button">從收藏選擇出戰陀螺</button>
+        <button class="action-button" id="battle-button" type="button" disabled>進入戰鬥</button>
+        <button class="action-button action-button--quiet" id="save-button" type="button" disabled>收藏這顆</button>
+      </div>
+    </article>
+
+    <div class="battle-collection-picker" id="battle-collection-picker" role="dialog" aria-modal="true" aria-labelledby="collection-picker-title" hidden>
+      <div class="battle-collection-picker__heading">
+        <div><small>YOUR COLLECTION</small><strong id="collection-picker-title">選擇出戰陀螺</strong></div>
+        <button type="button" id="collection-picker-close" aria-label="關閉收藏選擇">×</button>
+      </div>
+      <div class="battle-collection-picker__list" id="battle-collection-picker-list"></div>
+    </div>
+
+    <section class="player-profile" aria-labelledby="player-profile-title">
+      <div class="player-profile__heading">
+        <p>YOUR PILOT</p>
+        <h2 id="player-profile-title">選擇你的戰隊身份</h2>
+      </div>
+      <div class="avatar-picker" id="avatar-picker" aria-label="選擇戰隊頭像">
+        <button type="button" data-avatar="⚡" aria-label="閃電戰隊">⚡</button>
+        <button type="button" data-avatar="🔥" aria-label="烈焰戰隊">🔥</button>
+        <button type="button" data-avatar="🐉" aria-label="飛龍戰隊">🐉</button>
+        <button type="button" data-avatar="🦈" aria-label="幽鯊戰隊">🦈</button>
+        <button type="button" data-avatar="🦁" aria-label="獅王戰隊">🦁</button>
+        <button type="button" data-avatar="🌙" aria-label="月影戰隊">🌙</button>
+      </div>
+      <label class="pilot-name" for="pilot-name">戰隊暱稱</label>
+      <input id="pilot-name" class="pilot-name-input" type="text" maxlength="10" autocomplete="nickname" placeholder="輸入暱稱，最多 10 個字">
+      <small>請使用暱稱，不要輸入真實姓名。</small>
+    </section>
+
+    <section class="leaderboard-card" aria-labelledby="leaderboard-title">
+      <div class="leaderboard-card__heading">
+        <p>ARENA RECORDS</p>
+        <h2 id="leaderboard-title">玩家排行</h2>
+      </div>
+      <ol class="leaderboard-list" id="leaderboard-list"></ol>
+      <p class="leaderboard-note">點「挑戰」鎖定魔王或其他玩家的最高紀錄，把他從榜上擠下去。</p>
+    </section>
+    </aside>
+
+    <p class="scroll-cue" aria-hidden="true">SCROLL TO THE WISH LAB <span>↓</span></p>
+  </section>
+
+  <section class="collection-section" aria-labelledby="collection-title">
+    <div class="section-copy">
+      <p class="section-index">01 / YOUR CORES</p>
+      <h2 id="collection-title">我的戰鬥陀螺</h2>
+      <p>收藏最多五顆核心。從收藏中選一顆出戰，下一場就拿它挑戰魔王或榜上玩家。</p>
+    </div>
+    <div class="core-collection" id="core-collection">
+      <p class="collection-empty">還沒有收藏。先回競技場召喚第一顆吧。</p>
+    </div>
+  </section>
+
+  <section class="wish-section" aria-labelledby="wish-title">
+    <div class="wish-heading">
+      <p class="section-index">02 / WISH LAB</p>
+      <h2 id="wish-title">我懶得叫大家<br>填問卷。</h2>
+      <p>想要哪個功能，就直接按一下許願。人夠多，我就讓 <strong>Specformula</strong> 把它做出來。</p>
+      <small>這不是預購，也不會扣款。只是讓我知道你真的想玩。</small>
+    </div>
+
+    <div class="wish-grid">
+      <article class="wish-card" data-wish="customize" data-count="0" data-target="5000">
+        <span class="wish-card__number">WISH 01</span>
+        <div class="wish-card__lock">✦</div>
+        <h3>客製化<br>我的戰鬥陀螺</h3>
+        <p>自己選核心、配色、攻擊環與特殊能力。</p>
+        <div class="wish-progress"><span></span></div>
+        <p class="wish-count"><strong>0</strong> / 5,000 人許願</p>
+        <button type="button" class="wish-button">我要許願</button>
+      </article>
+
+      <article class="wish-card" data-wish="daily" data-count="0" data-target="4000">
+        <span class="wish-card__number">WISH 02</span>
+        <div class="wish-card__lock">✦</div>
+        <h3>每日隨機<br>稀有核心</h3>
+        <p>每天回來解鎖一次新的召喚機會與限定核心。</p>
+        <div class="wish-progress"><span></span></div>
+        <p class="wish-count"><strong>0</strong> / 4,000 人許願</p>
+        <button type="button" class="wish-button">我要許願</button>
+      </article>
+
+      <article class="wish-card wish-card--legend" data-wish="physical" data-count="0" data-target="8000">
+        <span class="wish-card__number">WISH 03</span>
+        <div class="wish-card__lock">✦</div>
+        <h3>做成實體<br>送到你家</h3>
+        <p>把你創造的原創陀螺變成真正拿得到的收藏品。</p>
+        <div class="wish-progress"><span></span></div>
+        <p class="wish-count"><strong>0</strong> / 8,000 人許願</p>
+        <button type="button" class="wish-button">我要許願</button>
+      </article>
+
+      <article class="wish-card" data-wish="live-room" data-count="0" data-target="5000">
+        <span class="wish-card__number">WISH 04</span>
+        <div class="wish-card__lock">✦</div>
+        <h3>即時雙人<br>戰鬥房間</h3>
+        <p>邀請朋友進同一個房間，同步看兩顆陀螺即時對戰。</p>
+        <div class="wish-progress"><span></span></div>
+        <p class="wish-count"><strong>0</strong> / 5,000 人許願</p>
+        <button type="button" class="wish-button">我要許願</button>
+      </article>
+    </div>
+  </section>
+
+  <section class="build-section" aria-labelledby="build-title">
+    <p class="build-eyebrow">PLAY → WISH → BUILD</p>
+    <h2 id="build-title">最多人想要的功能，<br><span>就讓它真的發生。</span></h2>
+    <p>Specformula 把你的雛形，變成可以上線的產品。</p>
+    <a href="https://specformula.ai/" target="_blank" rel="noopener">看看 Specformula 怎麼實現產品 <span>↗</span></a>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
+<script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
+<script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-12" defer></script>

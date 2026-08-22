@@ -42,3 +42,6 @@ exclude:
   - README.md
   - Gemfile
   - Gemfile.lock
+
+battle_top_wish_endpoint: https://mzobbjuhoddruekmxzoe.supabase.co/functions/v1/battle-top-wish
+battle_top_score_endpoint: https://mzobbjuhoddruekmxzoe.supabase.co/functions/v1/battle-top-score
