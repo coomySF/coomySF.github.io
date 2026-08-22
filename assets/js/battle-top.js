@@ -6,7 +6,8 @@
   const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
-  const avatarAssets = new Set(['nova', 'kai', 'rin', 'leo', 'mika', 'zane', 'astra', 'jett', 'luna', 'onyx', 'skye', 'blaze'].map(name => `/assets/images/battle-top/avatars/${name}.svg`));
+  const avatarNames = new Set(['nova', 'kai', 'rin', 'leo', 'mika', 'zane', 'astra', 'jett', 'luna', 'onyx', 'skye', 'blaze']);
+  const avatarAssets = new Set([...avatarNames].map(name => `/assets/images/battle-top/avatars/${name}.svg`));
   const legacyAvatarMap = { '⚡': 'nova', '🔥': 'blaze', '🐉': 'kai', '🦈': 'skye', '🦁': 'leo', '🌙': 'luna' };
 
   const productCatalog = [
@@ -24,7 +25,7 @@
     { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -54,8 +55,14 @@
   function makeId() { return `${Date.now().toString(36).slice(-4)}${Math.random().toString(36).slice(2, 5)}`.toUpperCase(); }
   function normalizeAvatar(value) {
     if (avatarAssets.has(value)) return value;
+    if (avatarNames.has(value)) return `/assets/images/battle-top/avatars/${value}.svg`;
     const migrated = Object.prototype.hasOwnProperty.call(legacyAvatarMap, value) ? legacyAvatarMap[value] : '';
     return migrated ? `/assets/images/battle-top/avatars/${migrated}.svg` : value || '/assets/images/battle-top/avatars/nova.svg';
+  }
+  function avatarId(value) {
+    const normalized = normalizeAvatar(value);
+    const match = normalized.match(/\/([^/]+)\.svg$/);
+    return match && avatarNames.has(match[1]) ? match[1] : 'nova';
   }
   function avatarMarkup(value) {
     const avatar = normalizeAvatar(value);
@@ -874,18 +881,17 @@
 
   function submitScore(points, won) {
     const profile = readProfile();
-    const entry = { id: makeId(), name: profile.name || `旋核手${randomInt(100, 999)}`, avatar: profile.avatar, top: state.player.name, score: points, won, createdAt: Date.now() };
+    const entry = { id: makeId(), name: profile.name || `旋核手${randomInt(100, 999)}`, avatar: avatarId(profile.avatar), top: state.player.name, score: points, won, createdAt: Date.now() };
     const scores = readStorage(storageKeys.scores, []);
     scores.push(entry);
     scores.sort((a, b) => b.score - a.score);
     writeStorage(storageKeys.scores, scores);
-    renderLeaderboard();
     els.resultCopy.textContent += ` 本場 ${points.toLocaleString('zh-TW')} 分。`;
     if (scoreEndpoint) {
       fetch(scoreEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) })
         .then(response => response.ok ? response.json() : Promise.reject(new Error('score request failed')))
         .then(data => { if (Array.isArray(data.scores)) renderLeaderboard(data.scores); })
-        .catch(() => { /* local record remains available when the backend is unavailable */ });
+        .catch(() => { els.resultCopy.textContent += ' 全站排行榜暫時無法更新。'; });
     }
     if (window.dataLayer) window.dataLayer.push({ event: 'battle_top_score', battle_score: points, battle_won: won });
   }
@@ -893,7 +899,8 @@
   function renderLeaderboard(serverScores) {
     if (!els.leaderboard) return;
     const bot = { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true };
-    const scores = Array.isArray(serverScores) ? serverScores : readStorage(storageKeys.scores, []);
+    if (Array.isArray(serverScores)) state.globalScores = serverScores;
+    const scores = state.globalScores;
     const ranked = [bot, ...scores].sort((a, b) => b.score - a.score);
     state.ranked = ranked;
     els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${avatarMarkup(entry.avatar)}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">PK</button></li>`).join('');
