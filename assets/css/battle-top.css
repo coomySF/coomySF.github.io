@@ -212,7 +212,7 @@
   .core-card .core-actions { grid-column:2; }
   .core-collection { grid-template-columns:repeat(3,1fr); }
 }
-@media (min-width:700px) and (max-width:1180px), (pointer:coarse) {
+@media (max-width:1180px), (pointer:coarse) {
   .avatar-picker { gap:9px; }
   .avatar-picker button { min-width:48px; min-height:48px; font-size:24px; }
   .pilot-name { font-size:11px; }
