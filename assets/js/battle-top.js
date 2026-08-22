@@ -299,7 +299,7 @@
     burst(325, 365, state.player.color, .8);
     setTimeout(() => card?.classList.remove('is-summoning'), 760);
     els.battle.disabled = false; els.save.disabled = false;
-    els.summon.textContent = '🎲 換一顆新陀螺！';
+    els.summon.textContent = 'CHANGE';
   }
 
   function updateCard() {
@@ -465,7 +465,7 @@
     els.status.textContent = 'COLLECTION CORE EQUIPPED';
     els.battle.disabled = false; els.save.disabled = false;
     syncSaveButton();
-    els.summon.textContent = '🎲 隨機換一顆！';
+    els.summon.textContent = 'CHANGE';
     closeCollectionPicker();
     document.querySelector('.arena-hero')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
   }
@@ -629,6 +629,6 @@
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
-  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '🎲 換一顆新陀螺！';
+  els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = 'CHANGE';
   els.status.textContent = 'CORE SYNCHRONIZED';
 })();

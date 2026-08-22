@@ -119,7 +119,7 @@
 .core-actions { display:grid; gap:8px; margin-top:20px; }
 .action-button,.wish-button { appearance:none; border:1px solid var(--arena-line); background:rgba(255,255,255,.025); color:var(--arena-paper); min-height:46px; padding:11px 15px; font:600 11px/1 "IBM Plex Mono",monospace; letter-spacing:.08em; cursor:pointer; transition:.2s ease; }
 .action-button:hover:not(:disabled),.wish-button:hover { border-color:var(--arena-cyan); color:var(--arena-cyan); transform:translateY(-2px); }
-.action-button--primary { min-height:58px; color:#170900; border-color:var(--arena-orange); background:linear-gradient(100deg,#ffd63d,var(--arena-orange)); font-size:13px; font-weight:900; box-shadow:0 0 28px rgba(255,158,44,.25); }
+.action-button--primary { min-height:58px; color:#170900; border-color:var(--arena-orange); background:linear-gradient(100deg,#ffd63d,var(--arena-orange)); font-size:18px; font-weight:1000; letter-spacing:.18em; box-shadow:0 0 28px rgba(255,158,44,.25); }
 .action-button--battle { min-height:58px; border-color:var(--arena-lime); background:linear-gradient(100deg,var(--arena-lime),#78ff7a); color:#061005; font-size:13px; font-weight:900; box-shadow:0 0 30px rgba(202,255,61,.2); animation:battle-ready 1.6s ease-in-out infinite; }
 .action-button--battle:hover:not(:disabled) { border-color:#fff; color:#061005; transform:translateY(-3px) scale(1.015); box-shadow:0 0 45px rgba(202,255,61,.38); }
 .action-button--battle:disabled { animation:none; }
