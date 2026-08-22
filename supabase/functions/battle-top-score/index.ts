@@ -6,6 +6,7 @@ const allowedOrigins = new Set([
   'http://127.0.0.1:4173'
 ]);
 const avatars = new Set(['nova', 'kai', 'rin', 'leo', 'mika', 'zane', 'astra', 'jett', 'luna', 'onyx', 'skye', 'blaze']);
+const maxScore = 1_000_000;
 
 Deno.serve(async request => {
   const origin = request.headers.get('origin') || '';
@@ -44,7 +45,7 @@ Deno.serve(async request => {
   if (!entry.nickname || [...entry.nickname].length > 10) return json({ error: 'invalid nickname' }, 400, cors);
   if (!avatars.has(entry.avatar)) return json({ error: 'invalid avatar' }, 400, cors);
   if (!entry.top_name || [...entry.top_name].length > 30) return json({ error: 'invalid top name' }, 400, cors);
-  if (!Number.isInteger(entry.score) || entry.score < 100 || entry.score > 3000) return json({ error: 'invalid score' }, 400, cors);
+  if (!Number.isInteger(entry.score) || entry.score < 100 || entry.score > maxScore) return json({ error: 'invalid score' }, 400, cors);
 
   const { error } = await supabase.from('battle_top_scores').insert(entry);
   if (error && error.code !== '23505') return json({ error: 'score unavailable' }, 500, cors);

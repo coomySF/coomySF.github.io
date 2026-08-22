@@ -735,7 +735,7 @@
     const modelScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 180 : 0) + Math.random() * 45));
     const opponentScore = Number(state.opponent.score) || 1000;
     const challengeScore = playerWon && !state.opponent.bot && !isCurrentPlayer(state.opponent)
-      ? Math.min(2999, opponentScore + randomInt(6, 18))
+      ? opponentScore + randomInt(6, 18)
       : 0;
     const recordScore = Math.max(modelScore, challengeScore);
     model.rankBonus = Math.max(0, recordScore - modelScore);
