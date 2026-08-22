@@ -12,7 +12,7 @@ keywords:
   - BEYBLADE X
   - 線上陀螺對戰
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-19">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260822-20">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -27,31 +27,49 @@ keywords:
 }
 </script>
 
-<div class="top-game" id="top-game">
+<div class="top-game" id="top-game" data-phase="intro">
   <div class="top-game__noise" aria-hidden="true"></div>
+
+  <section class="battle-entry" id="battle-entry" aria-labelledby="battle-entry-title">
+    <div class="battle-entry__energy" aria-hidden="true"></div>
+    <div class="battle-entry__tops" aria-hidden="true">
+      <div class="entry-top entry-top--blue"><span></span><img src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX01_list.png" alt=""></div>
+      <div class="entry-clash"><i></i><b>VS</b><i></i></div>
+      <div class="entry-top entry-top--red"><span></span><img src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png" alt=""></div>
+    </div>
+    <div class="battle-entry__copy">
+      <p>SPECFORMULA // BATTLE TOP</p>
+      <h1 id="battle-entry-title">戰鬥陀螺<br><span>旋核競技場</span></h1>
+      <button type="button" class="join-arena-button" id="join-arena-button">加入</button>
+    </div>
+  </section>
+
+  <div class="join-modal" id="join-modal" role="dialog" aria-modal="true" aria-labelledby="join-modal-title" hidden>
+    <div class="join-modal__panel">
+      <button class="join-modal__close" id="join-modal-close" type="button" aria-label="關閉">×</button>
+      <header><small>READY YOUR PILOT</small><h2 id="join-modal-title">選身份，再選對手</h2></header>
+      <section class="player-profile" aria-labelledby="player-profile-title">
+        <div class="player-profile__heading"><p>YOUR PILOT</p><h3 id="player-profile-title">選你的頭像</h3></div>
+        <div class="avatar-picker" id="avatar-picker" aria-label="選擇戰隊頭像">
+          <button type="button" data-avatar="⚡" aria-label="閃電戰隊">⚡</button><button type="button" data-avatar="🔥" aria-label="烈焰戰隊">🔥</button><button type="button" data-avatar="🐉" aria-label="飛龍戰隊">🐉</button><button type="button" data-avatar="🦈" aria-label="幽鯊戰隊">🦈</button><button type="button" data-avatar="🦁" aria-label="獅王戰隊">🦁</button><button type="button" data-avatar="🌙" aria-label="月影戰隊">🌙</button>
+        </div>
+        <label class="pilot-name" for="pilot-name">你的名字</label>
+        <input id="pilot-name" class="pilot-name-input" type="text" maxlength="10" autocomplete="nickname" placeholder="輸入暱稱">
+      </section>
+      <section class="join-rivals" aria-labelledby="join-rivals-title"><p>CHOOSE YOUR RIVAL</p><h3 id="join-rivals-title">先揍誰？</h3><div id="join-rival-list"></div></section>
+      <button type="button" class="enter-arena-button" id="enter-arena-button">進入競技場</button>
+    </div>
+  </div>
 
   <section class="arena-hero" aria-labelledby="arena-title">
     <div class="arena-copy">
       <p class="arena-kicker"><span></span> SPECFORMULA EXPERIMENT 01</p>
       <h1 id="arena-title" aria-label="戰鬥陀螺模擬器：旋核競技場"><span>旋核</span><br>競技場</h1>
       <p class="arena-lead">命運已經選好你的核心。<br>召喚它，然後讓它上場。</p>
-      <section class="player-profile" aria-labelledby="player-profile-title">
-        <div class="player-profile__heading">
-          <p>YOUR PILOT</p>
-          <h2 id="player-profile-title">玩家身份</h2>
-        </div>
-        <div class="avatar-picker" id="avatar-picker" aria-label="選擇戰隊頭像">
-          <button type="button" data-avatar="⚡" aria-label="閃電戰隊">⚡</button>
-          <button type="button" data-avatar="🔥" aria-label="烈焰戰隊">🔥</button>
-          <button type="button" data-avatar="🐉" aria-label="飛龍戰隊">🐉</button>
-          <button type="button" data-avatar="🦈" aria-label="幽鯊戰隊">🦈</button>
-          <button type="button" data-avatar="🦁" aria-label="獅王戰隊">🦁</button>
-          <button type="button" data-avatar="🌙" aria-label="月影戰隊">🌙</button>
-        </div>
-        <label class="pilot-name" for="pilot-name">玩家暱稱</label>
-        <input id="pilot-name" class="pilot-name-input" type="text" maxlength="10" autocomplete="nickname" placeholder="輸入暱稱，最多 10 個字">
-        <small>請使用暱稱，不要輸入真實姓名。</small>
-      </section>
+      <div class="opponent-badge" id="opponent-badge" aria-live="polite">
+        <div class="opponent-visual"><img id="opponent-product-image" src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png" alt="Hells Scythe 4-60T 官方商品圖"><span id="opponent-avatar">👹</span></div>
+        <div class="opponent-copy"><small>YOUR RIVAL</small><strong id="opponent-name">魔王</strong><em id="opponent-top">Hells Scythe 4-60T</em><b id="opponent-score">1,000 PTS</b></div>
+      </div>
       <section class="leaderboard-card" aria-labelledby="leaderboard-title">
         <div class="leaderboard-card__heading">
           <p>CHOOSE YOUR RIVAL</p>
@@ -72,13 +90,6 @@ keywords:
       <div class="arena-hud" aria-hidden="true">
         <span>ARENA // 01</span>
         <span id="arena-status">AWAITING CORE</span>
-      </div>
-      <div class="opponent-badge" id="opponent-badge" aria-live="polite">
-        <div class="opponent-visual">
-          <img id="opponent-product-image" src="https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png" alt="Hells Scythe 4-60T 官方商品圖">
-          <span id="opponent-avatar">👹</span>
-        </div>
-        <div class="opponent-copy"><small>NOW CHALLENGING</small><strong id="opponent-name">魔王</strong><em id="opponent-top">Hells Scythe 4-60T</em><b id="opponent-score">1,000 PTS</b></div>
       </div>
       <div class="battle-result" id="battle-result" aria-live="polite">
         <span class="battle-result__label">BATTLE RESULT</span>
@@ -195,4 +206,4 @@ keywords:
 <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.7/dist/svg.min.js"></script>
 <script>window.BATTLE_TOP_WISH_ENDPOINT = {{ site.battle_top_wish_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-19" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260822-20" defer></script>

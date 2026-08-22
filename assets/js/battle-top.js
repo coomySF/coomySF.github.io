@@ -14,8 +14,11 @@
     { id: 'BX-04', name: 'Knight Shield 3-80N', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX04_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx04.html', parts: 'Knight Shield · 3-80 · Needle', skill: '吸收衝擊的盾形刃與 Needle 軸尖，專門抵抗場外擊飛。', color: '#4c63c7', accent: '#e9b339', stats: { attack: 45, defense: 112, stamina: 63, burst: 30, xdash: 10 }, teeth: 3, core: 6 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null };
   const els = {
+    game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
+    joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
+    enterArena: document.querySelector('#enter-arena-button'), joinRivals: document.querySelector('#join-rival-list'),
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), name: document.querySelector('#top-name'),
@@ -541,6 +544,36 @@
     paint();
   }
 
+  function openJoinSetup() {
+    els.game.dataset.phase = 'setup';
+    els.joinModal.hidden = false;
+    renderJoinRivals();
+    els.joinModal.querySelector('[data-avatar].is-selected')?.focus();
+  }
+
+  function closeJoinSetup() {
+    els.joinModal.hidden = true;
+    els.game.dataset.phase = 'intro';
+    els.joinButton?.focus();
+  }
+
+  function enterArena() {
+    els.joinModal.hidden = true;
+    els.game.dataset.phase = 'game';
+    document.querySelector('.arena-hero')?.scrollIntoView({ block: 'start' });
+    requestAnimationFrame(() => buildScene());
+  }
+
+  function renderJoinRivals() {
+    if (!els.joinRivals) return;
+    const rivals = state.ranked.length ? state.ranked.slice(0, 3) : [state.opponent];
+    els.joinRivals.innerHTML = rivals.map((entry, index) => `<button type="button" class="join-rival${state.opponent.id === entry.id ? ' is-selected' : ''}" data-join-rival="${index}"><span><i>${escapeHTML(entry.avatar || '⚡')}</i><strong>${escapeHTML(entry.name)}</strong></span><b>${Number(entry.score).toLocaleString('zh-TW')} PTS</b></button>`).join('');
+    els.joinRivals.querySelectorAll('[data-join-rival]').forEach(button => button.addEventListener('click', () => {
+      setOpponent(rivals[Number(button.dataset.joinRival)]);
+      renderJoinRivals();
+    }));
+  }
+
   function syncSaveButton() {
     if (!els.save || !state.player) return;
     const isSaved = readCollection().some(item => item.id === state.player.id);
@@ -654,8 +687,10 @@
     const bot = { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true };
     const scores = Array.isArray(serverScores) ? serverScores : readStorage(storageKeys.scores, []);
     const ranked = [bot, ...scores].sort((a, b) => b.score - a.score).slice(0, 5);
-    els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${escapeHTML(entry.avatar || '⚡')}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">${state.opponent.id === entry.id ? '挑戰中' : '挑戰'}</button></li>`).join('');
+    state.ranked = ranked;
+    els.leaderboard.innerHTML = ranked.map((entry, index) => `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${escapeHTML(entry.avatar || '⚡')}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}">PK</button></li>`).join('');
     els.leaderboard.querySelectorAll('[data-challenge]').forEach(button => button.addEventListener('click', () => setOpponent(ranked[Number(button.dataset.challenge)])));
+    renderJoinRivals();
   }
 
   function loadLeaderboard() {
@@ -726,9 +761,15 @@
 
   els.summon?.addEventListener('click', summon);
   els.battle?.addEventListener('click', () => { state.sound = true; getAudio(); battle(); });
+  els.joinButton?.addEventListener('click', openJoinSetup);
+  els.joinClose?.addEventListener('click', closeJoinSetup);
+  els.enterArena?.addEventListener('click', enterArena);
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !els.joinModal.hidden) closeJoinSetup();
+  });
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
   els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = 'CHANGE';
