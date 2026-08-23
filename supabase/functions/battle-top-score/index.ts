@@ -26,7 +26,7 @@ Deno.serve(async request => {
 
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, secretKey, { auth: { persistSession: false } });
 
-  if (request.method === 'GET') return leaderboard(supabase, cors);
+  if (request.method === 'GET') return leaderboard(request, supabase, cors);
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405, cors);
 
   let body: Record<string, unknown>;
@@ -49,40 +49,40 @@ Deno.serve(async request => {
 
   const { error } = await supabase.from('battle_top_scores').insert(entry);
   if (error && error.code !== '23505') return json({ error: 'score unavailable' }, 500, cors);
-  return leaderboard(supabase, cors);
+  return leaderboard(request, supabase, cors);
 });
 
-async function leaderboard(supabase: ReturnType<typeof createClient>, cors: Record<string, string>) {
-  const pageSize = 1000;
-  const rows: Array<{
-    client_event_id: string;
-    nickname: string;
-    avatar: string;
-    top_name: string;
-    score: number;
-    won: boolean;
-    created_at: string;
-  }> = [];
+async function leaderboard(request: Request, supabase: ReturnType<typeof createClient>, cors: Record<string, string>) {
+  const url = new URL(request.url);
+  const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get('limit') || '50', 10) || 50));
+  const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0', 10) || 0);
+  const requestedId = String(url.searchParams.get('id') || '').toUpperCase();
+  const search = String(url.searchParams.get('q') || '').trim().slice(0, 30).replace(/[,%_]/g, '');
+  let scoresQuery = supabase
+    .from('battle_top_player_bests')
+    .select('client_event_id,nickname,avatar,top_name,score,won,created_at', { count: 'exact' })
+    .order('score', { ascending: false })
+    .order('created_at', { ascending: true });
 
-  for (let offset = 0; ; offset += pageSize) {
-    const { data, error } = await supabase
-      .from('battle_top_scores')
-      .select('client_event_id,nickname,avatar,top_name,score,won,created_at')
-      .order('score', { ascending: false })
-      .order('created_at', { ascending: true })
-      .range(offset, offset + pageSize - 1);
-    if (error) return json({ error: 'leaderboard unavailable' }, 500, cors);
-    rows.push(...data);
-    if (data.length < pageSize) break;
-  }
+  if (/^[A-Z0-9]{5,16}$/.test(requestedId)) scoresQuery = scoresQuery.eq('client_event_id', requestedId);
+  else if (search) scoresQuery = scoresQuery.or(`nickname.ilike.%${search}%,top_name.ilike.%${search}%`);
 
-  const bestByPlayer = new Map<string, typeof rows[number]>();
-  rows.forEach(row => {
-    const key = `${row.nickname.trim().toLocaleLowerCase()}::${row.avatar}`;
-    if (!bestByPlayer.has(key)) bestByPlayer.set(key, row);
-  });
-  const scores = [...bestByPlayer.values()].map(row => ({ id: row.client_event_id, name: row.nickname, avatar: row.avatar, top: row.top_name, score: row.score, won: row.won, createdAt: row.created_at }));
-  return json({ scores }, 200, cors);
+  const [scoresResult, totalResult] = await Promise.all([
+    scoresQuery.range(offset, offset + limit - 1),
+    supabase.from('battle_top_player_bests').select('client_event_id', { count: 'exact', head: true })
+  ]);
+  if (scoresResult.error || totalResult.error) return json({ error: 'leaderboard unavailable' }, 500, cors);
+
+  const scores = scoresResult.data.map(row => ({ id: row.client_event_id, name: row.nickname, avatar: row.avatar, top: row.top_name, score: row.score, won: row.won, createdAt: row.created_at }));
+  const filteredPlayers = scoresResult.count || 0;
+  return json({
+    scores,
+    totalPlayers: totalResult.count || 0,
+    filteredPlayers,
+    offset,
+    limit,
+    hasMore: offset + scores.length < filteredPlayers
+  }, 200, cors);
 }
 
 function json(body: unknown, status: number, cors: Record<string, string>) {

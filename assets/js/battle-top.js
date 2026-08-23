@@ -33,13 +33,13 @@
     { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], leaderboardQuery: '', leaderboardLoaded: false, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
     enterArena: document.querySelector('#enter-arena-button'), joinRivals: document.querySelector('#join-rival-list'),
     changeRival: document.querySelector('#change-rival-button'), onlineCount: document.querySelector('#arena-online-count'), leaderboardModal: document.querySelector('#leaderboard-modal'),
-    leaderboardClose: document.querySelector('#leaderboard-modal-close'), leaderboardRefresh: document.querySelector('#leaderboard-refresh'), leaderboardRefreshStatus: document.querySelector('#leaderboard-refresh-status'), leaderboardSearch: document.querySelector('#leaderboard-search'), leaderboardSearchStatus: document.querySelector('#leaderboard-search-status'),
+    leaderboardClose: document.querySelector('#leaderboard-modal-close'), leaderboardRefresh: document.querySelector('#leaderboard-refresh'), leaderboardRefreshStatus: document.querySelector('#leaderboard-refresh-status'), leaderboardSearch: document.querySelector('#leaderboard-search'), leaderboardSearchStatus: document.querySelector('#leaderboard-search-status'), leaderboardLoadMore: document.querySelector('#leaderboard-load-more'),
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
@@ -1015,7 +1015,7 @@
         .then(response => response.ok ? response.json() : Promise.reject(new Error('score request failed')))
         .then(data => {
           if (!Array.isArray(data.scores)) return;
-          renderLeaderboard(data.scores);
+          updateLeaderboard(data);
           const ownRecord = data.scores.find(score => identityKey(score.name, score.avatar) === playerKey);
           if (ownRecord) state.lastScoreEntry = ownRecord;
           showRankProgress(previousRank, playerKey);
@@ -1060,6 +1060,18 @@
     return Boolean(profile.name) && identityKey(entry?.name, entry?.avatar) === identityKey(profile.name, profile.avatar);
   }
 
+  function updateLeaderboard(data, append = false) {
+    const incoming = Array.isArray(data?.scores) ? data.scores : [];
+    state.globalScores = append
+      ? [...state.globalScores, ...incoming].filter((entry, index, list) => list.findIndex(item => item.id === entry.id) === index)
+      : incoming;
+    state.leaderboardLoaded = true;
+    state.leaderboardTotal = Number(data?.totalPlayers) || state.globalScores.length;
+    state.leaderboardFilteredTotal = Number(data?.filteredPlayers) || state.globalScores.length;
+    state.leaderboardHasMore = data?.hasMore === true;
+    renderLeaderboard();
+  }
+
   function renderLeaderboard(serverScores) {
     if (!els.leaderboard) return;
     const bot = { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true };
@@ -1074,13 +1086,14 @@
     const visibleEntries = ranked
       .map((entry, index) => ({ entry, index }))
       .filter(({ entry }) => !query || `${entry.name || ''} ${entry.top || ''}`.toLocaleLowerCase().includes(query));
-    const playerCount = scores.length;
+    const playerCount = state.leaderboardTotal || scores.length;
     if (state.leaderboardLoaded) els.changeRival.textContent = `換對手（${playerCount.toLocaleString('zh-TW')}）`;
     els.leaderboardSearchStatus.textContent = !state.leaderboardLoaded
       ? '正在讀取全站玩家…'
       : query
-        ? `找到 ${visibleEntries.length} 筆紀錄 · 全站 ${playerCount.toLocaleString('zh-TW')} 位玩家`
+        ? `找到 ${state.leaderboardFilteredTotal.toLocaleString('zh-TW')} 位玩家 · 全站 ${playerCount.toLocaleString('zh-TW')} 位玩家`
         : `全站共 ${playerCount.toLocaleString('zh-TW')} 位玩家`;
+    if (els.leaderboardLoadMore) els.leaderboardLoadMore.hidden = !state.leaderboardHasMore;
     if (!visibleEntries.length) {
       els.leaderboard.innerHTML = '<li class="leaderboard-empty"><strong>找不到。</strong><small>換個名字或陀螺試試！</small></li>';
       renderJoinRivals();
@@ -1097,7 +1110,7 @@
     renderJoinRivals();
   }
 
-  function loadLeaderboard(manual = false) {
+  function loadLeaderboard(manual = false, append = false) {
     if (!scoreEndpoint) {
       if (manual) els.leaderboardRefreshStatus.textContent = '排行榜目前沒有連上。';
       return Promise.resolve(false);
@@ -1107,16 +1120,28 @@
       els.leaderboardRefresh.classList.add('is-loading');
       els.leaderboardRefreshStatus.textContent = '正在抓最新排名…';
     }
-    return fetch(scoreEndpoint, { cache: 'no-store' })
+    const params = new URLSearchParams({ limit: '50', offset: String(append ? state.globalScores.length : 0) });
+    if (state.leaderboardQuery.trim()) params.set('q', state.leaderboardQuery.trim());
+    return fetch(`${scoreEndpoint}?${params}`, { cache: 'no-store' })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard request failed')))
       .then(data => {
         if (!Array.isArray(data.scores)) return;
-        renderLeaderboard(data.scores);
-        if (!state.requestedChallengeId) return;
-        const challengedPlayer = data.scores.find(entry => String(entry.id) === state.requestedChallengeId);
-        if (challengedPlayer) setOpponent(challengedPlayer);
-        state.requestedChallengeId = '';
-        if (manual) els.leaderboardRefreshStatus.textContent = `刷新完成，共 ${data.scores.length} 位玩家。`;
+        updateLeaderboard(data, append);
+        if (state.requestedChallengeId) {
+          const challengedPlayer = data.scores.find(entry => String(entry.id) === state.requestedChallengeId);
+          if (challengedPlayer) {
+            setOpponent(challengedPlayer);
+            state.requestedChallengeId = '';
+          } else {
+            const challengeId = state.requestedChallengeId;
+            state.requestedChallengeId = '';
+            fetch(`${scoreEndpoint}?id=${encodeURIComponent(challengeId)}`, { cache: 'no-store' })
+              .then(response => response.ok ? response.json() : Promise.reject(new Error('challenge request failed')))
+              .then(challengeData => { if (challengeData.scores?.[0]) setOpponent(challengeData.scores[0]); })
+              .catch(() => {});
+          }
+        }
+        if (manual) els.leaderboardRefreshStatus.textContent = `刷新完成，全站 ${state.leaderboardTotal.toLocaleString('zh-TW')} 位玩家。`;
         return true;
       })
       .catch(() => {
@@ -1208,9 +1233,12 @@
   els.opponentDetail?.addEventListener('click', event => { if (event.target === els.opponentDetail) closeOpponentDetail(); });
   els.leaderboardClose?.addEventListener('click', closeLeaderboard);
   els.leaderboardRefresh?.addEventListener('click', () => loadLeaderboard(true));
+  els.leaderboardLoadMore?.addEventListener('click', () => loadLeaderboard(false, true));
   els.leaderboardSearch?.addEventListener('input', event => {
     state.leaderboardQuery = event.target.value;
-    renderLeaderboard();
+    window.clearTimeout(state.leaderboardSearchTimer);
+    els.leaderboardSearchStatus.textContent = '正在搜尋全站玩家…';
+    state.leaderboardSearchTimer = window.setTimeout(() => loadLeaderboard(false), 280);
   });
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);

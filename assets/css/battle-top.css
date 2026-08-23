@@ -287,6 +287,8 @@
 .leaderboard-search input { width:100%; min-width:0; height:54px; padding:0 14px 0 4px; border:0; outline:0; background:transparent; color:#fff; font:800 17px/1 system-ui,sans-serif; }
 .leaderboard-search input::placeholder { color:#71878c; }
 .leaderboard-search-status { min-height:18px; margin:0; color:var(--arena-lime); font:700 10px/1.5 "IBM Plex Mono",monospace; }
+.leaderboard-load-more { width:100%; min-height:54px; margin-top:18px; border:2px solid var(--arena-cyan); background:rgba(40,244,232,.08); color:var(--arena-cyan); font:900 16px/1 system-ui,sans-serif; cursor:pointer; }
+.leaderboard-load-more:hover,.leaderboard-load-more:focus-visible { background:var(--arena-cyan); color:#04100f; outline:none; }
 .leaderboard-list li.leaderboard-empty { grid-template-columns:1fr; place-items:center; min-height:160px; padding:28px; text-align:center; }
 .leaderboard-list li.leaderboard-empty strong { font-size:20px; }
 .leaderboard-list li.leaderboard-empty small { margin-top:8px; font-size:12px; }

@@ -118,6 +118,7 @@ keywords:
         <p class="leaderboard-search-status" id="leaderboard-search-status" role="status" aria-live="polite"></p>
         <p class="leaderboard-refresh-status" id="leaderboard-refresh-status" role="status" aria-live="polite"></p>
         <ol class="leaderboard-list" id="leaderboard-list"></ol>
+        <button type="button" class="leaderboard-load-more" id="leaderboard-load-more" hidden>載入更多玩家</button>
         </div>
       </section>
     </div>
@@ -272,4 +273,4 @@ keywords:
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-53" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-54" defer></script>
