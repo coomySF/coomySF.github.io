@@ -53,14 +53,31 @@ Deno.serve(async request => {
 });
 
 async function leaderboard(supabase: ReturnType<typeof createClient>, cors: Record<string, string>) {
-  const { data, error } = await supabase
-    .from('battle_top_scores')
-    .select('client_event_id,nickname,avatar,top_name,score,won,created_at')
-    .order('score', { ascending: false })
-    .order('created_at', { ascending: true });
-  if (error) return json({ error: 'leaderboard unavailable' }, 500, cors);
-  const bestByPlayer = new Map<string, typeof data[number]>();
-  data.forEach(row => {
+  const pageSize = 1000;
+  const rows: Array<{
+    client_event_id: string;
+    nickname: string;
+    avatar: string;
+    top_name: string;
+    score: number;
+    won: boolean;
+    created_at: string;
+  }> = [];
+
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('battle_top_scores')
+      .select('client_event_id,nickname,avatar,top_name,score,won,created_at')
+      .order('score', { ascending: false })
+      .order('created_at', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) return json({ error: 'leaderboard unavailable' }, 500, cors);
+    rows.push(...data);
+    if (data.length < pageSize) break;
+  }
+
+  const bestByPlayer = new Map<string, typeof rows[number]>();
+  rows.forEach(row => {
     const key = `${row.nickname.trim().toLocaleLowerCase()}::${row.avatar}`;
     if (!bestByPlayer.has(key)) bestByPlayer.set(key, row);
   });
