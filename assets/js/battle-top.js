@@ -928,7 +928,7 @@
     state.battling = false; els.status.textContent = 'BATTLE COMPLETE';
     els.stageWrap.classList.remove('is-high-speed');
     els.battle.disabled = false; els.summon.disabled = false;
-    els.battle.textContent = '戰鬥開始'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
+    els.battle.textContent = '揍他'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
     submitScore(recordScore, playerWon);
     if (state.scene) {
       const winner = playerWon ? state.scene.player : state.scene.enemy;
@@ -1141,12 +1141,13 @@
     if (custom && !state.customDraft) startCustomizing('');
   }
 
-  function openCollectionPicker() {
+  function openCollectionPicker(panel = 'auto') {
     const collection = readCollection();
     renderBattleCollectionPicker();
-    showCollectionPanel(collection.length ? 'saved' : 'custom');
     els.collectionPicker.hidden = false;
     els.collectionPicker.classList.add('is-open');
+    if (panel === 'custom') startCustomizing(state.player?.id || '');
+    else showCollectionPanel(collection.length ? 'saved' : 'custom');
     els.collectionPickerClose.focus();
   }
 
@@ -1591,7 +1592,7 @@
     state.leaderboardSearchTimer = window.setTimeout(() => loadLeaderboard(false), 280);
   });
   els.save?.addEventListener('click', saveTop);
-  els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
+  els.collectionPickerButton?.addEventListener('click', () => openCollectionPicker('custom'));
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
   els.collectionSavedTab?.addEventListener('click', () => showCollectionPanel('saved'));
   els.collectionCustomTab?.addEventListener('click', () => showCollectionPanel('custom'));
