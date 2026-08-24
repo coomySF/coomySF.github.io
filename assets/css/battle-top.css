@@ -192,6 +192,9 @@
 .battle-share-composer button { grid-column:2; min-width:180px; min-height:54px; padding:12px 20px; border:2px solid var(--arena-cyan); background:var(--arena-cyan); color:#03100f; font:1000 17px/1 system-ui,sans-serif; cursor:pointer; }
 .battle-share-composer button:hover,.battle-share-composer button:focus-visible { border-color:#fff; box-shadow:0 0 28px rgba(40,244,232,.35); outline:none; }
 .battle-result__share-status { min-height:20px; margin-top:10px; color:var(--arena-cyan); font:700 11px/1.5 "IBM Plex Mono",monospace; }
+.battle-result__threads-tip { margin:8px 0 20px; color:#819397; font:600 11px/1.6 system-ui,sans-serif; }
+.battle-result__threads-tip a { color:var(--arena-cyan); text-underline-offset:3px; }
+.battle-result__threads-tip a:hover,.battle-result__threads-tip a:focus-visible { color:var(--arena-lime); }
 .battle-result.is-win .battle-result__retry { border-color:var(--arena-lime); background:var(--arena-lime); }
 .battle-result.is-lose .battle-result__retry { border-color:var(--arena-red); background:var(--arena-red); color:#fff; }
 @keyframes result-win { 0% { transform:scale(.35) rotate(-5deg); opacity:0; } 65% { transform:scale(1.12) rotate(2deg); } 100% { transform:scale(1); opacity:1; } }
