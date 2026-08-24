@@ -390,6 +390,8 @@
 .wish-heading>p { max-width:680px; color:#9eb0b5; font:400 16px/1.8 "Noto Serif TC",serif; }
 .wish-heading strong { color:var(--arena-cyan); }
 .wish-heading small { color:#5d7177; }
+.wish-heading small a { color:var(--arena-cyan); text-underline-offset:3px; }
+.wish-heading small a:hover,.wish-heading small a:focus-visible { color:var(--arena-lime); }
 .wish-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; }
 .wish-card { position:relative; min-height:450px; padding:28px; border:1px solid var(--arena-line); background:rgba(10,17,23,.78); clip-path:polygon(0 0,calc(100% - 28px) 0,100% 28px,100% 100%,0 100%); }
 .wish-card--legend { background:linear-gradient(145deg,rgba(255,77,103,.1),rgba(10,17,23,.8)); }
