@@ -151,6 +151,10 @@ keywords:
 
     <div class="arena-stage-wrap">
       <div id="arena-stage" class="arena-stage" role="img" aria-label="玩家與對手的兩顆戰鬥陀螺在霓虹競技場中對戰"></div>
+      <div class="battle-effect-banner" id="battle-effect-banner" aria-live="polite" hidden>
+        <span id="battle-effect-icon">⚡</span>
+        <div><small>ENHANCED IMPACT</small><strong id="battle-effect-name">雷霆強化</strong></div>
+      </div>
       <div class="arena-primary-actions" aria-label="主要戰鬥操作">
         <button class="action-button action-button--battle" id="battle-button" type="button" disabled>戰鬥開始</button>
         <button class="action-button action-button--primary" id="summon-button" type="button">抽陀螺</button>
@@ -200,7 +204,7 @@ keywords:
         <span>OFFICIAL PRODUCT IMAGE ↗</span>
       </a>
       <div class="core-actions">
-        <button class="action-button action-button--collection" id="collection-picker-button" type="button">從收藏選擇出戰陀螺</button>
+        <button class="action-button action-button--collection" id="collection-picker-button" type="button">強化陀螺</button>
         <button class="action-button action-button--quiet" id="save-button" type="button" disabled>我要這顆</button>
       </div>
       <h2 id="top-name">等待召喚</h2>
@@ -213,10 +217,44 @@ keywords:
 
     <div class="battle-collection-picker" id="battle-collection-picker" role="dialog" aria-modal="true" aria-labelledby="collection-picker-title" hidden>
       <div class="battle-collection-picker__heading">
-        <div><small>YOUR COLLECTION</small><strong id="collection-picker-title">選擇出戰陀螺</strong></div>
+        <div><small>TOP LAB</small><strong id="collection-picker-title">我的陀螺</strong></div>
         <button type="button" id="collection-picker-close" aria-label="關閉收藏選擇">×</button>
       </div>
-      <div class="battle-collection-picker__list" id="battle-collection-picker-list"></div>
+      <div class="battle-collection-picker__body">
+        <div class="battle-collection-tabs" role="tablist" aria-label="收藏與強化">
+          <button type="button" id="collection-tab-saved" role="tab" aria-selected="true" aria-controls="collection-saved-panel">我的收藏</button>
+          <button type="button" id="collection-tab-custom" role="tab" aria-selected="false" aria-controls="collection-custom-panel">強化陀螺</button>
+        </div>
+        <section id="collection-saved-panel" role="tabpanel" aria-labelledby="collection-tab-saved">
+          <div class="battle-collection-picker__list" id="battle-collection-picker-list"></div>
+          <aside class="battle-collection-rule" aria-label="收藏規則">
+            <div><small>COLLECTION SLOTS</small><strong id="collection-slot-count">0 / 5 格</strong></div>
+            <div class="battle-collection-slots" id="collection-slot-visual" aria-hidden="true"></div>
+            <p>每天得到一次冠軍，就可以增加收藏數量。現在先有 5 格，格子滿了可以刪掉舊陀螺。</p>
+          </aside>
+        </section>
+        <section class="custom-top-panel" id="collection-custom-panel" role="tabpanel" aria-labelledby="collection-tab-custom" hidden>
+          <div class="custom-top-preview">
+            <div class="custom-top-preview__visual" id="custom-top-preview" aria-label="強化陀螺預覽"></div>
+            <div class="custom-refine-stage" id="custom-refine-stage" aria-hidden="true"></div>
+            <p class="custom-effect-reveal" id="custom-effect-reveal">尚未強化</p>
+            <label class="custom-top-name">替它命名<input id="custom-top-name" type="text" maxlength="18" autocomplete="off" placeholder="我的無敵陀螺"></label>
+            <div class="custom-stat-preview" id="custom-stat-preview"></div>
+          </div>
+          <div class="custom-top-controls">
+            <div class="custom-part-group"><span>01 ／ 刃</span><strong>BLADE</strong><div class="custom-part-options" id="custom-blade-options"></div></div>
+            <div class="custom-part-group"><span>02 ／ 棘輪</span><strong>RATCHET</strong><div class="custom-part-options" id="custom-ratchet-options"></div></div>
+            <div class="custom-part-group"><span>03 ／ 軸尖</span><strong>BIT</strong><div class="custom-part-options" id="custom-bit-options"></div></div>
+            <p class="custom-top-note">零件會改變戰鬥數值；強化特效只讓撞擊更帥，不影響輸贏。</p>
+            <div class="custom-top-actions">
+              <button type="button" id="custom-refine-button">強化</button>
+              <button type="button" id="custom-save-button" disabled>加到收藏</button>
+              <button type="button" id="custom-battle-button">出戰</button>
+            </div>
+            <p class="custom-top-status" id="custom-top-status" aria-live="polite"></p>
+          </div>
+        </section>
+      </div>
     </div>
 
     </aside>

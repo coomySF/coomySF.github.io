@@ -33,7 +33,41 @@
     { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
+  const customizationParts = {
+    blade: [
+      { id: 'dran', name: 'Dran Sword', productId: 'BX-01', stats: { attack: 73, defense: 27, stamina: 23, burst: 48, xdash: 22 } },
+      { id: 'hells', name: 'Hells Scythe', productId: 'BX-02', stats: { attack: 48, defense: 48, stamina: 43, burst: 48, xdash: 14 } },
+      { id: 'wizard', name: 'Wizard Arrow', productId: 'BX-03', stats: { attack: 24, defense: 42, stamina: 76, burst: 21, xdash: 6 } },
+      { id: 'knight', name: 'Knight Shield', productId: 'BX-04', stats: { attack: 26, defense: 77, stamina: 42, burst: 21, xdash: 6 } },
+      { id: 'phoenix', name: 'Phoenix Wing', productId: 'BX-23', stats: { attack: 78, defense: 48, stamina: 31, burst: 52, xdash: 27 } },
+      { id: 'leon', name: 'Leon Crest', productId: 'UX-06', stats: { attack: 31, defense: 82, stamina: 48, burst: 48, xdash: 8 } }
+    ],
+    ratchet: [
+      { id: '3-60', name: '3-60', delta: { attack: 9, defense: 4, stamina: 1, burst: 25, xdash: 5 }, teeth: 3 },
+      { id: '4-60', name: '4-60', delta: { attack: 4, defense: 8, stamina: 6, burst: 25, xdash: 2 }, teeth: 4 },
+      { id: '5-70', name: '5-70', delta: { attack: 1, defense: 13, stamina: 12, burst: 17, xdash: 0 }, teeth: 5 },
+      { id: '7-60', name: '7-60', delta: { attack: 3, defense: 18, stamina: 7, burst: 24, xdash: 1 }, teeth: 7 },
+      { id: '9-60', name: '9-60', delta: { attack: 12, defense: 8, stamina: 4, burst: 27, xdash: 5 }, teeth: 9 },
+      { id: '3-80', name: '3-80', delta: { attack: 0, defense: 10, stamina: 13, burst: 9, xdash: 0 }, teeth: 3 }
+    ],
+    bit: [
+      { id: 'flat', name: 'Flat', code: 'F', delta: { attack: 28, defense: 8, stamina: 5, burst: 7, xdash: 18 } },
+      { id: 'taper', name: 'Taper', code: 'T', delta: { attack: 16, defense: 12, stamina: 12, burst: 7, xdash: 9 } },
+      { id: 'ball', name: 'Ball', code: 'B', delta: { attack: 5, defense: 14, stamina: 29, burst: 0, xdash: 2 } },
+      { id: 'needle', name: 'Needle', code: 'N', delta: { attack: 4, defense: 27, stamina: 8, burst: 0, xdash: 2 } },
+      { id: 'gear-flat', name: 'Gear Flat', code: 'GF', delta: { attack: 27, defense: 13, stamina: 6, burst: 7, xdash: 23 } },
+      { id: 'disc-ball', name: 'Disc Ball', code: 'DB', delta: { attack: 4, defense: 18, stamina: 31, burst: 3, xdash: 1 } }
+    ]
+  };
+  const refineEffects = [
+    { id: 'fire', name: '烈焰', icon: '🔥', color: '#ff6a18' },
+    { id: 'lightning', name: '雷霆', icon: '⚡', color: '#78f8ff' },
+    { id: 'ice', name: '冰晶', icon: '❄', color: '#8fe9ff' },
+    { id: 'tornado', name: '龍捲', icon: '🌀', color: '#b6fff0' },
+    { id: 'dragon', name: '龍魂', icon: '🐉', color: '#caFF3d' }
+  ];
+
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -41,7 +75,7 @@
     changeRival: document.querySelector('#change-rival-button'), onlineCount: document.querySelector('#arena-online-count'), leaderboardModal: document.querySelector('#leaderboard-modal'),
     leaderboardClose: document.querySelector('#leaderboard-modal-close'), leaderboardRefresh: document.querySelector('#leaderboard-refresh'), leaderboardRefreshStatus: document.querySelector('#leaderboard-refresh-status'), leaderboardSearch: document.querySelector('#leaderboard-search'), leaderboardSearchStatus: document.querySelector('#leaderboard-search-status'), leaderboardLoadMore: document.querySelector('#leaderboard-load-more'),
     leaderboardRivalsTab: document.querySelector('#leaderboard-rivals-tab'), leaderboardHistoryTab: document.querySelector('#leaderboard-history-tab'), leaderboardRivalsPanel: document.querySelector('#leaderboard-rivals-panel'), leaderboardHistoryPanel: document.querySelector('#leaderboard-history-panel'), battleHistoryList: document.querySelector('#battle-history-list'), battleHistoryCount: document.querySelector('#battle-history-count'), battleHistoryNote: document.querySelector('#battle-history-note'),
-    stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
+    stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'), battleEffectBanner: document.querySelector('#battle-effect-banner'), battleEffectIcon: document.querySelector('#battle-effect-icon'), battleEffectName: document.querySelector('#battle-effect-name'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
     rankUp: document.querySelector('#battle-rank-up'), rankHeadline: document.querySelector('#battle-rank-headline'), rankChange: document.querySelector('#battle-rank-change'),
@@ -53,6 +87,8 @@
     collection: document.querySelector('#core-collection'), leaderboard: document.querySelector('#leaderboard-list'),
     collectionPickerButton: document.querySelector('#collection-picker-button'), collectionPicker: document.querySelector('#battle-collection-picker'),
     collectionPickerClose: document.querySelector('#collection-picker-close'), collectionPickerList: document.querySelector('#battle-collection-picker-list'),
+    collectionSavedTab: document.querySelector('#collection-tab-saved'), collectionCustomTab: document.querySelector('#collection-tab-custom'), collectionSavedPanel: document.querySelector('#collection-saved-panel'), collectionCustomPanel: document.querySelector('#collection-custom-panel'), collectionSlotCount: document.querySelector('#collection-slot-count'), collectionSlotVisual: document.querySelector('#collection-slot-visual'),
+    customPreview: document.querySelector('#custom-top-preview'), customRefineStage: document.querySelector('#custom-refine-stage'), customEffectReveal: document.querySelector('#custom-effect-reveal'), customName: document.querySelector('#custom-top-name'), customStats: document.querySelector('#custom-stat-preview'), customBladeOptions: document.querySelector('#custom-blade-options'), customRatchetOptions: document.querySelector('#custom-ratchet-options'), customBitOptions: document.querySelector('#custom-bit-options'), customRefine: document.querySelector('#custom-refine-button'), customSave: document.querySelector('#custom-save-button'), customBattle: document.querySelector('#custom-battle-button'), customStatus: document.querySelector('#custom-top-status'),
     countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
     playerIdentity: document.querySelector('#player-identity-badge'), playerIdentityAvatar: document.querySelector('#player-identity-avatar'), playerIdentityName: document.querySelector('#player-identity-name'),
@@ -252,7 +288,14 @@
     observer.observe(hero);
   }
 
-  function cloneProduct(product) { return { ...product, stats: { ...product.stats } }; }
+  function cloneProduct(product) {
+    return {
+      ...product,
+      stats: { ...product.stats },
+      customParts: product.customParts ? { ...product.customParts } : undefined,
+      effect: product.effect ? { ...product.effect } : undefined
+    };
+  }
   function findProduct(name) { return productCatalog.find(product => product.name === name) || null; }
   function createTop(isEnemy = false) {
     const choices = !isEnemy && state.player && productCatalog.length > 1
@@ -555,6 +598,77 @@
     spinHalo(x, y, winnerColor);
   }
 
+  function showBattleEffect(effect, impact = false) {
+    if (!effect || !els.battleEffectBanner) return;
+    els.battleEffectIcon.textContent = effect.icon;
+    els.battleEffectName.textContent = `${effect.name}強化`;
+    els.battleEffectBanner.style.setProperty('--battle-effect-color', effect.color);
+    els.battleEffectBanner.hidden = false;
+    els.battleEffectBanner.classList.remove('is-visible', 'is-impact');
+    void els.battleEffectBanner.offsetWidth;
+    els.battleEffectBanner.classList.add('is-visible');
+    if (impact) els.battleEffectBanner.classList.add('is-impact');
+    window.clearTimeout(els.battleEffectBanner.hideTimer);
+    els.battleEffectBanner.hideTimer = window.setTimeout(() => {
+      els.battleEffectBanner.classList.remove('is-visible', 'is-impact');
+      window.setTimeout(() => { els.battleEffectBanner.hidden = true; }, reducedMotion ? 0 : 220);
+    }, impact ? 1250 : 950);
+  }
+
+  function refinedClash(effect, x, y, direction) {
+    if (!effect) return;
+    showBattleEffect(effect, true);
+    burst(x, y, effect.color, 1.25);
+    if (effect.id === 'fire') {
+      flameBurst(x - 20, y + 28, direction);
+      window.setTimeout(() => flameBurst(x + 30, y + 10, -direction), 90);
+    }
+    if (effect.id === 'lightning') {
+      lightningStrike(x - 44, y - 24, effect.color);
+      window.setTimeout(() => lightningStrike(x + 18, y - 42, '#ffffff'), 75);
+      window.setTimeout(() => lightningStrike(x + 62, y - 12, effect.color), 145);
+    }
+    if (effect.id === 'ice' && state.scene && !reducedMotion) {
+      const group = state.scene.impact.group().attr({ id: `fx-ice-${makeId()}` });
+      group.circle(155).center(x, y).fill('none').stroke({ color: '#d9fbff', width: 8 }).opacity(.9).attr({ filter: 'url(#coreGlow)' })
+        .animate(760).ease('>').scale(1.85).opacity(0);
+      for (let i = 0; i < 24; i += 1) {
+        const angle = i / 24 * Math.PI * 2, distance = randomInt(75, 190);
+        const shard = group.polygon('0,-30 10,10 0,26 -10,10').center(x, y).fill(i % 2 ? '#eaffff' : '#52cfff').opacity(.96);
+        shard.rotate(angle * 180 / Math.PI).animate(760, i * 8, 'now').ease('>').dmove(Math.cos(angle) * distance, Math.sin(angle) * distance).opacity(0);
+      }
+      setTimeout(() => group.remove(), 1150);
+    }
+    if (effect.id === 'tornado' && state.scene && !reducedMotion) {
+      const group = state.scene.impact.group().attr({ id: `fx-wind-${makeId()}` });
+      for (let i = 0; i < 10; i += 1) {
+        group.ellipse(70 + i * 30, 22 + i * 8).center(x, y - i * 10).fill('none').stroke({ color: i % 2 ? effect.color : '#ffffff', width: Math.max(1.5, 6 - i * .42) }).opacity(.9)
+          .animate(900, i * 24, 'now').ease('<>').rotate(direction * (230 + i * 28), x, y).scale(1.55).opacity(0);
+      }
+      setTimeout(() => group.remove(), 1250);
+    }
+    if (effect.id === 'dragon') {
+      flameBurst(x, y + 24, direction);
+      lightningStrike(x - 38, y - 28, effect.color);
+      window.setTimeout(() => flameBurst(x + 54, y - 8, -direction), 100);
+      window.setTimeout(() => lightningStrike(x + 52, y - 45, '#ffffff'), 150);
+      spinHalo(x, y, effect.color);
+    }
+  }
+
+  function attachEnhancedAura(actor, effect) {
+    if (!actor?.stage || !effect) return;
+    actor.stage.findOne('#player-enhanced-aura')?.remove();
+    const aura = actor.stage.group().attr({ id: 'player-enhanced-aura', class: `enhanced-aura enhanced-aura--${effect.id}` });
+    aura.polygon(polarPoints(effect.id === 'ice' ? 8 : 12, 94, 76)).center(0, 0).fill('none').stroke({ color: effect.color, width: 5, opacity: .72, linejoin: 'round' }).attr({ filter: 'url(#coreGlow)' });
+    aura.circle(174).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 2, opacity: .38, dasharray: effect.id === 'tornado' ? '28 8' : '7 13' });
+    aura.circle(42).center(67, -63).fill('#05090d').stroke({ color: effect.color, width: 3, opacity: .95 }).attr({ filter: 'url(#coreGlow)' });
+    aura.text(effect.icon).font({ family: 'system-ui', size: 25, anchor: 'middle' }).center(67, -66);
+    if (!reducedMotion) {
+      aura.animate(720).ease('-').rotate(120, 0, 0).animate(720).ease('-').rotate(240, 0, 0).animate(720).ease('-').rotate(360, 0, 0).loop();
+    }
+  }
+
   function runCountdown() {
     if (reducedMotion) { els.countdown.textContent = 'SHOOT!'; playCue('shoot'); return new Promise(resolve => setTimeout(() => { els.countdown.textContent = ''; resolve(); }, 180)); }
     const beats = ['3', '2', '1', 'SHOOT!'];
@@ -718,6 +832,7 @@
     });
     buildScene();
     if (!state.scene) return;
+    attachEnhancedAura(state.scene.player, state.player.effect);
     state.scene.player.stage.opacity(1);
     state.scene.enemy.stage.opacity(1);
     state.scene.player.x = 325; state.scene.player.y = 365;
@@ -727,6 +842,7 @@
     els.battle.disabled = true; els.summon.disabled = true;
     await runCountdown();
     startSpinSound();
+    if (state.player.effect) showBattleEffect(state.player.effect);
     spinHalo(325, 365, state.player.color);
     setTimeout(() => spinHalo(635, 365, state.enemy.color), 130);
     els.status.textContent = 'BATTLE IN PROGRESS';
@@ -742,7 +858,8 @@
     const recordScore = Math.max(modelScore, challengeScore);
     model.rankBonus = Math.max(0, recordScore - modelScore);
     if (reducedMotion) {
-      burst(480, 365, playerWon ? state.player.color : state.enemy.color, 1.1);
+      if (state.player.effect) refinedClash(state.player.effect, 456, 365, 1);
+      else burst(480, 365, playerWon ? state.player.color : state.enemy.color, 1.1);
       setTimeout(() => finishBattle(playerWon, recordScore), 180);
       return;
     }
@@ -762,6 +879,8 @@
       e.rotation = (e.rotation - (27.4 + t * 5) * dt * enemySpinFactor) % 360;
       trailFrame += 1;
       if (trailFrame % 3 === 0) { speedTrail(p); speedTrail(e); }
+      if (t >= .32 && !impactOne) { burst(480, 365, '#ffffff', 1.2); lightningStrike(480, 350); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
+      if (t >= .62 && !impactTwo) { if (state.player.effect) refinedClash(state.player.effect, 456, 360, 1); else elementalClash(480, 360, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1); defenseShield(state.player.stats.defense >= state.enemy.stats.defense ? p : e); playCue('impact'); playCue(state.player.effect?.id === 'lightning' ? 'zap' : 'fire'); setTimeout(() => playCue('zap'), 80); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 420); impactTwo = true; }
       if (t < .78) {
         const phase = t * Math.PI * 12;
         const collisionPulse = mark => Math.exp(-Math.pow((t - mark) / .026, 2));
@@ -776,8 +895,6 @@
         e.y = ey * (1 - collision) + 370 * collision;
         p.wobble = collision * 5;
         e.wobble = collision * 6;
-        if (t >= .32 && !impactOne) { burst(480, 365, '#ffffff', 1.2); lightningStrike(480, 350); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
-        if (t >= .62 && !impactTwo) { elementalClash(480, 360, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1); defenseShield(state.player.stats.defense >= state.enemy.stats.defense ? p : e); playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 80); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 320); impactTwo = true; }
       } else {
         const k = easeOut((t - .78) / .22);
         const winner = playerWon ? p : e, loser = playerWon ? e : p;
@@ -983,7 +1100,7 @@
   function equipTop(productId) {
     if (state.battling) return;
     const saved = readCollection().find(item => item.id === productId);
-    const product = findProduct(saved?.name) || productCatalog.find(item => item.id === productId);
+    const product = saved || productCatalog.find(item => item.id === productId);
     if (!product) return;
     state.player = cloneProduct(product);
     hideResult(); updateCard(); buildScene(); renderCollection();
@@ -996,22 +1113,38 @@
   }
 
   function renderBattleCollectionPicker() {
-    const products = readCollection()
-      .map(saved => findProduct(saved.name) || productCatalog.find(item => item.id === saved.id))
-      .filter(Boolean);
+    const products = readCollection();
+    if (els.collectionSlotCount) els.collectionSlotCount.textContent = `${products.length} / 5 格`;
+    if (els.collectionSlotVisual) els.collectionSlotVisual.innerHTML = Array.from({ length: 5 }, (_, index) => `<i class="${index < products.length ? 'is-filled' : ''}"></i>`).join('');
     if (!products.length) {
       els.collectionPickerList.innerHTML = '<p class="battle-collection-picker__empty">還沒有陀螺。先關閉這裡，再按「我要這顆」。</p>';
       return;
     }
     els.collectionPickerList.innerHTML = products.map(top => {
       const equipped = state.player?.id === top.id;
-      return `<article class="battle-collection-choice-row"><button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.id} · ${escapeHTML(top.type)}</small><strong>${escapeHTML(top.name)}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button><a class="battle-collection-buy" href="${top.source}" target="_blank" rel="noopener">商品／購買資訊 ↗</a></article>`;
+      return `<article class="battle-collection-choice-row"><button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.isCustom ? `${top.effect?.icon || '✦'} 強化核心` : `${top.id} · ${escapeHTML(top.type)}`}</small><strong>${escapeHTML(top.name)}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button><div class="battle-collection-choice-actions"><button type="button" data-customize="${top.id}">強化</button><button type="button" data-picker-remove="${top.id}">刪除</button>${top.source ? `<a href="${top.source}" target="_blank" rel="noopener">商品資訊 ↗</a>` : ''}</div></article>`;
     }).join('');
     els.collectionPickerList.querySelectorAll('[data-picker-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.pickerEquip)));
+    els.collectionPickerList.querySelectorAll('[data-customize]').forEach(button => button.addEventListener('click', () => startCustomizing(button.dataset.customize)));
+    els.collectionPickerList.querySelectorAll('[data-picker-remove]').forEach(button => button.addEventListener('click', () => {
+      const next = readCollection().filter(top => top.id !== button.dataset.pickerRemove);
+      writeStorage(storageKeys.collection, next); renderBattleCollectionPicker(); renderCollection(); syncSaveButton();
+    }));
+  }
+
+  function showCollectionPanel(panel) {
+    const custom = panel === 'custom';
+    els.collectionSavedPanel.hidden = custom;
+    els.collectionCustomPanel.hidden = !custom;
+    els.collectionSavedTab.setAttribute('aria-selected', String(!custom));
+    els.collectionCustomTab.setAttribute('aria-selected', String(custom));
+    if (custom && !state.customDraft) startCustomizing('');
   }
 
   function openCollectionPicker() {
+    const collection = readCollection();
     renderBattleCollectionPicker();
+    showCollectionPanel(collection.length ? 'saved' : 'custom');
     els.collectionPicker.hidden = false;
     els.collectionPicker.classList.add('is-open');
     els.collectionPickerClose.focus();
@@ -1022,15 +1155,171 @@
     els.collectionPicker.hidden = true;
   }
 
+  function deriveCustomType(stats) {
+    if (stats.attack >= stats.defense && stats.attack >= stats.stamina) return '攻擊型';
+    if (stats.defense >= stats.stamina) return '防禦型';
+    return '持久型';
+  }
+
+  function customPart(kind, id) { return customizationParts[kind].find(part => part.id === id) || customizationParts[kind][0]; }
+
+  function makeCustomDraft(seed) {
+    const official = seed && !seed.isCustom ? seed : null;
+    const officialParts = official?.parts?.split(' · ') || [];
+    return {
+      blade: seed?.customParts?.blade || customizationParts.blade.find(part => part.productId === official?.id)?.id || 'dran',
+      ratchet: seed?.customParts?.ratchet || customizationParts.ratchet.find(part => part.name === officialParts[1])?.id || '3-60',
+      bit: seed?.customParts?.bit || customizationParts.bit.find(part => part.name === officialParts[2])?.id || 'flat',
+      effect: seed?.effect ? { ...seed.effect } : null,
+      name: seed?.isCustom ? seed.name : ''
+    };
+  }
+
+  function buildCustomTop() {
+    const draft = state.customDraft;
+    const blade = customPart('blade', draft.blade), ratchet = customPart('ratchet', draft.ratchet), bit = customPart('bit', draft.bit);
+    const base = productCatalog.find(product => product.id === blade.productId) || productCatalog[0];
+    const stats = {};
+    Object.keys(blade.stats).forEach(key => { stats[key] = clamp(8, 120, blade.stats[key] + ratchet.delta[key] + bit.delta[key]); });
+    const generatedName = `${blade.name} ${ratchet.name}${bit.code}`;
+    return {
+      ...cloneProduct(base), id: state.customizingId || `CUSTOM-${makeId()}`, name: draft.name.trim() || generatedName,
+      type: deriveCustomType(stats), parts: `${blade.name} · ${ratchet.name} · ${bit.name}`, stats,
+      teeth: ratchet.teeth, core: base.core, isCustom: true, customParts: { blade: blade.id, ratchet: ratchet.id, bit: bit.id },
+      effect: draft.effect ? { ...draft.effect } : null,
+      skill: `${blade.name} 搭配 ${ratchet.name} 與 ${bit.name}。${draft.effect ? `撞擊時會爆發「${draft.effect.name}」特效。` : '強化後可獲得專屬撞擊特效。'}`
+    };
+  }
+
+  function renderCustomPartOptions(kind, element) {
+    element.innerHTML = customizationParts[kind].map(part => `<button type="button" data-custom-part="${kind}" data-custom-value="${part.id}" class="${state.customDraft[kind] === part.id ? 'is-selected' : ''}"><strong>${escapeHTML(part.name)}</strong><small>${kind === 'blade' ? '核心刃' : kind === 'ratchet' ? `${part.teeth} 齒` : part.code}</small></button>`).join('');
+  }
+
+  function renderCustomPreview() {
+    const top = buildCustomTop();
+    const isSaved = Boolean(state.customizingId && readCollection().some(item => item.id === state.customizingId));
+    renderCustomPartOptions('blade', els.customBladeOptions);
+    renderCustomPartOptions('ratchet', els.customRatchetOptions);
+    renderCustomPartOptions('bit', els.customBitOptions);
+    els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}"><small>${escapeHTML(top.parts)}</small>`;
+    const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
+    els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><i><b style="width:${value / 1.2}%"></b></i><strong>${value}</strong></div>`).join('');
+    els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> ${top.effect.name}特效` : '尚未強化';
+    els.customEffectReveal.style.setProperty('--effect-color', top.effect?.color || '#789096');
+    els.customSave.disabled = !isSaved && !top.effect;
+    els.customSave.textContent = isSaved ? '取消收藏' : '加到收藏';
+    els.customSave.classList.toggle('is-remove', isSaved);
+    els.customName.value = state.customDraft.name;
+    els.collectionCustomPanel.querySelectorAll('[data-custom-part]').forEach(button => button.addEventListener('click', () => {
+      state.customDraft[button.dataset.customPart] = button.dataset.customValue;
+      state.customDraft.effect = null;
+      els.customStatus.textContent = '零件已更換，請重新強化。';
+      renderCustomPreview();
+    }));
+  }
+
+  function startCustomizing(productId = '') {
+    const seed = readCollection().find(top => top.id === productId) || state.player || productCatalog[0];
+    state.customizingId = seed.isCustom ? seed.id : '';
+    state.customDraft = makeCustomDraft(seed);
+    els.customStatus.textContent = seed.isCustom ? '正在強化這顆陀螺。改名字會自動儲存。' : '選零件，再按強化。';
+    showCollectionPanel('custom');
+    renderCustomPreview();
+  }
+
+  function animateRefinement(effect) {
+    els.customRefineStage.innerHTML = '';
+    if (!SVG_NS_READY || reducedMotion) return;
+    const draw = window.SVG().addTo(els.customRefineStage).size('100%', '100%').viewbox(0, 0, 360, 260);
+    const group = draw.group();
+    group.circle(50).center(180, 130).fill('none').stroke({ color: effect.color, width: 3 }).opacity(.9)
+      .animate(800).ease('>').scale(5).opacity(0);
+    for (let i = 0; i < 18; i += 1) {
+      const angle = i / 18 * Math.PI * 2, length = 45 + (i % 4) * 16;
+      group.line(180, 130, 180 + Math.cos(angle) * length, 130 + Math.sin(angle) * length)
+        .stroke({ color: i % 2 ? effect.color : '#fff', width: 2 + i % 3 }).opacity(0)
+        .animate(180, i * 14, 'now').opacity(1).animate(520).ease('>').scale(1.8, 1.8, 180, 130).opacity(0);
+    }
+    group.text(effect.icon).font({ size: 68, anchor: 'middle' }).center(180, 126).opacity(0).scale(.2)
+      .animate(420, 160, 'now').ease('>').opacity(1).scale(1.15).animate(360).scale(1);
+    setTimeout(() => { els.customRefineStage.innerHTML = ''; }, 1250);
+  }
+
+  function refineCustomTop() {
+    const roll = Math.random();
+    const effect = roll > .94 ? refineEffects[4] : pick(refineEffects.slice(0, 4));
+    state.customDraft.effect = { ...effect };
+    animateRefinement(effect);
+    els.customStatus.textContent = `${effect.icon} 強化成功：${effect.name}！只改變撞擊特效。`;
+    playCue(effect.id === 'lightning' ? 'zap' : 'fire');
+    renderCustomPreview();
+  }
+
+  function saveCustomTop() {
+    const collection = readCollection();
+    const savedIndex = state.customizingId ? collection.findIndex(item => item.id === state.customizingId) : -1;
+    if (savedIndex >= 0) {
+      const removed = collection[savedIndex];
+      collection.splice(savedIndex, 1);
+      writeStorage(storageKeys.collection, collection);
+      state.customizingId = '';
+      renderCollection(); renderBattleCollectionPicker(); renderCustomPreview(); syncSaveButton();
+      els.customStatus.textContent = `「${removed.name}」已取消收藏，仍可直接出戰。`;
+      return;
+    }
+    if (!state.customDraft?.effect) return;
+    const top = buildCustomTop();
+    const existingIndex = collection.findIndex(item => item.id === top.id);
+    if (existingIndex < 0 && collection.length >= 5) { els.customStatus.textContent = '收藏已滿 5 顆，先回「我的收藏」刪掉一顆。'; return; }
+    if (existingIndex >= 0) collection[existingIndex] = top; else collection.unshift(top);
+    writeStorage(storageKeys.collection, collection.slice(0, 5));
+    state.customizingId = top.id;
+    state.customDraft.name = top.name;
+    trackEvent('battle_top_custom_save', { top_name: top.name, effect: top.effect.id });
+    renderCollection(); renderBattleCollectionPicker(); renderCustomPreview();
+    els.customStatus.textContent = `${top.effect.icon}「${top.name}」已存進收藏！`;
+  }
+
+  function persistCustomName() {
+    window.clearTimeout(state.customNameTimer);
+    if (!state.customDraft || !state.customizingId) return;
+    const collection = readCollection(), index = collection.findIndex(item => item.id === state.customizingId);
+    if (index < 0) return;
+    const top = buildCustomTop();
+    collection[index] = top;
+    writeStorage(storageKeys.collection, collection);
+    if (state.player?.id === top.id) {
+      state.player = cloneProduct(top);
+      updateCard(); buildScene();
+    }
+    renderCollection(); renderBattleCollectionPicker();
+    els.customStatus.textContent = `名字已自動儲存：${top.name}`;
+  }
+
+  function battleWithCustomTop() {
+    if (state.battling || !state.customDraft) return;
+    const top = buildCustomTop();
+    if (state.customizingId) persistCustomName();
+    state.player = cloneProduct(top);
+    hideResult(); updateCard(); buildScene(); renderCollection(); syncSaveButton();
+    els.status.textContent = top.effect ? `${top.effect.icon} ENHANCED CORE READY` : 'CUSTOM CORE READY';
+    els.battle.disabled = false; els.save.disabled = false;
+    closeCollectionPicker();
+    document.querySelector('.arena-hero')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    state.sound = true; getAudio();
+    window.setTimeout(() => battle(), reducedMotion ? 40 : 260);
+  }
+
   function renderCollection() {
     const collection = readCollection();
     if (!collection.length) { els.collection.innerHTML = '<p class="collection-empty">還沒有收藏。先回競技場召喚第一顆吧。</p>'; return; }
     els.collection.innerHTML = collection.map(saved => {
-      const top = findProduct(saved.name) || saved;
+      const top = saved;
       const equipped = state.player?.id === top.id;
-      return `<article class="saved-core${equipped ? ' is-equipped' : ''}" style="--core-color:${top.color}"><button class="saved-core__remove" type="button" data-remove="${top.id}" aria-label="移除 ${top.name}">×</button><span>BX SERIES // ${top.id}</span><img src="${top.image || ''}" alt="${escapeHTML(top.name)} 商品圖"><h3>${escapeHTML(top.name)}</h3><p>${escapeHTML(top.type)} · 戰力 ${Math.round(scoreWithoutLuck(top))}</p><button class="saved-core__equip" type="button" data-equip="${top.id}" ${equipped ? 'disabled' : ''}>${equipped ? '出戰中 ✓' : '選這顆出戰'}</button></article>`;
+      return `<article class="saved-core${equipped ? ' is-equipped' : ''}" style="--core-color:${top.color}"><button class="saved-core__remove" type="button" data-remove="${top.id}" aria-label="移除 ${top.name}">×</button><span>${top.isCustom ? `${top.effect?.icon || '✦'} CUSTOM CORE` : `BX SERIES // ${top.id}`}</span><img src="${top.image || ''}" alt="${escapeHTML(top.name)} 商品圖"><h3>${escapeHTML(top.name)}</h3><p>${escapeHTML(top.type)} · 戰力 ${Math.round(scoreWithoutLuck(top))}</p><button class="saved-core__customize" type="button" data-card-customize="${top.id}">強化</button><button class="saved-core__equip" type="button" data-equip="${top.id}" ${equipped ? 'disabled' : ''}>${equipped ? '出戰中 ✓' : '選這顆出戰'}</button></article>`;
     }).join('');
     els.collection.querySelectorAll('[data-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.equip)));
+    els.collection.querySelectorAll('[data-card-customize]').forEach(button => button.addEventListener('click', () => { openCollectionPicker(); startCustomizing(button.dataset.cardCustomize); }));
     els.collection.querySelectorAll('[data-remove]').forEach(button => button.addEventListener('click', () => {
       const next = readCollection().filter(top => top.id !== button.dataset.remove);
       writeStorage(storageKeys.collection, next); renderCollection(); syncSaveButton();
@@ -1045,6 +1334,7 @@
     const raw = readStorage(storageKeys.collection, []);
     let migrated = false;
     const normalized = raw.map((saved, index) => {
+      if (saved?.isCustom && saved?.stats && saved?.customParts) return cloneProduct(saved);
       const current = findProduct(saved?.name) || productCatalog.find(product => product.id === saved?.id);
       if (current) return cloneProduct(current);
       migrated = true;
@@ -1303,10 +1593,23 @@
   els.save?.addEventListener('click', saveTop);
   els.collectionPickerButton?.addEventListener('click', openCollectionPicker);
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
+  els.collectionSavedTab?.addEventListener('click', () => showCollectionPanel('saved'));
+  els.collectionCustomTab?.addEventListener('click', () => showCollectionPanel('custom'));
+  els.customRefine?.addEventListener('click', () => { state.sound = true; getAudio(); refineCustomTop(); });
+  els.customSave?.addEventListener('click', saveCustomTop);
+  els.customBattle?.addEventListener('click', battleWithCustomTop);
+  els.customName?.addEventListener('input', event => {
+    if (!state.customDraft) return;
+    state.customDraft.name = event.target.value;
+    window.clearTimeout(state.customNameTimer);
+    state.customNameTimer = window.setTimeout(persistCustomName, 500);
+  });
+  els.customName?.addEventListener('blur', persistCustomName);
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !els.joinModal.hidden) closeJoinSetup();
     else if (event.key === 'Escape' && !els.leaderboardModal.hidden) closeLeaderboard();
     else if (event.key === 'Escape' && !els.opponentDetail.hidden) closeOpponentDetail();
+    else if (event.key === 'Escape' && !els.collectionPicker.hidden) closeCollectionPicker();
   });
   renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initOnlinePresence(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
