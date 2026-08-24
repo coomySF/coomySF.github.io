@@ -1,9 +1,10 @@
 ---
 layout: default
-title: 戰鬥陀螺模擬器｜快速上線的 POC 產品實驗
+title: 戰鬥陀螺模擬器｜免費線上陀螺對戰遊戲
 permalink: /battle-top/
-description: 免費線上戰鬥陀螺模擬器：抽陀螺、建收藏、挑戰玩家排行榜。這也是把一個產品雛形快速上線，變成可驗證 POC 的實作案例。
-image: /assets/images/battle-top/og-arena.png
+description: 免費玩戰鬥陀螺模擬器！抽取陀螺、比較六種能力、挑戰全站玩家並刷新排行榜。手機打開就能玩，不用下載。
+image: /assets/images/battle-top/og-battle-arena-v2.jpg
+last_modified_at: 2026-08-24
 keywords:
   - 戰鬥陀螺
   - 戰鬥陀螺模擬器
@@ -17,7 +18,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260824-55">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260824-56">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -31,12 +32,24 @@ keywords:
   "inLanguage": "zh-TW",
   "keywords": ["戰鬥陀螺", "戰鬥陀螺模擬器", "BEYBLADE X", "雛形產品化", "快速上線 POC", "POC 產品化"],
   "featureList": ["抽取戰鬥陀螺", "挑戰玩家排行榜", "收藏與切換陀螺", "戰鬥結果分享"],
+  "image": "{{ '/assets/images/battle-top/og-battle-arena-v2.jpg' | absolute_url }}",
   "author": {
     "@type": "Person",
     "name": "Coomy",
     "url": "{{ '/about/' | absolute_url }}"
   },
   "url": "{{ '/battle-top/' | absolute_url }}"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {"@type":"Question","name":"這個戰鬥陀螺模擬器怎麼玩？","acceptedAnswer":{"@type":"Answer","text":"選擇頭像和暱稱後進入競技場，抽一顆陀螺、挑選排行榜對手，再按下戰鬥開始。勝利後可以刷新自己的最高分。"}},
+    {"@type":"Question","name":"戰鬥陀螺的勝負怎麼計算？","acceptedAnswer":{"@type":"Answer","text":"模擬器會綜合攻擊、防禦、持久、防爆、X 衝刺與類型特性，判斷撞飛、爆裂或旋轉停止，再加入少量隨機變化。"}},
+    {"@type":"Question","name":"需要下載或註冊嗎？","acceptedAnswer":{"@type":"Answer","text":"不用下載，也不用註冊。使用手機、平板或電腦瀏覽器打開網頁就能免費玩。"}}
+  ]
 }
 </script>
 
@@ -270,6 +283,22 @@ keywords:
         <p class="wish-count"><strong>0</strong> / 5,000 人許願</p>
         <button type="button" class="wish-button">我要許願</button>
       </article>
+    </div>
+  </section>
+
+  <section class="battle-guide" aria-labelledby="battle-guide-title">
+    <p class="section-index">03 / HOW TO PLAY</p>
+    <h2 id="battle-guide-title">免費戰鬥陀螺模擬器<br>打開網頁就能玩</h2>
+    <p class="battle-guide__lead">這是一款免下載、免註冊的線上戰鬥陀螺遊戲。先抽取一顆陀螺，再從排行榜挑選對手；每次對戰會依六種能力模擬撞飛、爆裂或旋轉停止，勝利就有機會刷新最高分。</p>
+    <div class="battle-guide__grid">
+      <article><span>01</span><h3>抽取陀螺</h3><p>隨機取得攻擊型、防禦型、持久型或平衡型陀螺，查看攻擊、防禦、持久、防爆與 X 衝刺能力。</p></article>
+      <article><span>02</span><h3>挑戰排行榜</h3><p>選擇全站玩家作為對手。打贏高分玩家後，你的個人最高紀錄就會往前爬。</p></article>
+      <article><span>03</span><h3>收藏再出戰</h3><p>把喜歡的陀螺加入收藏，下一場直接換它出戰，也能分享自己的分數邀請朋友挑戰。</p></article>
+    </div>
+    <div class="battle-guide__faq">
+      <details><summary>戰鬥陀螺的勝負怎麼算？</summary><p>攻擊、防禦、持久、防爆、X 衝刺和類型特性都會影響結果，另外保留少量隨機變化，讓每一場不會完全相同。</p></details>
+      <details><summary>手機和平板可以玩嗎？</summary><p>可以。遊戲以手機和平板操作為主，不需要安裝 App，使用瀏覽器打開就能玩。</p></details>
+      <details><summary>這是官方戰鬥陀螺遊戲嗎？</summary><p>不是。本頁是個人製作的非官方同人模擬器，遊戲能力值是依商品特性轉換的模擬數據，並非官方戰力或實測勝率。</p></details>
     </div>
   </section>
 
