@@ -33,13 +33,14 @@
     { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '' };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
     enterArena: document.querySelector('#enter-arena-button'), joinRivals: document.querySelector('#join-rival-list'),
     changeRival: document.querySelector('#change-rival-button'), onlineCount: document.querySelector('#arena-online-count'), leaderboardModal: document.querySelector('#leaderboard-modal'),
     leaderboardClose: document.querySelector('#leaderboard-modal-close'), leaderboardRefresh: document.querySelector('#leaderboard-refresh'), leaderboardRefreshStatus: document.querySelector('#leaderboard-refresh-status'), leaderboardSearch: document.querySelector('#leaderboard-search'), leaderboardSearchStatus: document.querySelector('#leaderboard-search-status'), leaderboardLoadMore: document.querySelector('#leaderboard-load-more'),
+    leaderboardRivalsTab: document.querySelector('#leaderboard-rivals-tab'), leaderboardHistoryTab: document.querySelector('#leaderboard-history-tab'), leaderboardRivalsPanel: document.querySelector('#leaderboard-rivals-panel'), leaderboardHistoryPanel: document.querySelector('#leaderboard-history-panel'), battleHistoryList: document.querySelector('#battle-history-list'), battleHistoryCount: document.querySelector('#battle-history-count'), battleHistoryNote: document.querySelector('#battle-history-note'),
     stage: document.querySelector('#arena-stage'), status: document.querySelector('#arena-status'),
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
@@ -389,7 +390,8 @@
   function buildScene() {
     if (!SVG_NS_READY || !els.stage) return;
     els.stage.innerHTML = '';
-    const draw = window.SVG().addTo(els.stage).size('100%', '100%').viewbox(0, 0, 960, 650);
+    const mobileArena = window.matchMedia('(max-width: 520px)').matches;
+    const draw = window.SVG().addTo(els.stage).size('100%', '100%').viewbox(mobileArena ? -48 : 0, 0, mobileArena ? 1056 : 960, 650);
     draw.attr({ preserveAspectRatio: 'xMidYMid meet', 'aria-hidden': 'true' });
     state.draw = draw;
 
@@ -834,7 +836,12 @@
 
   function readProfile() {
     const saved = readStorage(storageKeys.profile, {});
-    return { avatar: normalizeAvatar(saved.avatar), name: String(saved.name || '').trim().slice(0, 10) };
+    const playerId = /^[A-Z0-9]{16,40}$/.test(String(saved.playerId || '').toUpperCase())
+      ? String(saved.playerId).toUpperCase()
+      : `P${(window.crypto?.randomUUID?.() || `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`).replace(/[^a-z0-9]/gi, '').slice(0, 24)}`.toUpperCase();
+    const profile = { playerId, avatar: normalizeAvatar(saved.avatar), name: String(saved.name || '').trim().slice(0, 10) };
+    if (saved.playerId !== playerId) writeStorage(storageKeys.profile, profile);
+    return profile;
   }
 
   function initProfile() {
@@ -899,6 +906,56 @@
   function openLeaderboard() {
     els.leaderboardModal.hidden = false;
     els.leaderboardClose.focus();
+  }
+
+  function showLeaderboardPanel(panel) {
+    const showHistory = panel === 'history';
+    els.leaderboardRivalsPanel.hidden = showHistory;
+    els.leaderboardHistoryPanel.hidden = !showHistory;
+    els.leaderboardRivalsTab.setAttribute('aria-selected', String(!showHistory));
+    els.leaderboardHistoryTab.setAttribute('aria-selected', String(showHistory));
+    els.leaderboardRefresh.hidden = showHistory;
+    if (showHistory) loadBattleHistory();
+  }
+
+  function renderBattleHistory() {
+    const history = state.battleHistory;
+    els.battleHistoryCount.textContent = history.length;
+    els.battleHistoryCount.hidden = history.length === 0;
+    els.battleHistoryNote.textContent = history.length ? `最近 ${history.length} 次有人挑戰你` : '還沒有人來揍你。先把分數打上排行榜吧！';
+    els.battleHistoryList.innerHTML = history.map((entry, index) => `<li><i class="battle-history__avatar">${avatarMarkup(entry.avatar)}</i><span class="battle-history__copy"><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)} · ${formatHistoryTime(entry.createdAt)}</small><b class="${entry.defended ? '' : 'is-defeated'}">${entry.defended ? '你守住了！' : '你被擊敗'}</b></span><button type="button" data-revenge="${index}">揍回去</button></li>`).join('');
+    els.battleHistoryList.querySelectorAll('[data-revenge]').forEach(button => button.addEventListener('click', () => {
+      const entry = history[Number(button.dataset.revenge)];
+      setOpponent(entry);
+      closeLeaderboard();
+    }));
+  }
+
+  function loadBattleHistory(force = false) {
+    if (state.historyLoading || (state.historyLoaded && !force)) return;
+    if (!scoreEndpoint) { els.battleHistoryNote.textContent = '挑戰紀錄目前沒有連上。'; return; }
+    state.historyLoading = true;
+    els.battleHistoryNote.textContent = '正在讀取挑戰紀錄…';
+    const profile = readProfile();
+    fetch(`${scoreEndpoint}?history=${encodeURIComponent(profile.playerId)}&limit=30`, { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('history request failed')))
+      .then(data => {
+        state.battleHistory = Array.isArray(data.history) ? data.history : [];
+        state.historyLoaded = true;
+        renderBattleHistory();
+      })
+      .catch(() => { els.battleHistoryNote.textContent = '紀錄讀取失敗，關掉再試一次。'; })
+      .finally(() => { state.historyLoading = false; });
+  }
+
+  function formatHistoryTime(value) {
+    const elapsed = Math.max(0, Date.now() - new Date(value).getTime());
+    const minutes = Math.floor(elapsed / 60000);
+    if (minutes < 1) return '剛剛';
+    if (minutes < 60) return `${minutes} 分鐘前`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} 小時前`;
+    return `${Math.floor(hours / 24)} 天前`;
   }
 
   function closeLeaderboard() {
@@ -1003,7 +1060,8 @@
     const playerKey = `${playerName.trim().toLocaleLowerCase()}::${avatarId(profile.avatar)}`;
     const previousRankIndex = state.ranked.findIndex(entry => `${String(entry.name || '').trim().toLocaleLowerCase()}::${entry.avatar}` === playerKey);
     const previousRank = previousRankIndex >= 0 ? previousRankIndex + 1 : null;
-    const entry = { id: makeId(), name: playerName, avatar: avatarId(profile.avatar), top: state.player.name, score: points, won, createdAt: Date.now() };
+    const entry = { id: makeId(), playerId: profile.playerId, name: playerName, avatar: avatarId(profile.avatar), top: state.player.name, score: points, won, createdAt: Date.now() };
+    const match = !state.opponent.bot ? { id: makeId(), defenderEventId: state.opponent.id, defenderPlayerId: state.opponent.playerId || '' } : null;
     state.lastScoreEntry = entry;
     const scores = readStorage(storageKeys.scores, []);
     scores.push(entry);
@@ -1011,7 +1069,7 @@
     writeStorage(storageKeys.scores, scores);
     els.resultCopy.textContent += ` 本場 ${points.toLocaleString('zh-TW')} 分。`;
     if (scoreEndpoint) {
-      fetch(scoreEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(entry) })
+      fetch(scoreEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...entry, match }) })
         .then(response => response.ok ? response.json() : Promise.reject(new Error('score request failed')))
         .then(data => {
           if (!Array.isArray(data.scores)) return;
@@ -1233,6 +1291,8 @@
   els.opponentDetail?.addEventListener('click', event => { if (event.target === els.opponentDetail) closeOpponentDetail(); });
   els.leaderboardClose?.addEventListener('click', closeLeaderboard);
   els.leaderboardRefresh?.addEventListener('click', () => loadLeaderboard(true));
+  els.leaderboardRivalsTab?.addEventListener('click', () => showLeaderboardPanel('rivals'));
+  els.leaderboardHistoryTab?.addEventListener('click', () => showLeaderboardPanel('history'));
   els.leaderboardLoadMore?.addEventListener('click', () => loadLeaderboard(false, true));
   els.leaderboardSearch?.addEventListener('input', event => {
     state.leaderboardQuery = event.target.value;

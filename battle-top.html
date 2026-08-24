@@ -17,7 +17,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260824-52">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260824-55">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -111,6 +111,11 @@ keywords:
           <p>CHOOSE YOUR RIVAL</p>
           <h2 id="leaderboard-title">選擇對手</h2>
         </div>
+        <div class="leaderboard-tabs" role="tablist" aria-label="對手與挑戰紀錄">
+          <button type="button" id="leaderboard-rivals-tab" role="tab" aria-selected="true" aria-controls="leaderboard-rivals-panel">找人 PK</button>
+          <button type="button" id="leaderboard-history-tab" role="tab" aria-selected="false" aria-controls="leaderboard-history-panel">誰揍過我 <span id="battle-history-count" hidden></span></button>
+        </div>
+        <div id="leaderboard-rivals-panel" role="tabpanel" aria-labelledby="leaderboard-rivals-tab">
         <label class="leaderboard-search" for="leaderboard-search">
           <span aria-hidden="true">⌕</span>
           <input type="search" id="leaderboard-search" autocomplete="off" maxlength="30" placeholder="搜玩家或陀螺" aria-describedby="leaderboard-search-status">
@@ -122,6 +127,11 @@ keywords:
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 7 6 6 6-6M6 12l6 6 6-6"/></svg>
           <span>LOAD MORE</span>
         </button>
+        </div>
+        <div class="battle-history" id="leaderboard-history-panel" role="tabpanel" aria-labelledby="leaderboard-history-tab" hidden>
+          <p class="battle-history__note" id="battle-history-note">正在讀取挑戰紀錄…</p>
+          <ol class="battle-history__list" id="battle-history-list"></ol>
+        </div>
         </div>
       </section>
     </div>
@@ -277,4 +287,4 @@ keywords:
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260823-54" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260824-55" defer></script>

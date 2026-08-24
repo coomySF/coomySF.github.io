@@ -298,6 +298,22 @@
 .leaderboard-list li.leaderboard-empty small { margin-top:8px; font-size:12px; }
 .leaderboard-modal__panel .leaderboard-card__heading { padding-right:128px; }
 .leaderboard-modal__panel .leaderboard-card__heading h2 { font-size:clamp(26px,4vw,42px); }
+.leaderboard-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:20px 0 12px; padding:5px; border:1px solid rgba(40,244,232,.2); background:#05090d; }
+.leaderboard-tabs button { min-height:52px; border:1px solid transparent; background:transparent; color:#71878c; font:900 15px/1 system-ui,sans-serif; cursor:pointer; }
+.leaderboard-tabs button[aria-selected="true"] { border-color:var(--arena-cyan); background:rgba(40,244,232,.12); color:var(--arena-cyan); box-shadow:inset 0 0 24px rgba(40,244,232,.08); }
+.leaderboard-tabs button span { display:inline-grid; place-items:center; min-width:23px; height:23px; margin-left:6px; border-radius:20px; background:var(--arena-red); color:#fff; font-size:11px; }
+.battle-history[hidden] { display:none!important; }
+.battle-history__note { margin:4px 0 12px; color:#71878c; font:700 9px/1.5 "IBM Plex Mono",monospace; letter-spacing:.06em; }
+.battle-history__list { display:grid; gap:10px; margin:0; padding:0; list-style:none; }
+.battle-history__list li { display:grid; grid-template-columns:66px minmax(0,1fr) auto; align-items:center; gap:14px; min-height:94px; padding:12px; border:1px solid rgba(151,255,245,.16); background:rgba(255,255,255,.02); }
+.battle-history__avatar { display:grid; place-items:center; width:64px; height:64px; overflow:hidden; border:2px solid rgba(151,255,245,.32); border-radius:50%; background:#081218; font-style:normal; }
+.battle-history__avatar img { width:100%; height:100%; object-fit:cover; }
+.battle-history__copy { display:grid; min-width:0; gap:5px; }
+.battle-history__copy strong { overflow:hidden; font-size:17px; text-overflow:ellipsis; white-space:nowrap; }
+.battle-history__copy small { color:#84989d; font:700 10px/1.4 "IBM Plex Mono",monospace; }
+.battle-history__copy b { width:max-content; color:var(--arena-lime); font-size:12px; }
+.battle-history__copy b.is-defeated { color:var(--arena-red); }
+.battle-history__list button { min-width:104px; min-height:50px; border:2px solid var(--arena-red); background:var(--arena-red); color:#fff; font:1000 17px/1 system-ui,sans-serif; cursor:pointer; }
 .leaderboard-modal__panel .leaderboard-list { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 .leaderboard-modal__panel .leaderboard-list li { min-height:102px; }
 .core-card::before { content:""; position:absolute; top:0; right:24px; width:60px; height:2px; background:var(--arena-cyan); box-shadow:0 0 15px var(--arena-cyan); }
@@ -494,17 +510,44 @@
   .avatar-picker button { min-width:0; min-height:84px; font-size:42px; }
 }
 @media (max-width:520px) {
-  .arena-hero { padding:66px 12px 42px; }
-  .arena-copy { grid-template-columns:minmax(0,1fr) 116px; }
-  .arena-copy .opponent-badge,.arena-copy .change-rival-button { min-height:78px; }
-  .arena-copy .change-rival-button { font-size:16px; }
-  .opponent-visual { width:64px; }
-  .arena-stage { min-height:310px; margin:-30px 0 -34px; }
+  .arena-hero { padding:62px 10px 38px; gap:8px; }
+  .arena-copy { grid-template-columns:minmax(0,1fr) 108px; gap:8px; }
+  .arena-copy .opponent-badge,.arena-copy .change-rival-button { min-height:72px; }
+  .arena-copy .change-rival-button { font-size:14px; letter-spacing:.08em; }
+  .arena-copy .wish-pool-shortcut { min-height:48px; font-size:12px; }
+  .arena-copy .arena-online-count { min-height:24px; font-size:10px; }
+  .opponent-badge { gap:8px; padding:7px; }
+  .opponent-badge::after { display:none; }
+  .opponent-visual { width:56px; height:56px; }
+  .opponent-copy { min-width:0; }
+  .opponent-badge strong { max-width:100%; font-size:10px; }
+  .opponent-badge em { max-width:100%; overflow:hidden; font-size:7px; text-overflow:ellipsis; white-space:nowrap; }
+  .opponent-badge b { font-size:7px; }
+  .arena-stage { width:calc(100% - 16px); min-height:286px; margin:-24px auto -30px; }
   .arena-hud { display:none; }
   .opponent-badge { transform:none; }
+  .player-identity-badge { min-height:64px; grid-template-columns:52px minmax(0,1fr) 18px; margin-bottom:10px; }
+  .player-identity-badge__avatar { width:50px; height:50px; }
+  .player-identity-badge__copy strong { font-size:15px; }
+  .core-card { padding:18px; }
+  .core-card .product-visual { height:160px; }
+  .core-card h2 { font-size:22px; }
+  .core-card>p { font-size:10px; }
+  .core-card .product-source { font-size:6px; }
   .leaderboard-list li { grid-template-columns:60px minmax(0,1fr) 78px; }
   .leaderboard-list li>i { width:56px; height:56px; font-size:27px; }
   .leaderboard-list button { min-width:78px; font-size:17px; }
+  .leaderboard-modal__panel { max-height:calc(100svh - 16px); padding:72px 12px 18px; }
+  .leaderboard-modal__panel .leaderboard-card__heading { padding-right:0; }
+  .leaderboard-modal__panel .leaderboard-card__heading h2 { font-size:30px; }
+  .leaderboard-tabs { margin-top:14px; }
+  .leaderboard-tabs button { min-height:48px; font-size:13px; }
+  .battle-history__list li { grid-template-columns:52px minmax(0,1fr) 82px; gap:8px; min-height:80px; padding:8px; }
+  .battle-history__avatar { width:50px; height:50px; }
+  .battle-history__copy strong { font-size:14px; }
+  .battle-history__copy small { font-size:8px; }
+  .battle-history__copy b { font-size:10px; }
+  .battle-history__list button { min-width:82px; min-height:46px; font-size:14px; }
   .battle-entry__copy { margin-bottom:9vh; }
   .battle-entry__copy h1 { font-size:40px; }
   .join-modal { padding:10px; }
@@ -513,7 +556,7 @@
   .avatar-picker { grid-template-columns:repeat(3,1fr); gap:12px; }
   .avatar-picker button { min-width:0; min-height:76px; border-radius:14px; font-size:38px; }
   .arena-primary-actions { gap:8px; padding:8px; }
-  .arena-primary-actions .action-button { min-height:72px; padding:10px 6px; font-size:17px; }
+  .arena-primary-actions .action-button { min-height:66px; padding:10px 6px; font-size:16px; }
   .battle-result__actions { grid-template-columns:1fr; width:min(420px,90vw); }
   .battle-result__retry,.battle-result__share { min-height:66px; }
   .battle-share-composer { grid-template-columns:1fr; width:min(420px,90vw); }
@@ -521,11 +564,18 @@
   .core-collection { grid-template-columns:1fr; }
   .saved-core { min-height:135px; }
   .collection-section,.wish-section,.build-section { padding-left:18px; padding-right:18px; }
+  .section-copy h2,.wish-heading h2,.build-section h2 { font-size:clamp(34px,10vw,44px); }
+  .section-copy>p:last-child,.wish-heading>p,.build-section>p { font-size:13px; }
+  .wish-heading { margin-bottom:42px; }
+  .wish-card { min-height:370px; padding:22px; }
+  .wish-card__lock { margin:30px 0 22px; }
+  .wish-card h3 { font-size:28px; }
+  .wish-button { left:22px; right:22px; bottom:22px; width:calc(100% - 44px); }
   .battle-collection-choice-row { grid-template-columns:1fr; }
   .battle-collection-buy { min-height:48px; }
   .build-section { min-height:70svh; padding-top:80px; padding-bottom:80px; }
-  .build-section h2 { font-size:clamp(34px,10vw,50px); }
-  .build-section>p { font-size:15px; }
+  .build-section h2 { font-size:clamp(34px,10vw,44px); }
+  .build-section>p { font-size:13px; }
 }
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; }
