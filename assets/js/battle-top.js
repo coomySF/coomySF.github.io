@@ -67,11 +67,11 @@
     { id: 'dragon', name: '龍魂', icon: '🐉', color: '#caFF3d' }
   ];
   const equipmentCatalog = [
-    { id: 'power-gear', name: '猛攻齒輪', icon: '✹', stat: 'attack', label: '攻擊', amount: 8, color: '#ff6847', effect: refineEffects[0] },
-    { id: 'steel-armor', name: '鋼鐵護甲', icon: '⬢', stat: 'defense', label: '防禦', amount: 10, color: '#61e9ff', effect: refineEffects[2] },
-    { id: 'eternal-core', name: '永動軸心', icon: '◎', stat: 'stamina', label: '持久', amount: 9, color: '#caFF3d', effect: refineEffects[3] },
-    { id: 'burst-lock', name: '防爆扣環', icon: '◇', stat: 'burst', label: '防爆', amount: 8, color: '#b781ff', effect: refineEffects[4] },
-    { id: 'dash-engine', name: '衝刺引擎', icon: 'ϟ', stat: 'xdash', label: 'X 衝刺', amount: 10, color: '#ffe25c', effect: refineEffects[1] }
+    { id: 'power-gear', name: '猛攻齒輪', icon: '✹', stat: 'attack', label: '攻擊', amount: 8, color: '#ff6847' },
+    { id: 'steel-armor', name: '鋼鐵護甲', icon: '⬢', stat: 'defense', label: '防禦', amount: 10, color: '#61e9ff' },
+    { id: 'eternal-core', name: '永動軸心', icon: '◎', stat: 'stamina', label: '持久', amount: 9, color: '#caFF3d' },
+    { id: 'burst-lock', name: '防爆扣環', icon: '◇', stat: 'burst', label: '防爆', amount: 8, color: '#b781ff' },
+    { id: 'dash-engine', name: '衝刺引擎', icon: 'ϟ', stat: 'xdash', label: 'X 衝刺', amount: 10, color: '#ffe25c' }
   ];
 
   const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
@@ -778,7 +778,7 @@
       els.battleLootImage.innerHTML = equipmentImage(state.lastLoot);
       els.battleLootName.textContent = state.lastLoot.name;
       els.battleLootStat.textContent = `${state.lastLoot.label} +${state.lastLoot.amount}`;
-      els.battleLootCount.textContent = `現在持有 ×${state.lastLoot.count}`;
+      els.battleLootCount.textContent = `現在持有 ×${state.lastLoot.count} · 裝備出戰時鑑定特效`;
     }
     els.result.classList.add('is-visible');
     setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
@@ -1183,7 +1183,17 @@
 
   function readEquipmentInventory() {
     const saved = readStorage(storageKeys.equipment, {});
-    return Object.fromEntries(equipmentCatalog.map(item => [item.id, Math.max(0, Number(saved[item.id]) || 0)]));
+    return Object.fromEntries(equipmentCatalog.map(item => {
+      const entry = saved[item.id];
+      if (entry && typeof entry === 'object') {
+        return [item.id, { count: Math.max(0, Number(entry.count) || 0), effectId: refineEffects.some(effect => effect.id === entry.effectId) ? entry.effectId : '' }];
+      }
+      return [item.id, { count: Math.max(0, Number(entry) || 0), effectId: '' }];
+    }));
+  }
+
+  function equipmentEffect(entry) {
+    return refineEffects.find(effect => effect.id === entry?.effectId) || null;
   }
 
   function equipmentImage(item) {
@@ -1193,10 +1203,10 @@
   function grantEquipment() {
     const item = pick(equipmentCatalog);
     const inventory = readEquipmentInventory();
-    inventory[item.id] += 1;
+    inventory[item.id].count += 1;
     writeStorage(storageKeys.equipment, inventory);
-    state.lastLoot = { ...item, count: inventory[item.id] };
-    trackEvent('battle_top_equipment_drop', { equipment_id: item.id, equipment_stat: item.stat, equipment_count: inventory[item.id] });
+    state.lastLoot = { ...item, count: inventory[item.id].count };
+    trackEvent('battle_top_equipment_drop', { equipment_id: item.id, equipment_stat: item.stat, equipment_count: inventory[item.id].count });
     return state.lastLoot;
   }
 
@@ -1215,10 +1225,14 @@
   function buildCustomTop() {
     const draft = state.customDraft;
     const base = productCatalog.find(product => product.id === draft.baseProductId) || productCatalog[0];
-    const equipped = draft.equipment.map(id => equipmentCatalog.find(item => item.id === id)).filter(Boolean);
+    const inventory = readEquipmentInventory();
+    const equipped = draft.equipment.map(id => {
+      const item = equipmentCatalog.find(candidate => candidate.id === id);
+      return item ? { ...item, effect: equipmentEffect(inventory[id]) } : null;
+    }).filter(Boolean);
     const stats = { ...base.stats };
     equipped.forEach(item => { stats[item.stat] = clamp(8, 150, stats[item.stat] + item.amount); });
-    const effect = equipped.length ? equipped[equipped.length - 1].effect : null;
+    const effect = [...equipped].reverse().find(item => item.effect)?.effect || null;
     return {
       ...cloneProduct(base), id: state.customizingId || `CUSTOM-${makeId()}`, baseProductId: base.id, name: draft.name.trim() || `我的${base.name.split(' ')[0]}`,
       type: deriveCustomType(stats), stats, isCustom: true, equipment: [...draft.equipment],
@@ -1229,7 +1243,7 @@
 
   function renderEquipmentOptions() {
     const inventory = readEquipmentInventory();
-    const owned = equipmentCatalog.filter(item => inventory[item.id] > 0);
+    const owned = equipmentCatalog.filter(item => inventory[item.id].count > 0);
     els.customEquipmentSlots.textContent = `${state.customDraft.equipment.length} / 3`;
     if (!owned.length) {
       els.customEquipmentOptions.innerHTML = '<p class="custom-equipment-empty">還沒有強化道具。先去揍贏一個對手！</p>';
@@ -1237,7 +1251,8 @@
     }
     els.customEquipmentOptions.innerHTML = owned.map(item => {
       const equipped = state.customDraft.equipment.includes(item.id);
-      return `<button type="button" class="custom-equipment-card${equipped ? ' is-equipped' : ''}" data-equipment="${item.id}" style="--equipment-color:${item.color}" aria-pressed="${equipped}"><span>${equipmentImage(item)}<i>×${inventory[item.id]}</i></span><strong>${escapeHTML(item.name)}</strong><b>${item.label} +${item.amount}</b><small>${equipped ? '已裝上 ✓' : '點一下裝上'}</small></button>`;
+      const effect = equipmentEffect(inventory[item.id]);
+      return `<button type="button" class="custom-equipment-card${equipped ? ' is-equipped' : ''}" data-equipment="${item.id}" style="--equipment-color:${effect?.color || item.color}" aria-pressed="${equipped}"><span>${equipmentImage(item)}<i>×${inventory[item.id].count}</i></span><strong>${escapeHTML(item.name)}</strong><b>${item.label} +${item.amount}</b><small>${effect ? `${effect.icon} ${effect.name}特效` : equipped ? '出戰時鑑定特效' : '尚未鑑定'}</small></button>`;
     }).join('');
     els.customEquipmentOptions.querySelectorAll('[data-equipment]').forEach(button => button.addEventListener('click', () => {
       const id = button.dataset.equipment;
@@ -1258,7 +1273,7 @@
     els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}"><small>${escapeHTML(top.parts)}</small>`;
     const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
     els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><i><b style="width:${value / 1.2}%"></b></i><strong>${value}</strong></div>`).join('');
-    els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> 已裝 ${top.equipment.length} 件` : '尚未裝備';
+    els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> ${top.effect.name}特效` : top.equipment.length ? '特效等待出戰鑑定' : '尚未裝備';
     els.customEffectReveal.style.setProperty('--effect-color', top.effect?.color || '#789096');
     els.customSave.disabled = !isSaved && !top.equipment.length;
     els.customSave.textContent = isSaved ? '取消收藏' : '加到收藏';
@@ -1334,8 +1349,23 @@
     if (showStatus) els.customStatus.textContent = `名字已自動儲存：${top.name}`;
   }
 
-  function battleWithCustomTop() {
+  async function battleWithCustomTop() {
     if (state.battling || !state.customDraft) return;
+    const inventory = readEquipmentInventory();
+    const unidentifiedId = [...state.customDraft.equipment].reverse().find(id => inventory[id]?.count > 0 && !inventory[id].effectId);
+    if (unidentifiedId) {
+      const item = equipmentCatalog.find(candidate => candidate.id === unidentifiedId);
+      const effect = pick(refineEffects);
+      inventory[unidentifiedId].effectId = effect.id;
+      writeStorage(storageKeys.equipment, inventory);
+      els.customStatus.textContent = `${effect.icon} 意外獲得「${effect.name}特效」！已綁定 ${item.name}`;
+      els.customEffectReveal.innerHTML = `<span>${effect.icon}</span> ${effect.name}特效！`;
+      els.customEffectReveal.style.setProperty('--effect-color', effect.color);
+      animateRefinement(effect);
+      state.sound = true; getAudio(); playCue(effect.id === 'lightning' ? 'zap' : effect.id === 'fire' || effect.id === 'dragon' ? 'fire' : 'summon');
+      trackEvent('battle_top_equipment_effect_reveal', { equipment_id: unidentifiedId, effect_id: effect.id });
+      await new Promise(resolve => window.setTimeout(resolve, reducedMotion ? 500 : 1450));
+    }
     const top = buildCustomTop();
     if (state.customizingId) persistCustomName();
     state.player = cloneProduct(top);
