@@ -67,7 +67,7 @@
     { id: 'dragon', name: '龍魂', icon: '🐉', color: '#caFF3d' }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -1022,6 +1022,8 @@
 
   function openLeaderboard() {
     els.leaderboardModal.hidden = false;
+    showLeaderboardPanel('rivals');
+    loadLeaderboard(true);
     els.leaderboardClose.focus();
   }
 
@@ -1469,11 +1471,13 @@
       els.leaderboardRefresh.classList.add('is-loading');
       els.leaderboardRefreshStatus.textContent = '正在抓最新排名…';
     }
-    const params = new URLSearchParams({ limit: '50', offset: String(append ? state.globalScores.length : 0) });
+    const requestId = ++state.leaderboardRequestId;
+    const params = new URLSearchParams({ limit: '50', offset: String(append ? state.globalScores.length : 0), _: String(Date.now()) });
     if (state.leaderboardQuery.trim()) params.set('q', state.leaderboardQuery.trim());
     return fetch(`${scoreEndpoint}?${params}`, { cache: 'no-store' })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard request failed')))
       .then(data => {
+        if (requestId !== state.leaderboardRequestId) return false;
         if (!Array.isArray(data.scores)) return;
         updateLeaderboard(data, append);
         if (state.requestedChallengeId) {
@@ -1494,11 +1498,12 @@
         return true;
       })
       .catch(() => {
+        if (requestId !== state.leaderboardRequestId) return false;
         if (manual) els.leaderboardRefreshStatus.textContent = '刷新失敗，請再按一次。';
         return false;
       })
       .finally(() => {
-        if (!manual) return;
+        if (!manual || requestId !== state.leaderboardRequestId) return;
         els.leaderboardRefresh.disabled = false;
         els.leaderboardRefresh.classList.remove('is-loading');
       });
