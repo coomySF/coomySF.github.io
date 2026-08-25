@@ -3,7 +3,7 @@
 
   const SVG_NS_READY = typeof window.SVG === 'function';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const storageKeys = { collection: 'coomy-top-collection-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', presence: 'coomy-top-presence-v1' };
+  const storageKeys = { collection: 'coomy-top-collection-v1', equipment: 'coomy-top-equipment-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', presence: 'coomy-top-presence-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
   const supabaseUrl = window.BATTLE_TOP_SUPABASE_URL || '';
@@ -66,8 +66,15 @@
     { id: 'tornado', name: '龍捲', icon: '🌀', color: '#b6fff0' },
     { id: 'dragon', name: '龍魂', icon: '🐉', color: '#caFF3d' }
   ];
+  const equipmentCatalog = [
+    { id: 'power-gear', name: '猛攻齒輪', icon: '✹', stat: 'attack', label: '攻擊', amount: 8, color: '#ff6847', effect: refineEffects[0] },
+    { id: 'steel-armor', name: '鋼鐵護甲', icon: '⬢', stat: 'defense', label: '防禦', amount: 10, color: '#61e9ff', effect: refineEffects[2] },
+    { id: 'eternal-core', name: '永動軸心', icon: '◎', stat: 'stamina', label: '持久', amount: 9, color: '#caFF3d', effect: refineEffects[3] },
+    { id: 'burst-lock', name: '防爆扣環', icon: '◇', stat: 'burst', label: '防爆', amount: 8, color: '#b781ff', effect: refineEffects[4] },
+    { id: 'dash-engine', name: '衝刺引擎', icon: 'ϟ', stat: 'xdash', label: 'X 衝刺', amount: 10, color: '#ffe25c', effect: refineEffects[1] }
+  ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
+  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -79,7 +86,7 @@
     result: document.querySelector('#battle-result'), resultTitle: document.querySelector('#battle-result-title'),
     resultCopy: document.querySelector('#battle-result-copy'), resultOutcome: document.querySelector('#battle-result-outcome'),
     rankUp: document.querySelector('#battle-rank-up'), rankHeadline: document.querySelector('#battle-rank-headline'), rankChange: document.querySelector('#battle-rank-change'),
-    resultRetry: document.querySelector('#battle-result-retry'), resultShare: document.querySelector('#battle-result-share'), resultShareComposer: document.querySelector('#battle-share-composer'), resultShareMessage: document.querySelector('#battle-share-message'), resultShareCopy: document.querySelector('#battle-share-copy'), resultShareStatus: document.querySelector('#battle-result-share-status'), name: document.querySelector('#top-name'),
+    resultRetry: document.querySelector('#battle-result-retry'), resultShare: document.querySelector('#battle-result-share'), resultShareComposer: document.querySelector('#battle-share-composer'), resultShareMessage: document.querySelector('#battle-share-message'), resultShareCopy: document.querySelector('#battle-share-copy'), resultShareStatus: document.querySelector('#battle-result-share-status'), battleLoot: document.querySelector('#battle-loot'), battleLootImage: document.querySelector('#battle-loot-image'), battleLootName: document.querySelector('#battle-loot-name'), battleLootStat: document.querySelector('#battle-loot-stat'), battleLootCount: document.querySelector('#battle-loot-count'), name: document.querySelector('#top-name'),
     className: document.querySelector('#top-class'), rarity: document.querySelector('#top-rarity'),
     code: document.querySelector('#top-code'), skill: document.querySelector('#top-skill'),
     stats: document.querySelector('#stat-grid'), summon: document.querySelector('#summon-button'),
@@ -88,7 +95,7 @@
     collectionPickerButton: document.querySelector('#collection-picker-button'), collectionPicker: document.querySelector('#battle-collection-picker'),
     collectionPickerClose: document.querySelector('#collection-picker-close'), collectionPickerList: document.querySelector('#battle-collection-picker-list'),
     collectionSavedTab: document.querySelector('#collection-tab-saved'), collectionCustomTab: document.querySelector('#collection-tab-custom'), collectionSavedPanel: document.querySelector('#collection-saved-panel'), collectionCustomPanel: document.querySelector('#collection-custom-panel'), collectionSlotCount: document.querySelector('#collection-slot-count'), collectionSlotVisual: document.querySelector('#collection-slot-visual'),
-    customPreview: document.querySelector('#custom-top-preview'), customRefineStage: document.querySelector('#custom-refine-stage'), customEffectReveal: document.querySelector('#custom-effect-reveal'), customName: document.querySelector('#custom-top-name'), customStats: document.querySelector('#custom-stat-preview'), customBladeOptions: document.querySelector('#custom-blade-options'), customRatchetOptions: document.querySelector('#custom-ratchet-options'), customBitOptions: document.querySelector('#custom-bit-options'), customRefine: document.querySelector('#custom-refine-button'), customSave: document.querySelector('#custom-save-button'), customBattle: document.querySelector('#custom-battle-button'), customStatus: document.querySelector('#custom-top-status'),
+    customPreview: document.querySelector('#custom-top-preview'), customRefineStage: document.querySelector('#custom-refine-stage'), customEffectReveal: document.querySelector('#custom-effect-reveal'), customName: document.querySelector('#custom-top-name'), customStats: document.querySelector('#custom-stat-preview'), customEquipmentOptions: document.querySelector('#custom-equipment-options'), customEquipmentSlots: document.querySelector('#custom-equipment-slots'), customSave: document.querySelector('#custom-save-button'), customBattle: document.querySelector('#custom-battle-button'), customStatus: document.querySelector('#custom-top-status'),
     countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
     playerIdentity: document.querySelector('#player-identity-badge'), playerIdentityAvatar: document.querySelector('#player-identity-avatar'), playerIdentityName: document.querySelector('#player-identity-name'),
@@ -293,6 +300,7 @@
       ...product,
       stats: { ...product.stats },
       customParts: product.customParts ? { ...product.customParts } : undefined,
+      equipment: Array.isArray(product.equipment) ? [...product.equipment] : undefined,
       effect: product.effect ? { ...product.effect } : undefined
     };
   }
@@ -765,6 +773,13 @@
     const typeCopy = model?.typeEdge > 0 ? '你克制對手！' : model?.typeEdge < 0 ? '對手克制你！' : '沒有類型克制。';
     const rankBonusCopy = model?.rankBonus > 0 ? ` 擊敗高分對手，排名加成 +${model.rankBonus}！` : '';
     els.resultCopy.textContent = `${outcomeCopy} ${typeCopy} 六項因素均已換算。${rankBonusCopy}`;
+    els.battleLoot.hidden = !playerWon || !state.lastLoot;
+    if (playerWon && state.lastLoot) {
+      els.battleLootImage.innerHTML = equipmentImage(state.lastLoot);
+      els.battleLootName.textContent = state.lastLoot.name;
+      els.battleLootStat.textContent = `${state.lastLoot.label} +${state.lastLoot.amount}`;
+      els.battleLootCount.textContent = `現在持有 ×${state.lastLoot.count}`;
+    }
     els.result.classList.add('is-visible');
     setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
   }
@@ -824,6 +839,7 @@
 
   async function battle() {
     if (!state.player || state.battling) return;
+    state.lastLoot = null;
     state.enemy = cloneProduct(findProduct(state.opponent.top) || state.enemy || productCatalog[1]);
     trackEvent('battle_top_battle_start', {
       player_top: state.player.name,
@@ -928,6 +944,7 @@
     state.battling = false; els.status.textContent = 'BATTLE COMPLETE';
     els.stageWrap.classList.remove('is-high-speed');
     els.battle.disabled = false; els.summon.disabled = false;
+    if (playerWon) grantEquipment();
     els.battle.textContent = '揍他'; showResult(playerWon); playCue(playerWon ? 'win' : 'lose');
     submitScore(recordScore, playerWon);
     if (state.scene) {
@@ -1164,68 +1181,96 @@
     return '持久型';
   }
 
-  function customPart(kind, id) { return customizationParts[kind].find(part => part.id === id) || customizationParts[kind][0]; }
+  function readEquipmentInventory() {
+    const saved = readStorage(storageKeys.equipment, {});
+    return Object.fromEntries(equipmentCatalog.map(item => [item.id, Math.max(0, Number(saved[item.id]) || 0)]));
+  }
+
+  function equipmentImage(item) {
+    return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(item.name)}"><defs><radialGradient id="g-${item.id}"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="${item.color}"/><stop offset="1" stop-color="#071017"/></radialGradient></defs><circle cx="60" cy="60" r="48" fill="url(#g-${item.id})" opacity=".32"/><path d="M60 10 77 27 101 32 106 56 96 79 75 91 52 108 32 92 12 78 17 53 22 29 47 25Z" fill="#071017" stroke="${item.color}" stroke-width="4"/><circle cx="60" cy="60" r="27" fill="none" stroke="${item.color}" stroke-width="3" stroke-dasharray="8 5"/><text x="60" y="70" text-anchor="middle" font-size="34" font-weight="900" fill="#fff">${item.icon}</text></svg>`;
+  }
+
+  function grantEquipment() {
+    const item = pick(equipmentCatalog);
+    const inventory = readEquipmentInventory();
+    inventory[item.id] += 1;
+    writeStorage(storageKeys.equipment, inventory);
+    state.lastLoot = { ...item, count: inventory[item.id] };
+    trackEvent('battle_top_equipment_drop', { equipment_id: item.id, equipment_stat: item.stat, equipment_count: inventory[item.id] });
+    return state.lastLoot;
+  }
 
   function makeCustomDraft(seed) {
-    const official = seed && !seed.isCustom ? seed : null;
-    const officialParts = official?.parts?.split(' · ') || [];
+    const base = productCatalog.find(product => product.id === seed?.baseProductId)
+      || productCatalog.find(product => product.id === seed?.id)
+      || productCatalog.find(product => product.image === seed?.image)
+      || productCatalog[0];
     return {
-      blade: seed?.customParts?.blade || customizationParts.blade.find(part => part.productId === official?.id)?.id || 'dran',
-      ratchet: seed?.customParts?.ratchet || customizationParts.ratchet.find(part => part.name === officialParts[1])?.id || '3-60',
-      bit: seed?.customParts?.bit || customizationParts.bit.find(part => part.name === officialParts[2])?.id || 'flat',
-      effect: seed?.effect ? { ...seed.effect } : null,
+      baseProductId: base.id,
+      equipment: Array.isArray(seed?.equipment) ? seed.equipment.filter(id => equipmentCatalog.some(item => item.id === id)).slice(0, 3) : [],
       name: seed?.isCustom ? seed.name : ''
     };
   }
 
   function buildCustomTop() {
     const draft = state.customDraft;
-    const blade = customPart('blade', draft.blade), ratchet = customPart('ratchet', draft.ratchet), bit = customPart('bit', draft.bit);
-    const base = productCatalog.find(product => product.id === blade.productId) || productCatalog[0];
-    const stats = {};
-    Object.keys(blade.stats).forEach(key => { stats[key] = clamp(8, 120, blade.stats[key] + ratchet.delta[key] + bit.delta[key]); });
-    const generatedName = `${blade.name} ${ratchet.name}${bit.code}`;
+    const base = productCatalog.find(product => product.id === draft.baseProductId) || productCatalog[0];
+    const equipped = draft.equipment.map(id => equipmentCatalog.find(item => item.id === id)).filter(Boolean);
+    const stats = { ...base.stats };
+    equipped.forEach(item => { stats[item.stat] = clamp(8, 150, stats[item.stat] + item.amount); });
+    const effect = equipped.length ? equipped[equipped.length - 1].effect : null;
     return {
-      ...cloneProduct(base), id: state.customizingId || `CUSTOM-${makeId()}`, name: draft.name.trim() || generatedName,
-      type: deriveCustomType(stats), parts: `${blade.name} · ${ratchet.name} · ${bit.name}`, stats,
-      teeth: ratchet.teeth, core: base.core, isCustom: true, customParts: { blade: blade.id, ratchet: ratchet.id, bit: bit.id },
-      effect: draft.effect ? { ...draft.effect } : null,
-      skill: `${blade.name} 搭配 ${ratchet.name} 與 ${bit.name}。${draft.effect ? `撞擊時會爆發「${draft.effect.name}」特效。` : '強化後可獲得專屬撞擊特效。'}`
+      ...cloneProduct(base), id: state.customizingId || `CUSTOM-${makeId()}`, baseProductId: base.id, name: draft.name.trim() || `我的${base.name.split(' ')[0]}`,
+      type: deriveCustomType(stats), stats, isCustom: true, equipment: [...draft.equipment],
+      effect: effect ? { ...effect } : null,
+      skill: equipped.length ? `已裝備：${equipped.map(item => `${item.label}+${item.amount}`).join('、')}。` : '打贏對手取得裝備，再回來強化。'
     };
   }
 
-  function renderCustomPartOptions(kind, element) {
-    element.innerHTML = customizationParts[kind].map(part => `<button type="button" data-custom-part="${kind}" data-custom-value="${part.id}" class="${state.customDraft[kind] === part.id ? 'is-selected' : ''}"><strong>${escapeHTML(part.name)}</strong><small>${kind === 'blade' ? '核心刃' : kind === 'ratchet' ? `${part.teeth} 齒` : part.code}</small></button>`).join('');
+  function renderEquipmentOptions() {
+    const inventory = readEquipmentInventory();
+    const owned = equipmentCatalog.filter(item => inventory[item.id] > 0);
+    els.customEquipmentSlots.textContent = `${state.customDraft.equipment.length} / 3`;
+    if (!owned.length) {
+      els.customEquipmentOptions.innerHTML = '<p class="custom-equipment-empty">還沒有強化道具。先去揍贏一個對手！</p>';
+      return;
+    }
+    els.customEquipmentOptions.innerHTML = owned.map(item => {
+      const equipped = state.customDraft.equipment.includes(item.id);
+      return `<button type="button" class="custom-equipment-card${equipped ? ' is-equipped' : ''}" data-equipment="${item.id}" style="--equipment-color:${item.color}" aria-pressed="${equipped}"><span>${equipmentImage(item)}<i>×${inventory[item.id]}</i></span><strong>${escapeHTML(item.name)}</strong><b>${item.label} +${item.amount}</b><small>${equipped ? '已裝上 ✓' : '點一下裝上'}</small></button>`;
+    }).join('');
+    els.customEquipmentOptions.querySelectorAll('[data-equipment]').forEach(button => button.addEventListener('click', () => {
+      const id = button.dataset.equipment;
+      const index = state.customDraft.equipment.indexOf(id);
+      if (index >= 0) state.customDraft.equipment.splice(index, 1);
+      else if (state.customDraft.equipment.length < 3) state.customDraft.equipment.push(id);
+      else { els.customStatus.textContent = '最多裝 3 件，先拿掉一件。'; return; }
+      els.customStatus.textContent = index >= 0 ? '裝備已卸下。' : '裝備完成！能力已增加。';
+      persistCustomName(false);
+      renderCustomPreview();
+    }));
   }
 
   function renderCustomPreview() {
     const top = buildCustomTop();
     const isSaved = Boolean(state.customizingId && readCollection().some(item => item.id === state.customizingId));
-    renderCustomPartOptions('blade', els.customBladeOptions);
-    renderCustomPartOptions('ratchet', els.customRatchetOptions);
-    renderCustomPartOptions('bit', els.customBitOptions);
+    renderEquipmentOptions();
     els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}"><small>${escapeHTML(top.parts)}</small>`;
     const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
     els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><i><b style="width:${value / 1.2}%"></b></i><strong>${value}</strong></div>`).join('');
-    els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> ${top.effect.name}特效` : '尚未強化';
+    els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> 已裝 ${top.equipment.length} 件` : '尚未裝備';
     els.customEffectReveal.style.setProperty('--effect-color', top.effect?.color || '#789096');
-    els.customSave.disabled = !isSaved && !top.effect;
+    els.customSave.disabled = !isSaved && !top.equipment.length;
     els.customSave.textContent = isSaved ? '取消收藏' : '加到收藏';
     els.customSave.classList.toggle('is-remove', isSaved);
     els.customName.value = state.customDraft.name;
-    els.collectionCustomPanel.querySelectorAll('[data-custom-part]').forEach(button => button.addEventListener('click', () => {
-      state.customDraft[button.dataset.customPart] = button.dataset.customValue;
-      state.customDraft.effect = null;
-      els.customStatus.textContent = '零件已更換，請重新強化。';
-      renderCustomPreview();
-    }));
   }
 
   function startCustomizing(productId = '') {
     const seed = readCollection().find(top => top.id === productId) || state.player || productCatalog[0];
     state.customizingId = seed.isCustom ? seed.id : '';
     state.customDraft = makeCustomDraft(seed);
-    els.customStatus.textContent = seed.isCustom ? '正在強化這顆陀螺。改名字會自動儲存。' : '選零件，再按強化。';
+    els.customStatus.textContent = seed.isCustom ? '點裝備圖片就能更換。改名字會自動儲存。' : '選擇打贏後取得的裝備。';
     showCollectionPanel('custom');
     renderCustomPreview();
   }
@@ -1248,16 +1293,6 @@
     setTimeout(() => { els.customRefineStage.innerHTML = ''; }, 1250);
   }
 
-  function refineCustomTop() {
-    const roll = Math.random();
-    const effect = roll > .94 ? refineEffects[4] : pick(refineEffects.slice(0, 4));
-    state.customDraft.effect = { ...effect };
-    animateRefinement(effect);
-    els.customStatus.textContent = `${effect.icon} 強化成功：${effect.name}！只改變撞擊特效。`;
-    playCue(effect.id === 'lightning' ? 'zap' : 'fire');
-    renderCustomPreview();
-  }
-
   function saveCustomTop() {
     const collection = readCollection();
     const savedIndex = state.customizingId ? collection.findIndex(item => item.id === state.customizingId) : -1;
@@ -1270,7 +1305,7 @@
       els.customStatus.textContent = `「${removed.name}」已取消收藏，仍可直接出戰。`;
       return;
     }
-    if (!state.customDraft?.effect) return;
+    if (!state.customDraft?.equipment.length) return;
     const top = buildCustomTop();
     const existingIndex = collection.findIndex(item => item.id === top.id);
     if (existingIndex < 0 && collection.length >= 5) { els.customStatus.textContent = '收藏已滿 5 顆，先回「我的收藏」刪掉一顆。'; return; }
@@ -1278,12 +1313,12 @@
     writeStorage(storageKeys.collection, collection.slice(0, 5));
     state.customizingId = top.id;
     state.customDraft.name = top.name;
-    trackEvent('battle_top_custom_save', { top_name: top.name, effect: top.effect.id });
+    trackEvent('battle_top_custom_save', { top_name: top.name, equipment_count: top.equipment.length });
     renderCollection(); renderBattleCollectionPicker(); renderCustomPreview();
-    els.customStatus.textContent = `${top.effect.icon}「${top.name}」已存進收藏！`;
+    els.customStatus.textContent = `「${top.name}」已存進收藏！`;
   }
 
-  function persistCustomName() {
+  function persistCustomName(showStatus = true) {
     window.clearTimeout(state.customNameTimer);
     if (!state.customDraft || !state.customizingId) return;
     const collection = readCollection(), index = collection.findIndex(item => item.id === state.customizingId);
@@ -1296,7 +1331,7 @@
       updateCard(); buildScene();
     }
     renderCollection(); renderBattleCollectionPicker();
-    els.customStatus.textContent = `名字已自動儲存：${top.name}`;
+    if (showStatus) els.customStatus.textContent = `名字已自動儲存：${top.name}`;
   }
 
   function battleWithCustomTop() {
@@ -1601,7 +1636,6 @@
   els.collectionPickerClose?.addEventListener('click', closeCollectionPicker);
   els.collectionSavedTab?.addEventListener('click', () => showCollectionPanel('saved'));
   els.collectionCustomTab?.addEventListener('click', () => showCollectionPanel('custom'));
-  els.customRefine?.addEventListener('click', () => { state.sound = true; getAudio(); refineCustomTop(); });
   els.customSave?.addEventListener('click', saveCustomTop);
   els.customBattle?.addEventListener('click', battleWithCustomTop);
   els.customName?.addEventListener('input', event => {

@@ -179,6 +179,13 @@ keywords:
           <button type="button" class="battle-result__share" id="battle-result-share">邀朋友挑戰我</button>
           <button type="button" class="battle-result__retry" id="battle-result-retry">再戰一次</button>
         </div>
+        <div class="battle-loot" id="battle-loot" hidden>
+          <span>WIN REWARD</span>
+          <div id="battle-loot-image" aria-hidden="true"></div>
+          <strong id="battle-loot-name">獲得裝備</strong>
+          <b id="battle-loot-stat">防禦 +10</b>
+          <small id="battle-loot-count">持有 ×1</small>
+        </div>
         <div class="battle-share-composer" id="battle-share-composer" hidden>
           <label for="battle-share-message">你的挑戰貼文</label>
           <textarea id="battle-share-message" rows="5" maxlength="500"></textarea>
@@ -242,12 +249,10 @@ keywords:
             <div class="custom-stat-preview" id="custom-stat-preview"></div>
           </div>
           <div class="custom-top-controls">
-            <div class="custom-part-group"><span>01 ／ 刃</span><strong>BLADE</strong><div class="custom-part-options" id="custom-blade-options"></div></div>
-            <div class="custom-part-group"><span>02 ／ 棘輪</span><strong>RATCHET</strong><div class="custom-part-options" id="custom-ratchet-options"></div></div>
-            <div class="custom-part-group"><span>03 ／ 軸尖</span><strong>BIT</strong><div class="custom-part-options" id="custom-bit-options"></div></div>
-            <p class="custom-top-note">零件會改變戰鬥數值；強化特效只讓撞擊更帥，不影響輸贏。</p>
+            <div class="custom-equipment-heading"><span>MY POWER ITEMS</span><strong>我的強化道具</strong><b id="custom-equipment-slots">0 / 3</b></div>
+            <div class="custom-equipment-options" id="custom-equipment-options"></div>
+            <p class="custom-top-note">每次打贏都會獲得一件裝備。點圖片裝上，最多同時裝 3 件；重複裝備會合併顯示數量。</p>
             <div class="custom-top-actions">
-              <button type="button" id="custom-refine-button">強化</button>
               <button type="button" id="custom-save-button" disabled>加到收藏</button>
               <button type="button" id="custom-battle-button">出戰</button>
             </div>
