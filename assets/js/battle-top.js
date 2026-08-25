@@ -3,7 +3,7 @@
 
   const SVG_NS_READY = typeof window.SVG === 'function';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const storageKeys = { collection: 'coomy-top-collection-v1', equipment: 'coomy-top-equipment-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', presence: 'coomy-top-presence-v1' };
+  const storageKeys = { collection: 'coomy-top-collection-v1', equipment: 'coomy-top-equipment-v2', legacyEquipment: 'coomy-top-equipment-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', presence: 'coomy-top-presence-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
   const supabaseUrl = window.BATTLE_TOP_SUPABASE_URL || '';
@@ -778,7 +778,7 @@
       els.battleLootImage.innerHTML = equipmentImage(state.lastLoot);
       els.battleLootName.textContent = state.lastLoot.name;
       els.battleLootStat.textContent = `${state.lastLoot.label} +${state.lastLoot.amount}`;
-      els.battleLootCount.textContent = `現在持有 ×${state.lastLoot.count} · 裝備出戰時鑑定特效`;
+      els.battleLootCount.textContent = `獨立裝備 ${state.lastLoot.instanceId.slice(-6)} · 出戰時鑑定專屬特效`;
     }
     els.result.classList.add('is-visible');
     setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
@@ -1111,6 +1111,7 @@
     if (!state.player) return;
     const collection = readCollection();
     if (collection.some(item => item.id === state.player.id)) { syncSaveButton(); openCollectionPicker(); return; }
+    if (state.player.isCustom) assignEquipmentToTop(state.player.id, state.player.equipment || []);
     collection.unshift(state.player); writeStorage(storageKeys.collection, collection.slice(0, 5));
     trackEvent('battle_top_collection_save', { top_id: state.player.id, top_name: state.player.name, top_type: state.player.type });
     syncSaveButton(); renderCollection(); openCollectionPicker();
@@ -1147,7 +1148,7 @@
     els.collectionPickerList.querySelectorAll('[data-customize]').forEach(button => button.addEventListener('click', () => startCustomizing(button.dataset.customize)));
     els.collectionPickerList.querySelectorAll('[data-picker-remove]').forEach(button => button.addEventListener('click', () => {
       const next = readCollection().filter(top => top.id !== button.dataset.pickerRemove);
-      writeStorage(storageKeys.collection, next); renderBattleCollectionPicker(); renderCollection(); syncSaveButton();
+      writeStorage(storageKeys.collection, next); releaseEquipmentFromTop(button.dataset.pickerRemove); renderBattleCollectionPicker(); renderCollection(); syncSaveButton();
     }));
   }
 
@@ -1182,15 +1183,29 @@
   }
 
   function readEquipmentInventory() {
-    const saved = readStorage(storageKeys.equipment, {});
-    return Object.fromEntries(equipmentCatalog.map(item => {
-      const entry = saved[item.id];
-      if (entry && typeof entry === 'object') {
-        return [item.id, { count: Math.max(0, Number(entry.count) || 0), effectId: refineEffects.some(effect => effect.id === entry.effectId) ? entry.effectId : '' }];
+    const saved = readStorage(storageKeys.equipment, null);
+    if (Array.isArray(saved)) {
+      return saved.map(instance => ({
+        id: String(instance.id || `GEAR-${makeId()}`),
+        itemId: equipmentCatalog.some(item => item.id === instance.itemId) ? instance.itemId : equipmentCatalog[0].id,
+        effectId: refineEffects.some(effect => effect.id === instance.effectId) ? instance.effectId : '',
+        ownerTopId: String(instance.ownerTopId || '')
+      }));
+    }
+    const legacy = readStorage(storageKeys.legacyEquipment, {});
+    const migrated = [];
+    equipmentCatalog.forEach(item => {
+      const entry = legacy[item.id];
+      const count = Math.max(0, Number(entry?.count ?? entry) || 0);
+      for (let index = 0; index < count; index += 1) {
+        migrated.push({ id: `GEAR-${makeId()}`, itemId: item.id, effectId: index === 0 && refineEffects.some(effect => effect.id === entry?.effectId) ? entry.effectId : '', ownerTopId: '' });
       }
-      return [item.id, { count: Math.max(0, Number(entry) || 0), effectId: '' }];
-    }));
+    });
+    writeStorage(storageKeys.equipment, migrated);
+    return migrated;
   }
+
+  function writeEquipmentInventory(inventory) { writeStorage(storageKeys.equipment, inventory); }
 
   function equipmentEffect(entry) {
     return refineEffects.find(effect => effect.id === entry?.effectId) || null;
@@ -1203,10 +1218,11 @@
   function grantEquipment() {
     const item = pick(equipmentCatalog);
     const inventory = readEquipmentInventory();
-    inventory[item.id].count += 1;
-    writeStorage(storageKeys.equipment, inventory);
-    state.lastLoot = { ...item, count: inventory[item.id].count };
-    trackEvent('battle_top_equipment_drop', { equipment_id: item.id, equipment_stat: item.stat, equipment_count: inventory[item.id].count });
+    const instance = { id: `GEAR-${makeId()}`, itemId: item.id, effectId: '', ownerTopId: '' };
+    inventory.push(instance);
+    writeEquipmentInventory(inventory);
+    state.lastLoot = { ...item, instanceId: instance.id };
+    trackEvent('battle_top_equipment_drop', { equipment_id: item.id, equipment_stat: item.stat, equipment_instance_id: instance.id });
     return state.lastLoot;
   }
 
@@ -1215,9 +1231,17 @@
       || productCatalog.find(product => product.id === seed?.id)
       || productCatalog.find(product => product.image === seed?.image)
       || productCatalog[0];
+    const inventory = readEquipmentInventory();
+    const used = new Set();
+    const equipment = (Array.isArray(seed?.equipment) ? seed.equipment : []).map(reference => {
+      const exact = inventory.find(instance => instance.id === reference && (!instance.ownerTopId || instance.ownerTopId === seed?.id));
+      const legacy = exact || inventory.find(instance => instance.itemId === reference && !used.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === seed?.id));
+      if (legacy) used.add(legacy.id);
+      return legacy?.id || '';
+    }).filter(Boolean).slice(0, 3);
     return {
       baseProductId: base.id,
-      equipment: Array.isArray(seed?.equipment) ? seed.equipment.filter(id => equipmentCatalog.some(item => item.id === id)).slice(0, 3) : [],
+      equipment,
       name: seed?.isCustom ? seed.name : ''
     };
   }
@@ -1227,8 +1251,9 @@
     const base = productCatalog.find(product => product.id === draft.baseProductId) || productCatalog[0];
     const inventory = readEquipmentInventory();
     const equipped = draft.equipment.map(id => {
-      const item = equipmentCatalog.find(candidate => candidate.id === id);
-      return item ? { ...item, effect: equipmentEffect(inventory[id]) } : null;
+      const instance = inventory.find(candidate => candidate.id === id);
+      const item = equipmentCatalog.find(candidate => candidate.id === instance?.itemId);
+      return item ? { ...item, instance, effect: equipmentEffect(instance) } : null;
     }).filter(Boolean);
     const stats = { ...base.stats };
     equipped.forEach(item => { stats[item.stat] = clamp(8, 150, stats[item.stat] + item.amount); });
@@ -1243,16 +1268,17 @@
 
   function renderEquipmentOptions() {
     const inventory = readEquipmentInventory();
-    const owned = equipmentCatalog.filter(item => inventory[item.id].count > 0);
+    const available = inventory.filter(instance => !instance.ownerTopId || instance.ownerTopId === state.customizingId);
     els.customEquipmentSlots.textContent = `${state.customDraft.equipment.length} / 3`;
-    if (!owned.length) {
-      els.customEquipmentOptions.innerHTML = '<p class="custom-equipment-empty">還沒有強化道具。先去揍贏一個對手！</p>';
+    if (!available.length) {
+      els.customEquipmentOptions.innerHTML = '<p class="custom-equipment-empty">沒有可用裝備。打贏對手取得新裝備，或從其他收藏陀螺卸下。</p>';
       return;
     }
-    els.customEquipmentOptions.innerHTML = owned.map(item => {
-      const equipped = state.customDraft.equipment.includes(item.id);
-      const effect = equipmentEffect(inventory[item.id]);
-      return `<button type="button" class="custom-equipment-card${equipped ? ' is-equipped' : ''}" data-equipment="${item.id}" style="--equipment-color:${effect?.color || item.color}" aria-pressed="${equipped}"><span>${equipmentImage(item)}<i>×${inventory[item.id].count}</i></span><strong>${escapeHTML(item.name)}</strong><b>${item.label} +${item.amount}</b><small>${effect ? `${effect.icon} ${effect.name}特效` : equipped ? '出戰時鑑定特效' : '尚未鑑定'}</small></button>`;
+    els.customEquipmentOptions.innerHTML = available.map(instance => {
+      const item = equipmentCatalog.find(candidate => candidate.id === instance.itemId) || equipmentCatalog[0];
+      const equipped = state.customDraft.equipment.includes(instance.id);
+      const effect = equipmentEffect(instance);
+      return `<button type="button" class="custom-equipment-card${equipped ? ' is-equipped' : ''}" data-equipment="${instance.id}" style="--equipment-color:${effect?.color || item.color}" aria-pressed="${equipped}"><span>${equipmentImage(item)}<i>#${instance.id.slice(-4)}</i></span><strong>${escapeHTML(item.name)}</strong><b>${item.label} +${item.amount}</b><small>${effect ? `${effect.icon} ${effect.name}特效` : equipped ? '出戰時鑑定特效' : '尚未鑑定'}</small></button>`;
     }).join('');
     els.customEquipmentOptions.querySelectorAll('[data-equipment]').forEach(button => button.addEventListener('click', () => {
       const id = button.dataset.equipment;
@@ -1308,6 +1334,25 @@
     setTimeout(() => { els.customRefineStage.innerHTML = ''; }, 1250);
   }
 
+  function assignEquipmentToTop(topId, equipmentIds) {
+    const selected = new Set(equipmentIds);
+    const inventory = readEquipmentInventory();
+    inventory.forEach(instance => {
+      if (instance.ownerTopId === topId && !selected.has(instance.id)) instance.ownerTopId = '';
+      if (selected.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === topId)) instance.ownerTopId = topId;
+    });
+    writeEquipmentInventory(inventory);
+  }
+
+  function releaseEquipmentFromTop(topId) {
+    const inventory = readEquipmentInventory();
+    let changed = false;
+    inventory.forEach(instance => {
+      if (instance.ownerTopId === topId) { instance.ownerTopId = ''; changed = true; }
+    });
+    if (changed) writeEquipmentInventory(inventory);
+  }
+
   function saveCustomTop() {
     const collection = readCollection();
     const savedIndex = state.customizingId ? collection.findIndex(item => item.id === state.customizingId) : -1;
@@ -1315,6 +1360,7 @@
       const removed = collection[savedIndex];
       collection.splice(savedIndex, 1);
       writeStorage(storageKeys.collection, collection);
+      releaseEquipmentFromTop(removed.id);
       state.customizingId = '';
       renderCollection(); renderBattleCollectionPicker(); renderCustomPreview(); syncSaveButton();
       els.customStatus.textContent = `「${removed.name}」已取消收藏，仍可直接出戰。`;
@@ -1324,6 +1370,7 @@
     const top = buildCustomTop();
     const existingIndex = collection.findIndex(item => item.id === top.id);
     if (existingIndex < 0 && collection.length >= 5) { els.customStatus.textContent = '收藏已滿 5 顆，先回「我的收藏」刪掉一顆。'; return; }
+    assignEquipmentToTop(top.id, top.equipment);
     if (existingIndex >= 0) collection[existingIndex] = top; else collection.unshift(top);
     writeStorage(storageKeys.collection, collection.slice(0, 5));
     state.customizingId = top.id;
@@ -1339,6 +1386,7 @@
     const collection = readCollection(), index = collection.findIndex(item => item.id === state.customizingId);
     if (index < 0) return;
     const top = buildCustomTop();
+    assignEquipmentToTop(top.id, top.equipment);
     collection[index] = top;
     writeStorage(storageKeys.collection, collection);
     if (state.player?.id === top.id) {
@@ -1352,12 +1400,16 @@
   async function battleWithCustomTop() {
     if (state.battling || !state.customDraft) return;
     const inventory = readEquipmentInventory();
-    const unidentifiedId = [...state.customDraft.equipment].reverse().find(id => inventory[id]?.count > 0 && !inventory[id].effectId);
+    const unidentifiedId = [...state.customDraft.equipment].reverse().find(id => {
+      const instance = inventory.find(candidate => candidate.id === id);
+      return instance && !instance.effectId;
+    });
     if (unidentifiedId) {
-      const item = equipmentCatalog.find(candidate => candidate.id === unidentifiedId);
+      const instance = inventory.find(candidate => candidate.id === unidentifiedId);
+      const item = equipmentCatalog.find(candidate => candidate.id === instance.itemId);
       const effect = pick(refineEffects);
-      inventory[unidentifiedId].effectId = effect.id;
-      writeStorage(storageKeys.equipment, inventory);
+      instance.effectId = effect.id;
+      writeEquipmentInventory(inventory);
       els.customStatus.textContent = `${effect.icon} 意外獲得「${effect.name}特效」！已綁定 ${item.name}`;
       els.customEffectReveal.innerHTML = `<span>${effect.icon}</span> ${effect.name}特效！`;
       els.customEffectReveal.style.setProperty('--effect-color', effect.color);
@@ -1390,7 +1442,7 @@
     els.collection.querySelectorAll('[data-card-customize]').forEach(button => button.addEventListener('click', () => { openCollectionPicker(); startCustomizing(button.dataset.cardCustomize); }));
     els.collection.querySelectorAll('[data-remove]').forEach(button => button.addEventListener('click', () => {
       const next = readCollection().filter(top => top.id !== button.dataset.remove);
-      writeStorage(storageKeys.collection, next); renderCollection(); syncSaveButton();
+      writeStorage(storageKeys.collection, next); releaseEquipmentFromTop(button.dataset.remove); renderCollection(); syncSaveButton();
     }));
   }
 
@@ -1402,13 +1454,39 @@
     const raw = readStorage(storageKeys.collection, []);
     let migrated = false;
     const normalized = raw.map((saved, index) => {
-      if (saved?.isCustom && saved?.stats && saved?.customParts) return cloneProduct(saved);
+      if (saved?.isCustom && saved?.stats && (saved?.customParts || Array.isArray(saved?.equipment))) return cloneProduct(saved);
       const current = findProduct(saved?.name) || productCatalog.find(product => product.id === saved?.id);
       if (current) return cloneProduct(current);
       migrated = true;
       return cloneProduct(productCatalog[index % productCatalog.length]);
     }).filter((product, index, list) => list.findIndex(item => item.id === product.id) === index).slice(0, 5);
-    if (migrated || normalized.length !== raw.length) writeStorage(storageKeys.collection, normalized);
+    const inventory = readEquipmentInventory();
+    const collectionIds = new Set(normalized.map(top => top.id));
+    const claimed = new Set();
+    inventory.forEach(instance => {
+      if (instance.ownerTopId && !collectionIds.has(instance.ownerTopId)) { instance.ownerTopId = ''; migrated = true; }
+    });
+    normalized.forEach(top => {
+      if (!top.isCustom || !Array.isArray(top.equipment)) return;
+      const resolved = top.equipment.map(reference => {
+        const exact = inventory.find(instance => instance.id === reference && !claimed.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === top.id));
+        const legacy = exact || inventory.find(instance => instance.itemId === reference && !claimed.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === top.id));
+        if (!legacy) return '';
+        if (legacy.ownerTopId !== top.id) migrated = true;
+        legacy.ownerTopId = top.id;
+        claimed.add(legacy.id);
+        return legacy.id;
+      }).filter(Boolean).slice(0, 3);
+      if (resolved.join('|') !== top.equipment.join('|')) migrated = true;
+      top.equipment = resolved;
+    });
+    inventory.forEach(instance => {
+      if (instance.ownerTopId && !claimed.has(instance.id)) { instance.ownerTopId = ''; migrated = true; }
+    });
+    if (migrated || normalized.length !== raw.length) {
+      writeStorage(storageKeys.collection, normalized);
+      writeEquipmentInventory(inventory);
+    }
     return normalized;
   }
 
