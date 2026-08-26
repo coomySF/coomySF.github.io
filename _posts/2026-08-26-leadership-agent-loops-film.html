@@ -1,0 +1,780 @@
+---
+layout: film
+title: 領導者的四種 Loop・動畫版本
+description: 用動畫實驗室的粉彩畫風，把「主管嘴上要 ownership，卻只允許團隊用 Turn-Based Loop 工作」這篇講一遍——十個 beat，看完能複述四種 Loop 和切換條件。
+date: 2026-08-26 21:00:00 +0800
+image: /assets/og-post-loops2.jpg
+tags: [動畫實驗室, 領導, Agent]
+seo:
+  type: BlogPosting
+---
+<style>
+  /* 片長 = 停留總和 15.4 viewport + 1 個進場 viewport */
+  #al2-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1640vh; }
+  .al2-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .al2-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #fff1e4 0%, #f8dfe8 52%, #dcd4f2 100%); }
+  #al2-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .al2-ui { position: absolute; inset: 0; pointer-events: none; }
+  .al2-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 56%, rgba(70, 40, 90, .22) 100%); }
+  .al2-text {
+    position: absolute; left: 50%; top: 9vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center;
+  }
+  .al2-key {
+    font-family: var(--display); font-weight: 600;
+    font-size: clamp(34px, 6vw, 72px); line-height: 1.15; letter-spacing: .02em;
+    color: #3b2f45; margin: 0; opacity: 0;
+    text-shadow: 0 2px 24px rgba(255, 245, 235, .9);
+  }
+  .al2-cap {
+    font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px); line-height: 1.9;
+    color: #4a3b52; margin: 14px 0 0; opacity: 0;
+    text-shadow: 0 1px 18px rgba(255, 245, 235, .9);
+  }
+  .al2-cap span { display: inline-block; opacity: 0; }
+  .al2-text[data-beat="9"] .al2-cap { font-size: clamp(13px, 1.5vw, 17px); }
+  .al2-start-wrap { text-align: center; margin: 6px 0 46px; }
+  .al2-start {
+    cursor: pointer; background: none;
+    border: 1px solid rgba(220, 148, 124, .4); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .34em; text-indent: .34em; color: var(--life-clay);
+    animation: al2-drift 2.4s ease-in-out infinite, al2-glow 2.4s ease-in-out infinite;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .al2-start:hover { background: rgba(220, 148, 124, .12); border-color: var(--life-clay); }
+  @keyframes al2-drift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+  @keyframes al2-glow {
+    0%, 100% { box-shadow: 0 0 0 rgba(220, 148, 124, 0); }
+    50% { box-shadow: 0 0 22px rgba(220, 148, 124, .3); }
+  }
+  .al2-source { font-family: var(--serif); color: var(--life-muted); }
+  .al2-source a { color: var(--life-ink); }
+
+  /* 靜態版：reduced-motion 或無 WebGL 時，十個 beat 直接堆疊、內容一個不少 */
+  .al2-static-list { display: none; list-style: none; margin: 0; padding: 0; }
+  html.al2-static .al2-static-list { display: block; }
+  html.al2-static #al2-film { height: auto; margin: 0; width: auto; }
+  html.al2-static .al2-stage { display: none; }
+  html.al2-static .al2-start-wrap { display: none; }
+  .al2-beat-static { padding: 48px 0; border-bottom: 1px solid rgba(226, 221, 207, .12); }
+  .al2-beat-static .al2-skey {
+    font-family: var(--display); font-weight: 600; font-size: clamp(28px, 4.5vw, 48px);
+    line-height: 1.2; color: var(--life-ink); margin: 0 0 12px;
+  }
+  .al2-beat-static .al2-scap { font-family: var(--serif); font-size: 18px; line-height: 1.9; color: var(--life-ink); margin: 0; }
+  .al2-beat-static .al2-snum { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; color: var(--life-clay); margin: 0 0 10px; }
+</style>
+
+<p class="al2-start-wrap"><button class="al2-start" type="button">▶ PLAY</button></p>
+
+<div id="al2-film">
+  <div class="al2-stage">
+    <div class="al2-sky" aria-hidden="true"></div>
+    <canvas id="al2-canvas" aria-hidden="true"></canvas>
+    <div class="al2-ui">
+      <div class="al2-vig" aria-hidden="true"></div>
+      <div class="al2-text" data-beat="0">
+        <h2 class="al2-key">主管一直在選 Loop</h2>
+        <p class="al2-cap" data-cap="0">領導者管專案時，其實一直在替每個人選 Loop，只是沒這樣說。</p>
+      </div>
+      <div class="al2-text" data-beat="1">
+        <h2 class="al2-key">要主動卻只給回合</h2>
+        <p class="al2-cap" data-cap="1">嘴上要 ownership，實際只允許 Turn-Based，最後又怪人不主動。</p>
+      </div>
+      <div class="al2-text" data-beat="2">
+        <h2 class="al2-key">一步一請示</h2>
+        <p class="al2-cap" data-cap="2">Turn-Based 適合第一次、不可逆、事故中；永不結束時，等待最合理。</p>
+      </div>
+      <div class="al2-text" data-beat="3">
+        <h2 class="al2-key">給結果不只給責任</h2>
+        <p class="al2-cap" data-cap="3">Goal-Based 要給齊五條件：結果、自決範圍、資源、求援訊號、回看時機。</p>
+      </div>
+      <div class="al2-text" data-beat="4">
+        <h2 class="al2-key">節奏是為了早看見</h2>
+        <p class="al2-cap" data-cap="4">Time-Based 重點不是幾天開一次會，而是有沒有更早看見問題並改下一步。</p>
+      </div>
+      <div class="al2-text" data-beat="5">
+        <h2 class="al2-key">知道哪裡不必等</h2>
+        <p class="al2-cap" data-cap="5">Proactive 需要資訊與邊界；沒有的話會變成不敢動或衝過頭兩種極端。</p>
+      </div>
+      <div class="al2-text" data-beat="6">
+        <h2 class="al2-key">同一人不同 Loop</h2>
+        <p class="al2-cap" data-cap="6">四種 Loop 不是階梯；同一人熟事可主動，遇事故切回回合制。</p>
+      </div>
+      <div class="al2-text" data-beat="7">
+        <h2 class="al2-key">設計切換條件</h2>
+        <p class="al2-cap" data-cap="7">領導者最重要的工作不是把人推向 Proactive，而是知道什麼時候切換。</p>
+      </div>
+      <div class="al2-text" data-beat="8">
+        <h2 class="al2-key">先看 Loop 再看人</h2>
+        <p class="al2-cap" data-cap="8">「他不夠主動」先不當人格判斷；先看我們讓他用哪種 Loop、有沒有離開的條件。</p>
+      </div>
+      <div class="al2-text" data-beat="9">
+        <h2 class="al2-key">回顧</h2>
+        <p class="al2-cap" data-cap="9"><span>主管一直在選 Loop</span><span>／要主動卻只給回合</span><span>／一步一請示</span><span>／給結果不只給責任</span><span>／節奏是為了早看見</span><span>／知道哪裡不必等</span><span>／同一人不同 Loop</span><span>／設計切換條件</span><span>／先看 Loop 再看人</span></p>
+      </div>
+    </div>
+  </div>
+
+  <ol class="al2-static-list">
+    <li class="al2-beat-static"><p class="al2-snum">B1</p><h2 class="al2-skey">主管一直在選 Loop</h2><p class="al2-scap">領導者管專案時，其實一直在替每個人選 Loop，只是沒這樣說。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B2</p><h2 class="al2-skey">要主動卻只給回合</h2><p class="al2-scap">嘴上要 ownership，實際只允許 Turn-Based，最後又怪人不主動。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B3</p><h2 class="al2-skey">一步一請示</h2><p class="al2-scap">Turn-Based 適合第一次、不可逆、事故中；永不結束時，等待最合理。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B4</p><h2 class="al2-skey">給結果不只給責任</h2><p class="al2-scap">Goal-Based 要給齊五條件：結果、自決範圍、資源、求援訊號、回看時機。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B5</p><h2 class="al2-skey">節奏是為了早看見</h2><p class="al2-scap">Time-Based 重點不是幾天開一次會，而是有沒有更早看見問題並改下一步。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B6</p><h2 class="al2-skey">知道哪裡不必等</h2><p class="al2-scap">Proactive 需要資訊與邊界；沒有的話會變成不敢動或衝過頭兩種極端。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B7</p><h2 class="al2-skey">同一人不同 Loop</h2><p class="al2-scap">四種 Loop 不是階梯；同一人熟事可主動，遇事故切回回合制。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B8</p><h2 class="al2-skey">設計切換條件</h2><p class="al2-scap">領導者最重要的工作不是把人推向 Proactive，而是知道什麼時候切換。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B9</p><h2 class="al2-skey">先看 Loop 再看人</h2><p class="al2-scap">「他不夠主動」先不當人格判斷；先看我們讓他用哪種 Loop、有沒有離開的條件。</p></li>
+    <li class="al2-beat-static"><p class="al2-snum">B10</p><h2 class="al2-skey">回顧</h2><p class="al2-scap">主管一直在選 Loop／要主動卻只給回合／一步一請示／給結果不只給責任／節奏是為了早看見／知道哪裡不必等／同一人不同 Loop／設計切換條件／先看 Loop 再看人</p></li>
+  </ol>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const small = matchMedia('(max-width: 640px)').matches;
+const canvas = document.getElementById('al2-canvas');
+
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+  catch { return false; }
+}
+// Rule 5：reduced-motion 或無 WebGL → 靜態版，十個 beat 內容一個不少
+if (reduced || !webglOK()) docEl.classList.add('al2-static');
+
+// Rule 1：整頁只用一個 easing 家族（smoothstep）
+function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+const EASE = ss;
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp01(x) { return Math.min(1, Math.max(0, x)); }
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], EASE(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+// ---------- 節拍表（停留 → 進度區間） ----------
+const DWELL = [1.3, 1.3, 1.6, 1.6, 1.4, 1.6, 1.4, 1.8, 1.4, 2.0];
+const TOTAL = DWELL.reduce((a, b) => a + b, 0);
+const BEATS = [];
+{ let acc = 0; DWELL.forEach((d) => { BEATS.push({ s: acc / TOTAL, e: (acc + d) / TOTAL, len: d / TOTAL }); acc += d; }); }
+const ROOM = 30;           // 每個 beat 一個房間，沿 +x 排開（fov 50 在 z≈8–12 可見 ±9，30 才不會露出鄰房）
+const TRANS = 0.22;        // beat 前 22%：鏡頭 / 場景轉場，之後畫面停定 ≥ 1.0 viewport
+const TEXT_IN = [0.30, 0.40];
+const TEXT_OUT = 0.92;
+
+const C = {
+  turn: '#f2a9a0', goal: '#ffd58a', time: '#a5dbff', pro: '#b8f0c8',
+  leader: '#dc947c', member: '#f2eee5', skin: '#ffe8dc', ink: '#4a3b52',
+  risk: '#ff8f8f', wall: '#e6d9cf', hill: '#cfe9c4', wood: '#b98a68',
+};
+const LOOPS = [C.turn, C.goal, C.time, C.pro];
+if (!docEl.classList.contains('al2-static')) boot();
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 120);
+  camera.position.set(0, 0.3, 12.5);
+
+  const hemi = new THREE.HemisphereLight('#fffdfa', '#d8c8ee', 1.45);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight('#fff4ea', 0.8);
+  key.position.set(3, 4, 2.5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
+  key.shadow.camera.left = -9; key.shadow.camera.right = 9;
+  key.shadow.camera.top = 7; key.shadow.camera.bottom = -5;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 24;
+  key.shadow.radius = 6;
+  scene.add(key);
+  scene.add(key.target);
+  const fill = new THREE.DirectionalLight('#e2ecff', 0.3);
+  fill.position.set(-4, -2, -3);
+  scene.add(fill);
+
+  const glowTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+  })();
+  const sprite = (parent, color, scale) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.setScalar(scale);
+    parent.add(s);
+    return s;
+  };
+  const solidMat = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.95, metalness: 0, ...opts });
+  const mesh = (geo, mat) => new THREE.Mesh(geo, mat);
+  const casts = (g) => g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  const fadeGroup = (grp, op) => {
+    grp.traverse((o) => {
+      if (o.material && !Array.isArray(o.material)) { o.material.transparent = true; o.material.opacity = ('_baseOp' in o.material ? o.material._baseOp : 1) * op; }
+    });
+  };
+  const markBase = (grp) => grp.traverse((o) => { if (o.material && !Array.isArray(o.material)) o.material._baseOp = o.material.opacity ?? 1; });
+
+  // 地板：整條走廊共用一片影子地
+  const ground = mesh(new THREE.PlaneGeometry(360, 60), new THREE.ShadowMaterial({ opacity: 0.16 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(ROOM * 4.5, -2.02, 0);
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // ---------- 通用零件 ----------
+  // 人：圓錐身體 + 球頭（腳底在 y=0）
+  const person = (bodyColor, s = 1) => {
+    const g = new THREE.Group();
+    const body = mesh(new THREE.ConeGeometry(0.42 * s, 0.95 * s, 8), solidMat(bodyColor));
+    body.position.y = 0.475 * s;
+    g.add(body);
+    const head = mesh(new THREE.IcosahedronGeometry(0.3 * s, 2), solidMat(C.skin));
+    head.position.y = 1.2 * s;
+    g.add(head);
+    const eye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.05 * s, 8, 6), solidMat(C.ink, { roughness: 0.35 }));
+      e.scale.z = 0.5;
+      e.position.set(x * s, 1.23 * s, 0.27 * s);
+      return e;
+    };
+    g.add(eye(-0.11), eye(0.11));
+    const sm = mesh(new THREE.TorusGeometry(0.06 * s, 0.014 * s, 5, 10, Math.PI), solidMat(C.ink));
+    sm.position.set(0, 1.12 * s, 0.28 * s);
+    sm.rotation.z = Math.PI;
+    g.add(sm);
+    g.userData.body = body;
+    g.userData.head = head;
+    casts(g);
+    markBase(g);
+    return g;
+  };
+  // 環：平放在地上的圈
+  const ring = (color, r, tube = 0.09, flat = true, opts = {}) => {
+    const m = mesh(new THREE.TorusGeometry(r, tube, 8, 40), solidMat(color, { emissive: color, emissiveIntensity: 0.25, ...opts }));
+    if (flat) m.rotation.x = Math.PI / 2;
+    m.position.y = flat ? 0.06 : r + tube;
+    m.castShadow = true;
+    return m;
+  };
+  const room = (i) => {
+    const g = new THREE.Group();
+    g.position.x = i * ROOM;
+    scene.add(g);
+    return g;
+  };
+  const clampBeat = (p, b) => clamp01((p - b.s) / b.len);
+
+  // ---------- B1：主管一直在選 Loop ----------
+  const r1 = room(0);
+  const b1 = {};
+  {
+    const leader = person(C.leader, 1.15);
+    leader.position.set(0, -2, 0.4);
+    r1.add(leader);
+    const MX = [-4.6, -1.6, 1.6, 4.6];
+    b1.members = MX.map((x, i) => {
+      const m = person(C.member, 0.95);
+      m.position.set(x, -2, -1.8);
+      r1.add(m);
+      return m;
+    });
+    b1.rings = MX.map((x, i) => {
+      const rg = new THREE.Group();
+      rg.add(ring(LOOPS[i], 0.9));
+      rg.position.set(x, -2, -1.8);
+      rg.scale.setScalar(0.001);
+      r1.add(rg);
+      return rg;
+    });
+    b1.hand = new THREE.Vector3(0.45, -1.0, 0.6);
+    b1.feet = MX.map((x) => new THREE.Vector3(x, -2, -1.8));
+  }
+
+  // ---------- B2 / B9：小環 + 牆 + 遠處的大環 ----------
+  const lockedScene = (rm, withBig = true) => {
+    const o = {};
+    o.member = person(C.member, 0.95);
+    o.member.position.set(-2.2, -2, 0);
+    rm.add(o.member);
+    o.ring = ring(C.turn, 0.9, 0.09);
+    o.ring.position.set(-2.2, -1.94, 0);
+    rm.add(o.ring);
+    o.wall = mesh(new THREE.BoxGeometry(0.4, 2.0, 3.4), solidMat(C.wall));
+    o.wall.position.set(0.3, -1.0, 0);
+    o.wall.castShadow = true;
+    rm.add(o.wall);
+    if (withBig) {
+      o.big = ring(C.pro, 3, 0.12, true, { transparent: true, opacity: 0.25, emissiveIntensity: 0.6 });
+      o.big.position.set(3.6, -1.94, -2.2);
+      o.big.castShadow = false;
+      rm.add(o.big);
+      o.bigGlow = sprite(rm, C.pro, 4);
+      o.bigGlow.position.set(3.6, -1.6, -2.2);
+    }
+    return o;
+  };
+  const r2 = room(1);
+  const b2 = lockedScene(r2);
+
+  // ---------- B3：一步一請示 ----------
+  const r3 = room(2);
+  const b3 = {};
+  {
+    b3.leader = person(C.leader, 1.15);
+    b3.leader.position.set(-3, -2, 0);
+    r3.add(b3.leader);
+    b3.member = person(C.member, 0.95);
+    b3.member.position.set(3, -2, 0);
+    r3.add(b3.member);
+    b3.ball = mesh(new THREE.SphereGeometry(0.22, 12, 10), solidMat('#fff2c0', { emissive: '#ffd58a', emissiveIntensity: 0.9 }));
+    b3.ball.castShadow = true;
+    r3.add(b3.ball);
+    b3.glow = sprite(r3, '#ffd58a', 1.4);
+    b3.tiles = [0, 1, 2, 3].map((k) => {
+      const tl = mesh(new THREE.BoxGeometry(0.9, 0.12, 0.9), solidMat(C.turn));
+      tl.position.set(-1.5 + k * 1.05, -1.96, 1.9);
+      tl.scale.setScalar(0.001);
+      tl.castShadow = true;
+      r3.add(tl);
+      return tl;
+    });
+  }
+
+  // ---------- B4：給結果不只給責任 ----------
+  const r4 = room(3);
+  const b4 = {};
+  {
+    const hill = mesh(new THREE.SphereGeometry(2.6, 14, 10), solidMat(C.hill));
+    hill.scale.y = 0.6;
+    hill.position.set(4.6, -3.2, -2.2);
+    hill.receiveShadow = true;
+    r4.add(hill);
+    const pole = mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 6), solidMat(C.wood));
+    pole.position.set(4.6, -0.9, -2.2);
+    r4.add(pole);
+    const flag = mesh(new THREE.BoxGeometry(0.7, 0.42, 0.04), solidMat(C.goal, { emissive: C.goal, emissiveIntensity: 0.3 }));
+    flag.position.set(4.95, -0.35, -2.2);
+    r4.add(flag);
+    casts(r4);
+    b4.flag = flag;
+    b4.member = person(C.member, 0.95);
+    r4.add(b4.member);
+    b4.cubes = [0, 1, 2, 3, 4].map(() => {
+      const c = mesh(new THREE.BoxGeometry(0.26, 0.26, 0.26), solidMat('#fff1cf', { emissive: C.goal, emissiveIntensity: 0 }));
+      c.castShadow = true;
+      r4.add(c);
+      return c;
+    });
+    b4.path = (u) => {
+      const B = (a, b, c) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * b + u * u * c;
+      return new THREE.Vector3(B(-4.2, 0, 3.4), B(-2, -2, -1.75), B(0.6, 2.4, -1.0));
+    };
+  }
+
+  // ---------- B5：節奏是為了早看見 ----------
+  const r5 = room(4);
+  const b5 = {};
+  {
+    const axis = mesh(new THREE.BoxGeometry(10.4, 0.14, 0.34), solidMat(C.time));
+    axis.position.set(0, -1.95, 0);
+    r5.add(axis);
+    b5.POSTS = [-4.5, -2.5, -0.5, 1.5, 3.5];
+    b5.posts = b5.POSTS.map((x) => {
+      const p = mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.1, 8), solidMat(C.time, { emissive: C.time, emissiveIntensity: 0.3 }));
+      p.position.set(x, -1.35, 0);
+      r5.add(p);
+      const cap = mesh(new THREE.SphereGeometry(0.16, 8, 6), solidMat('#d9efff'));
+      cap.position.set(x, -0.75, 0);
+      r5.add(cap);
+      return p;
+    });
+    b5.bar = mesh(new THREE.BoxGeometry(0.62, 1, 0.5), solidMat(C.risk, { emissive: C.risk, emissiveIntensity: 0.25 }));
+    b5.bar.position.set(-4.5, -1.5, 1.0);
+    r5.add(b5.bar);
+    casts(r5);
+  }
+
+  // ---------- B6：知道哪裡不必等（A 有邊界 / B 無邊界） ----------
+  const r6 = room(5);
+  const b6 = { A: new THREE.Group(), B: new THREE.Group() };
+  r6.add(b6.A, b6.B);
+  {
+    const W = 6.4, D = 4;
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(W, D)), new THREE.LineBasicMaterial({ color: C.pro, transparent: true }));
+    edges.rotation.x = -Math.PI / 2;
+    edges.position.y = -1.9;
+    b6.A.add(edges);
+    const edgeMat = solidMat(C.pro, { emissive: C.pro, emissiveIntensity: 0.7 });
+    [[0, D / 2, W, 0.1], [0, -D / 2, W, 0.1], [W / 2, 0, 0.1, D], [-W / 2, 0, 0.1, D]].forEach(([x, z, w, d]) => {
+      const e = mesh(new THREE.BoxGeometry(w, 0.1, d), edgeMat);
+      e.position.set(x, -1.95, z);
+      b6.A.add(e);
+    });
+    b6.memberA = person(C.member, 0.95);
+    b6.A.add(b6.memberA);
+    const beaconPole = mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.5, 8), solidMat('#d8d0e8'));
+    beaconPole.position.set(3.6, -1.25, -1.9);
+    b6.A.add(beaconPole);
+    b6.beacon = mesh(new THREE.SphereGeometry(0.3, 10, 8), solidMat('#fff7d6', { emissive: C.goal, emissiveIntensity: 0 }));
+    b6.beacon.position.set(3.6, -0.2, -1.9);
+    b6.A.add(b6.beacon);
+    b6.beaconGlow = sprite(b6.A, C.goal, 1.8);
+    b6.beaconGlow.position.copy(b6.beacon.position);
+    b6.leaderA = person(C.leader, 1.15);
+    b6.leaderA.position.set(4.4, -2, -0.4);
+    b6.A.add(b6.leaderA);
+    casts(b6.A);
+    markBase(b6.A);
+    // B：沒有邊界——一個縮成一團，一個衝出畫面
+    b6.ballB = new THREE.Group();
+    const bb = mesh(new THREE.SphereGeometry(0.5, 12, 10), solidMat(C.member));
+    bb.scale.y = 0.8;
+    const bEye = (x) => {
+      const e = mesh(new THREE.SphereGeometry(0.05, 8, 6), solidMat(C.ink));
+      e.scale.z = 0.5;
+      e.position.set(x, 0.05, 0.47);
+      return e;
+    };
+    b6.ballB.add(bb, bEye(-0.12), bEye(0.12));
+    b6.ballB.position.set(-1.2, -1.55, 0.2);
+    b6.B.add(b6.ballB);
+    b6.flyB = person(C.member, 0.95);
+    b6.B.add(b6.flyB);
+    casts(b6.B);
+    markBase(b6.B);
+  }
+
+  // ---------- B7：同一人不同 Loop（左：日常 / 右：事故） ----------
+  const r7 = room(6);
+  const b7 = { L: new THREE.Group(), R: new THREE.Group() };
+  r7.add(b7.L, b7.R);
+  {
+    b7.L.position.x = -3.2;
+    b7.R.position.x = 3.2;
+    b7.bigRing = ring(C.pro, 2.2, 0.1);
+    b7.bigRing.position.y = -1.94;
+    b7.L.add(b7.bigRing);
+    b7.memberL = person(C.member, 0.95);
+    b7.L.add(b7.memberL);
+    const smallRing = ring(C.turn, 0.9, 0.09);
+    smallRing.position.set(0.4, -1.94, 0);
+    b7.R.add(smallRing);
+    b7.memberR = person(C.member, 0.95);
+    b7.memberR.position.set(0.4, -2, 0);
+    b7.R.add(b7.memberR);
+    b7.leaderR = person(C.leader, 1.15);
+    b7.leaderR.position.set(-1.6, -2, 0.3);
+    b7.R.add(b7.leaderR);
+    b7.red = new THREE.PointLight('#ff5c5c', 0, 14, 1.6);
+    b7.red.position.set(0.6, 1.2, 2.4);
+    b7.R.add(b7.red);
+    b7.redGlow = sprite(b7.R, '#ff6b6b', 5);
+    b7.redGlow.position.set(0.4, -1.2, -1.5);
+    casts(b7.L); casts(b7.R);
+    markBase(b7.L); markBase(b7.R);
+  }
+
+  // ---------- B8：設計切換條件（旋鈕 + 四張條件卡） ----------
+  const r8 = room(7);
+  const b8 = {};
+  {
+    b8.ANG = [-1.15, -0.4, 0.4, 1.15];
+    const dial = mesh(new THREE.CylinderGeometry(1.9, 2.0, 0.45, 28), solidMat('#efe6f5'));
+    dial.position.set(0, -1.6, 1.6);
+    dial.castShadow = true;
+    r8.add(dial);
+    b8.ANG.forEach((a, i) => {
+      const tick = mesh(new THREE.BoxGeometry(0.28, 0.08, 0.14), solidMat(LOOPS[i], { emissive: LOOPS[i], emissiveIntensity: 0.4 }));
+      tick.position.set(Math.cos(a) * 1.5, -1.33, 1.6 - Math.sin(a) * 1.5);
+      tick.rotation.y = a;
+      r8.add(tick);
+    });
+    b8.needle = new THREE.Group();
+    const nd = mesh(new THREE.BoxGeometry(1.55, 0.1, 0.18), solidMat(C.ink));
+    nd.position.x = 0.75;
+    nd.castShadow = true;
+    const hub = mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.14, 12), solidMat(C.ink));
+    b8.needle.add(nd, hub);
+    b8.needle.position.set(0, -1.3, 1.6);
+    r8.add(b8.needle);
+    const CX = [-3.9, -1.3, 1.3, 3.9];
+    b8.cards = CX.map((x, i) => {
+      const side = solidMat('#f6f0ea');
+      const back = solidMat('#d9d0d8');
+      const front = solidMat(LOOPS[i], { emissive: LOOPS[i], emissiveIntensity: 0.35 });
+      const card = mesh(new THREE.BoxGeometry(1.7, 1.05, 0.07), [side, side, side, side, back, front]);
+      card.position.set(x, -0.2, -0.4);
+      card.castShadow = true;
+      r8.add(card);
+      return card;
+    });
+  }
+
+  // ---------- B9：先看 Loop 再看人 ----------
+  const r9 = room(8);
+  const b9 = lockedScene(r9, false);
+  b9.ring.material = solidMat(C.turn, { emissive: C.turn, emissiveIntensity: 0.25 });
+  b9.colTurn = new THREE.Color(C.turn);
+  b9.colPro = new THREE.Color(C.pro);
+
+  // ---------- B10：四色環並排 ----------
+  const r10 = room(9);
+  {
+    [-4.5, -1.5, 1.5, 4.5].forEach((x, i) => {
+      const rg = ring(LOOPS[i], 1.1, 0.15, false);
+      rg.position.set(x, -0.9, 0);
+      r10.add(rg);
+      const base = ring(LOOPS[i], 1.1, 0.06, true, { transparent: true, opacity: 0.35 });
+      base.position.set(x, -1.94, 0);
+      base.castShadow = false;
+      r10.add(base);
+    });
+  }
+  const rooms = [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10];
+
+  // ---------- DOM ----------
+  const keys = [...document.querySelectorAll('.al2-key')];
+  const caps = [...document.querySelectorAll('.al2-cap')];
+  const recapSpans = [...caps[9].querySelectorAll('span')];
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('al2-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__al2Seek = (p) => { P = p; Psm = p; render(); };
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  let lastUserMs = performance.now();
+  const cancelGlide = () => { autoScroll = null; lastUserMs = performance.now(); };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.al2-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * (BEATS[0].s + BEATS[0].len * TEXT_IN[1]), 2600);
+  });
+  let endSeen = false, prevT = 0;
+  const clock = new THREE.Clock();
+
+  // 每個 beat 的鏡頭 z（zoom-in 只出現在 B1、B9；B10 回到基準）
+  const ZBASE = 8.8;
+  const Z = BEATS.map(() => [ZBASE, ZBASE]);
+  Z[0] = [12.6, ZBASE];
+  Z[8] = [ZBASE, 7.8];
+  Z[9] = [7.8, ZBASE];
+
+  // ---------- 各 beat 的畫面（回傳鏡頭 x 偏移，供 pan 使用） ----------
+  const upd = [
+    // B1 zoom-in：四條環從主管手上長到四個團員腳下
+    (q, t) => {
+      b1.rings.forEach((rg, i) => {
+        const g = EASE(0.04 + i * 0.06, 0.18 + i * 0.06, q);
+        rg.position.lerpVectors(b1.hand, b1.feet[i], g);
+        rg.scale.setScalar(Math.max(0.001, g));
+      });
+      return 0;
+    },
+    // B2 static：小環困住團員，遠處大環輕輕呼吸
+    (q, t) => {
+      const pulse = 1 + 0.035 * Math.sin(t * 1.6);
+      b2.big.scale.set(pulse, pulse, 1);
+      b2.bigGlow.material.opacity = 0.22 + 0.06 * Math.sin(t * 1.6);
+      return 0;
+    },
+    // B3 pan：光球在主管與團員之間來回四次，每次來回長出一格；最後團員停下
+    (q, t) => {
+      const u = clamp01((q - 0.05) / 0.62) * 4;
+      const f = u - Math.floor(u);
+      const LX = -2.3, MX = 2.3;
+      let bx, arc;
+      if (u >= 4) { bx = LX; arc = 0; }
+      else { const leg = f < 0.5 ? f * 2 : 1 - (f - 0.5) * 2; bx = lerp(LX, MX, EASE(0, 1, leg)); arc = Math.sin(leg * Math.PI); }
+      b3.ball.position.set(bx, -0.75 + arc * 0.5, 0.3);
+      b3.glow.position.copy(b3.ball.position);
+      b3.glow.material.opacity = 0.5;
+      b3.tiles.forEach((tl, k) => tl.scale.setScalar(Math.max(0.001, EASE(k + 0.85, k + 1, u))));
+      b3.member.scale.y = 1 - 0.15 * EASE(0.72, 0.85, q);
+      return bx * 0.35;
+    },
+    // B4 pan：團員自己畫路走向旗子；五顆條件方塊依序亮起
+    (q, t) => {
+      const m = EASE(0.1, 0.8, q);
+      const pos = b4.path(m);
+      const bob = Math.abs(Math.sin(m * 26)) * 0.08 * (m > 0 && m < 1 ? 1 : 0);
+      b4.member.position.set(pos.x, pos.y + bob, pos.z);
+      b4.member.rotation.z = -0.06 * Math.sin(m * 26);
+      [0.15, 0.3, 0.45, 0.6, 0.75].forEach((th, i) => {
+        const lit = EASE(th, th + 0.06, q);
+        const a = t * 0.9 + i * Math.PI * 2 / 5;
+        const c = b4.cubes[i];
+        c.position.set(pos.x + Math.cos(a) * 0.95, pos.y + 1.0 + Math.sin(t * 1.4 + i) * 0.12, pos.z + Math.sin(a) * 0.95);
+        c.rotation.set(t * 0.6 + i, t * 0.8, 0);
+        c.material.emissiveIntensity = lit * 0.9;
+        c.scale.setScalar(0.8 + lit * 0.45);
+      });
+      return pos.x * 0.45;
+    },
+    // B5 pan：沿時間軸前進；風險柱長高，在每個檢查點被壓回去
+    (q, t) => {
+      const v = EASE(0.05, 0.95, q);
+      const x = -4.5 + 9 * v;
+      const h = kf(v, [[0, 0.15], [0.2, 1.1], [0.24, 0.3], [0.42, 1.2], [0.46, 0.35], [0.64, 1.3], [0.68, 0.35], [0.86, 1.35], [0.9, 0.4], [1, 0.55]]);
+      b5.bar.scale.y = h;
+      b5.bar.position.set(x, -2 + h / 2, 1.0);
+      b5.posts.forEach((p, i) => {
+        const near = 1 - Math.min(1, Math.abs(p.position.x - x) / 0.9);
+        p.material.emissiveIntensity = 0.3 + near * 0.6;
+      });
+      return x * 0.55;
+    },
+    // B6 cross-fade：有邊界 → 無邊界
+    (q, t) => {
+      const fadeA = 1 - EASE(0.5, 0.6, q), fadeB = EASE(0.5, 0.6, q);
+      const wx = 2.7 * Math.sin(q * 11), wz = 1.3 * Math.sin(q * 17 + 1);
+      b6.memberA.position.set(wx, -2, wz);
+      const lit = EASE(2.1, 2.5, Math.abs(wx));
+      b6.beacon.material.emissiveIntensity = lit;
+      b6.beaconGlow.material.opacity = lit * 0.7 * fadeA;
+      b6.leaderA.position.y = -2 - (1 - lit) * 0.3;
+      b6.A.visible = fadeA > 0.01;
+      b6.B.visible = fadeB > 0.01;
+      fadeGroup(b6.A, fadeA);
+      fadeGroup(b6.leaderA, fadeA * lit);
+      fadeGroup(b6.B, fadeB);
+      const fly = EASE(0.55, 1, q);
+      b6.flyB.position.set(0.8 + fly * 9, -2 + fly * 1.4, 0);
+      b6.flyB.rotation.z = -0.55 * fly;
+      b6.ballB.scale.setScalar(0.85 + 0.1 * Math.sin(t * 2));
+      return 0;
+    },
+    // B7 cross-fade：日常（大環自由走）→ 事故（紅光、小環、一步一步對）
+    (q, t) => {
+      const sw = EASE(0.45, 0.55, q);
+      const fadeL = 1 - sw, fadeR = sw;
+      const a = q * 7;
+      b7.memberL.position.set(Math.cos(a) * 2.2, -2, Math.sin(a) * 2.2);
+      b7.memberL.rotation.y = -a;
+      b7.L.visible = fadeL > 0.01;
+      b7.R.visible = fadeR > 0.01;
+      fadeGroup(b7.L, fadeL);
+      fadeGroup(b7.R, fadeR);
+      b7.red.intensity = fadeR * 40 * (0.8 + 0.2 * Math.sin(t * 5));
+      b7.redGlow.material.opacity = fadeR * 0.45;
+      b7.leaderR.position.x = -1.6 + 0.08 * Math.sin(t * 3);
+      return lerp(-1.4, 1.4, sw);
+    },
+    // B8 pan：四張條件卡依序翻面，指針跟著轉到對應段位
+    (q, t) => {
+      [0.15, 0.30, 0.45, 0.58].forEach((th, i) => { b8.cards[i].rotation.y = Math.PI * EASE(th, th + 0.1, q); });
+      b8.needle.rotation.y = kf(q, [[0.15, -1.6], [0.25, -1.15], [0.30, -1.15], [0.40, -0.4], [0.45, -0.4], [0.55, 0.4], [0.58, 0.4], [0.68, 1.15]]);
+      return kf(q, [[0.1, -2.6], [0.2, -2.6], [0.3, -1.2], [0.45, 1.2], [0.62, 2.6]]) * 0.5;
+    },
+    // B9 zoom-in：小環張開變大，牆沉下去，團員走出來
+    (q, t) => {
+      const open = EASE(0.22, 0.5, q);
+      const s = lerp(1, 2.2 / 0.9, open);
+      b9.ring.scale.set(s, s, 1);
+      b9.ring.material.color.lerpColors(b9.colTurn, b9.colPro, open);
+      b9.ring.material.emissive.copy(b9.ring.material.color);
+      b9.wall.position.y = lerp(-1.0, -3.6, EASE(0.22, 0.5, q));
+      b9.wall.visible = q < 0.5;  // 地板是透明 ShadowMaterial，沉下去後要真的隱藏
+      const walk = EASE(0.45, 0.75, q);
+      b9.member.position.set(lerp(-2.2, 1.4, walk), -2 + Math.abs(Math.sin(walk * 18)) * 0.08 * (walk > 0 && walk < 1 ? 1 : 0), 0.3);
+      return 0;
+    },
+    // B10 static：四色環並排
+    (q, t) => 0,
+  ];
+
+  function update(p, t) {
+    let bi = 0;
+    for (let i = 0; i < BEATS.length; i++) if (p >= BEATS[i].s) bi = i;
+    const qs = BEATS.map((b) => clampBeat(p, b));
+
+    // 文字：Rule 3 —— 畫面在 q=TRANS 停定後才進場（q 0.30→0.40），beat 尾 8% 淡出
+    BEATS.forEach((b, i) => {
+      const q = qs[i];
+      const inside = p >= b.s && p < b.e;
+      const w = inside ? EASE(TEXT_IN[0], TEXT_IN[1], q) * (1 - EASE(TEXT_OUT, 1, q)) : 0;
+      keys[i].style.opacity = String(w);
+      if (i === 9) {
+        caps[i].style.opacity = String(inside ? 1 - EASE(TEXT_OUT, 1, q) : 0);
+        recapSpans.forEach((sp, k) => { sp.style.opacity = String(inside ? EASE(0.32 + k * 0.04, 0.38 + k * 0.04, q) : 0); });
+      } else {
+        caps[i].style.opacity = String(inside ? EASE(TEXT_IN[0] + 0.03, TEXT_IN[1] + 0.03, q) * (1 - EASE(TEXT_OUT, 1, q)) : 0);
+      }
+    });
+
+    // 場景：每個 beat 都用自己的 q 更新（deterministic）
+    const offs = upd.map((fn, i) => fn(qs[i], t));
+    rooms.forEach((r, i) => { r.visible = Math.abs(i - bi) <= 1; });
+
+    // 鏡頭：房間切換（beat 前 22%）+ 該 beat 的 pan 偏移 + zoom
+    const q = qs[bi];
+    const roomX = ROOM * bi - (bi > 0 ? ROOM * (1 - EASE(0, TRANS, q)) : 0);
+    const offW = EASE(0.05, 0.25, q) * (1 - EASE(0.92, 1, q));
+    const camX = roomX + offs[bi] * offW;
+    const camZ = kf(q, [[0, Z[bi][0]], [0.25, Z[bi][1]]]);
+    const wideComp = Math.max(1, 5.8 / (0.4663 * camera.aspect) / camZ);  // 直式手機：保證可見半寬 ≥ 5.8，場景不被裁
+    camera.position.set(camX, 0.8, camZ * wideComp);
+    camera.lookAt(camX, 0.2, 0);
+    key.position.set(camX + 3, 4, 2.5);
+    key.target.position.set(camX, -1, 0);
+  }
+
+  function render() {
+    const t = clock.getElapsedTime();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (performance.now() - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, EASE(0, 1, u)));
+      if (u >= 1) autoScroll = null;
+    }
+    const dt = Math.min(0.05, Math.max(0, t - prevT));
+    prevT = t;
+    // 自動播放：0.8 秒沒有使用者操作就以電影節奏續播
+    if (!autoScroll && !endSeen && P > 0.002 && P < 0.998 && performance.now() - lastUserMs > 800) {
+      const max = film.offsetHeight - innerHeight;
+      scrollTo(0, Math.min(film.offsetTop + max, scrollY + (max / 55) * dt));
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm, t);
+    renderer.render(scene, camera);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+    readScroll();
+  });
+}
+</script>
+
+<div class="film-prose">
+  <p class="al2-source">這是 <a href="{{ '/writing/leadership-agent-loops/' | relative_url }}">原文《主管嘴上要 ownership，卻只允許團隊用 Turn-Based Loop 工作》</a> 的動畫版本。</p>
+</div>
