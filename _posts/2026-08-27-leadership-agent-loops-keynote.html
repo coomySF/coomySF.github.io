@@ -1,0 +1,794 @@
+---
+layout: film
+title: 領導者的四種 Loop・發表會版本
+description: 同一篇文章的第三種畫法——深色舞台、毛玻璃卡片、只打在焦點上的一束光，像產品發表會的投影片。十個 beat，看完能複述四種 Loop 和切換條件。
+date: 2026-08-27 10:00:00 +0800
+image: /assets/og-post-loops2.jpg
+tags: [動畫實驗室, 領導, Agent]
+seo:
+  type: BlogPosting
+---
+<style>
+  /* keynote 語域：深藍黑漸層舞台、毛玻璃卡片、一束只打在焦點上的光。沒有其他光暈、沒有其他脈動。 */
+  html.al4-keynote {
+    --life-bg: #0a0f1e; --life-ink: #f3f4f8; --life-muted: #9aa3b8; --life-clay: #ff8a7a;
+    --al4-sans: -apple-system, 'Noto Sans TC', sans-serif;
+    --al4-grad: linear-gradient(180deg, #0a0f1e 0%, #141b33 100%);
+  }
+  html.al4-keynote body { background: var(--al4-grad) fixed; background-color: #0a0f1e; color: #f3f4f8; }
+  html.al4-keynote .site-header { border-color: rgba(255, 255, 255, .14); }
+  html.al4-keynote .site-header a, html.al4-keynote .site-footer { color: #f3f4f8; }
+  html.al4-keynote .site-footer { border-color: rgba(255, 255, 255, .14); }
+  html.al4-keynote .film-post-head h1 { color: #f3f4f8; font-family: var(--display); font-weight: 600; letter-spacing: .01em; }
+  html.al4-keynote .film-post-deck { color: #c9cfdd; font-family: var(--serif); }
+  html.al4-keynote .film-post-meta { color: #9aa3b8; }
+  html.al4-keynote .film-post-back { color: #9aa3b8; }
+  html.al4-keynote .film-post-end a { color: #f3f4f8; border-color: rgba(255, 255, 255, .22); }
+  html.al4-keynote .film-post-end a:hover { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .45); }
+
+  /* 片長 = 停留總和 15.4 viewport + 1 個進場 viewport */
+  #al4-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1640vh; }
+  .al4-stage {
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    background: var(--al4-grad); background-color: #0a0f1e;
+  }
+  /* 唯一的一束光：中心由 JS 依每個 beat 的焦點設定 --sx / --sy */
+  .al4-spot {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(circle at var(--sx, 50%) var(--sy, 60%), rgba(255, 255, 255, .10), transparent 40%);
+  }
+  #al4-svg {
+    position: absolute; left: 0; top: 40vh; width: 100%; height: 56vh; display: block; overflow: hidden;
+  }
+  #al4-svg text.m { font-family: var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  #al4-svg text.s { font-family: var(--al4-sans); font-weight: 500; letter-spacing: .02em; }
+  #al4-svg * { stroke-linecap: round; stroke-linejoin: round; }
+  .al4-ui { position: absolute; inset: 0; pointer-events: none; }
+  .al4-text {
+    position: absolute; left: 50%; top: 11vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px));
+    text-align: center;
+  }
+  .al4-eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .24em; color: #9aa3b8;
+    margin: 0 0 10px; opacity: 0;
+  }
+  .al4-key {
+    font-family: var(--display); font-weight: 600;
+    font-size: clamp(36px, 5.6vw, 70px); line-height: 1.15; letter-spacing: .01em;
+    color: #f3f4f8; margin: 0; opacity: 0;
+  }
+  .al4-cap {
+    font-family: var(--serif); font-weight: 400; font-size: clamp(15px, 1.9vw, 20px); line-height: 1.9;
+    color: #c9cfdd; margin: 14px 0 0; opacity: 0;
+  }
+  .al4-cap span { display: inline-block; opacity: 0; }
+  .al4-text[data-beat="9"] .al4-cap { font-size: clamp(13px, 1.5vw, 17px); }
+  .al4-start-wrap { text-align: center; margin: 6px 0 46px; }
+  .al4-start {
+    cursor: pointer; background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .22); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .34em; text-indent: .34em; color: #f3f4f8;
+    transition: background .3s ease, border-color .3s ease;
+  }
+  .al4-start:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .45); }
+  .al4-source { font-family: var(--serif); color: #9aa3b8; line-height: 1.9; }
+  .al4-source a { color: #f3f4f8; }
+
+  /* 靜態版：reduced-motion 時，十個 beat 直接堆疊、內容一個不少 */
+  .al4-static-list { display: none; list-style: none; margin: 0; padding: 0; }
+  html.al4-static .al4-static-list { display: block; }
+  html.al4-static #al4-film { height: auto; margin: 0; width: auto; }
+  html.al4-static .al4-stage { display: none; }
+  html.al4-static .al4-start-wrap { display: none; }
+  .al4-beat-static { padding: 48px 0; border-bottom: 1px solid rgba(255, 255, 255, .14); }
+  .al4-beat-static .al4-skey {
+    font-family: var(--display); font-weight: 600; font-size: clamp(28px, 4.5vw, 48px);
+    line-height: 1.2; color: #f3f4f8; margin: 0 0 12px;
+  }
+  .al4-beat-static .al4-scap { font-family: var(--serif); font-size: 18px; line-height: 1.9; color: #c9cfdd; margin: 0; }
+  .al4-beat-static .al4-snum { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; color: #9aa3b8; margin: 0 0 10px; }
+</style>
+<script>document.documentElement.classList.add('al4-keynote');</script>
+
+<p class="al4-start-wrap"><button class="al4-start" type="button">▶ PLAY</button></p>
+
+<div id="al4-film">
+  <div class="al4-stage">
+    <div class="al4-spot" aria-hidden="true"></div>
+    <svg id="al4-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMin meet" aria-hidden="true"></svg>
+    <div class="al4-ui">
+      <div class="al4-text" data-beat="0">
+        <p class="al4-eyebrow">01 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">主管一直在選 Loop</h2>
+        <p class="al4-cap" data-cap="0">領導者管專案時，其實一直在替每個人選 Loop，只是沒這樣說。</p>
+      </div>
+      <div class="al4-text" data-beat="1">
+        <p class="al4-eyebrow">02 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">要主動卻只給回合</h2>
+        <p class="al4-cap" data-cap="1">嘴上要 ownership，實際只允許 Turn-Based，最後又怪人不主動。</p>
+      </div>
+      <div class="al4-text" data-beat="2">
+        <p class="al4-eyebrow">03 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">一步一請示</h2>
+        <p class="al4-cap" data-cap="2">Turn-Based 適合第一次、不可逆、事故中；永不結束時，等待最合理。</p>
+      </div>
+      <div class="al4-text" data-beat="3">
+        <p class="al4-eyebrow">04 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">給結果不只給責任</h2>
+        <p class="al4-cap" data-cap="3">Goal-Based 要給齊五條件：結果、自決範圍、資源、求援訊號、回看時機。</p>
+      </div>
+      <div class="al4-text" data-beat="4">
+        <p class="al4-eyebrow">05 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">節奏是為了早看見</h2>
+        <p class="al4-cap" data-cap="4">Time-Based 重點不是幾天開一次會，而是有沒有更早看見問題並改下一步。</p>
+      </div>
+      <div class="al4-text" data-beat="5">
+        <p class="al4-eyebrow">06 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">知道哪裡不必等</h2>
+        <p class="al4-cap" data-cap="5">Proactive 需要資訊與邊界；沒有的話會變成不敢動或衝過頭兩種極端。</p>
+      </div>
+      <div class="al4-text" data-beat="6">
+        <p class="al4-eyebrow">07 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">同一人不同 Loop</h2>
+        <p class="al4-cap" data-cap="6">四種 Loop 不是階梯；同一人熟事可主動，遇事故切回回合制。</p>
+      </div>
+      <div class="al4-text" data-beat="7">
+        <p class="al4-eyebrow">08 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">設計切換條件</h2>
+        <p class="al4-cap" data-cap="7">領導者最重要的工作不是把人推向 Proactive，而是知道什麼時候切換。</p>
+      </div>
+      <div class="al4-text" data-beat="8">
+        <p class="al4-eyebrow">09 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">先看 Loop 再看人</h2>
+        <p class="al4-cap" data-cap="8">「他不夠主動」先不當人格判斷；先看我們讓他用哪種 Loop、有沒有離開的條件。</p>
+      </div>
+      <div class="al4-text" data-beat="9">
+        <p class="al4-eyebrow">10 / 10 · KEYNOTE</p>
+        <h2 class="al4-key">回顧</h2>
+        <p class="al4-cap" data-cap="9"><span>主管一直在選 Loop</span><span>／要主動卻只給回合</span><span>／一步一請示</span><span>／給結果不只給責任</span><span>／節奏是為了早看見</span><span>／知道哪裡不必等</span><span>／同一人不同 Loop</span><span>／設計切換條件</span><span>／先看 Loop 再看人</span></p>
+      </div>
+    </div>
+  </div>
+
+  <ol class="al4-static-list">
+    <li class="al4-beat-static"><p class="al4-snum">B1</p><h2 class="al4-skey">主管一直在選 Loop</h2><p class="al4-scap">領導者管專案時，其實一直在替每個人選 Loop，只是沒這樣說。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B2</p><h2 class="al4-skey">要主動卻只給回合</h2><p class="al4-scap">嘴上要 ownership，實際只允許 Turn-Based，最後又怪人不主動。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B3</p><h2 class="al4-skey">一步一請示</h2><p class="al4-scap">Turn-Based 適合第一次、不可逆、事故中；永不結束時，等待最合理。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B4</p><h2 class="al4-skey">給結果不只給責任</h2><p class="al4-scap">Goal-Based 要給齊五條件：結果、自決範圍、資源、求援訊號、回看時機。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B5</p><h2 class="al4-skey">節奏是為了早看見</h2><p class="al4-scap">Time-Based 重點不是幾天開一次會，而是有沒有更早看見問題並改下一步。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B6</p><h2 class="al4-skey">知道哪裡不必等</h2><p class="al4-scap">Proactive 需要資訊與邊界；沒有的話會變成不敢動或衝過頭兩種極端。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B7</p><h2 class="al4-skey">同一人不同 Loop</h2><p class="al4-scap">四種 Loop 不是階梯；同一人熟事可主動，遇事故切回回合制。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B8</p><h2 class="al4-skey">設計切換條件</h2><p class="al4-scap">領導者最重要的工作不是把人推向 Proactive，而是知道什麼時候切換。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B9</p><h2 class="al4-skey">先看 Loop 再看人</h2><p class="al4-scap">「他不夠主動」先不當人格判斷；先看我們讓他用哪種 Loop、有沒有離開的條件。</p></li>
+    <li class="al4-beat-static"><p class="al4-snum">B10</p><h2 class="al4-skey">回顧</h2><p class="al4-scap">主管一直在選 Loop／要主動卻只給回合／一步一請示／給結果不只給責任／節奏是為了早看見／知道哪裡不必等／同一人不同 Loop／設計切換條件／先看 Loop 再看人</p></li>
+  </ol>
+</div>
+
+<script type="module">
+import { SVG, Runner, Timeline } from 'https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.4/dist/svg.esm.js';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Rule 5：reduced-motion → 靜態版，十個 beat 內容一個不少
+if (reduced) docEl.classList.add('al4-static');
+
+// Rule 1：整頁只用一個 easing 家族 —— SVG.js 的正弦家族：'<>'（in-out）與 '>'（out）
+const EIO = (t) => -Math.cos(Math.min(1, Math.max(0, t)) * Math.PI) / 2 + 0.5;   // === SVG.js '<>'
+const EO = (t) => Math.sin(Math.min(1, Math.max(0, t)) * Math.PI / 2);           // === SVG.js '>'
+const seg = (a, b, x) => EIO((x - a) / (b - a));
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], seg(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+// ---------- 節拍表（停留 → 進度區間） ----------
+const DWELL = [1.3, 1.3, 1.6, 1.6, 1.4, 1.6, 1.4, 1.8, 1.4, 2.0];
+const TOTAL = DWELL.reduce((a, b) => a + b, 0);
+const BEATS = [];
+{ let acc = 0; DWELL.forEach((d) => { BEATS.push({ s: acc / TOTAL, e: (acc + d) / TOTAL, len: d / TOTAL }); acc += d; }); }
+const TRANS = 0.22;        // beat 前 22%：鏡頭 / 場景轉場，之後畫面停定 ≥ 1.0 viewport
+const TEXT_IN = [0.30, 0.40];
+const TEXT_OUT = 0.92;
+const T = 1000;            // 每個 beat 的 timeline 長度（單位 ms，實際由 scroll 進度 seek）
+
+// ---------- 色票（keynote：深底、毛玻璃、亮但不螢光的四色） ----------
+const INK = '#f3f4f8', MUTED = '#9aa3b8';
+const HAIR = 'rgba(255,255,255,.14)', GLASS = 'rgba(255,255,255,.07)', GEDGE = 'rgba(255,255,255,.22)', GHI = 'rgba(255,255,255,.45)';
+const LC = { turn: '#ff8a7a', goal: '#ffd166', time: '#6fb7ff', pro: '#5fe0a8' };
+const ACC = LC.turn;
+const LOOPS = [LC.turn, LC.goal, LC.time, LC.pro];
+const LNAME = ['回合', '目標', '時間', '主動'];
+const LEN = ['TURN-BASED', 'GOAL-BASED', 'TIME-BASED', 'PROACTIVE'];
+const FULL = [0, 0, 1200, 600];
+
+if (!docEl.classList.contains('al4-static')) boot();
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const draw = SVG('#al4-svg');
+  draw.viewbox(...FULL);
+
+  // ---------- 通用零件 ----------
+  const hexLerp = (a, b, t) => {
+    const A = a.match(/\w\w/g).map((h) => parseInt(h, 16)), B = b.match(/\w\w/g).map((h) => parseInt(h, 16));
+    return '#' + A.map((v, i) => Math.round(lerp(v, B[i], t)).toString(16).padStart(2, '0')).join('');
+  };
+  // 毛玻璃卡：半透明白 7% + 1px 22% 白邊 + 頂部 1px 45% 高光線。不用 blur filter（底下只有漸層，假玻璃即可）。
+  const glass = (g, x, y, w, h, r = 14) => {
+    const rect = g.rect(w, h).radius(r).move(x, y).fill(GLASS).stroke({ color: GEDGE, width: 1 });
+    const hi = g.line(x + r, y + 0.5, x + w - r, y + 0.5).stroke({ color: GHI, width: 1 });
+    return { rect, hi };
+  };
+  // 焦點內光：只在該卡是焦點時顯示（opacity 由各 beat 控制），用兩層描邊模擬柔的內光
+  const glow = (g, x, y, w, h, color, r = 14) => {
+    const c = g.group().opacity(0);
+    c.rect(w, h).radius(r).move(x, y).fill({ color, opacity: 0.07 }).stroke({ color, width: 1.5, opacity: 0.55 });
+    c.rect(w - 8, h - 8).radius(Math.max(4, r - 4)).move(x + 4, y + 4).fill('none').stroke({ color, width: 6, opacity: 0.10 });
+    return c;
+  };
+  // 4px 色條（卡片左側）
+  const sideBar = (g, x, y, h, color) => g.rect(4, h).radius(2).move(x, y).fill(color);
+  // 小藥丸（實色）
+  const pill = (g, cx, cy, w, h, color) => g.rect(w, h).radius(h / 2).center(cx, cy).fill(color);
+  // 人：實心圓頭 + 實心圓角矩形軀幹（org-chart avatar）；y = 軀幹頂
+  const avatar = (g, x, y, color = INK) => {
+    const p = g.group();
+    p.circle(36).center(x, y - 30).fill(color);
+    p.rect(64, 40).radius(10).move(x - 32, y - 6).fill(color);
+    return p;
+  };
+  // ↻ 圖示：弧 + 箭頭，stroke 3
+  const loopIcon = (g, x, y, color) => {
+    const p = g.group();
+    p.path(`M${x - 10.3} ${y - 3.8} A11 11 0 1 1 ${x + 5.5} ${y + 9.5}`).fill('none').stroke({ color, width: 3 });
+    p.path(`M${x + 11} ${y + 1} L${x + 5.5} ${y + 9.5} L${x - 3} ${y + 6.5}`).fill('none').stroke({ color, width: 3 });
+    return p;
+  };
+  // 鎖：鎖身 + 鎖環；unlock 時旋轉鎖環
+  const lock = (g, x, y, color = MUTED) => {
+    const p = g.group();
+    const shackle = p.path(`M${x - 6} ${y - 2} V${y - 9} A6 6 0 0 1 ${x + 6} ${y - 9} V${y - 2}`).fill('none').stroke({ color, width: 2 });
+    p.rect(22, 16).radius(3).move(x - 11, y - 2).fill(color);
+    return { grp: p, shackle, hinge: [x - 6, y - 2] };
+  };
+  const mono = (g, x, y, txt, color = MUTED, size = 20, anchor = 'middle') =>
+    g.plain(txt).addClass('m').font({ size, anchor }).fill(color).attr({ x, y });
+  const label = (g, x, y, txt, color = INK, size = 22, anchor = 'middle') =>
+    g.plain(txt).addClass('s').font({ size, anchor }).fill(color).attr({ x, y });
+  const hair = (g, x1, y1, x2, y2, color = HAIR, w = 1) => g.line(x1, y1, x2, y2).stroke({ color, width: w });
+  // Loop 節點卡（240×96）：毛玻璃 + 4px 左色條 + ↻ + 等寬標籤 + 中文；回傳 { c, glow }
+  const loopCard = (g, x, y, i) => {
+    const c = g.group();
+    glass(c, x, y, 240, 96);
+    const gl = glow(c, x, y, 240, 96, LOOPS[i]);
+    sideBar(c, x + 12, y + 12, 72, LOOPS[i]);
+    loopIcon(c, x + 46, y + 46, LOOPS[i]);
+    mono(c, x + 74, y + 42, LEN[i], LOOPS[i], 16, 'start');
+    label(c, x + 74, y + 76, LNAME[i], INK, 22, 'start');
+    return { c, glow: gl };
+  };
+
+  // 遠層視差：12 顆固定位置的小點（deterministic），反向於鏡頭 pan 以 30% 幅度漂移
+  const far = draw.group().attr('id', 'al4-far');
+  for (let i = 0; i < 12; i++) {
+    far.circle(3).center(60 + ((i * 337) % 1080), 60 + ((i * 211) % 480)).fill(INK).opacity(0.25);
+  }
+
+  // ---------- 每個 beat 一條 Timeline，完全由 scroll 進度 seek ----------
+  const scenes = [], tls = [], spots = [];
+  const scene = (id, spot) => {
+    const g = draw.group().attr('id', 's-' + id).opacity(0);
+    const tl = new Timeline().persist(true);
+    tl.pause();
+    scenes.push(g); tls.push(tl); spots.push(spot || (() => [600, 300]));
+    const setSpot = (fn) => { spots[spots.length - 1] = fn; };
+    // 線段延伸：dasharray / dashoffset 從 getTotalLength() 來，同一 easing 家族 '<>'
+    const extend = (el, s, e) => {
+      const L = el.node.getTotalLength();
+      el.attr({ 'stroke-dasharray': L, 'stroke-dashoffset': L });
+      new Runner((e - s) * T).element(el).ease('<>').attr({ 'stroke-dashoffset': 0 }).schedule(tl, s * T, 'absolute');
+      return el;
+    };
+    // 依進度算值的 runner（during 拿到的是原始 position，easing 在 fn 內用同一家族處理）
+    const run = (el, s, e, fn) => new Runner((e - s) * T).element(el).during((p) => fn(p)).schedule(tl, s * T, 'absolute');
+    // 進場：上滑 28 + 淡入 + 以自身中心縮放 .96→1
+    const slide = (el, s, e, dy = 28) => {
+      el.opacity(0);
+      return run(el, s, e, (p) => {
+        const w = EO(p);
+        el.opacity(w).transform({ translateY: dy * (1 - w), scale: lerp(0.96, 1, w), origin: 'center' });
+      });
+    };
+    const fade = (el, s, e) => { el.opacity(0); return run(el, s, e, (p) => el.opacity(EO(p))); };
+    return { g, tl, extend, run, slide, fade, setSpot };
+  };
+  // 鏡頭：zoom-in 最多 0.85×，中心 (cx, cy)
+  const zoomTo = (cx, cy, z) => {
+    const w = lerp(1200, 1020, z), h = lerp(600, 510, z);
+    const x = Math.min(180, Math.max(0, cx - w / 2)), y = Math.min(90, Math.max(0, cy - h / 2));
+    draw.viewbox(lerp(0, x, z), lerp(0, y, z), w, h);
+  };
+  const CARD_X = [190, 460, 740, 1010];
+
+  // ---------- B1：主管一直在選 Loop（zoom-in 0.85 收到主管，再放開看四張玻璃卡依序落下） ----------
+  {
+    const { g, extend, run, slide, setSpot } = scene('leader-picks-loops');
+    const leader = avatar(g, 600, 130, ACC);
+    mono(g, 600, 194, 'LEADER', ACC, 16);
+    label(g, 600, 224, '主管', INK);
+    const glows = [];
+    CARD_X.forEach((cx, i) => {
+      const link = g.path(`M600 236 V320 H${cx} V400`).fill('none').stroke({ color: 'rgba(255,255,255,.3)', width: 1.5 });
+      const { c, glow: gl } = loopCard(g, cx - 120, 400, i);
+      glows.push(gl);
+      const s = 0.10 + i * 0.08;
+      extend(link, s, s + 0.08);
+      slide(c, s + 0.05, s + 0.13);
+    });
+    leader.opacity(0);
+    run(leader, 0.0, 0.1, (p) => leader.opacity(EO(p)));
+    // 鏡頭：0–0.3 收到主管，0.3–0.5 放開；焦點內光只在正在落下的那張卡上
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      zoomTo(600, 180, seg(0, 0.3, q) * (1 - seg(0.3, 0.5, q)));
+      glows.forEach((gl, i) => {
+        const on = 0.15 + i * 0.08, off = i < 3 ? 0.23 + i * 0.08 : 0.62;
+        gl.opacity(seg(on, on + 0.06, q) * (1 - seg(off, off + 0.06, q)));
+      });
+    });
+    setSpot((q) => [kf(q, [[0.12, 600], [0.18, CARD_X[0]], [0.26, CARD_X[1]], [0.34, CARD_X[2]], [0.42, CARD_X[3]], [0.68, 600]]),
+      kf(q, [[0.12, 150], [0.18, 448], [0.62, 448], [0.68, 300]])]);
+  }
+
+  // ---------- B2：要主動卻只給回合（static；只有虛線大卡呼吸） ----------
+  {
+    const { g, extend, fade, slide, setSpot } = scene('locked-in-turn-loop');
+    const frame = g.group();
+    glass(frame, 190, 190, 220, 220);
+    glow(frame, 190, 190, 220, 220, LC.turn).opacity(1);
+    sideBar(frame, 202, 202, 196, LC.turn);
+    avatar(frame, 300, 290, INK);
+    mono(frame, 300, 172, LEN[0], LC.turn, 16);
+    label(frame, 300, 446, LNAME[0], INK);
+    slide(frame, 0.02, 0.14);
+    const wall = hair(g, 600, 80, 600, 520, 'rgba(255,255,255,.3)', 1);
+    extend(wall, 0.10, 0.28);
+    const lk = lock(g, 600, 300, MUTED);
+    fade(lk.grp, 0.24, 0.32);
+    const bigWrap = g.group();
+    const big = bigWrap.rect(380, 200).radius(14).center(900, 300).fill('none').stroke({ color: LC.pro, width: 1.5, dasharray: '8 8' });
+    mono(bigWrap, 900, 172, LEN[3], LC.pro, 16);
+    label(bigWrap, 900, 446, LNAME[3], MUTED);
+    fade(bigWrap, 0.16, 0.3);
+    // 唯一允許的 wall-clock 動作：虛線大卡 3 秒呼吸 .45→.75（自帶 timeline，不綁在 beat timeline 上）
+    big.opacity(0.45).animate(1500).ease('<>').opacity(0.75).loop(true, true);
+    setSpot(() => [300, 300]);
+  }
+
+  // ---------- B3：一步一請示（pan ≤ 80：跟著紅色 token 來回四次，STEP 計數器遞增；光跟著 token） ----------
+  {
+    const { g, fade, run, setSpot } = scene('turn-based-pingpong');
+    const LX = 200, MX = 1000, Y = 300, X0 = LX + 80, X1 = MX - 80;
+    const leader = avatar(g, LX, Y - 20, ACC);
+    const member = avatar(g, MX, Y - 20, INK);
+    mono(g, LX, 370, 'LEADER', ACC, 16); label(g, LX, 400, '主管', INK);
+    mono(g, MX, 370, 'MEMBER', MUTED, 16); label(g, MX, 400, '團員', INK);
+    fade(leader, 0.0, 0.1); fade(member, 0.02, 0.12);
+    const lane = g.group();
+    const laneR = lane.rect(X1 - X0, 28).radius(14).move(X0, Y - 14).fill(GLASS).stroke({ color: GEDGE, width: 1 });
+    lane.opacity(0);
+    run(lane, 0.02, 0.14, (p) => { const w = EIO(p); lane.opacity(1); laneR.width((X1 - X0) * w); });
+    mono(g, 600, Y - 30, 'REQUEST LANE', MUTED, 14);
+    const ticks = [0, 1, 2, 3].map((k) => pill(g, 450 + k * 100, 476, 60, 10, LC.turn).opacity(0));
+    const stepT = mono(g, 600, 524, 'STEP 00', LC.turn, 20);
+    const token = g.rect(16, 16).radius(4).move(X0 - 8, Y - 8).fill(LC.turn);
+    const uOf = (q) => clamp01((q - 0.05) / 0.7) * 4;
+    const tokenX = (q) => {
+      const u = uOf(q), leg = u - Math.floor(u);
+      return u >= 4 ? X0 : lerp(X0, X1, leg < 0.5 ? EIO(leg * 2) : 1 - EIO((leg - 0.5) * 2));
+    };
+    let lastN = -1;
+    run(g, 0.05, 1, (p) => {
+      const q = 0.05 + p * 0.95;
+      const u = uOf(q), bx = tokenX(q);
+      token.move(bx - 8, Y - 8);
+      ticks.forEach((tk, k) => tk.opacity(seg(k + 0.5, k + 0.62, u)));
+      const n = Math.min(4, Math.floor(u + 0.5));
+      if (n !== lastN) { lastN = n; stepT.plain('STEP 0' + n); }
+      member.opacity(1 - 0.65 * seg(0.8, 0.92, q));
+      draw.viewbox(lerp(-40, 40, (bx - X0) / (X1 - X0)), 0, 1200, 600);
+    });
+    setSpot((q) => [tokenX(q), Y]);
+  }
+
+  // ---------- B4：給結果不只給責任（pan ≤ 80：階梯細線依序延伸，五張玻璃 checklist 卡到位即打勾；光跟著團員） ----------
+  {
+    const { g, extend, run, slide, setSpot } = scene('goal-with-five-tokens');
+    const goal = g.group();
+    glass(goal, 920, 70, 180, 60);
+    glow(goal, 920, 70, 180, 60, LC.goal).opacity(1);
+    goal.polygon('946,84 946,116 950,116 950,104 972,96 950,88 950,84').fill(LC.goal);
+    mono(goal, 990, 108, 'GOAL', LC.goal, 18, 'start');
+    slide(goal, 0.0, 0.1);
+    const PTS = [[120, 540], [300, 540], [300, 440], [480, 440], [480, 340], [660, 340], [660, 240], [840, 240], [840, 140], [900, 140]];
+    const path = g.polyline(PTS).fill('none').stroke({ color: 'rgba(255,255,255,.35)', width: 2 });
+    extend(path, 0.04, 0.5);
+    const WORDS = ['結果', '自決範圍', '資源', '求援訊號', '回看時機'];
+    const RUNS = [[120, 300, 540], [300, 480, 440], [480, 660, 340], [660, 840, 240], [840, 900, 140]];
+    WORDS.forEach((w, i) => {
+      const [xa, xb, y] = RUNS[i];
+      const cx = i === 4 ? 780 : (xa + xb) / 2;
+      const c = g.group();
+      glass(c, cx - 100, y - 100, 200, 60);
+      const box = c.rect(20, 20).radius(4).move(cx - 86, y - 80).fill('none').stroke({ color: LC.goal, width: 1.5 });
+      const check = c.path(`M${cx - 82} ${y - 70} L${cx - 77} ${y - 65} L${cx - 69} ${y - 76}`).fill('none').stroke({ color: '#0a0f1e', width: 2.5 }).opacity(0);
+      mono(c, cx - 56, y - 78, '0' + (i + 1), LC.goal, 12, 'start');
+      label(c, cx - 56, y - 56, w, INK, 20, 'start');
+      const s = 0.10 + i * 0.09;
+      slide(c, s, s + 0.06);
+      run(box, s + 0.05, s + 0.09, (p) => { const w2 = EO(p); box.fill({ color: LC.goal, opacity: w2 }); check.opacity(w2); });
+    });
+    const member = avatar(g, 120, 520, INK);
+    const L = path.node.getTotalLength() - 60;   // 停在最後一階頂端，離 GOAL 卡 60 單位，不與卡重疊
+    const memberAt = (q) => { const t = EIO(clamp01((q - 0.06) / 0.49)); const pt = path.node.getPointAtLength(L * t); return [pt.x, pt.y, t]; };
+    run(g, 0.06, 0.55, (p) => {
+      const q = 0.06 + p * 0.49;
+      const [x, y, t] = memberAt(q);
+      member.transform({ translateX: x - 120, translateY: y - 540 });
+      draw.viewbox(lerp(-40, 40, t), 0, 1200, 600);
+    });
+    setSpot((q) => { const [x, y] = memberAt(q); return [x, y - 20]; });
+  }
+
+  // ---------- B5：節奏是為了早看見（pan ≤ 80：風險面積圖由左向右延伸，每到檢查點被壓回；光跟著圖的前端） ----------
+  {
+    const { g, extend, run, setSpot } = scene('checkpoints-catch-risk');
+    const base = hair(g, 110, 440, 1100, 440, 'rgba(255,255,255,.35)', 1.5);
+    extend(base, 0.0, 0.12);
+    mono(g, 1100, 480, 'TIME', MUTED, 14, 'end');
+    const CX = [260, 430, 600, 770, 940];
+    CX.forEach((x, i) => {
+      extend(hair(g, x, 170, x, 440, LC.time, 1), 0.04 + i * 0.02, 0.14 + i * 0.02);
+      const tag = g.group();
+      glass(tag, x - 26, 452, 52, 24, 12);
+      mono(tag, x, 469, 'CP' + (i + 1), LC.time, 13);
+    });
+    const warn = g.line(110, 150, 1100, 150).stroke({ color: 'rgba(255,255,255,.5)', width: 1, dasharray: '8 8' });
+    extend(warn, 0.04, 0.16);
+    mono(g, 110, 138, 'LIMIT', MUTED, 14, 'start');
+    const AP = [[110, 440], [110, 400], [260, 230], [260, 340], [430, 220], [430, 330], [600, 210], [600, 320], [770, 200], [770, 310], [940, 190], [940, 300], [1100, 240], [1100, 440]];
+    const clipR = draw.rect(0, 600).move(110, 0);
+    const clip = draw.clip().add(clipR);
+    const area = g.group().clipWith(clip);
+    area.polygon(AP).fill({ color: ACC, opacity: 0.18 });
+    area.polyline(AP.slice(1, -1)).fill('none').stroke({ color: ACC, width: 2.5 });
+    mono(g, 1100, 224, 'RISK', ACC, 14, 'end');
+    const headT = (q) => EIO(clamp01((q - 0.12) / 0.63));
+    run(g, 0.12, 0.75, (p) => {
+      const t = EIO(p);
+      clipR.width(990 * t);
+      draw.viewbox(lerp(0, 80, t), 0, 1200, 600);
+    });
+    setSpot((q) => [110 + 990 * headT(q), 300]);
+  }
+
+  // ---------- B6：知道哪裡不必等（cross-fade：有邊界 → 無邊界） ----------
+  {
+    const { g, extend, run, setSpot } = scene('boundary-and-beacon');
+    const A = g.group(), B = g.group().opacity(0);
+    const box = A.rect(440, 440).radius(14).move(380, 80).fill('none').stroke({ color: LC.pro, width: 1.5, dasharray: '8 8' });
+    extend(box, 0.0, 0.2);
+    mono(A, 380, 546, 'BOUNDARY', LC.pro, 14, 'start');
+    label(A, 380 + 116, 546, '邊界', INK, 18, 'start');
+    const beacon = A.rect(24, 24).radius(6).move(852, 68).fill(GLASS).stroke({ color: GEDGE, width: 1 });
+    mono(A, 890, 86, 'BEACON', MUTED, 14, 'start');
+    label(A, 890 + 86, 86, '信號', INK, 18, 'start');
+    const R = [[480, 190], [720, 190], [720, 410], [480, 410]];
+    const routeAt = (t) => {
+      const u = (t * 4) % 4, k = Math.floor(u), f = u - k;
+      const a = R[k % 4], b = R[(k + 1) % 4];
+      return [lerp(a[0], b[0], f), lerp(a[1], b[1], f)];
+    };
+    A.polygon(R).fill('none').stroke({ color: HAIR, width: 1 });
+    const wander = avatar(A, 480, 190, INK);
+    const wanderAt = (q) => routeAt(clamp01(q / 0.55) * 0.999);
+    run(A, 0, 0.65, (p) => {
+      const q = p * 0.65;
+      const [x, y] = wanderAt(q);
+      wander.transform({ translateX: x - 480, translateY: y - 190 });
+      const dc = Math.min(...R.map(([cx, cy]) => Math.hypot(x - cx, y - cy)));
+      const near = 1 - clamp01(dc / 80);
+      beacon.fill({ color: ACC, opacity: lerp(0.07, 0.9, near) }).stroke({ color: near > 0.5 ? ACC : GEDGE });
+      A.opacity(1 - seg(0.55, 0.65, q));
+    });
+    // B：沒有邊界——一個縮成小玻璃方塊不動，一個往右滑出畫面留下紅色軌跡
+    const still = avatar(B, 420, 290, INK);
+    const frozen = B.rect(18, 18).radius(4).move(411, 291).fill(GLASS).stroke({ color: GEDGE, width: 1 }).opacity(0);
+    mono(B, 420, 350, 'FROZEN', MUTED, 14);
+    label(B, 420, 380, '不敢動', INK, 20);
+    const trail = B.line(600, 300, 600, 300).stroke({ color: ACC, width: 2.5 });
+    const rush = avatar(B, 600, 290, INK);
+    mono(B, 1000, 350, 'OVERRUN', ACC, 14);
+    label(B, 1000, 380, '衝過頭', INK, 20);
+    run(B, 0.55, 1, (p) => {
+      const q = 0.55 + p * 0.45;
+      B.opacity(seg(0.55, 0.65, q));
+      const sh = seg(0.65, 0.85, q);
+      still.opacity(1 - sh); frozen.opacity(sh);
+      const rx = lerp(600, 1320, seg(0.62, 0.95, q));
+      rush.transform({ translateX: rx - 600 });
+      trail.plot(600, 300, rx, 300);
+    });
+    setSpot((q) => {
+      if (q < 0.6) { const [x, y] = wanderAt(q); return [x, y]; }
+      return [600, 300];
+    });
+  }
+
+  // ---------- B7：同一人不同 Loop（cross-fade：日常 → 事故；光換邊） ----------
+  {
+    const { g, extend, run, slide, fade, setSpot } = scene('same-person-two-loops');
+    const Lg = g.group(), Rg = g.group().opacity(0);
+    const CARD = [320, 200, 560, 200];
+    const big = Lg.group();
+    glass(big, CARD[0], CARD[1], CARD[2], CARD[3]);
+    glow(big, CARD[0], CARD[1], CARD[2], CARD[3], LC.pro).opacity(1);
+    sideBar(big, CARD[0] + 12, CARD[1] + 12, CARD[3] - 24, LC.pro);
+    mono(big, 600, 182, LEN[3] + ' · ROUTINE', LC.pro, 16);
+    label(big, 600, 446, LNAME[3] + '・熟事', INK);
+    slide(big, 0.0, 0.12);
+    const edgeAt = (t) => {
+      const [x, y, w, h] = CARD, per = 2 * (w + h), d = (t * per) % per;
+      if (d < w) return [x + d, y];
+      if (d < w + h) return [x + w, y + d - w];
+      if (d < 2 * w + h) return [x + w - (d - w - h), y + h];
+      return [x, y + h - (d - 2 * w - h)];
+    };
+    const walker = avatar(Lg, CARD[0], CARD[1] - 2, INK);
+    run(Lg, 0, 0.55, (p) => {
+      const q = p * 0.55;
+      const [x, y] = edgeAt(EIO(clamp01(q / 0.5)) * 1.5 * 0.999);
+      walker.transform({ translateX: x - CARD[0], translateY: y - CARD[1] });
+      Lg.opacity(1 - seg(0.45, 0.55, q));
+    });
+    const leader = avatar(Rg, 420, 280, ACC);
+    mono(Rg, 420, 372, 'LEADER', ACC, 16); label(Rg, 420, 402, '主管', INK);
+    const frame = Rg.group();
+    glass(frame, 690, 170, 260, 260);
+    glow(frame, 690, 170, 260, 260, LC.turn).opacity(1);
+    sideBar(frame, 702, 182, 236, LC.turn);
+    avatar(frame, 820, 280, INK);
+    mono(frame, 820, 372, LEN[0], LC.turn, 16);
+    label(frame, 820, 402, LNAME[0] + '・事故中', INK);
+    const inc = Rg.group();
+    pill(inc, 820, 113, 120, 32, ACC);
+    mono(inc, 820, 118, 'INCIDENT', '#0a0f1e', 14);
+    const link = Rg.line(470, 280, 680, 280).stroke({ color: 'rgba(255,255,255,.5)', width: 2, dasharray: '12 10' });
+    Rg.path('M486 266 L470 280 L486 294').fill('none').stroke({ color: 'rgba(255,255,255,.5)', width: 2 });
+    Rg.path('M664 266 L680 280 L664 294').fill('none').stroke({ color: 'rgba(255,255,255,.5)', width: 2 });
+    fade(leader, 0.5, 0.6); slide(frame, 0.5, 0.62); slide(inc, 0.58, 0.68, -16);
+    extend(link, 0.56, 0.68);
+    run(Rg, 0.45, 1, (p) => {
+      const q = 0.45 + p * 0.55;
+      Rg.opacity(seg(0.45, 0.55, q));
+    });
+    setSpot((q) => [kf(q, [[0.45, 600], [0.55, 820]]), 300]);
+  }
+
+  // ---------- B8：設計切換條件（pan ≤ 80：四張玻璃條件卡依序落下，segmented selector 的色塊同步滑到對應段） ----------
+  {
+    const { g, run, slide, setSpot } = scene('switch-dial');
+    const CARDS = [
+      ['第一次・不可逆・事故', '→ 回合制'],
+      ['結果與範圍說得清', '→ 目標制'],
+      ['要更早看見問題', '→ 時間制'],
+      ['資訊夠・邊界清', '→ 主動制'],
+    ];
+    const CXs = [41, 327, 613, 899];
+    const AT = [0.15, 0.30, 0.45, 0.58];
+    const glows = [];
+    CARDS.forEach(([c1, c2], i) => {
+      const x = CXs[i];
+      const c = g.group();
+      glass(c, x, 60, 260, 130);
+      glows.push(glow(c, x, 60, 260, 130, LOOPS[i]));
+      c.line(x + 14, 62, x + 246, 62).stroke({ color: LOOPS[i], width: 4 });
+      mono(c, x + 18, 98, 'IF', MUTED, 12, 'start');
+      label(c, x + 130, 130, c1, INK, 20);
+      label(c, x + 130, 170, c2, LOOPS[i], 22);
+      slide(c, AT[i], AT[i] + 0.1);
+    });
+    // Segmented selector 900×56（毛玻璃），指示塊 = 該段 Loop 色的淡玻璃
+    const SX = 150, SY = 400, SW = 225;
+    glass(g, SX, SY, 900, 56, 28);
+    const ind = g.rect(SW - 8, 48).radius(24).move(SX + 4, SY + 4).fill({ color: LOOPS[0], opacity: 0.22 }).stroke({ color: LOOPS[0], width: 1 }).opacity(0);
+    LOOPS.forEach((col, i) => {
+      if (i) hair(g, SX + i * SW, SY + 12, SX + i * SW, SY + 44);
+      mono(g, SX + i * SW + SW / 2, SY + 24, LEN[i], col, 13);
+      label(g, SX + i * SW + SW / 2, SY + 46, LNAME[i], INK, 18);
+    });
+    const kOf = (q) => kf(q, [[0.15, 0], [0.25, 0], [0.30, 0], [0.40, 1], [0.45, 1], [0.55, 2], [0.58, 2], [0.68, 3]]);
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      ind.opacity(seg(0.12, 0.18, q));
+      const k = kOf(q), k0 = Math.floor(k), k1 = Math.min(3, k0 + 1);
+      const col = hexLerp(LOOPS[k0], LOOPS[k1], k - k0);
+      ind.move(SX + 4 + k * SW, SY + 4).fill({ color: col, opacity: 0.22 }).stroke({ color: col });
+      glows.forEach((gl, i) => {
+        const off = i < 3 ? AT[i + 1] : 0.72;
+        gl.opacity(seg(AT[i], AT[i] + 0.08, q) * (1 - seg(off, off + 0.08, q)));
+      });
+      draw.viewbox(kf(q, [[0.1, 0], [0.45, 80], [0.75, 0]]), 0, 1200, 600);
+    });
+    setSpot((q) => [CXs[Math.round(kOf(q))] + 130, 125]);
+  }
+
+  // ---------- B9：先看 Loop 再看人（zoom-in 0.85：玻璃卡張開、鎖打開、分隔線縮成 0、團員走出去） ----------
+  {
+    const { g, extend, run, fade, setSpot } = scene('ring-opens');
+    const { rect: frame, hi } = glass(g, 190, 190, 220, 220);
+    const fglow = glow(g, 190, 190, 220, 220, LC.turn).opacity(1);
+    const rbar = sideBar(g, 202, 202, 196, LC.turn);
+    const member = avatar(g, 300, 290, INK);
+    const lb0 = mono(g, 300, 172, LEN[0], LC.turn, 16);
+    const lbN = label(g, 300, 446, LNAME[0], INK);
+    fade(frame, 0.0, 0.1); fade(hi, 0.0, 0.1); fade(member, 0.02, 0.12);
+    const wall = hair(g, 600, 80, 600, 520, 'rgba(255,255,255,.3)', 1);
+    extend(wall, 0.04, 0.2);
+    const lk = lock(g, 600, 300, MUTED);
+    fade(lk.grp, 0.14, 0.22);
+    const unlocked = g.group();
+    pill(unlocked, 850, 200, 130, 32, LC.pro);
+    mono(unlocked, 850, 205, 'UNLOCKED', '#0a0f1e', 14);
+    const lb1 = label(g, 850, 470, LNAME[3] + '・條件給了就能離開', INK);
+    unlocked.opacity(0); lb1.opacity(0);
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      const open = seg(0.22, 0.6, q);
+      frame.width(lerp(220, 560, open)).stroke({ color: '#ffffff', opacity: lerp(0.22, 0.14, open) });
+      hi.plot(204, 190.5, lerp(396, 736, open), 190.5).opacity(1 - open);
+      fglow.opacity(1 - open); rbar.opacity(1 - open);
+      lb0.opacity(1 - open); lbN.opacity(1 - open);
+      const unlock = seg(0.22, 0.38, q);
+      lk.shackle.transform({ rotate: -40 * unlock, origin: lk.hinge });
+      lk.grp.opacity(1 - seg(0.4, 0.5, q));
+      const shrink = seg(0.22, 0.5, q);
+      wall.plot(600, lerp(80, 300, shrink), 600, lerp(520, 300, shrink)).opacity(1 - seg(0.45, 0.52, q));
+      const walk = seg(0.45, 0.75, q);
+      member.transform({ translateX: 550 * walk });
+      const tagIn = seg(0.6, 0.72, q);
+      unlocked.opacity(tagIn).transform({ translateY: -16 * (1 - tagIn) });
+      lb1.opacity(seg(0.62, 0.74, q));
+      zoomTo(560, 300, seg(0.05, 0.3, q));
+    });
+    setSpot((q) => [kf(q, [[0.4, 300], [0.72, 850]]), 300]);
+  }
+
+  // ---------- B10：回顧（static：四張玻璃 Loop 卡並排，沒有東西在動） ----------
+  {
+    const { g } = scene('four-rings-recap', () => [600, 300]);
+    CARD_X.forEach((cx, i) => loopCard(g, cx - 120, 252, i));
+    hair(g, 70, 386, 1130, 386);
+    mono(g, 600, 416, 'FOUR LOOPS · SWITCH BY CONDITION', MUTED, 13);
+  }
+
+  // ---------- DOM ----------
+  const keys = [...document.querySelectorAll('.al4-key')];
+  const caps = [...document.querySelectorAll('.al4-cap')];
+  const eyebrows = [...document.querySelectorAll('.al4-eyebrow')];
+  const recapSpans = [...caps[9].querySelectorAll('span')];
+  const stage = document.querySelector('.al4-stage');
+
+  // 光束：把 SVG 座標換成 stage 百分比（svg 佔 stage 的 top 40vh / height 56vh / width 100%，xMidYMin meet）
+  const setSpot = (x, y) => {
+    const vb = draw.viewbox();
+    const W = innerWidth, H = innerHeight * 0.56;
+    const s = Math.min(W / vb.width, H / vb.height);
+    const px = (W - vb.width * s) / 2 + (x - vb.x) * s;
+    const py = innerHeight * 0.4 + (y - vb.y) * s;
+    stage.style.setProperty('--sx', (px / innerWidth * 100).toFixed(2) + '%');
+    stage.style.setProperty('--sy', (py / innerHeight * 100).toFixed(2) + '%');
+  };
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('al4-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__al4Seek = (p) => { P = p; Psm = p; render(); };
+  window.__al2Seek = window.__al3Seek = window.__al4Seek;
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  let lastUserMs = performance.now();
+  const cancelGlide = () => { autoScroll = null; lastUserMs = performance.now(); };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.al4-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * (BEATS[0].s + BEATS[0].len * TEXT_IN[1]), 2600);
+  });
+  let endSeen = false, prevMs = performance.now();
+  const clampBeat = (p, b) => clamp01((p - b.s) / b.len);
+  let curBeat = -1;
+
+  function update(p) {
+    let bi = 0;
+    for (let i = 0; i < BEATS.length; i++) if (p >= BEATS[i].s) bi = i;
+    const qs = BEATS.map((b) => clampBeat(p, b));
+
+    // 文字：Rule 3 —— 畫面在 q=TRANS 停定後才進場（q 0.30→0.40），beat 尾 8% 淡出
+    BEATS.forEach((b, i) => {
+      const q = qs[i];
+      const inside = p >= b.s && p < b.e;
+      const w = inside ? seg(TEXT_IN[0], TEXT_IN[1], q) * (1 - seg(TEXT_OUT, 1, q)) : 0;
+      keys[i].style.opacity = String(w);
+      eyebrows[i].style.opacity = String(w);
+      if (i === 9) {
+        caps[i].style.opacity = String(inside ? 1 - seg(TEXT_OUT, 1, q) : 0);
+        recapSpans.forEach((sp, k) => { sp.style.opacity = String(inside ? seg(0.32 + k * 0.04, 0.38 + k * 0.04, q) : 0); });
+      } else {
+        caps[i].style.opacity = String(inside ? seg(TEXT_IN[0] + 0.03, TEXT_IN[1] + 0.03, q) * (1 - seg(TEXT_OUT, 1, q)) : 0);
+      }
+    });
+
+    // 場景：只顯示當前 beat；換 beat 時鏡頭先回全景，再由該 beat 的 timeline 依 q seek（deterministic）
+    if (bi !== curBeat) {
+      scenes.forEach((s, i) => { if (i !== bi) s.opacity(0); });
+      draw.viewbox(...FULL);
+      curBeat = bi;
+    }
+    const q = qs[bi];
+    const enter = bi === 0 ? 1 : seg(0, TRANS * 0.4, q);
+    scenes[bi].opacity(enter * (1 - seg(0.95, 1, q)));
+    tls[bi].time(q * T);
+
+    // 光束跟著該 beat 的焦點；遠層小點反向於鏡頭 pan 以 30% 幅度漂移
+    const [sx, sy] = spots[bi](q);
+    setSpot(sx, sy);
+    const vb = draw.viewbox();
+    far.transform({ translateX: vb.x * 0.3, translateY: vb.y * 0.3 });
+  }
+
+  function render() {
+    const now = performance.now();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (now - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, EIO(u)));
+      if (u >= 1) autoScroll = null;
+    }
+    const dt = Math.min(0.05, Math.max(0, (now - prevMs) / 1000));
+    prevMs = now;
+    // 自動播放：0.8 秒沒有使用者操作就以電影節奏續播
+    if (!autoScroll && !endSeen && P > 0.002 && P < 0.998 && now - lastUserMs > 800) {
+      const max = film.offsetHeight - innerHeight;
+      scrollTo(0, Math.min(film.offsetTop + max, scrollY + (max / 55) * dt));
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', readScroll);
+}
+</script>
+
+<div class="film-prose">
+  <p class="al4-source">這是 <a href="{{ '/writing/leadership-agent-loops/' | relative_url }}">原文《主管嘴上要 ownership，卻只允許團隊用 Turn-Based Loop 工作》</a> 的發表會版本。<br>另外兩種畫法：<a href="{{ '/writing/leadership-agent-loops-film/' | relative_url }}">線稿版本</a>、<a href="{{ '/writing/leadership-agent-loops-diagram/' | relative_url }}">圖表版本</a>。</p>
+</div>

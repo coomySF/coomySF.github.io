@@ -64,3 +64,26 @@
 ## 效能
 - 首屏傳輸量: 0.28 MB（上限 4）
 - fps: 未實測（背景分頁）；純 SVG 位移 / 淡入
+
+---
+
+# Beat QA Report — 領導者的四種 Loop・發表會版本（keynote）
+
+- 貼文: `_posts/2026-08-27-leadership-agent-loops-keynote.html`（第三種風格，同 10 beat、同論點）
+- Beat sheet: `specs/003-agent-loops-film/beat-sheet-keynote.md`
+- 日期: 2026-08-27
+- 視覺語域: `keynote`——深藍黑固定漸層、假玻璃卡片（7% 白填色 + 22% 白邊 + 45% 白頂高光，無 blur filter）、單一柔光只跟著焦點元素（`--sx/--sy` 每 beat 設定）、12 顆固定位置遠景點微視差、動效只有位移 / 淡入 / 縮放 .96→1；唯一 wall-clock 動作是 B2 虛線卡呼吸。
+- 判定方式: 同前兩版（iframe 1280×800 全 10 beat；390×844 抽 B1/B4/B8/B10；靜態版手機）
+
+| Beat | 標題可讀 1280×800 | 標題可讀 390×844 | 畫面對應論點 | 文字不壓關鍵區 | reduced-motion 可讀 | 判定 |
+|---|---|---|---|---|---|---|
+| B1–B10 | PASS | PASS（抽驗 B1/B4/B8/B10） | PASS | PASS | PASS | PASS |
+
+## 不通過項目
+- 無。B4 團員頭像在停留點貼著第五張卡右緣但不蓋字，判 PASS。
+
+## Recap 檢查
+- Recap beat 列出全部標題: PASS
+
+## 效能
+- 首屏傳輸量: 0.28 MB（上限 4）；fps 未實測（背景分頁）
