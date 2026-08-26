@@ -1,7 +1,7 @@
 ---
 layout: film
 title: 領導者的四種 Loop・動畫版本
-description: 用動畫實驗室的粉彩畫風，把「主管嘴上要 ownership，卻只允許團隊用 Turn-Based Loop 工作」這篇講一遍——十個 beat，看完能複述四種 Loop 和切換條件。
+description: 用動畫實驗室的 editorial 線稿畫風，把「主管嘴上要 ownership，卻只允許團隊用 Turn-Based Loop 工作」這篇講一遍——十個 beat，看完能複述四種 Loop 和切換條件。
 date: 2026-08-26 21:00:00 +0800
 image: /assets/og-post-loops2.jpg
 tags: [動畫實驗室, 領導, Agent]
@@ -11,26 +11,27 @@ seo:
 <style>
   /* 片長 = 停留總和 15.4 viewport + 1 個進場 viewport */
   #al2-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1640vh; }
-  .al2-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; }
-  .al2-sky { position: absolute; inset: 0; background: linear-gradient(180deg, #fff1e4 0%, #f8dfe8 52%, #dcd4f2 100%); }
-  #al2-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .al2-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; background: var(--life-bg); }
+  #al2-svg {
+    position: absolute; left: 0; top: 40vh; width: 100%; height: 56vh; display: block; overflow: hidden;
+  }
+  #al2-svg text { font-family: var(--mono); letter-spacing: .14em; }
+  #al2-svg * { stroke-linecap: round; stroke-linejoin: round; }
   .al2-ui { position: absolute; inset: 0; pointer-events: none; }
-  .al2-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 56%, rgba(70, 40, 90, .22) 100%); }
+  .al2-vig { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, .38) 100%); }
   .al2-text {
-    position: absolute; left: 50%; top: 9vh; transform: translateX(-50%);
+    position: absolute; left: 50%; top: 12vh; transform: translateX(-50%);
     width: max-content; max-width: min(30em, calc(100vw - 48px));
     text-align: center;
   }
   .al2-key {
     font-family: var(--display); font-weight: 600;
     font-size: clamp(34px, 6vw, 72px); line-height: 1.15; letter-spacing: .02em;
-    color: #3b2f45; margin: 0; opacity: 0;
-    text-shadow: 0 2px 24px rgba(255, 245, 235, .9);
+    color: var(--life-ink); margin: 0; opacity: 0;
   }
   .al2-cap {
     font-family: var(--serif); font-size: clamp(15px, 1.9vw, 20px); line-height: 1.9;
-    color: #4a3b52; margin: 14px 0 0; opacity: 0;
-    text-shadow: 0 1px 18px rgba(255, 245, 235, .9);
+    color: #cfcabc; margin: 14px 0 0; opacity: 0;
   }
   .al2-cap span { display: inline-block; opacity: 0; }
   .al2-text[data-beat="9"] .al2-cap { font-size: clamp(13px, 1.5vw, 17px); }
@@ -52,7 +53,7 @@ seo:
   .al2-source { font-family: var(--serif); color: var(--life-muted); }
   .al2-source a { color: var(--life-ink); }
 
-  /* 靜態版：reduced-motion 或無 WebGL 時，十個 beat 直接堆疊、內容一個不少 */
+  /* 靜態版：reduced-motion 時，十個 beat 直接堆疊、內容一個不少 */
   .al2-static-list { display: none; list-style: none; margin: 0; padding: 0; }
   html.al2-static .al2-static-list { display: block; }
   html.al2-static #al2-film { height: auto; margin: 0; width: auto; }
@@ -63,7 +64,7 @@ seo:
     font-family: var(--display); font-weight: 600; font-size: clamp(28px, 4.5vw, 48px);
     line-height: 1.2; color: var(--life-ink); margin: 0 0 12px;
   }
-  .al2-beat-static .al2-scap { font-family: var(--serif); font-size: 18px; line-height: 1.9; color: var(--life-ink); margin: 0; }
+  .al2-beat-static .al2-scap { font-family: var(--serif); font-size: 18px; line-height: 1.9; color: #cfcabc; margin: 0; }
   .al2-beat-static .al2-snum { font-family: var(--mono); font-size: 11px; letter-spacing: .3em; color: var(--life-clay); margin: 0 0 10px; }
 </style>
 
@@ -71,8 +72,7 @@ seo:
 
 <div id="al2-film">
   <div class="al2-stage">
-    <div class="al2-sky" aria-hidden="true"></div>
-    <canvas id="al2-canvas" aria-hidden="true"></canvas>
+    <svg id="al2-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMin meet" aria-hidden="true"></svg>
     <div class="al2-ui">
       <div class="al2-vig" aria-hidden="true"></div>
       <div class="al2-text" data-beat="0">
@@ -133,29 +133,24 @@ seo:
 </div>
 
 <script type="module">
-import * as THREE from 'three';
+import { SVG, Runner, Timeline } from 'https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.4/dist/svg.esm.js';
 
 const docEl = document.documentElement;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const small = matchMedia('(max-width: 640px)').matches;
-const canvas = document.getElementById('al2-canvas');
 
-function webglOK() {
-  try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
-  catch { return false; }
-}
-// Rule 5：reduced-motion 或無 WebGL → 靜態版，十個 beat 內容一個不少
-if (reduced || !webglOK()) docEl.classList.add('al2-static');
+// Rule 5：reduced-motion → 靜態版，十個 beat 內容一個不少
+if (reduced) docEl.classList.add('al2-static');
 
-// Rule 1：整頁只用一個 easing 家族（smoothstep）
-function ss(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
-const EASE = ss;
-function lerp(a, b, t) { return a + (b - a) * t; }
-function clamp01(x) { return Math.min(1, Math.max(0, x)); }
+// Rule 1：整頁只用一個 easing 家族 —— SVG.js 的正弦家族：'<>'（in-out）與 '>'（out）
+const EIO = (t) => -Math.cos(Math.min(1, Math.max(0, t)) * Math.PI) / 2 + 0.5;   // === SVG.js '<>'
+const EO = (t) => Math.sin(Math.min(1, Math.max(0, t)) * Math.PI / 2);           // === SVG.js '>'
+const seg = (a, b, x) => EIO((x - a) / (b - a));
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
 function kf(p, pts) {
   if (p <= pts[0][0]) return pts[0][1];
   for (let i = 1; i < pts.length; i++) {
-    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], EASE(pts[i - 1][0], pts[i][0], p));
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], seg(pts[i - 1][0], pts[i][0], p));
   }
   return pts[pts.length - 1][1];
 }
@@ -165,387 +160,355 @@ const DWELL = [1.3, 1.3, 1.6, 1.6, 1.4, 1.6, 1.4, 1.8, 1.4, 2.0];
 const TOTAL = DWELL.reduce((a, b) => a + b, 0);
 const BEATS = [];
 { let acc = 0; DWELL.forEach((d) => { BEATS.push({ s: acc / TOTAL, e: (acc + d) / TOTAL, len: d / TOTAL }); acc += d; }); }
-const ROOM = 30;           // 每個 beat 一個房間，沿 +x 排開（fov 50 在 z≈8–12 可見 ±9，30 才不會露出鄰房）
 const TRANS = 0.22;        // beat 前 22%：鏡頭 / 場景轉場，之後畫面停定 ≥ 1.0 viewport
 const TEXT_IN = [0.30, 0.40];
 const TEXT_OUT = 0.92;
+const T = 1000;            // 每個 beat 的 timeline 長度（單位 ms，實際由 scroll 進度 seek）
 
-const C = {
-  turn: '#f2a9a0', goal: '#ffd58a', time: '#a5dbff', pro: '#b8f0c8',
-  leader: '#dc947c', member: '#f2eee5', skin: '#ffe8dc', ink: '#4a3b52',
-  risk: '#ff8f8f', wall: '#e6d9cf', hill: '#cfe9c4', wood: '#b98a68',
-};
-const LOOPS = [C.turn, C.goal, C.time, C.pro];
+// ---------- 色票（editorial，深底低飽和） ----------
+const INK = '#ece8de', MUTED = '#8b877b', ACC = '#dc947c';
+const LC = { turn: '#c98b82', goal: '#c9a86a', time: '#7fa7c4', pro: '#7fb597' };
+const LOOPS = [LC.turn, LC.goal, LC.time, LC.pro];
+const LNAME = ['回合', '目標', '時間', '主動'];
+const LEN = ['TURN-BASED', 'GOAL-BASED', 'TIME-BASED', 'PROACTIVE'];
+const FULL = [0, 0, 1200, 600];
+
 if (!docEl.classList.contains('al2-static')) boot();
 
 function boot() {
   docEl.style.scrollBehavior = 'auto';
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(innerWidth, innerHeight);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 120);
-  camera.position.set(0, 0.3, 12.5);
+  const draw = SVG('#al2-svg');
+  draw.viewbox(...FULL);
 
-  const hemi = new THREE.HemisphereLight('#fffdfa', '#d8c8ee', 1.45);
-  scene.add(hemi);
-  const key = new THREE.DirectionalLight('#fff4ea', 0.8);
-  key.position.set(3, 4, 2.5);
-  key.castShadow = true;
-  key.shadow.mapSize.set(small ? 1024 : 2048, small ? 1024 : 2048);
-  key.shadow.camera.left = -9; key.shadow.camera.right = 9;
-  key.shadow.camera.top = 7; key.shadow.camera.bottom = -5;
-  key.shadow.camera.near = 0.5; key.shadow.camera.far = 24;
-  key.shadow.radius = 6;
-  scene.add(key);
-  scene.add(key.target);
-  const fill = new THREE.DirectionalLight('#e2ecff', 0.3);
-  fill.position.set(-4, -2, -3);
-  scene.add(fill);
-
-  const glowTex = (() => {
-    const c = document.createElement('canvas'); c.width = c.height = 256;
-    const g = c.getContext('2d');
-    const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-    gr.addColorStop(0, 'rgba(255,255,255,.9)'); gr.addColorStop(0.45, 'rgba(255,255,255,.28)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
-    return new THREE.CanvasTexture(c);
-  })();
-  const sprite = (parent, color, scale) => {
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-    s.scale.setScalar(scale);
-    parent.add(s);
-    return s;
+  // ---------- 通用零件（單一線寬線稿：base 2.5 / hero 3.5） ----------
+  const S = (el, color = INK, w = 2.5) => el.fill('none').stroke({ color, width: w });
+  const glyph = (g, x, y, color = INK, w = 2.5) => {
+    // 人：圓頭 + 短頸線 + 淺弧肩（沒有五官）；y = 肩線基準
+    const p = g.group();
+    S(p.circle(40).center(x, y - 63), color, w);
+    S(p.line(x, y - 42, x, y - 18), color, w);
+    S(p.path(`M${x - 45} ${y + 6} Q${x} ${y - 33} ${x + 45} ${y + 6}`), color, w);
+    return p;
   };
-  const solidMat = (color, opts = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.95, metalness: 0, ...opts });
-  const mesh = (geo, mat) => new THREE.Mesh(geo, mat);
-  const casts = (g) => g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  const fadeGroup = (grp, op) => {
-    grp.traverse((o) => {
-      if (o.material && !Array.isArray(o.material)) { o.material.transparent = true; o.material.opacity = ('_baseOp' in o.material ? o.material._baseOp : 1) * op; }
-    });
+  const tag = (g, x, y, txt, color = MUTED, size = 22) =>
+    g.plain(txt).font({ size, anchor: 'middle' }).fill(color).attr({ x, y });
+  const ring = (g, cx, cy, rx, ry, color, fillOp = 0.12) =>
+    g.ellipse(rx * 2, ry * 2).center(cx, cy).fill({ color, opacity: fillOp }).stroke({ color, width: 2.5 });
+  const dot = (g, x, y, r, color = INK) => g.circle(r * 2).center(x, y).fill(color);
+  const hexLerp = (a, b, t) => {
+    const A = a.match(/\w\w/g).map((h) => parseInt(h, 16)), B = b.match(/\w\w/g).map((h) => parseInt(h, 16));
+    return '#' + A.map((v, i) => Math.round(lerp(v, B[i], t)).toString(16).padStart(2, '0')).join('');
   };
-  const markBase = (grp) => grp.traverse((o) => { if (o.material && !Array.isArray(o.material)) o.material._baseOp = o.material.opacity ?? 1; });
+  const cubic = (p0, p1, p2, p3, u) => {
+    const k = 1 - u;
+    return [k * k * k * p0[0] + 3 * k * k * u * p1[0] + 3 * k * u * u * p2[0] + u * u * u * p3[0],
+      k * k * k * p0[1] + 3 * k * k * u * p1[1] + 3 * k * u * u * p2[1] + u * u * u * p3[1]];
+  };
 
-  // 地板：整條走廊共用一片影子地
-  const ground = mesh(new THREE.PlaneGeometry(360, 60), new THREE.ShadowMaterial({ opacity: 0.16 }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set(ROOM * 4.5, -2.02, 0);
-  ground.receiveShadow = true;
-  scene.add(ground);
-
-  // ---------- 通用零件 ----------
-  // 人：圓錐身體 + 球頭（腳底在 y=0）
-  const person = (bodyColor, s = 1) => {
-    const g = new THREE.Group();
-    const body = mesh(new THREE.ConeGeometry(0.42 * s, 0.95 * s, 8), solidMat(bodyColor));
-    body.position.y = 0.475 * s;
-    g.add(body);
-    const head = mesh(new THREE.IcosahedronGeometry(0.3 * s, 2), solidMat(C.skin));
-    head.position.y = 1.2 * s;
-    g.add(head);
-    const eye = (x) => {
-      const e = mesh(new THREE.SphereGeometry(0.05 * s, 8, 6), solidMat(C.ink, { roughness: 0.35 }));
-      e.scale.z = 0.5;
-      e.position.set(x * s, 1.23 * s, 0.27 * s);
-      return e;
+  // ---------- 每個 beat 一條 Timeline，完全由 scroll 進度 seek ----------
+  const scenes = [], tls = [];
+  const scene = (id) => {
+    const g = draw.group().attr('id', 's-' + id).opacity(0);
+    const tl = new Timeline().persist(true);
+    tl.pause();
+    scenes.push(g); tls.push(tl);
+    // 描線進場：dasharray / dashoffset 從 getTotalLength() 來，用 .animate().attr() 模式在 timeline 上跑
+    const drawOn = (el, s, e, ease = '>') => {
+      const L = el.node.getTotalLength();
+      el.attr({ 'stroke-dasharray': L, 'stroke-dashoffset': L });
+      new Runner((e - s) * T).element(el).ease(ease).attr({ 'stroke-dashoffset': 0 }).schedule(tl, s * T, 'absolute');
+      return el;
     };
-    g.add(eye(-0.11), eye(0.11));
-    const sm = mesh(new THREE.TorusGeometry(0.06 * s, 0.014 * s, 5, 10, Math.PI), solidMat(C.ink));
-    sm.position.set(0, 1.12 * s, 0.28 * s);
-    sm.rotation.z = Math.PI;
-    g.add(sm);
-    g.userData.body = body;
-    g.userData.head = head;
-    casts(g);
-    markBase(g);
-    return g;
+    const drawGroup = (grp, s, e) => grp.children().forEach((c) => drawOn(c, s, e));
+    // 依進度算值的 runner（during 拿到的是原始 position，easing 在 fn 內用同一家族處理）
+    const run = (el, s, e, fn) => new Runner((e - s) * T).element(el).during((p) => fn(p)).schedule(tl, s * T, 'absolute');
+    return { g, tl, drawOn, drawGroup, run };
   };
-  // 環：平放在地上的圈
-  const ring = (color, r, tube = 0.09, flat = true, opts = {}) => {
-    const m = mesh(new THREE.TorusGeometry(r, tube, 8, 40), solidMat(color, { emissive: color, emissiveIntensity: 0.25, ...opts }));
-    if (flat) m.rotation.x = Math.PI / 2;
-    m.position.y = flat ? 0.06 : r + tube;
-    m.castShadow = true;
-    return m;
-  };
-  const room = (i) => {
-    const g = new THREE.Group();
-    g.position.x = i * ROOM;
-    scene.add(g);
-    return g;
-  };
-  const clampBeat = (p, b) => clamp01((p - b.s) / b.len);
 
-  // ---------- B1：主管一直在選 Loop ----------
-  const r1 = room(0);
-  const b1 = {};
+  // ---------- B1：主管一直在選 Loop（zoom-in：全景 → 主管 → 放開看四環；四環在 q 0.45 前描完） ----------
   {
-    const leader = person(C.leader, 1.15);
-    leader.position.set(0, -2, 0.4);
-    r1.add(leader);
-    const MX = [-4.6, -1.6, 1.6, 4.6];
-    b1.members = MX.map((x, i) => {
-      const m = person(C.member, 0.95);
-      m.position.set(x, -2, -1.8);
-      r1.add(m);
-      return m;
+    const { g, drawOn, drawGroup, run } = scene('leader-picks-loops');
+    const leader = glyph(g, 600, 330, ACC, 3.5);
+    tag(g, 600, 385, '主管', ACC);
+    const RX = [190, 460, 740, 1010];
+    RX.forEach((x, i) => {
+      const link = S(g.path(`M600 345 Q${lerp(600, x, 0.5)} 420 ${x} 435`), MUTED, 1.5).attr('stroke-opacity', 0.45);
+      const r = ring(g, x, 470, 105, 35, LOOPS[i]);
+      const lb = tag(g, x, 545, LNAME[i], LOOPS[i], 24).opacity(0);
+      const s = 0.10 + i * 0.075;
+      drawOn(link, s, s + 0.08);
+      drawOn(r, s + 0.02, s + 0.10);
+      run(lb, s + 0.07, s + 0.12, (p) => lb.opacity(EO(p)));
     });
-    b1.rings = MX.map((x, i) => {
-      const rg = new THREE.Group();
-      rg.add(ring(LOOPS[i], 0.9));
-      rg.position.set(x, -2, -1.8);
-      rg.scale.setScalar(0.001);
-      r1.add(rg);
-      return rg;
-    });
-    b1.hand = new THREE.Vector3(0.45, -1.0, 0.6);
-    b1.feet = MX.map((x) => new THREE.Vector3(x, -2, -1.8));
-  }
-
-  // ---------- B2 / B9：小環 + 牆 + 遠處的大環 ----------
-  const lockedScene = (rm, withBig = true) => {
-    const o = {};
-    o.member = person(C.member, 0.95);
-    o.member.position.set(-2.2, -2, 0);
-    rm.add(o.member);
-    o.ring = ring(C.turn, 0.9, 0.09);
-    o.ring.position.set(-2.2, -1.94, 0);
-    rm.add(o.ring);
-    o.wall = mesh(new THREE.BoxGeometry(0.4, 2.0, 3.4), solidMat(C.wall));
-    o.wall.position.set(0.3, -1.0, 0);
-    o.wall.castShadow = true;
-    rm.add(o.wall);
-    if (withBig) {
-      o.big = ring(C.pro, 3, 0.12, true, { transparent: true, opacity: 0.25, emissiveIntensity: 0.6 });
-      o.big.position.set(3.6, -1.94, -2.2);
-      o.big.castShadow = false;
-      rm.add(o.big);
-      o.bigGlow = sprite(rm, C.pro, 4);
-      o.bigGlow.position.set(3.6, -1.6, -2.2);
-    }
-    return o;
-  };
-  const r2 = room(1);
-  const b2 = lockedScene(r2);
-
-  // ---------- B3：一步一請示 ----------
-  const r3 = room(2);
-  const b3 = {};
-  {
-    b3.leader = person(C.leader, 1.15);
-    b3.leader.position.set(-3, -2, 0);
-    r3.add(b3.leader);
-    b3.member = person(C.member, 0.95);
-    b3.member.position.set(3, -2, 0);
-    r3.add(b3.member);
-    b3.ball = mesh(new THREE.SphereGeometry(0.22, 12, 10), solidMat('#fff2c0', { emissive: '#ffd58a', emissiveIntensity: 0.9 }));
-    b3.ball.castShadow = true;
-    r3.add(b3.ball);
-    b3.glow = sprite(r3, '#ffd58a', 1.4);
-    b3.tiles = [0, 1, 2, 3].map((k) => {
-      const tl = mesh(new THREE.BoxGeometry(0.9, 0.12, 0.9), solidMat(C.turn));
-      tl.position.set(-1.5 + k * 1.05, -1.96, 1.9);
-      tl.scale.setScalar(0.001);
-      tl.castShadow = true;
-      r3.add(tl);
-      return tl;
+    drawGroup(leader, 0.02, 0.2);
+    // 鏡頭：0–0.3 收到主管，0.3–0.5 放開（單一 during，避免兩個 viewbox runner 搶同一屬性）
+    run(g, 0, 0.5, (p) => {
+      const q = p * 0.5;
+      const z = seg(0, 0.3, q) * (1 - seg(0.3, 0.5, q));
+      draw.viewbox(lerp(0, 300, z), lerp(0, 150, z), lerp(1200, 600, z), lerp(600, 300, z));
     });
   }
 
-  // ---------- B4：給結果不只給責任 ----------
-  const r4 = room(3);
-  const b4 = {};
+  // ---------- B2：要主動卻只給回合（static；只有大環呼吸） ----------
   {
-    const hill = mesh(new THREE.SphereGeometry(2.6, 14, 10), solidMat(C.hill));
-    hill.scale.y = 0.6;
-    hill.position.set(4.6, -3.2, -2.2);
-    hill.receiveShadow = true;
-    r4.add(hill);
-    const pole = mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.6, 6), solidMat(C.wood));
-    pole.position.set(4.6, -0.9, -2.2);
-    r4.add(pole);
-    const flag = mesh(new THREE.BoxGeometry(0.7, 0.42, 0.04), solidMat(C.goal, { emissive: C.goal, emissiveIntensity: 0.3 }));
-    flag.position.set(4.95, -0.35, -2.2);
-    r4.add(flag);
-    casts(r4);
-    b4.flag = flag;
-    b4.member = person(C.member, 0.95);
-    r4.add(b4.member);
-    b4.cubes = [0, 1, 2, 3, 4].map(() => {
-      const c = mesh(new THREE.BoxGeometry(0.26, 0.26, 0.26), solidMat('#fff1cf', { emissive: C.goal, emissiveIntensity: 0 }));
-      c.castShadow = true;
-      r4.add(c);
-      return c;
-    });
-    b4.path = (u) => {
-      const B = (a, b, c) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * b + u * u * c;
-      return new THREE.Vector3(B(-4.2, 0, 3.4), B(-2, -2, -1.75), B(0.6, 2.4, -1.0));
-    };
+    const { g, drawOn, drawGroup, run } = scene('locked-in-turn-loop');
+    const m = glyph(g, 350, 300, INK);
+    drawGroup(m, 0.02, 0.16);
+    const small = S(g.circle(220).center(350, 290), LC.turn);
+    drawOn(small, 0.06, 0.24);
+    tag(g, 350, 445, LNAME[0], LC.turn, 24);
+    const wall = S(g.line(600, 60, 600, 540), INK, 3.5);
+    drawOn(wall, 0.12, 0.3);
+    const bigWrap = g.group().opacity(0);
+    const big = S(bigWrap.ellipse(420, 140).center(900, 300), LC.pro).attr('stroke-dasharray', '12 14');
+    tag(bigWrap, 900, 420, LNAME[3], LC.pro, 24);
+    run(bigWrap, 0.16, 0.3, (p) => bigWrap.opacity(EO(p)));
+    // 唯一允許的 wall-clock 動作：大環 3 秒呼吸（自帶 timeline，不綁在 beat timeline 上）
+    big.animate(1500).ease('<>').attr({ rx: 210 * 1.04, ry: 70 * 1.04 }).loop(true, true);
   }
 
-  // ---------- B5：節奏是為了早看見 ----------
-  const r5 = room(4);
-  const b5 = {};
+  // ---------- B3：一步一請示（pan：跟著小圓來回） ----------
   {
-    const axis = mesh(new THREE.BoxGeometry(10.4, 0.14, 0.34), solidMat(C.time));
-    axis.position.set(0, -1.95, 0);
-    r5.add(axis);
-    b5.POSTS = [-4.5, -2.5, -0.5, 1.5, 3.5];
-    b5.posts = b5.POSTS.map((x) => {
-      const p = mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.1, 8), solidMat(C.time, { emissive: C.time, emissiveIntensity: 0.3 }));
-      p.position.set(x, -1.35, 0);
-      r5.add(p);
-      const cap = mesh(new THREE.SphereGeometry(0.16, 8, 6), solidMat('#d9efff'));
-      cap.position.set(x, -0.75, 0);
-      r5.add(cap);
-      return p;
-    });
-    b5.bar = mesh(new THREE.BoxGeometry(0.62, 1, 0.5), solidMat(C.risk, { emissive: C.risk, emissiveIntensity: 0.25 }));
-    b5.bar.position.set(-4.5, -1.5, 1.0);
-    r5.add(b5.bar);
-    casts(r5);
-  }
-
-  // ---------- B6：知道哪裡不必等（A 有邊界 / B 無邊界） ----------
-  const r6 = room(5);
-  const b6 = { A: new THREE.Group(), B: new THREE.Group() };
-  r6.add(b6.A, b6.B);
-  {
-    const W = 6.4, D = 4;
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(W, D)), new THREE.LineBasicMaterial({ color: C.pro, transparent: true }));
-    edges.rotation.x = -Math.PI / 2;
-    edges.position.y = -1.9;
-    b6.A.add(edges);
-    const edgeMat = solidMat(C.pro, { emissive: C.pro, emissiveIntensity: 0.7 });
-    [[0, D / 2, W, 0.1], [0, -D / 2, W, 0.1], [W / 2, 0, 0.1, D], [-W / 2, 0, 0.1, D]].forEach(([x, z, w, d]) => {
-      const e = mesh(new THREE.BoxGeometry(w, 0.1, d), edgeMat);
-      e.position.set(x, -1.95, z);
-      b6.A.add(e);
-    });
-    b6.memberA = person(C.member, 0.95);
-    b6.A.add(b6.memberA);
-    const beaconPole = mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.5, 8), solidMat('#d8d0e8'));
-    beaconPole.position.set(3.6, -1.25, -1.9);
-    b6.A.add(beaconPole);
-    b6.beacon = mesh(new THREE.SphereGeometry(0.3, 10, 8), solidMat('#fff7d6', { emissive: C.goal, emissiveIntensity: 0 }));
-    b6.beacon.position.set(3.6, -0.2, -1.9);
-    b6.A.add(b6.beacon);
-    b6.beaconGlow = sprite(b6.A, C.goal, 1.8);
-    b6.beaconGlow.position.copy(b6.beacon.position);
-    b6.leaderA = person(C.leader, 1.15);
-    b6.leaderA.position.set(4.4, -2, -0.4);
-    b6.A.add(b6.leaderA);
-    casts(b6.A);
-    markBase(b6.A);
-    // B：沒有邊界——一個縮成一團，一個衝出畫面
-    b6.ballB = new THREE.Group();
-    const bb = mesh(new THREE.SphereGeometry(0.5, 12, 10), solidMat(C.member));
-    bb.scale.y = 0.8;
-    const bEye = (x) => {
-      const e = mesh(new THREE.SphereGeometry(0.05, 8, 6), solidMat(C.ink));
-      e.scale.z = 0.5;
-      e.position.set(x, 0.05, 0.47);
-      return e;
-    };
-    b6.ballB.add(bb, bEye(-0.12), bEye(0.12));
-    b6.ballB.position.set(-1.2, -1.55, 0.2);
-    b6.B.add(b6.ballB);
-    b6.flyB = person(C.member, 0.95);
-    b6.B.add(b6.flyB);
-    casts(b6.B);
-    markBase(b6.B);
-  }
-
-  // ---------- B7：同一人不同 Loop（左：日常 / 右：事故） ----------
-  const r7 = room(6);
-  const b7 = { L: new THREE.Group(), R: new THREE.Group() };
-  r7.add(b7.L, b7.R);
-  {
-    b7.L.position.x = -3.2;
-    b7.R.position.x = 3.2;
-    b7.bigRing = ring(C.pro, 2.2, 0.1);
-    b7.bigRing.position.y = -1.94;
-    b7.L.add(b7.bigRing);
-    b7.memberL = person(C.member, 0.95);
-    b7.L.add(b7.memberL);
-    const smallRing = ring(C.turn, 0.9, 0.09);
-    smallRing.position.set(0.4, -1.94, 0);
-    b7.R.add(smallRing);
-    b7.memberR = person(C.member, 0.95);
-    b7.memberR.position.set(0.4, -2, 0);
-    b7.R.add(b7.memberR);
-    b7.leaderR = person(C.leader, 1.15);
-    b7.leaderR.position.set(-1.6, -2, 0.3);
-    b7.R.add(b7.leaderR);
-    b7.red = new THREE.PointLight('#ff5c5c', 0, 14, 1.6);
-    b7.red.position.set(0.6, 1.2, 2.4);
-    b7.R.add(b7.red);
-    b7.redGlow = sprite(b7.R, '#ff6b6b', 5);
-    b7.redGlow.position.set(0.4, -1.2, -1.5);
-    casts(b7.L); casts(b7.R);
-    markBase(b7.L); markBase(b7.R);
-  }
-
-  // ---------- B8：設計切換條件（旋鈕 + 四張條件卡） ----------
-  const r8 = room(7);
-  const b8 = {};
-  {
-    b8.ANG = [-1.15, -0.4, 0.4, 1.15];
-    const dial = mesh(new THREE.CylinderGeometry(1.9, 2.0, 0.45, 28), solidMat('#efe6f5'));
-    dial.position.set(0, -1.6, 1.6);
-    dial.castShadow = true;
-    r8.add(dial);
-    b8.ANG.forEach((a, i) => {
-      const tick = mesh(new THREE.BoxGeometry(0.28, 0.08, 0.14), solidMat(LOOPS[i], { emissive: LOOPS[i], emissiveIntensity: 0.4 }));
-      tick.position.set(Math.cos(a) * 1.5, -1.33, 1.6 - Math.sin(a) * 1.5);
-      tick.rotation.y = a;
-      r8.add(tick);
-    });
-    b8.needle = new THREE.Group();
-    const nd = mesh(new THREE.BoxGeometry(1.55, 0.1, 0.18), solidMat(C.ink));
-    nd.position.x = 0.75;
-    nd.castShadow = true;
-    const hub = mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.14, 12), solidMat(C.ink));
-    b8.needle.add(nd, hub);
-    b8.needle.position.set(0, -1.3, 1.6);
-    r8.add(b8.needle);
-    const CX = [-3.9, -1.3, 1.3, 3.9];
-    b8.cards = CX.map((x, i) => {
-      const side = solidMat('#f6f0ea');
-      const back = solidMat('#d9d0d8');
-      const front = solidMat(LOOPS[i], { emissive: LOOPS[i], emissiveIntensity: 0.35 });
-      const card = mesh(new THREE.BoxGeometry(1.7, 1.05, 0.07), [side, side, side, side, back, front]);
-      card.position.set(x, -0.2, -0.4);
-      card.castShadow = true;
-      r8.add(card);
-      return card;
+    const { g, drawOn, drawGroup, run } = scene('turn-based-pingpong');
+    const LX = 200, MX = 1000, Y = 300, X0 = LX + 70, X1 = MX - 70;
+    const leader = glyph(g, LX, Y, ACC, 3.5);
+    const member = glyph(g, MX, Y, INK);
+    tag(g, LX, 355, '主管', ACC);
+    tag(g, MX, 355, '團員');
+    drawGroup(leader, 0.0, 0.12); drawGroup(member, 0.02, 0.14);
+    const lane = S(g.line(X0, Y - 30, X1, Y - 30), MUTED, 1.5).attr({ 'stroke-dasharray': '4 12', 'stroke-opacity': 0.5 });
+    drawOn(lane, 0.02, 0.14);
+    const base = S(g.line(150, 470, 1050, 470), MUTED, 2);
+    drawOn(base, 0.0, 0.12);
+    tag(g, 1080, 478, '時間', MUTED).attr('text-anchor', 'start');
+    const ticks = [0, 1, 2, 3].map((k) => S(g.line(350 + k * 150, 452, 350 + k * 150, 488), LC.turn).opacity(0));
+    const ball = dot(g, X0, Y - 30, 9, LC.turn);
+    run(g, 0.05, 1, (p) => {
+      const q = 0.05 + p * 0.95;
+      const u = clamp01((q - 0.05) / 0.7) * 4;
+      const leg = u - Math.floor(u);
+      let bx, arc;
+      if (u >= 4) { bx = X0; arc = 0; } else {
+        const t = leg < 0.5 ? EIO(leg * 2) : 1 - EIO((leg - 0.5) * 2);
+        bx = lerp(X0, X1, t); arc = Math.sin(t * Math.PI);
+      }
+      ball.center(bx, Y - 30 - arc * 40);
+      ticks.forEach((tk, k) => tk.opacity(seg(k + 0.5, k + 0.62, u)));
+      member.opacity(1 - 0.65 * seg(0.8, 0.92, q));
+      draw.viewbox(lerp(-60, 60, (bx - X0) / (X1 - X0)), 0, 1200, 600);
     });
   }
 
-  // ---------- B9：先看 Loop 再看人 ----------
-  const r9 = room(8);
-  const b9 = lockedScene(r9, false);
-  b9.ring.material = solidMat(C.turn, { emissive: C.turn, emissiveIntensity: 0.25 });
-  b9.colTurn = new THREE.Color(C.turn);
-  b9.colPro = new THREE.Color(C.pro);
-
-  // ---------- B10：四色環並排 ----------
-  const r10 = room(9);
+  // ---------- B4：給結果不只給責任（pan：跟著團員走向旗子，五個條件依序描線） ----------
   {
-    [-4.5, -1.5, 1.5, 4.5].forEach((x, i) => {
-      const rg = ring(LOOPS[i], 1.1, 0.15, false);
-      rg.position.set(x, -0.9, 0);
-      r10.add(rg);
-      const base = ring(LOOPS[i], 1.1, 0.06, true, { transparent: true, opacity: 0.35 });
-      base.position.set(x, -1.94, 0);
-      base.castShadow = false;
-      r10.add(base);
+    const { g, drawOn, run } = scene('goal-with-five-tokens');
+    const pole = S(g.line(1050, 90, 1050, 200), LC.goal, 3.5);
+    const flag = g.polygon('1050,90 1112,112 1050,134').fill({ color: LC.goal, opacity: 0.16 }).stroke({ color: LC.goal, width: 2.5 });
+    tag(g, 1050, 238, LNAME[1], LC.goal, 24);
+    drawOn(pole, 0.0, 0.1); drawOn(flag, 0.04, 0.14);
+    const P = [[120, 540], [330, 540], [420, 300], [1050, 200]];
+    const path = S(g.path(`M${P[0]} C${P[1]} ${P[2]} ${P[3]}`), MUTED, 2.5);
+    drawOn(path, 0.04, 0.22, '<>');
+    const WORDS = ['結果', '自決範圍', '資源', '求援訊號', '回看時機'];
+    WORDS.forEach((w, i) => {
+      const u = 0.12 + i * 0.18;
+      const [px, py] = cubic(P[0], P[1], P[2], P[3], u);
+      const above = i % 2 === 0;
+      const cy = above ? py - 92 : py + 84;
+      const box = S(g.rect(130, 50).radius(8).center(px, cy), LC.goal);
+      const stem = S(g.line(px, above ? cy + 25 : cy - 25, px, py), LC.goal, 1.5).attr('stroke-opacity', 0.6);
+      const lb = tag(g, px, cy + 8, w, LC.goal).opacity(0);
+      const s = 0.12 + i * 0.08;
+      drawOn(stem, s, s + 0.04); drawOn(box, s + 0.02, s + 0.08);
+      run(lb, s + 0.06, s + 0.10, (p) => lb.opacity(EO(p)));
+    });
+    const member = dot(g, 120, 540, 9, INK);
+    const L = path.length();
+    run(g, 0.1, 0.8, (p) => {
+      const t = EIO(p);
+      const pt = path.pointAt(L * t);
+      member.center(pt.x, pt.y);
+      draw.viewbox(lerp(-80, 120, t), 0, 1200, 600);
     });
   }
-  const rooms = [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10];
+
+  // ---------- B5：節奏是為了早看見（pan：沿時間軸前進 0→100，警戒線標籤始終在畫面內） ----------
+  {
+    const { g, drawOn, run } = scene('checkpoints-catch-risk');
+    const base = S(g.line(110, 320, 1100, 320), MUTED, 2.5);
+    drawOn(base, 0.0, 0.12);
+    tag(g, 1100, 372, '時間', MUTED);
+    const CX = [260, 430, 600, 770, 940];
+    CX.forEach((x, i) => {
+      const tk = S(g.line(x, 298, x, 342), LC.time, 2.5);
+      drawOn(tk, 0.04 + i * 0.02, 0.12 + i * 0.02);
+      tag(g, x, 372, `檢查點 ${i + 1}`, LC.time);
+    });
+    const warn = S(g.line(110, 120, 1100, 120), MUTED, 1.5).attr('stroke-dasharray', '8 12');
+    drawOn(warn, 0.04, 0.16);
+    tag(g, 220, 104, '警戒線', MUTED).attr('text-anchor', 'start');
+    const pts = [[110, 300], [260, 160], [260, 250], [430, 155], [430, 245], [600, 150], [600, 240], [770, 145], [770, 235], [940, 140], [940, 230], [1100, 190]];
+    const risk = S(g.polyline(pts), ACC, 3.5);
+    drawOn(risk, 0.12, 0.75, '<>');
+    tag(g, 1100, 160, '風險', ACC);
+    run(g, 0.12, 0.75, (p) => draw.viewbox(lerp(0, 100, EIO(p)), 0, 1200, 600));
+  }
+
+  // ---------- B6：知道哪裡不必等（cross-fade：有邊界 → 無邊界） ----------
+  {
+    const { g, drawOn, run } = scene('boundary-and-beacon');
+    const A = g.group(), B = g.group().opacity(0);
+    const box = S(A.rect(800, 440).move(200, 80), LC.pro).attr('stroke-dasharray', '10 14');
+    drawOn(box, 0.0, 0.2, '<>');
+    tag(A, 200, 556, '邊界', LC.pro).attr('text-anchor', 'start');
+    const beacon = S(A.circle(22).center(1012, 68), ACC);
+    const beaconFill = A.circle(16).center(1012, 68).fill(ACC).opacity(0);
+    tag(A, 1040, 76, '信號', ACC).attr('text-anchor', 'start');
+    const N = 72;
+    const liss = (q) => { const a = q * Math.PI * 2 * 1.6; return [600 + 375 * Math.sin(a), 300 + 195 * Math.sin(2 * a)]; };
+    const TRAIL = Array.from({ length: N + 1 }, (_, i) => liss((i / N) * 0.55));
+    const trail = S(A.polyline([TRAIL[0]]), INK, 1.5).attr('stroke-opacity', 0.35);
+    const wander = dot(A, ...TRAIL[0], 9, INK);
+    run(A, 0, 0.65, (p) => {
+      const q = p * 0.65;
+      const t = clamp01(q / 0.55);
+      const [x, y] = liss(t * 0.55);
+      wander.center(x, y);
+      trail.plot(TRAIL.slice(0, Math.max(1, Math.round(t * N) + 1)));
+      const d = Math.min(x - 200, 1000 - x, y - 80, 520 - y);
+      const near = 1 - clamp01(d / 80);
+      beaconFill.opacity(near);
+      beacon.attr('stroke-width', 2.5 + near * 2);
+      A.opacity(1 - seg(0.55, 0.65, q));
+    });
+    // B：沒有邊界——一個停在軌跡末端縮成一點不動，一個從中心直線衝出畫面
+    const END = TRAIL[N];
+    S(B.polyline(TRAIL), INK, 1.5).attr('stroke-opacity', 0.25);
+    const still = dot(B, END[0], END[1], 9, INK);
+    tag(B, END[0], END[1] + 50, '不敢動', MUTED);
+    const rushTrail = S(B.line(600, 300, 600, 300), INK, 1.5).attr('stroke-opacity', 0.35);
+    const rush = dot(B, 600, 300, 9, INK);
+    tag(B, 1000, 350, '衝過頭', MUTED);
+    run(B, 0.55, 1, (p) => {
+      const q = 0.55 + p * 0.45;
+      B.opacity(seg(0.55, 0.65, q));
+      still.radius(lerp(9, 3, seg(0.65, 0.85, q)));
+      const rx = lerp(600, 1300, seg(0.62, 0.95, q));
+      rush.center(rx, 300);
+      rushTrail.plot(600, 300, rx, 300);
+    });
+  }
+
+  // ---------- B7：同一人不同 Loop（cross-fade：日常 → 事故） ----------
+  {
+    const { g, drawOn, drawGroup, run } = scene('same-person-two-loops');
+    const Lg = g.group(), Rg = g.group().opacity(0);
+    const big = ring(Lg, 600, 300, 210, 70, LC.pro, 0);
+    drawOn(big, 0.0, 0.18, '<>');
+    tag(Lg, 600, 420, LNAME[3] + '・熟事', LC.pro, 24);
+    const orbit = dot(Lg, 810, 300, 9, INK);
+    run(Lg, 0, 0.55, (p) => {
+      const q = p * 0.55;
+      const a = EIO(clamp01(q / 0.5)) * Math.PI * 2 * 1.5;
+      orbit.center(600 + 210 * Math.cos(a), 300 + 70 * Math.sin(a));
+      Lg.opacity(1 - seg(0.45, 0.55, q));
+    });
+    const leader = glyph(Rg, 400, 300, ACC, 3.5);
+    const member = glyph(Rg, 800, 300, INK);
+    const small = S(Rg.circle(220).center(800, 290), LC.turn);
+    tag(Rg, 800, 450, LNAME[0] + '・事故中', LC.turn, 24);
+    tag(Rg, 400, 450, '主管', ACC);
+    const link = S(Rg.line(470, 250, 680, 250), INK, 2.5).attr('stroke-dasharray', '14 10');
+    S(Rg.path('M482 238 L470 250 L482 262'), INK, 2.5);
+    S(Rg.path('M668 238 L680 250 L668 262'), INK, 2.5);
+    const bang = S(Rg.polygon('800,120 776,165 824,165'), ACC, 2.5);
+    S(Rg.line(800, 134, 800, 150), ACC, 2.5);
+    tag(Rg, 840, 150, '事故', ACC).attr('text-anchor', 'start');
+    drawGroup(leader, 0.5, 0.62); drawGroup(member, 0.5, 0.62);
+    drawOn(small, 0.52, 0.66); drawOn(bang, 0.6, 0.7);
+    run(Rg, 0.45, 1, (p) => {
+      const q = 0.45 + p * 0.55;
+      Rg.opacity(seg(0.45, 0.55, q));
+      link.attr('stroke-dashoffset', -EIO(clamp01((q - 0.55) / 0.45)) * 240);   // 來回連線的脈動：虛線隨進度推進
+    });
+  }
+
+  // ---------- B8：設計切換條件（pan：四張條件卡依序描線，指針同步轉到段位） ----------
+  {
+    const { g, drawOn, run } = scene('switch-dial');
+    const CXd = 600, CYd = 400, R = 170;
+    const pol = (deg, r) => [CXd + r * Math.cos(deg * Math.PI / 180), CYd + r * Math.sin(deg * Math.PI / 180)];
+    const [ax, ay] = pol(170, R), [bx, by] = pol(10, R);
+    const arc = S(g.path(`M${ax} ${ay} A${R} ${R} 0 1 1 ${bx} ${by}`), INK, 2.5);
+    drawOn(arc, 0.0, 0.14, '<>');
+    const ANG = [145, 95, 45, -5];
+    ANG.forEach((a, i) => {
+      const [x1, y1] = pol(a, R - 14), [x2, y2] = pol(a, R + 14), [lx, ly] = pol(a, R - 50);
+      drawOn(S(g.line(x1, y1, x2, y2), LOOPS[i], 2.5), 0.04 + i * 0.02, 0.12 + i * 0.02);
+      tag(g, lx, ly + 8, LNAME[i], LOOPS[i], 24);
+    });
+    const needle = S(g.line(CXd, CYd, ...pol(170, R - 75)), ACC, 3.5);
+    dot(g, CXd, CYd, 9, ACC);
+    const CARDS = [
+      ['第一次・不可逆・事故', '→ 回合制'],
+      ['結果與範圍說得清', '→ 目標制'],
+      ['要更早看見問題', '→ 時間制'],
+      ['資訊夠・邊界清', '→ 主動制'],
+    ];
+    const CXs = [41, 327, 613, 899];
+    const AT = [0.15, 0.30, 0.45, 0.58];
+    CARDS.forEach(([c1, c2], i) => {
+      const x = CXs[i];
+      const card = S(g.rect(260, 130).radius(10).move(x, 60), LOOPS[i]);
+      const t1 = tag(g, x + 130, 112, c1, MUTED).attr('letter-spacing', '.04em').opacity(0);
+      const t2 = tag(g, x + 130, 160, c2, LOOPS[i]).attr('letter-spacing', '.04em').opacity(0);
+      drawOn(card, AT[i], AT[i] + 0.1, '<>');
+      run(t1, AT[i] + 0.06, AT[i] + 0.12, (p) => t1.opacity(EO(p)));
+      run(t2, AT[i] + 0.09, AT[i] + 0.15, (p) => t2.opacity(EO(p)));
+    });
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      const a = kf(q, [[0.15, 170], [0.25, 145], [0.30, 145], [0.40, 95], [0.45, 95], [0.55, 45], [0.58, 45], [0.68, -5]]);
+      needle.plot(CXd, CYd, ...pol(a, R - 75));
+      draw.viewbox(kf(q, [[0.1, 0], [0.45, 160], [0.75, 0]]), 0, 1200, 600);
+    });
+  }
+
+  // ---------- B9：先看 Loop 再看人（zoom-in：viewbox 收到張開的環，整個環與團員都在畫面內） ----------
+  {
+    const { g, drawOn, drawGroup, run } = scene('ring-opens');
+    const CX9 = 470;
+    const member = glyph(g, CX9, 300, INK);
+    drawGroup(member, 0.0, 0.12);
+    const small = S(g.circle(220).center(CX9, 300), LC.turn);
+    drawOn(small, 0.02, 0.18);
+    const lb0 = tag(g, CX9, 450, LNAME[0], LC.turn, 24);
+    const lb1 = tag(g, CX9, 568, LNAME[3] + '・條件給了就能離開', LC.pro, 24).opacity(0);
+    const wall = S(g.line(600, 60, 600, 540), INK, 3.5);
+    drawOn(wall, 0.04, 0.2);
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      const open = seg(0.22, 0.6, q);
+      small.radius(lerp(110, 200, open)).stroke({ color: hexLerp(LC.turn, LC.pro, open) });
+      lb0.opacity(1 - open); lb1.opacity(open);
+      const shrink = seg(0.22, 0.5, q);
+      wall.plot(600, lerp(60, 300, shrink), 600, lerp(540, 300, shrink)).opacity(1 - seg(0.45, 0.52, q));
+      const walk = seg(0.45, 0.75, q);
+      member.transform({ translateX: 290 * walk });
+      const z = seg(0.05, 0.3, q);
+      draw.viewbox(lerp(0, 120, z), lerp(0, 20, z), lerp(1200, 960, z), lerp(600, 560, z));
+    });
+  }
+
+  // ---------- B10：回顧（static：四色線稿環並排） ----------
+  {
+    const { g } = scene('four-rings-recap');
+    [190, 460, 740, 1010].forEach((x, i) => {
+      ring(g, x, 280, 105, 35, LOOPS[i], 0.14);
+      tag(g, x, 360, LNAME[i], LOOPS[i], 24);
+      tag(g, x, 392, LEN[i], MUTED);
+    });
+  }
 
   // ---------- DOM ----------
   const keys = [...document.querySelectorAll('.al2-key')];
@@ -575,140 +538,11 @@ function boot() {
   if (startEl) startEl.addEventListener('click', () => {
     glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * (BEATS[0].s + BEATS[0].len * TEXT_IN[1]), 2600);
   });
-  let endSeen = false, prevT = 0;
-  const clock = new THREE.Clock();
+  let endSeen = false, prevMs = performance.now();
+  const clampBeat = (p, b) => clamp01((p - b.s) / b.len);
+  let curBeat = -1;
 
-  // 每個 beat 的鏡頭 z（zoom-in 只出現在 B1、B9；B10 回到基準）
-  const ZBASE = 8.8;
-  const Z = BEATS.map(() => [ZBASE, ZBASE]);
-  Z[0] = [12.6, ZBASE];
-  Z[8] = [ZBASE, 7.8];
-  Z[9] = [7.8, ZBASE];
-
-  // ---------- 各 beat 的畫面（回傳鏡頭 x 偏移，供 pan 使用） ----------
-  const upd = [
-    // B1 zoom-in：四條環從主管手上長到四個團員腳下
-    (q, t) => {
-      b1.rings.forEach((rg, i) => {
-        const g = EASE(0.04 + i * 0.06, 0.18 + i * 0.06, q);
-        rg.position.lerpVectors(b1.hand, b1.feet[i], g);
-        rg.scale.setScalar(Math.max(0.001, g));
-      });
-      return 0;
-    },
-    // B2 static：小環困住團員，遠處大環輕輕呼吸
-    (q, t) => {
-      const pulse = 1 + 0.035 * Math.sin(t * 1.6);
-      b2.big.scale.set(pulse, pulse, 1);
-      b2.bigGlow.material.opacity = 0.22 + 0.06 * Math.sin(t * 1.6);
-      return 0;
-    },
-    // B3 pan：光球在主管與團員之間來回四次，每次來回長出一格；最後團員停下
-    (q, t) => {
-      const u = clamp01((q - 0.05) / 0.62) * 4;
-      const f = u - Math.floor(u);
-      const LX = -2.3, MX = 2.3;
-      let bx, arc;
-      if (u >= 4) { bx = LX; arc = 0; }
-      else { const leg = f < 0.5 ? f * 2 : 1 - (f - 0.5) * 2; bx = lerp(LX, MX, EASE(0, 1, leg)); arc = Math.sin(leg * Math.PI); }
-      b3.ball.position.set(bx, -0.75 + arc * 0.5, 0.3);
-      b3.glow.position.copy(b3.ball.position);
-      b3.glow.material.opacity = 0.5;
-      b3.tiles.forEach((tl, k) => tl.scale.setScalar(Math.max(0.001, EASE(k + 0.85, k + 1, u))));
-      b3.member.scale.y = 1 - 0.15 * EASE(0.72, 0.85, q);
-      return bx * 0.35;
-    },
-    // B4 pan：團員自己畫路走向旗子；五顆條件方塊依序亮起
-    (q, t) => {
-      const m = EASE(0.1, 0.8, q);
-      const pos = b4.path(m);
-      const bob = Math.abs(Math.sin(m * 26)) * 0.08 * (m > 0 && m < 1 ? 1 : 0);
-      b4.member.position.set(pos.x, pos.y + bob, pos.z);
-      b4.member.rotation.z = -0.06 * Math.sin(m * 26);
-      [0.15, 0.3, 0.45, 0.6, 0.75].forEach((th, i) => {
-        const lit = EASE(th, th + 0.06, q);
-        const a = t * 0.9 + i * Math.PI * 2 / 5;
-        const c = b4.cubes[i];
-        c.position.set(pos.x + Math.cos(a) * 0.95, pos.y + 1.0 + Math.sin(t * 1.4 + i) * 0.12, pos.z + Math.sin(a) * 0.95);
-        c.rotation.set(t * 0.6 + i, t * 0.8, 0);
-        c.material.emissiveIntensity = lit * 0.9;
-        c.scale.setScalar(0.8 + lit * 0.45);
-      });
-      return pos.x * 0.45;
-    },
-    // B5 pan：沿時間軸前進；風險柱長高，在每個檢查點被壓回去
-    (q, t) => {
-      const v = EASE(0.05, 0.95, q);
-      const x = -4.5 + 9 * v;
-      const h = kf(v, [[0, 0.15], [0.2, 1.1], [0.24, 0.3], [0.42, 1.2], [0.46, 0.35], [0.64, 1.3], [0.68, 0.35], [0.86, 1.35], [0.9, 0.4], [1, 0.55]]);
-      b5.bar.scale.y = h;
-      b5.bar.position.set(x, -2 + h / 2, 1.0);
-      b5.posts.forEach((p, i) => {
-        const near = 1 - Math.min(1, Math.abs(p.position.x - x) / 0.9);
-        p.material.emissiveIntensity = 0.3 + near * 0.6;
-      });
-      return x * 0.55;
-    },
-    // B6 cross-fade：有邊界 → 無邊界
-    (q, t) => {
-      const fadeA = 1 - EASE(0.5, 0.6, q), fadeB = EASE(0.5, 0.6, q);
-      const wx = 2.7 * Math.sin(q * 11), wz = 1.3 * Math.sin(q * 17 + 1);
-      b6.memberA.position.set(wx, -2, wz);
-      const lit = EASE(2.1, 2.5, Math.abs(wx));
-      b6.beacon.material.emissiveIntensity = lit;
-      b6.beaconGlow.material.opacity = lit * 0.7 * fadeA;
-      b6.leaderA.position.y = -2 - (1 - lit) * 0.3;
-      b6.A.visible = fadeA > 0.01;
-      b6.B.visible = fadeB > 0.01;
-      fadeGroup(b6.A, fadeA);
-      fadeGroup(b6.leaderA, fadeA * lit);
-      fadeGroup(b6.B, fadeB);
-      const fly = EASE(0.55, 1, q);
-      b6.flyB.position.set(0.8 + fly * 9, -2 + fly * 1.4, 0);
-      b6.flyB.rotation.z = -0.55 * fly;
-      b6.ballB.scale.setScalar(0.85 + 0.1 * Math.sin(t * 2));
-      return 0;
-    },
-    // B7 cross-fade：日常（大環自由走）→ 事故（紅光、小環、一步一步對）
-    (q, t) => {
-      const sw = EASE(0.45, 0.55, q);
-      const fadeL = 1 - sw, fadeR = sw;
-      const a = q * 7;
-      b7.memberL.position.set(Math.cos(a) * 2.2, -2, Math.sin(a) * 2.2);
-      b7.memberL.rotation.y = -a;
-      b7.L.visible = fadeL > 0.01;
-      b7.R.visible = fadeR > 0.01;
-      fadeGroup(b7.L, fadeL);
-      fadeGroup(b7.R, fadeR);
-      b7.red.intensity = fadeR * 40 * (0.8 + 0.2 * Math.sin(t * 5));
-      b7.redGlow.material.opacity = fadeR * 0.45;
-      b7.leaderR.position.x = -1.6 + 0.08 * Math.sin(t * 3);
-      return lerp(-1.4, 1.4, sw);
-    },
-    // B8 pan：四張條件卡依序翻面，指針跟著轉到對應段位
-    (q, t) => {
-      [0.15, 0.30, 0.45, 0.58].forEach((th, i) => { b8.cards[i].rotation.y = Math.PI * EASE(th, th + 0.1, q); });
-      b8.needle.rotation.y = kf(q, [[0.15, -1.6], [0.25, -1.15], [0.30, -1.15], [0.40, -0.4], [0.45, -0.4], [0.55, 0.4], [0.58, 0.4], [0.68, 1.15]]);
-      return kf(q, [[0.1, -2.6], [0.2, -2.6], [0.3, -1.2], [0.45, 1.2], [0.62, 2.6]]) * 0.5;
-    },
-    // B9 zoom-in：小環張開變大，牆沉下去，團員走出來
-    (q, t) => {
-      const open = EASE(0.22, 0.5, q);
-      const s = lerp(1, 2.2 / 0.9, open);
-      b9.ring.scale.set(s, s, 1);
-      b9.ring.material.color.lerpColors(b9.colTurn, b9.colPro, open);
-      b9.ring.material.emissive.copy(b9.ring.material.color);
-      b9.wall.position.y = lerp(-1.0, -3.6, EASE(0.22, 0.5, q));
-      b9.wall.visible = q < 0.5;  // 地板是透明 ShadowMaterial，沉下去後要真的隱藏
-      const walk = EASE(0.45, 0.75, q);
-      b9.member.position.set(lerp(-2.2, 1.4, walk), -2 + Math.abs(Math.sin(walk * 18)) * 0.08 * (walk > 0 && walk < 1 ? 1 : 0), 0.3);
-      return 0;
-    },
-    // B10 static：四色環並排
-    (q, t) => 0,
-  ];
-
-  function update(p, t) {
+  function update(p) {
     let bi = 0;
     for (let i = 0; i < BEATS.length; i++) if (p >= BEATS[i].s) bi = i;
     const qs = BEATS.map((b) => clampBeat(p, b));
@@ -717,61 +551,50 @@ function boot() {
     BEATS.forEach((b, i) => {
       const q = qs[i];
       const inside = p >= b.s && p < b.e;
-      const w = inside ? EASE(TEXT_IN[0], TEXT_IN[1], q) * (1 - EASE(TEXT_OUT, 1, q)) : 0;
+      const w = inside ? seg(TEXT_IN[0], TEXT_IN[1], q) * (1 - seg(TEXT_OUT, 1, q)) : 0;
       keys[i].style.opacity = String(w);
       if (i === 9) {
-        caps[i].style.opacity = String(inside ? 1 - EASE(TEXT_OUT, 1, q) : 0);
-        recapSpans.forEach((sp, k) => { sp.style.opacity = String(inside ? EASE(0.32 + k * 0.04, 0.38 + k * 0.04, q) : 0); });
+        caps[i].style.opacity = String(inside ? 1 - seg(TEXT_OUT, 1, q) : 0);
+        recapSpans.forEach((sp, k) => { sp.style.opacity = String(inside ? seg(0.32 + k * 0.04, 0.38 + k * 0.04, q) : 0); });
       } else {
-        caps[i].style.opacity = String(inside ? EASE(TEXT_IN[0] + 0.03, TEXT_IN[1] + 0.03, q) * (1 - EASE(TEXT_OUT, 1, q)) : 0);
+        caps[i].style.opacity = String(inside ? seg(TEXT_IN[0] + 0.03, TEXT_IN[1] + 0.03, q) * (1 - seg(TEXT_OUT, 1, q)) : 0);
       }
     });
 
-    // 場景：每個 beat 都用自己的 q 更新（deterministic）
-    const offs = upd.map((fn, i) => fn(qs[i], t));
-    rooms.forEach((r, i) => { r.visible = Math.abs(i - bi) <= 1; });
-
-    // 鏡頭：房間切換（beat 前 22%）+ 該 beat 的 pan 偏移 + zoom
+    // 場景：只顯示當前 beat；換 beat 時鏡頭先回全景，再由該 beat 的 timeline 依 q seek（deterministic）
+    if (bi !== curBeat) {
+      scenes.forEach((s, i) => { if (i !== bi) s.opacity(0); });
+      draw.viewbox(...FULL);
+      curBeat = bi;
+    }
     const q = qs[bi];
-    const roomX = ROOM * bi - (bi > 0 ? ROOM * (1 - EASE(0, TRANS, q)) : 0);
-    const offW = EASE(0.05, 0.25, q) * (1 - EASE(0.92, 1, q));
-    const camX = roomX + offs[bi] * offW;
-    const camZ = kf(q, [[0, Z[bi][0]], [0.25, Z[bi][1]]]);
-    const wideComp = Math.max(1, 5.8 / (0.4663 * camera.aspect) / camZ);  // 直式手機：保證可見半寬 ≥ 5.8，場景不被裁
-    camera.position.set(camX, 0.8, camZ * wideComp);
-    camera.lookAt(camX, 0.2, 0);
-    key.position.set(camX + 3, 4, 2.5);
-    key.target.position.set(camX, -1, 0);
+    const enter = bi === 0 ? 1 : seg(0, TRANS * 0.4, q);
+    scenes[bi].opacity(enter * (1 - seg(0.95, 1, q)));
+    tls[bi].time(q * T);
   }
 
   function render() {
-    const t = clock.getElapsedTime();
+    const now = performance.now();
     Psm += (P - Psm) * 0.12;
     if (autoScroll) {
-      const u = Math.min(1, (performance.now() - autoScroll.t0) / autoScroll.dur);
-      scrollTo(0, lerp(autoScroll.from, autoScroll.to, EASE(0, 1, u)));
+      const u = Math.min(1, (now - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, EIO(u)));
       if (u >= 1) autoScroll = null;
     }
-    const dt = Math.min(0.05, Math.max(0, t - prevT));
-    prevT = t;
+    const dt = Math.min(0.05, Math.max(0, (now - prevMs) / 1000));
+    prevMs = now;
     // 自動播放：0.8 秒沒有使用者操作就以電影節奏續播
-    if (!autoScroll && !endSeen && P > 0.002 && P < 0.998 && performance.now() - lastUserMs > 800) {
+    if (!autoScroll && !endSeen && P > 0.002 && P < 0.998 && now - lastUserMs > 800) {
       const max = film.offsetHeight - innerHeight;
       scrollTo(0, Math.min(film.offsetTop + max, scrollY + (max / 55) * dt));
     }
     if (P > 0.995) endSeen = true;
-    update(Psm, t);
-    renderer.render(scene, camera);
+    update(Psm);
   }
   const tick = () => { requestAnimationFrame(tick); render(); };
   tick();
 
-  addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-    readScroll();
-  });
+  addEventListener('resize', readScroll);
 }
 </script>
 
