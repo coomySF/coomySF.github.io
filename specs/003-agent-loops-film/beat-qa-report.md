@@ -31,3 +31,36 @@
 - 桌機 fps: 未實測（QA 分頁在背景，rAF 停止；依規則 4 不標 PASS）／手機 fps: 未實測。純 SVG 描線 + viewBox 動畫，負載遠低於 v1 的 WebGL。
 - 降級: `prefers-reduced-motion` 或 SVG.js 載入失敗 → `html.al2-static` 靜態十段
 - 待辦: 部署後真機前景量一次 fps
+
+---
+
+# Beat QA Report — 領導者的四種 Loop・圖表版本（corporate）
+
+- 貼文: `_posts/2026-08-27-leadership-agent-loops-diagram.html`（與 editorial 版並列，同 10 beat、同論點）
+- Beat sheet: `specs/003-agent-loops-film/beat-sheet-corporate.md`
+- 日期: 2026-08-27
+- 視覺語域: `corporate`——米白底 `#f4f1ea`、40px 淡格線、填色幾何色塊 + 1px 邊框、org-chart 頭像、↻ loop 節點、Plex Mono 大寫標籤 / 無襯線中文；動效只有位移、淡入、線段延伸；zoom ≤ 0.85×、pan ≤ 80。
+- 判定方式: 同 editorial 版（iframe 固定尺寸 1280×800 / 390×844，`__al3Seek` 跳停留點）
+
+| Beat | 標題可讀 1280×800 | 標題可讀 390×844 | 畫面對應論點 | 文字不壓關鍵區 | reduced-motion 可讀 | 判定 |
+|---|---|---|---|---|---|---|
+| B1 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B2 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B3 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B4 | PASS | PASS | PASS | PASS（首輪：頭像壓到 GOAL 卡 → 走位提前一階停下） | PASS | PASS |
+| B5 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B6 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B7 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B8 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B9 | PASS | PASS | PASS | PASS | PASS | PASS |
+| B10 | PASS | PASS | PASS | PASS | PASS | PASS |
+
+## 不通過項目
+- 首輪：格線只鋪在 SVG 區，舞台上下兩帶 → 格線改為 `.al3-stage` 的 CSS background，整個舞台一致。
+
+## Recap 檢查
+- Recap beat 列出全部標題: PASS（逐字 = beat-sheet 九條 headline）
+
+## 效能
+- 首屏傳輸量: 0.28 MB（上限 4）
+- fps: 未實測（背景分頁）；純 SVG 位移 / 淡入
