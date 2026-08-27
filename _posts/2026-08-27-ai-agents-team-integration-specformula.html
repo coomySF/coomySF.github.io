@@ -1,0 +1,776 @@
+---
+layout: film
+title: 四個人一起 Vibe・SpecFormula 版本
+description: 把「一個人帶 Agent 兩天做完 POC，四個人一起 Vibe，收四倍的爛攤子」講一遍——多人各帶 Agent 為什麼會撞車、少做了哪一步、SpecFormula 用同一張圖和同一組 BDD 怎麼接住。十個 beat。
+date: 2026-08-27 12:00:00 +0800
+image: /assets/og-post-agents.jpg
+tags: [動畫實驗室, AI, Agent, SpecFormula]
+seo:
+  type: BlogPosting
+---
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=DM+Serif+Display&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* specformula 語域（DESIGN.md「希卡石板」）：冷石近黑平底、一條刻進去的青綠光、DM Serif 品牌時刻 + DM Mono 刻文。
+     石面是平的：沒有漸層底、沒有格線、沒有玻璃、沒有陰影；光只在狀態出現（掃描帶）。 */
+  html.at-sf {
+    --sf-ui: 'DM Sans', 'Noto Sans TC', system-ui, sans-serif;
+    --sf-display: 'DM Serif Display', serif;
+    --sf-cjk: 'Noto Sans TC', sans-serif;
+    --sf-mono: 'DM Mono', ui-monospace, monospace;
+    --sf-base: hsl(237 2% 5%); --sf-surface: hsl(237 2% 8%); --sf-raised: hsl(237 2% 12%); --sf-overlay: hsl(237 2% 15%);
+    --sf-fg: hsl(237 2% 96%); --sf-fg2: hsl(237 2% 70%); --sf-muted: hsl(237 2% 45%);
+    --sf-carve: hsl(237 2% 20%); --sf-line: hsla(237 2% 100% / .07);
+    --sf-teal: hsl(174 58% 57%); --sf-teal-soft: hsl(174 58% 57% / .14); --sf-teal-faint: hsl(174 58% 57% / .06);
+    --life-bg: #0c0c0d; --life-ink: hsl(237 2% 96%); --life-muted: hsl(237 2% 70%); --life-clay: hsl(174 58% 57%);
+  }
+  html.at-sf body { background: #0c0c0d; color: var(--sf-fg); font-family: var(--sf-ui); }
+  html.at-sf .site-header { border-color: var(--sf-line); }
+  html.at-sf .site-header a, html.at-sf .site-footer { color: var(--sf-fg); font-family: var(--sf-ui); }
+  html.at-sf .site-footer { border-color: var(--sf-line); }
+  html.at-sf .film-post-head h1 { color: var(--sf-fg); font-family: var(--sf-display), var(--sf-cjk); font-weight: 500; letter-spacing: -.02em; }
+  html.at-sf .film-post-deck { color: var(--sf-fg2); font-family: var(--sf-ui); }
+  html.at-sf .film-post-meta { color: var(--sf-muted); font-family: var(--sf-mono); letter-spacing: .2em; text-transform: uppercase; }
+  html.at-sf .film-post-back { color: var(--sf-fg2); }
+  html.at-sf .film-post-end a { color: var(--sf-fg); border-color: var(--sf-carve); }
+  html.at-sf .film-post-end a:hover { background: var(--sf-raised); border-color: var(--sf-teal); }
+
+  /* 片長 = 停留總和 15.3 viewport + 1 個進場 viewport */
+  #at-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 1630vh; }
+  .at-stage { position: sticky; top: 0; height: 100vh; overflow: hidden; background: #0c0c0d; }
+  #at-svg { position: absolute; left: 0; top: 40vh; width: 100%; height: 56vh; display: block; overflow: hidden; }
+  /* Inscription Rule：等寬 + 大寫 + 字距只給刻文標籤；中文與正文不拉字距 */
+  #at-svg text.m { font-family: var(--sf-mono); letter-spacing: .2em; text-transform: uppercase; }
+  #at-svg text.s { font-family: var(--sf-cjk); font-weight: 500; }
+  #at-svg text.w { font-family: var(--sf-display); }
+  #at-svg * { stroke-linecap: round; stroke-linejoin: round; }
+  .at-ui { position: absolute; inset: 0; pointer-events: none; }
+  .at-text {
+    position: absolute; left: 50%; top: 11vh; transform: translateX(-50%);
+    width: max-content; max-width: min(30em, calc(100vw - 48px)); text-align: center;
+  }
+  .at-eyebrow { font-family: var(--sf-mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--sf-muted); margin: 0 0 10px; opacity: 0; }
+  .at-key {
+    font-family: var(--sf-display), var(--sf-cjk); font-weight: 500;
+    font-size: clamp(34px, 5.4vw, 66px); line-height: 1.15; letter-spacing: -.02em;
+    color: var(--sf-fg); margin: 0; opacity: 0;
+  }
+  .at-hi { font-style: normal; color: var(--sf-teal); }
+  .at-cap {
+    font-family: var(--sf-ui); font-weight: 400; font-size: clamp(16px, 1.8vw, 18px); line-height: 1.85;
+    color: var(--sf-fg2); margin: 14px 0 0; opacity: 0;
+  }
+  .at-cap span { display: inline-block; opacity: 0; }
+  .at-text[data-beat="9"] .at-cap { font-size: clamp(13px, 1.5vw, 16px); }
+  .at-start-wrap { text-align: center; margin: 6px 0 46px; }
+  .at-start {
+    cursor: pointer; background: var(--sf-teal); border: 1px solid var(--sf-teal); border-radius: 999px;
+    padding: 13px 30px; font-family: var(--sf-mono); font-size: 12px; font-weight: 500;
+    letter-spacing: .3em; text-indent: .3em; color: #0c0c0d; transition: transform .12s ease, background .2s ease;
+  }
+  .at-start:hover { background: hsl(174 58% 40%); }
+  .at-start:active { transform: scale(.94); }
+  .at-source { font-family: var(--sf-ui); color: var(--sf-fg2); line-height: 1.9; }
+  .at-source a { color: var(--sf-fg); }
+
+  /* 靜態版：reduced-motion 時，十個 beat 直接堆疊、內容一個不少 */
+  .at-static-list { display: none; list-style: none; margin: 0; padding: 0; }
+  html.at-static .at-static-list { display: block; }
+  html.at-static #at-film { height: auto; margin: 0; width: auto; }
+  html.at-static .at-stage { display: none; }
+  html.at-static .at-start-wrap { display: none; }
+  .at-beat-static { padding: 48px 0; border-bottom: 1px solid var(--sf-line); }
+  .at-beat-static .at-skey {
+    font-family: var(--sf-display), var(--sf-cjk); font-weight: 500; font-size: clamp(28px, 4.5vw, 48px);
+    line-height: 1.2; letter-spacing: -.02em; color: var(--sf-fg); margin: 0 0 12px;
+  }
+  .at-beat-static .at-scap { font-family: var(--sf-ui); font-size: 18px; line-height: 1.85; color: var(--sf-fg2); margin: 0; }
+  .at-beat-static .at-snum { font-family: var(--sf-mono); font-size: 11px; letter-spacing: .2em; color: var(--sf-muted); margin: 0 0 10px; }
+</style>
+<script>document.documentElement.classList.add('at-sf');</script>
+
+<p class="at-start-wrap"><button class="at-start" type="button">▶ PLAY</button></p>
+
+<div id="at-film">
+  <div class="at-stage">
+    <svg id="at-svg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMin meet" aria-hidden="true"></svg>
+    <div class="at-ui">
+      <div class="at-text" data-beat="0">
+        <p class="at-eyebrow">01 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">兩天做完 <em class="at-hi">POC</em></h2>
+        <p class="at-cap" data-cap="0">一個人帶著 Agent，不到一兩天就把測試環境、網站、履歷生成跑起來。</p>
+      </div>
+      <div class="at-text" data-beat="1">
+        <p class="at-eyebrow">02 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">四個 Agent <em class="at-hi">撞車</em></h2>
+        <p class="at-cap" data-cap="1">四個人各自帶 Agent 改同一個專案後，原本沒處理好的問題全被放大。</p>
+      </div>
+      <div class="at-text" data-beat="2">
+        <p class="at-eyebrow">03 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">每人都完成，產品<em class="at-hi">失控</em></h2>
+        <p class="at-cap" data-cap="2">元件重複生成、越界改全域樣式、改 A 壞 B，review 只能猜範圍。</p>
+      </div>
+      <div class="at-text" data-beat="3">
+        <p class="at-eyebrow">04 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">共用 DB 被<em class="at-hi">清掉</em></h2>
+        <p class="at-cap" data-cap="3">最扯的一次，Agent 把共用 DB 清掉，大家瞬間全部登不進去。</p>
+      </div>
+      <div class="at-text" data-beat="4">
+        <p class="at-eyebrow">05 / 10 · SPECFORMULA</p>
+        <h2 class="at-key"><em class="at-hi">邊界</em>沒定義</h2>
+        <p class="at-cap" data-cap="4">沒先定義共用元件與 API 的修改邊界，Agent 各自找解、跨區改動。</p>
+      </div>
+      <div class="at-text" data-beat="5">
+        <p class="at-eyebrow">06 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">實作變快，<em class="at-hi">整合</em>沒變快</h2>
+        <p class="at-cap" data-cap="5">AI 縮短局部實作，需求理解、影響分析、整合驗證沒一起縮短，未知修改越積越多。</p>
+      </div>
+      <div class="at-text" data-beat="6">
+        <p class="at-eyebrow">07 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">少做的一步：<em class="at-hi">先寫清楚</em></h2>
+        <p class="at-cap" data-cap="6">要先寫清楚：這輪驗證什麼、影響哪些、誰負責哪段規格、什麼結果算完成。</p>
+      </div>
+      <div class="at-text" data-beat="7">
+        <p class="at-eyebrow">08 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">先看<em class="at-hi">同一張圖</em></h2>
+        <p class="at-cap" data-cap="7">SpecFormula 將 Flow、Feature、API、資料表連成一張圖。</p>
+      </div>
+      <div class="at-text" data-beat="8">
+        <p class="at-eyebrow">09 / 10 · SPECFORMULA</p>
+        <h2 class="at-key">同一組 <em class="at-hi">BDD</em> 驗收</h2>
+        <p class="at-cap" data-cap="8">行為寫成 Rule 與 Example，人與 Agent 用同組 BDD 驗收。</p>
+      </div>
+      <div class="at-text" data-beat="9">
+        <p class="at-eyebrow">10 / 10 · SPECFORMULA</p>
+        <h2 class="at-key"><em class="at-hi">回顧</em></h2>
+        <p class="at-cap" data-cap="9"><span>兩天做完 POC</span><span>／四個 Agent 撞車</span><span>／每人都完成，產品失控</span><span>／共用 DB 被清掉</span><span>／邊界沒定義</span><span>／實作變快，整合沒變快</span><span>／少做的一步：先寫清楚</span><span>／先看同一張圖</span><span>／同一組 BDD 驗收</span></p>
+      </div>
+    </div>
+  </div>
+
+  <ol class="at-static-list">
+    <li class="at-beat-static"><p class="at-snum">B1</p><h2 class="at-skey">兩天做完 <em class="at-hi">POC</em></h2><p class="at-scap">一個人帶著 Agent，不到一兩天就把測試環境、網站、履歷生成跑起來。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B2</p><h2 class="at-skey">四個 Agent <em class="at-hi">撞車</em></h2><p class="at-scap">四個人各自帶 Agent 改同一個專案後，原本沒處理好的問題全被放大。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B3</p><h2 class="at-skey">每人都完成，產品<em class="at-hi">失控</em></h2><p class="at-scap">元件重複生成、越界改全域樣式、改 A 壞 B，review 只能猜範圍。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B4</p><h2 class="at-skey">共用 DB 被<em class="at-hi">清掉</em></h2><p class="at-scap">最扯的一次，Agent 把共用 DB 清掉，大家瞬間全部登不進去。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B5</p><h2 class="at-skey"><em class="at-hi">邊界</em>沒定義</h2><p class="at-scap">沒先定義共用元件與 API 的修改邊界，Agent 各自找解、跨區改動。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B6</p><h2 class="at-skey">實作變快，<em class="at-hi">整合</em>沒變快</h2><p class="at-scap">AI 縮短局部實作，需求理解、影響分析、整合驗證沒一起縮短，未知修改越積越多。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B7</p><h2 class="at-skey">少做的一步：<em class="at-hi">先寫清楚</em></h2><p class="at-scap">要先寫清楚：這輪驗證什麼、影響哪些、誰負責哪段規格、什麼結果算完成。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B8</p><h2 class="at-skey">先看<em class="at-hi">同一張圖</em></h2><p class="at-scap">SpecFormula 將 Flow、Feature、API、資料表連成一張圖。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B9</p><h2 class="at-skey">同一組 <em class="at-hi">BDD</em> 驗收</h2><p class="at-scap">行為寫成 Rule 與 Example，人與 Agent 用同組 BDD 驗收。</p></li>
+    <li class="at-beat-static"><p class="at-snum">B10</p><h2 class="at-skey"><em class="at-hi">回顧</em></h2><p class="at-scap">兩天做完 POC／四個 Agent 撞車／每人都完成，產品失控／共用 DB 被清掉／邊界沒定義／實作變快，整合沒變快／少做的一步：先寫清楚／先看同一張圖／同一組 BDD 驗收</p></li>
+  </ol>
+</div>
+
+<script type="module">
+import { SVG, Runner, Timeline } from 'https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.2.4/dist/svg.esm.js';
+
+const docEl = document.documentElement;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Rule 5：reduced-motion → 靜態版，十個 beat 內容一個不少
+if (reduced) docEl.classList.add('at-static');
+
+// Rule 1：整頁只用一個 easing 家族 —— SVG.js 的正弦家族：'<>'（in-out）與 '>'（out）
+const EIO = (t) => -Math.cos(Math.min(1, Math.max(0, t)) * Math.PI) / 2 + 0.5;   // === SVG.js '<>'
+const EO = (t) => Math.sin(Math.min(1, Math.max(0, t)) * Math.PI / 2);           // === SVG.js '>'
+const seg = (a, b, x) => EIO((x - a) / (b - a));
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+function kf(p, pts) {
+  if (p <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    if (p <= pts[i][0]) return lerp(pts[i - 1][1], pts[i][1], seg(pts[i - 1][0], pts[i][0], p));
+  }
+  return pts[pts.length - 1][1];
+}
+
+// ---------- 節拍表（停留 → 進度區間） ----------
+const DWELL = [1.3, 1.4, 1.6, 1.3, 1.6, 1.4, 1.5, 1.6, 1.6, 2.0];
+const TOTAL = DWELL.reduce((a, b) => a + b, 0);
+const BEATS = [];
+{ let acc = 0; DWELL.forEach((d) => { BEATS.push({ s: acc / TOTAL, e: (acc + d) / TOTAL, len: d / TOTAL }); acc += d; }); }
+const TRANS = 0.22;        // beat 前 22%：鏡頭 / 場景轉場，之後畫面停定 ≥ 1.0 viewport
+const TEXT_IN = [0.30, 0.40];
+const TEXT_OUT = 0.92;
+const T = 1000;            // 每個 beat 的 timeline 長度（單位 ms，實際由 scroll 進度 seek）
+
+// ---------- 色票（DESIGN.md dark tokens，色相鎖 237；青綠是唯一的光，橘只給 INCIDENT / RISK） ----------
+const BASE = '#0c0c0d', SURFACE = '#141414', RAISED = '#1e1e1f', OVERLAY = '#262627';
+const FG = '#f4f4f5', FG2 = '#b2b2b3', MUTED = '#727273', CARVE = '#333334';
+const LINE = 'rgba(255,255,255,.07)';
+const TEAL = '#52d1c4';                       // hsl(174 58% 57%)
+const TEAL_SOFT = { color: TEAL, opacity: 0.14 }, TEAL_FAINT = { color: TEAL, opacity: 0.06 };
+const ORANGE = '#cb8b0b';                     // hsl(40 90% 42%)
+const FULL = [0, 0, 1200, 600];
+
+if (!docEl.classList.contains('at-static')) boot();
+
+function boot() {
+  docEl.style.scrollBehavior = 'auto';
+  const draw = SVG('#at-svg');
+  draw.viewbox(...FULL);
+
+  // ---------- 通用零件 ----------
+  const hexLerp = (a, b, t) => {
+    const A = a.match(/\w\w/g).map((h) => parseInt(h, 16)), B = b.match(/\w\w/g).map((h) => parseInt(h, 16));
+    return '#' + A.map((v, i) => Math.round(lerp(v, B[i], t)).toString(16).padStart(2, '0')).join('');
+  };
+  // 石卡：實色 surface / raised + 1px carve 凹陷邊 + radius 10（--radius）；平的，沒有陰影
+  const card = (g, x, y, w, h, fill = SURFACE, stroke = CARVE, r = 10) =>
+    g.rect(w, h).radius(r).move(x, y).fill(fill).stroke({ color: stroke, width: 1 });
+  // 焦點覆層：teal-soft 填色（只在該卡是焦點時顯示，opacity 由各 beat 控制）
+  const focus = (g, x, y, w, h, r = 10) =>
+    g.rect(w, h).radius(r).move(x, y).fill(TEAL_SOFT).stroke({ color: TEAL, width: 1, opacity: 0.35 }).opacity(0);
+  // 4px 左色條（橘 = 被限制 / 事故）
+  const sideBar = (g, x, y, h, color) => g.rect(4, h).radius(2).move(x, y).fill(color);
+  // 藥丸（rounded-full）
+  const pill = (g, cx, cy, w, h, fill, stroke = null) => {
+    const r = g.rect(w, h).radius(h / 2).center(cx, cy).fill(fill);
+    if (stroke) r.stroke({ color: stroke, width: 1 });
+    return r;
+  };
+  // 品牌母題：「Sf.」的句點 —— 青綠圓點 r 7
+  const dot = (g, x, y, color = TEAL) => g.circle(14).center(x, y).fill(color);
+  // 節點圓點 r 3.5：連線的接點
+  const node = (g, x, y) => g.circle(7).center(x, y).fill(TEAL);
+  // 人：實心圓頭 + 實心圓角矩形軀幹（org-chart avatar）；y = 軀幹頂
+  const avatar = (g, x, y, color = FG) => {
+    const p = g.group();
+    p.circle(36).center(x, y - 30).fill(color);
+    p.rect(64, 40).radius(10).move(x - 32, y - 6).fill(color);
+    return p;
+  };
+  // Agent 節點：青綠點 r 9 + 一圈細青綠環
+  const agent = (g, x, y) => {
+    const p = g.group();
+    p.circle(32).center(x, y).fill('none').stroke({ color: TEAL, width: 1, opacity: 0.6 });
+    p.circle(18).center(x, y).fill(TEAL);
+    return p;
+  };
+  // 鎖：鎖身 + 鎖環
+  const lock = (g, x, y, color = MUTED) => {
+    const p = g.group();
+    const shackle = p.path(`M${x - 6} ${y - 2} V${y - 9} A6 6 0 0 1 ${x + 6} ${y - 9} V${y - 2}`).fill('none').stroke({ color, width: 2 });
+    p.rect(22, 16).radius(3).move(x - 11, y - 2).fill(color);
+    return { grp: p, shackle, hinge: [x - 6, y - 2] };
+  };
+  // 勾：青綠方框內的勾（BASE 描邊）或裸勾（青綠描邊）
+  const checkPath = (g, cx, cy, color = BASE) =>
+    g.path(`M${cx - 6} ${cy} L${cx - 1} ${cy + 5} L${cx + 7} ${cy - 6}`).fill('none').stroke({ color, width: 2.5 });
+  const mono = (g, x, y, txt, color = MUTED, size = 20, anchor = 'middle') =>
+    g.plain(txt).addClass('m').font({ size, anchor }).fill(color).attr({ x, y });
+  const label = (g, x, y, txt, color = FG, size = 22, anchor = 'middle') =>
+    g.plain(txt).addClass('s').font({ size, anchor }).fill(color).attr({ x, y });
+  // Divider Rule：連線與分隔用 line（白 7%），carve 只給凹陷的框
+  const hair = (g, x1, y1, x2, y2, color = LINE, w = 1) => g.line(x1, y1, x2, y2).stroke({ color, width: w });
+
+  // 浮水印：「Sf.」（白襯線 S + 青綠斜體 f + 青綠句點），舞台右下，55%
+  const wm = draw.text((add) => {
+    add.tspan('S').fill(FG);
+    add.tspan('f').fill(TEAL).attr({ 'font-style': 'italic' });
+    add.tspan('.').fill(TEAL);
+  }).addClass('w').font({ size: 26, anchor: 'end' }).attr({ x: 1160, y: 572 }).opacity(0.55);
+  wm.attr('id', 'at-wm');
+
+  // ---------- 每個 beat 一條 Timeline，完全由 scroll 進度 seek ----------
+  const scenes = [], tls = [], focals = [], rests = [];
+  // rest：掃描後留下的邊光，只准落在單一張有 carve 邊的卡上（null = 不留邊光，只掃過）
+  const scene = (id, focal, rest = null) => {
+    const g = draw.group().attr('id', 's-' + id).opacity(0);
+    const tl = new Timeline().persist(true);
+    tl.pause();
+    scenes.push(g); tls.push(tl); focals.push(focal || [0, 0, 1200, 600]); rests.push(rest);
+    // 線段延伸：dasharray / dashoffset 從 getTotalLength() 來，同一 easing 家族 '<>'
+    const extend = (el, s, e) => {
+      const L = el.node.getTotalLength();
+      el.attr({ 'stroke-dasharray': L, 'stroke-dashoffset': L });
+      new Runner((e - s) * T).element(el).ease('<>').attr({ 'stroke-dashoffset': 0 }).schedule(tl, s * T, 'absolute');
+      return el;
+    };
+    const run = (el, s, e, fn) => new Runner((e - s) * T).element(el).during((p) => fn(p)).schedule(tl, s * T, 'absolute');
+    // 進場 = 品牌 ui-press 曲線：scale .94→1 + 淡入（不位移）
+    const slide = (el, s, e) => {
+      el.opacity(0);
+      return run(el, s, e, (p) => { const w = EO(p); el.opacity(w).transform({ scale: lerp(0.94, 1, w), origin: 'center' }); });
+    };
+    const fade = (el, s, e) => { el.opacity(0); return run(el, s, e, (p) => el.opacity(EO(p))); };
+    return { g, tl, extend, run, slide, fade };
+  };
+  // 鏡頭：zoom-in 最多 0.85×，中心 (cx, cy)
+  const zoomTo = (cx, cy, z) => {
+    const w = lerp(1200, 1020, z), h = lerp(600, 510, z);
+    const x = Math.min(180, Math.max(0, cx - w / 2)), y = Math.min(90, Math.max(0, cy - h / 2));
+    draw.viewbox(lerp(0, x, z), lerp(0, y, z), w, h);
+  };
+  // 打勾方框：青綠框 → 填滿 + BASE 勾
+  const checkbox = (g, x, y) => {
+    const box = g.rect(20, 20).radius(4).move(x, y).fill('none').stroke({ color: TEAL, width: 1.5 });
+    const chk = checkPath(g, x + 10, y + 10, BASE).opacity(0);
+    return { box, chk, tick: (w) => { box.fill({ color: TEAL, opacity: w }); chk.opacity(w); } };
+  };
+
+  // ---------- B1：兩天做完 POC（zoom-in 0.85：從人與 Agent 收到三張卡，再放開） ----------
+  {
+    const { g, extend, run, slide, fade } = scene('solo-agent-two-days', [760, 150, 220, 290], [760, 370, 220, 70]);
+    const dev = avatar(g, 300, 300, FG);
+    mono(g, 300, 372, 'DEV', MUTED, 16); label(g, 300, 402, '一個人', FG, 20);
+    const ag = agent(g, 420, 285);
+    mono(g, 420, 372, 'AGENT', TEAL, 16);
+    fade(dev, 0.0, 0.1); fade(ag, 0.04, 0.14);
+    const CY = [185, 295, 405];
+    const WORDS = ['測試環境', '網站', '履歷生成'];
+    WORDS.forEach((w, i) => {
+      const cy = CY[i];
+      const link = g.path(`M440 285 H600 V${cy} H760`).fill('none').stroke({ color: LINE, width: 1.5 });
+      const s = 0.12 + i * 0.12;
+      extend(link, s, s + 0.08);
+      const c = g.group();
+      card(c, 760, cy - 35, 220, 70, SURFACE, CARVE);
+      const cb = checkbox(c, 784, cy - 10);
+      label(c, 820, cy + 8, w, FG, 20, 'start');
+      slide(c, s + 0.05, s + 0.12);
+      run(cb.box, s + 0.12, s + 0.17, (p) => cb.tick(EO(p)));
+    });
+    mono(g, 760, 500, 'DAY 01', MUTED, 14, 'start');
+    const arrow = g.line(850, 495, 900, 495).stroke({ color: TEAL, width: 1.5 });
+    extend(arrow, 0.2, 0.55);
+    const head = g.path('M892 488 L900 495 L892 502').fill('none').stroke({ color: TEAL, width: 1.5 });
+    fade(head, 0.5, 0.56);
+    const d2 = mono(g, 980, 500, 'DAY 02', FG, 14, 'end');
+    fade(d2, 0.52, 0.6);
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      const z = seg(0, 0.18, q) * (1 - seg(0.62, 0.75, q));
+      const m = seg(0.22, 0.4, q);
+      zoomTo(lerp(360, 870, m), 300, z);
+    });
+  }
+
+  // ---------- B2：四個 Agent 撞車（static：四組人 + Agent 連向同一個 REPO，diff 色塊重疊處轉橘） ----------
+  {
+    const { g, extend, run, slide, fade } = scene('four-agents-one-repo', [450, 220, 300, 160], [450, 220, 300, 160]);
+    const repo = g.group();
+    card(repo, 450, 220, 300, 160, SURFACE, CARVE);
+    mono(repo, 600, 306, 'REPO', FG, 20);
+    slide(repo, 0.0, 0.12);
+    const CORNERS = [[150, 130], [1050, 130], [150, 470], [1050, 470]];
+    const PATCH = [[480, 250, 150, 80], [570, 250, 150, 80], [520, 285, 150, 70], [560, 270, 130, 80]];
+    CORNERS.forEach(([x, y], i) => {
+      const pr = g.group();
+      avatar(pr, x - 28, y, FG);
+      agent(pr, x + 44, y - 14);
+      fade(pr, 0.02 + i * 0.03, 0.12 + i * 0.03);
+      const left = x < 600;
+      const sx = left ? x + 76 : x - 76, tx = left ? 450 : 750, ty = y < 300 ? 250 : 350;
+      const ln = g.line(sx, y - 14, tx, ty).stroke({ color: LINE, width: 1.5 });
+      const s = 0.14 + i * 0.08;
+      extend(ln, s, s + 0.1);
+      const [px, py, pw, ph] = PATCH[i];
+      const patch = g.rect(pw, ph).radius(6).move(px, py).fill({ color: TEAL, opacity: 0.12 }).stroke({ color: TEAL, width: 1, opacity: 0.5 });
+      fade(patch, s + 0.1, s + 0.16);
+    });
+    const overlap = g.rect(70, 45).radius(6).move(575, 285).fill({ color: ORANGE, opacity: 0.25 });
+    fade(overlap, 0.5, 0.6);
+    const tag = g.group();
+    pill(tag, 600, 420, 130, 32, ORANGE);
+    mono(tag, 600, 425, 'CONFLICT', BASE, 13);
+    slide(tag, 0.56, 0.66);
+  }
+
+  // ---------- B3：每人都完成，產品失控（pan ≤ 80：四批 diff 依序落下，REVIEW ? 計數上升） ----------
+  {
+    const { g, run, fade } = scene('overlap-diffs', [160, 170, 600, 212], [900, 240, 180, 80]);
+    const GX = (c) => 160 + c * 76, GY = (r) => 170 + r * 76;
+    mono(g, 160, 150, 'COMPONENTS', MUTED, 13, 'start');
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 6; c++) g.rect(60, 60).radius(6).move(GX(c), GY(r)).fill(SURFACE).stroke({ color: CARVE, width: 1 });
+    g.rect(80, 212).radius(8).move(680, 170).fill(SURFACE).stroke({ color: CARVE, width: 1 });
+    mono(g, 720, 150, 'GLOBAL STYLE', MUTED, 13);
+    const ab = hair(g, 190, 470, 420, 470, LINE, 2);
+    node(g, 190, 470).opacity(0.5); node(g, 420, 470).opacity(0.5);
+    mono(g, 190, 504, 'A', MUTED, 13); mono(g, 420, 504, 'B', MUTED, 13);
+    card(g, 900, 240, 180, 80, SURFACE, CARVE);
+    mono(g, 990, 268, 'REVIEW', MUTED, 13);
+    const cnt = mono(g, 990, 304, '? × 0', FG, 22);
+    const drop = (x, y, w, h, s) => {
+      const r = g.rect(w, h).radius(6).move(x, y).fill({ color: TEAL, opacity: 0.12 }).stroke({ color: TEAL, width: 1, opacity: 0.5 }).opacity(0);
+      run(r, s, s + 0.08, (p) => { const w2 = EO(p); r.opacity(w2).transform({ translateY: -24 * (1 - w2) }); });
+      return r;
+    };
+    const B = [0.08, 0.18, 0.28, 0.38];
+    drop(GX(1), GY(0), 60, 60, B[0]);
+    drop(GX(4), GY(2), 60, 60, B[1]);
+    const eq = g.group();
+    eq.line(GX(1) + 30, GY(0) + 30, GX(4) + 30, GY(2) + 30).stroke({ color: TEAL, width: 1, dasharray: '4 6' });
+    const ex = (GX(1) + GX(4)) / 2 + 30, ey = (GY(0) + GY(2)) / 2 + 30;
+    pill(eq, ex, ey, 36, 22, RAISED, TEAL);
+    mono(eq, ex, ey + 5, '=', TEAL, 14);
+    fade(eq, B[1] + 0.08, B[1] + 0.14);
+    drop(GX(5), GY(1), 220, 60, B[2]);
+    const brk = g.group();
+    brk.line(190, 470, 285, 470).stroke({ color: ORANGE, width: 2 });
+    brk.line(325, 470, 420, 470).stroke({ color: ORANGE, width: 2 });
+    fade(brk, B[3], B[3] + 0.08);
+    let last = -1;
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      const n = B.filter((b) => q >= b + 0.05).length;
+      if (n !== last) { last = n; cnt.plain('? × ' + n); }
+      ab.opacity(1 - seg(B[3], B[3] + 0.08, q));
+      draw.viewbox(kf(q, [[0.05, 0], [0.45, 80]]), 0, 1200, 600);
+    });
+  }
+
+  // ---------- B4：共用 DB 被清掉（static：橘色指令進圓柱，三格依序清空，四端同時亮橘鎖 + 401） ----------
+  {
+    const { g, extend, run, slide, fade } = scene('shared-db-wiped', [510, 190, 180, 230], [510, 200, 180, 200]);
+    const db = g.group();
+    card(db, 510, 200, 180, 200, SURFACE, CARVE);
+    db.ellipse(180, 44).center(600, 200).fill(RAISED).stroke({ color: CARVE, width: 1 });
+    const rows = [0, 1, 2].map((i) => db.rect(140, 38).radius(6).move(530, 236 + i * 50).fill(RAISED).stroke({ color: CARVE, width: 1 }));
+    mono(db, 600, 436, 'SHARED DB', MUTED, 14);
+    slide(db, 0.0, 0.12);
+    const S = [[150, 150], [150, 450], [1050, 150], [1050, 450]];
+    S.forEach(([x, y], i) => {
+      const a = avatar(g, x, y, FG);
+      fade(a, 0.02 + i * 0.02, 0.1 + i * 0.02);
+      const left = x < 600;
+      const ex = left ? x + 50 : x - 50, tx = left ? 510 : 690, ty = y < 300 ? 260 : 340;
+      const ln = g.line(ex, y + 14, tx, ty).stroke({ color: LINE, width: 1.5 });
+      extend(ln, 0.08 + i * 0.03, 0.18 + i * 0.03);
+      const lx = left ? x + 90 : x - 90, ly = y + 56;
+      const lk = lock(g, lx, ly, ORANGE);
+      const code = mono(g, left ? lx + 22 : lx - 22, ly + 12, '401', ORANGE, 14, left ? 'start' : 'end');
+      fade(lk.grp, 0.58, 0.66); fade(code, 0.58, 0.66);
+    });
+    const ag = agent(g, 330, 90);
+    mono(g, 330, 130, 'AGENT', TEAL, 14);
+    fade(ag, 0.14, 0.22);
+    const cmd = g.line(352, 100, 560, 188).stroke({ color: ORANGE, width: 2, dasharray: '8 8' });
+    extend(cmd, 0.22, 0.32);
+    const cmdT = mono(g, 470, 122, 'DROP', ORANGE, 13);
+    fade(cmdT, 0.26, 0.32);
+    rows.forEach((r, i) => run(r, 0.34 + i * 0.07, 0.4 + i * 0.07, (p) => r.fill({ color: RAISED, opacity: 1 - EO(p) })));
+  }
+
+  // ---------- B5：邊界沒定義（pan ≤ 80：四張步驟卡向右串起，節點依序亮起） ----------
+  {
+    const XS = [60, 340, 620, 900];
+    const W = ['沒定邊界', '各自找解', '跨區進同一批 diff', 'review 重新理解'];
+    const { g, extend, run, slide } = scene('four-step-chain', [60, 245, 1080, 110], [900, 245, 240, 110]);
+    XS.forEach((x, i) => {
+      const c = g.group();
+      card(c, x, 245, 240, 110, SURFACE, CARVE);
+      mono(c, x + 20, 280, '0' + (i + 1), TEAL, 13, 'start');
+      label(c, x + 20, 322, W[i], FG, 20, 'start');
+      const s = 0.06 + i * 0.15;
+      slide(c, s, s + 0.1);
+      if (i < 3) {
+        const ln = g.line(x + 240, 300, x + 280, 300).stroke({ color: LINE, width: 1.5 });
+        extend(ln, s + 0.1, s + 0.15);
+        const nd = node(g, x + 260, 300).opacity(0);
+        run(nd, s + 0.13, s + 0.17, (p) => nd.opacity(EO(p)));
+      }
+    });
+    run(g, 0, 0.8, (p) => { draw.viewbox(kf(p * 0.8, [[0.1, 0], [0.6, 80]]), 0, 1200, 600); });
+  }
+
+  // ---------- B6：實作變快，整合沒變快（pan ≤ 60：第一條收短成青綠短棒，其餘不動，REVIEW QUEUE 往上跳） ----------
+  {
+    const NAMES = ['實作', '需求理解', '影響分析', '整合驗證'];
+    const YS = [150, 240, 330, 420];
+    const { g, run, slide } = scene('asymmetric-bars', [100, 150, 700, 298], [880, 240, 220, 110]);
+    const bars = [];
+    NAMES.forEach((n, i) => {
+      const row = g.group();
+      label(row, 100, YS[i] - 12, n, FG, 18, 'start');
+      row.rect(700, 28).radius(14).move(100, YS[i]).fill(RAISED).stroke({ color: CARVE, width: 1 });
+      bars.push(row.rect(700, 28).radius(14).move(100, YS[i]).fill(MUTED));
+      slide(row, 0.02 + i * 0.04, 0.12 + i * 0.04);
+    });
+    const tip = dot(g, 800, 164, TEAL).opacity(0);
+    const c = g.group();
+    card(c, 880, 240, 220, 110, SURFACE, CARVE);
+    mono(c, 990, 272, 'REVIEW QUEUE', MUTED, 12);
+    const qt = mono(c, 990, 322, '03', FG, 30);
+    slide(c, 0.14, 0.24);
+    let last = -1;
+    run(g, 0, 0.8, (p) => {
+      const q = p * 0.8;
+      const sh = seg(0.2, 0.42, q);
+      const w = lerp(700, 180, sh);
+      bars[0].width(w).fill({ color: hexLerp(MUTED, TEAL, sh), opacity: lerp(1, 0.14, sh) }).stroke({ color: TEAL, width: 1, opacity: sh });
+      tip.center(100 + w, 164).opacity(sh);
+      const n = Math.round(lerp(3, 12, seg(0.3, 0.7, q)));
+      if (n !== last) { last = n; qt.plain(String(n).padStart(2, '0')); }
+      draw.viewbox(kf(q, [[0.15, 0], [0.5, 60]]), 0, 1200, 600);
+    });
+  }
+
+  // ---------- B7：少做的一步：先寫清楚（zoom-in 0.85：收到那張規格卡，四行依序刻上，八個節點都指向它） ----------
+  {
+    const { g, extend, run, slide, fade } = scene('four-questions-card', [290, 150, 620, 300], [290, 150, 620, 300]);
+    const c = g.group();
+    card(c, 290, 150, 620, 300, SURFACE, CARVE);
+    c.line(300, 150.5, 900, 150.5).stroke({ color: TEAL, width: 1 });
+    mono(c, 322, 188, 'SPEC · THIS ROUND', MUTED, 12, 'start');
+    slide(c, 0.0, 0.12);
+    const Q = ['驗證假設', '受影響範圍', '分工', '完成條件'];
+    const YS = [232, 292, 352, 412];
+    Q.forEach((t, i) => {
+      const y = YS[i];
+      const row = g.group();
+      const cb = checkbox(row, 322, y - 14);
+      mono(row, 358, y - 5, '0' + (i + 1), TEAL, 12, 'start');
+      label(row, 400, y + 4, t, FG, 22, 'start');
+      const s = 0.16 + i * 0.1;
+      fade(row, s, s + 0.06);
+      run(cb.box, s + 0.06, s + 0.1, (p) => cb.tick(EO(p)));
+    });
+    const AV = [[110, 190], [110, 430], [1090, 190], [1090, 430]];
+    const AG = [[450, 80], [750, 80], [450, 520], [750, 520]];
+    AV.forEach(([x, y], i) => {
+      const a = avatar(g, x, y, FG);
+      fade(a, 0.02 + i * 0.02, 0.1 + i * 0.02);
+      const left = x < 600;
+      const ln = g.line(left ? x + 40 : x - 40, y + 10, left ? 290 : 910, y + 10).stroke({ color: LINE, width: 1.5 });
+      extend(ln, 0.5 + i * 0.03, 0.6 + i * 0.03);
+    });
+    AG.forEach(([x, y], i) => {
+      const a = agent(g, x, y);
+      fade(a, 0.04 + i * 0.02, 0.12 + i * 0.02);
+      const top = y < 300;
+      const ln = g.line(x, top ? y + 18 : y - 18, x, top ? 150 : 450).stroke({ color: LINE, width: 1.5 });
+      extend(ln, 0.52 + i * 0.03, 0.62 + i * 0.03);
+    });
+    run(g, 0, 0.8, (p) => zoomTo(600, 300, seg(0.05, 0.3, p * 0.8)));
+  }
+
+  // ---------- B8：先看同一張圖（zoom-in 0.85：Flow → Feature → API → Table 依序描線，四個人視線都指向同一張圖） ----------
+  {
+    const NAMES = ['FLOW', 'FEATURE', 'API', 'TABLE'];
+    const XS = [240, 480, 720, 960], Y = 230;
+    const { g, extend, run, slide, fade } = scene('one-diagram-shared', [155, 202, 890, 56]);
+    mono(g, 600, 150, 'ONE DIAGRAM', MUTED, 13);
+    NAMES.forEach((n, i) => {
+      const x = XS[i];
+      const c = g.group();
+      pill(c, x, Y, 170, 56, SURFACE, CARVE);
+      mono(c, x, Y + 5, n, FG, 15);
+      slide(c, 0.04 + i * 0.12, 0.12 + i * 0.12);
+      if (i < 3) {
+        const ln = g.line(x + 85, Y, x + 155, Y).stroke({ color: LINE, width: 1.5 });
+        extend(ln, 0.12 + i * 0.12, 0.18 + i * 0.12);
+        const nd = node(g, x + 120, Y).opacity(0);
+        run(nd, 0.14 + i * 0.12, 0.18 + i * 0.12, (p) => nd.opacity(EO(p)));
+      }
+    });
+    const AX = [330, 510, 690, 870];
+    AX.forEach((x, i) => {
+      const a = avatar(g, x, 470, FG);
+      fade(a, 0.3 + i * 0.04, 0.38 + i * 0.04);
+      const ln = g.line(x, 418, 600, 262).stroke({ color: LINE, width: 1 });
+      extend(ln, 0.5 + i * 0.04, 0.6 + i * 0.04);
+    });
+    run(g, 0, 0.8, (p) => zoomTo(600, 240, seg(0.05, 0.3, p * 0.8)));
+  }
+
+  // ---------- B9：同一組 BDD 驗收（pan ≤ 80：四個實作方塊依序過閘，三個打勾、一個轉橘退回） ----------
+  {
+    const { g, extend, run, slide, fade } = scene('bdd-scenarios-gate', [560, 140, 80, 320]);
+    const KW = ['GIVEN', 'WHEN', 'THEN'];
+    const EX = ['登入狀態', '點擊 CTA', '送出事件'];
+    const CY = [190, 260, 330];
+    mono(g, 80, 140, 'SCENARIO', MUTED, 13, 'start');
+    KW.forEach((k, i) => {
+      const c = g.group();
+      card(c, 80, CY[i] - 30, 220, 60, SURFACE, CARVE);
+      mono(c, 100, CY[i] + 5, k, TEAL, 14, 'start');
+      label(c, 190, CY[i] + 7, EX[i], FG, 16, 'start');
+      slide(c, 0.02 + i * 0.05, 0.1 + i * 0.05);
+    });
+    const feed = g.line(300, 260, 595, 260).stroke({ color: LINE, width: 1.5 });
+    extend(feed, 0.1, 0.18);
+    const gate = g.group();
+    gate.rect(10, 40).radius(3).move(595, 140).fill(TEAL);
+    gate.rect(10, 40).radius(3).move(595, 420).fill(TEAL);
+    gate.line(600, 180, 600, 420).stroke({ color: TEAL, width: 1 });
+    mono(gate, 600, 490, 'BDD GATE', TEAL, 13);
+    fade(gate, 0.08, 0.16);
+    const LANE = [210, 270, 330, 390];
+    const S = [0.16, 0.25, 0.34, 0.43], D = 0.08;
+    LANE.forEach((y, i) => {
+      const sq = g.group();
+      const box = sq.rect(44, 44).radius(8).center(400, y).fill(RAISED).stroke({ color: CARVE, width: 1 });
+      mono(sq, 400, y + 5, '0' + (i + 1), FG2, 12);
+      fade(sq, 0.06 + i * 0.02, 0.12 + i * 0.02);
+      const bounce = i === 2;
+      const ok = checkPath(g, 820, y, TEAL).opacity(0);
+      const no = g.path(`M${480 - 7} ${y - 7} L${480 + 7} ${y + 7} M${480 + 7} ${y - 7} L${480 - 7} ${y + 7}`).fill('none').stroke({ color: ORANGE, width: 2.5 }).opacity(0);
+      run(sq, S[i], S[i] + D, (p) => {
+        let x;
+        if (bounce) x = p < 0.5 ? lerp(400, 590, EIO(p * 2)) : lerp(590, 520, EIO((p - 0.5) * 2));
+        else x = lerp(400, 760, EIO(p));
+        sq.transform({ translateX: x - 400 });
+        if (bounce) box.stroke({ color: hexLerp(CARVE, ORANGE, seg(0.5, 0.7, p)) });
+      });
+      if (bounce) fade(no, S[i] + D, S[i] + D + 0.04);
+      else fade(ok, S[i] + D, S[i] + D + 0.04);
+    });
+    run(g, 0, 0.8, (p) => { draw.viewbox(kf(p * 0.8, [[0.12, 0], [0.52, 80]]), 0, 1200, 600); });
+  }
+
+  // ---------- B10：回顧（static：規格卡 — 圖 — 閘門 一線串起，沒有東西在動；浮水印常駐） ----------
+  {
+    const { g } = scene('recap-spec-to-gate', [150, 220, 900, 160], [150, 220, 200, 120]);
+    const c = g.group();
+    card(c, 150, 220, 200, 120, SURFACE, CARVE);
+    c.line(160, 220.5, 340, 220.5).stroke({ color: TEAL, width: 1 });
+    [0, 1, 2, 3].forEach((i) => {
+      c.rect(10, 10).radius(2).move(170, 242 + i * 22).fill(TEAL);
+      hair(c, 192, 247 + i * 22, 320, 247 + i * 22, CARVE, 2);
+    });
+    mono(g, 250, 372, 'SPEC', MUTED, 13);
+    hair(g, 350, 280, 462, 280); node(g, 406, 280);
+    ['FLOW', 'FEATURE', 'API', 'TABLE'].forEach((n, i) => {
+      const cx = 500 + i * 90;
+      pill(g, cx, 280, 76, 30, SURFACE, CARVE);
+      mono(g, cx, 284, n, FG2, 9);
+      if (i < 3) node(g, cx + 45, 280);
+    });
+    mono(g, 635, 372, 'ONE DIAGRAM', MUTED, 13);
+    hair(g, 808, 280, 920, 280); node(g, 864, 280);
+    g.rect(10, 24).radius(3).move(925, 226).fill(TEAL);
+    g.rect(10, 24).radius(3).move(925, 310).fill(TEAL);
+    g.line(930, 250, 930, 310).stroke({ color: TEAL, width: 1 });
+    g.rect(30, 30).radius(6).center(1000, 280).fill(RAISED).stroke({ color: CARVE, width: 1 });
+    checkPath(g, 1050, 280, TEAL);
+    mono(g, 980, 372, 'BDD GATE', MUTED, 13);
+    hair(g, 70, 420, 1130, 420);
+    mono(g, 600, 450, 'SAME SPEC · SAME DIAGRAM · SAME GATE', MUTED, 13);
+  }
+
+  // ---------- 掃描帶（Stone Face Rule：光只在狀態出現）----------
+  // 24 單位寬、teal-faint→teal-soft→透明的帶子，在畫面停定時（q .22→.34）掃過焦點元素一次，之後留一圈淡青綠邊光
+  const SCAN_W = 24;
+  const scanGrad = draw.gradient('linear', (add) => {
+    add.stop({ offset: 0, color: TEAL, opacity: 0.06 });
+    add.stop({ offset: 0.5, color: TEAL, opacity: 0.14 });
+    add.stop({ offset: 1, color: TEAL, opacity: 0 });
+  });
+  const scanClipR = draw.rect(10, 10).radius(10);
+  const scanClip = draw.clip().add(scanClipR);
+  const scan = draw.group().attr('id', 'at-scan').clipWith(scanClip).opacity(0);
+  const scanBand = scan.rect(SCAN_W, 600).fill(scanGrad);
+  const scanEdge = draw.rect(10, 10).radius(10).fill('none').stroke({ color: TEAL, width: 1, opacity: 0.35 }).opacity(0);
+  wm.front();
+
+  // ---------- DOM ----------
+  const keys = [...document.querySelectorAll('.at-key')];
+  const caps = [...document.querySelectorAll('.at-cap')];
+  const eyebrows = [...document.querySelectorAll('.at-eyebrow')];
+  const recapSpans = [...caps[9].querySelectorAll('span')];
+
+  // ---------- scroll + autoplay ----------
+  const film = document.getElementById('at-film');
+  let P = 0, Psm = 0;
+  const readScroll = () => {
+    const max = film.offsetHeight - innerHeight;
+    const y = Math.min(Math.max(scrollY - film.offsetTop, 0), max);
+    P = max > 0 ? y / max : 0;
+  };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll();
+  window.__atSeek = (p) => { P = p; Psm = p; render(); };
+  window.__al2Seek = window.__atSeek;
+
+  let autoScroll = null;
+  const glideTo = (targetY, dur = 3000) => { autoScroll = { from: scrollY, to: targetY, t0: performance.now(), dur }; };
+  let lastUserMs = performance.now();
+  const cancelGlide = () => { autoScroll = null; lastUserMs = performance.now(); };
+  addEventListener('wheel', cancelGlide, { passive: true });
+  addEventListener('touchstart', cancelGlide, { passive: true });
+  addEventListener('keydown', cancelGlide, { passive: true });
+  const startEl = document.querySelector('.at-start');
+  if (startEl) startEl.addEventListener('click', () => {
+    glideTo(film.offsetTop + (film.offsetHeight - innerHeight) * (BEATS[0].s + BEATS[0].len * TEXT_IN[1]), 2600);
+  });
+  let endSeen = false, prevMs = performance.now();
+  const clampBeat = (p, b) => clamp01((p - b.s) / b.len);
+  let curBeat = -1;
+
+  function update(p) {
+    let bi = 0;
+    for (let i = 0; i < BEATS.length; i++) if (p >= BEATS[i].s) bi = i;
+    const qs = BEATS.map((b) => clampBeat(p, b));
+
+    // 文字：Rule 3 —— 畫面在 q=TRANS 停定後才進場（q 0.30→0.40），beat 尾 8% 淡出
+    BEATS.forEach((b, i) => {
+      const q = qs[i];
+      const inside = p >= b.s && p < b.e;
+      const w = inside ? seg(TEXT_IN[0], TEXT_IN[1], q) * (1 - seg(TEXT_OUT, 1, q)) : 0;
+      keys[i].style.opacity = String(w);
+      eyebrows[i].style.opacity = String(w);
+      if (i === 9) {
+        caps[i].style.opacity = String(inside ? 1 - seg(TEXT_OUT, 1, q) : 0);
+        recapSpans.forEach((sp, k) => { sp.style.opacity = String(inside ? seg(0.32 + k * 0.04, 0.38 + k * 0.04, q) : 0); });
+      } else {
+        caps[i].style.opacity = String(inside ? seg(TEXT_IN[0] + 0.03, TEXT_IN[1] + 0.03, q) * (1 - seg(TEXT_OUT, 1, q)) : 0);
+      }
+    });
+
+    // 場景：只顯示當前 beat；換 beat 時鏡頭先回全景，再由該 beat 的 timeline 依 q seek（deterministic）
+    if (bi !== curBeat) {
+      scenes.forEach((s, i) => { if (i !== bi) s.opacity(0); });
+      draw.viewbox(...FULL);
+      curBeat = bi;
+    }
+    const q = qs[bi];
+    const enter = bi === 0 ? 1 : seg(0, TRANS * 0.4, q);
+    const vis = enter * (1 - seg(0.95, 1, q));
+    scenes[bi].opacity(vis);
+    tls[bi].time(q * T);
+
+    // 掃描帶：q .22→.34 掃過該 beat 的焦點框一次，之後留邊光到 beat 尾
+    const [fx, fy, fw, fh] = focals[bi];
+    const sw = seg(0.22, 0.34, q);
+    scanClipR.move(fx, fy).size(fw, fh);
+    scanBand.move(fx - SCAN_W + (fw + 2 * SCAN_W) * sw, fy).size(SCAN_W, fh);
+    scan.opacity((q > 0.22 && q < 0.34) ? vis : 0);
+    const rest = rests[bi];
+    if (rest) {
+      const [rx, ry, rw, rh] = typeof rest === 'function' ? rest(q) : rest;
+      scanEdge.move(rx, ry).size(rw, rh).opacity(seg(0.30, 0.36, q) * (1 - seg(0.90, 0.96, q)) * vis);
+    } else scanEdge.opacity(0);
+    // 浮水印釘在畫面右下（跟著 viewBox）
+    const vb = draw.viewbox();
+    wm.transform({ translateX: vb.x + vb.width - 1200, translateY: vb.y + vb.height - 600 });
+  }
+
+  function render() {
+    const now = performance.now();
+    Psm += (P - Psm) * 0.12;
+    if (autoScroll) {
+      const u = Math.min(1, (now - autoScroll.t0) / autoScroll.dur);
+      scrollTo(0, lerp(autoScroll.from, autoScroll.to, EIO(u)));
+      if (u >= 1) autoScroll = null;
+    }
+    const dt = Math.min(0.05, Math.max(0, (now - prevMs) / 1000));
+    prevMs = now;
+    // 自動播放：0.8 秒沒有使用者操作就以電影節奏續播
+    if (!autoScroll && !endSeen && P > 0.002 && P < 0.998 && now - lastUserMs > 800) {
+      const max = film.offsetHeight - innerHeight;
+      scrollTo(0, Math.min(film.offsetTop + max, scrollY + (max / 55) * dt));
+    }
+    if (P > 0.995) endSeen = true;
+    update(Psm);
+  }
+  const tick = () => { requestAnimationFrame(tick); render(); };
+  tick();
+
+  addEventListener('resize', readScroll);
+}
+</script>
+
+<div class="film-prose">
+  <p class="at-source">這是 <a href="{{ '/writing/ai-agents-team-integration/' | relative_url }}">原文《一個人帶 Agent 兩天做完 POC，四個人一起 Vibe，收四倍的爛攤子》</a> 的動畫版本。</p>
+</div>
