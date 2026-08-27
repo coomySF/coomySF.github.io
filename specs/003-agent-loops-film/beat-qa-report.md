@@ -87,3 +87,26 @@
 
 ## 效能
 - 首屏傳輸量: 0.28 MB（上限 4）；fps 未實測（背景分頁）
+
+---
+
+# Beat QA Report — 領導者的四種 Loop・SpecFormula 版本
+
+- 貼文: `_posts/2026-08-27-leadership-agent-loops-specformula.html`（第四種風格，同 10 beat、同論點）
+- Beat sheet: `specs/003-agent-loops-film/beat-sheet-specformula.md`
+- 日期: 2026-08-27
+- 視覺語域: `specformula`——依 `specformula-vibe/DESIGN.md`「希卡石板」：冷石近黑（色相 237）、青綠 hsl(174 58% 57%) 只作刻進去的光（掃描帶 + 節點圓點 + 焦點卡邊光）、橘色只給 INCIDENT / RISK / Turn 邊條、One Voice Rule（青綠 < 一成）、Stone Face Rule（面是平的，無漸層 / 格線 / 玻璃 / 陰影）、Inscription Rule（DM Mono 大寫只給 eyebrow / tag）、DM Serif Display 大標一個青綠關鍵詞、右下 Sf. 浮水印。
+- 判定方式: 同前（iframe 1280×800 全 10 beat；390×844 抽 B1/B8/B10；靜態版手機）
+
+| Beat | 標題可讀 1280×800 | 標題可讀 390×844 | 畫面對應論點 | 文字不壓關鍵區 | reduced-motion 可讀 | 判定 |
+|---|---|---|---|---|---|---|
+| B1–B10 | PASS | PASS（抽驗） | PASS | PASS | PASS | PASS |
+
+## 不通過項目
+- 首輪：掃描帶的「停駐邊光」套在整個焦點 bbox，B4 / B6 出現莫名青綠外框 → 邊光只留在卡片類元素（B1/B2/B7/B8/B9/B10），B3–B6 只掃不停駐。已重驗通過。
+
+## Recap 檢查
+- Recap beat 列出全部標題: PASS
+
+## 效能
+- 首屏傳輸量: 0.37 MB（上限 4；多載 DM Sans / DM Mono / DM Serif Display）；fps 未實測（背景分頁）
