@@ -444,7 +444,7 @@
     details.path('M -62 35 C -25 62 27 62 64 32 C 28 47 -27 48 -62 35 Z').fill('#000000').opacity(.3).addClass('rotor-cel-shadow');
 
     stage.attr({ style: `filter:drop-shadow(0 0 8px ${top.color}) drop-shadow(0 0 20px ${top.color}88)` });
-    return { stage, tilt, spin, shadow, top, x: 0, y: 0, rotation: 0, speed: 0, wobble: 0 };
+    return { stage, tilt, spin, shadow, top, x: 0, y: 0, rotation: 0, speed: 0, wobble: 0, scale: 1, pocketed: false };
   }
 
   function buildScene() {
@@ -488,7 +488,7 @@
       const ex = ARENA.cx + nx * ARENA.rx, ey = ARENA.cy + ny * ARENA.ry;
       pocket.x = ex + nx * 24; pocket.y = ey + ny * 24;
       const g = pocketLayer.group().attr({ id: `arena-${pocket.id}` });
-      g.ellipse(118, 78).center(ex + nx * 28, ey + ny * 28).fill('#0a1b2c').stroke({ color: '#2f8fd6', width: 5 });
+      pocket.ring = g.ellipse(118, 78).center(ex + nx * 28, ey + ny * 28).fill('#0a1b2c').stroke({ color: '#2f8fd6', width: 5 });
       g.ellipse(80, 48).center(ex + nx * 30, ey + ny * 30).fill('#03080d').stroke({ color: '#000000', width: 2, opacity: .6 });
       g.text(pocket.label).font({ family: 'IBM Plex Mono', size: 20, weight: 700 }).fill(pocket.points === 3 ? '#ff8a3d' : '#7fd3ff').center(ex + nx * 88, ey + ny * 88).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 4 });
     });
@@ -516,7 +516,7 @@
     if (!scene) return;
     ['player', 'enemy'].forEach(key => {
       const actor = scene[key];
-      actor.stage.transform({ translateX: actor.x, translateY: actor.y });
+      actor.stage.transform({ translateX: actor.x, translateY: actor.y, scale: actor.scale || 1 });
       actor.tilt.transform({ rotate: Math.sin(actor.rotation * .035) * actor.wobble, origin: [0, 0], scaleX: 1.04 + actor.wobble * .004, scaleY: .82 - actor.wobble * .002 });
       actor.spin.transform({ rotate: actor.rotation, origin: [0, 0] });
     });
@@ -909,7 +909,8 @@
     }
 
     const start = performance.now();
-    const duration = 4200;
+    // 進洞結局多留 1.2 秒：飛向洞口 → 掉進去 → 洞口閃光 + 飄分數，讓人看得到「被撞進洞裡」
+    const duration = model.outcome.startsWith('pocket') ? 5400 : 4200;
     const easeOut = t => 1 - Math.pow(1 - t, 3);
     let impactOne = false, impactTwo = false, previousFrame = start, trailFrame = 0, lastWallHit = 0;
     // 外圍透明盒：跑出碗緣就彈回來，並在盒子上閃一下火花
@@ -959,11 +960,24 @@
           // 被撞進洞：從碰撞點飛向該洞，掉進去就消失
           const pocket = state.pockets.find(item => item.id === model.outcome) || state.pockets[1];
           const loserStartX = playerWon ? 527 : 433;
-          loser.x = loserStartX + (pocket.x - loserStartX) * k;
-          loser.y = 365 + (pocket.y - 365) * k - 70 * Math.sin(k * Math.PI);
-          loser.wobble = 10 + k * 14;
-          loser.stage.opacity(k < .82 ? 1 : Math.max(.04, 1 - (k - .82) / .18));
-          if (k > .82 && !loser.pocketed) { loser.pocketed = true; burst(pocket.x, pocket.y, pocket.points === 3 ? '#ff8a3d' : '#7fd3ff', 1); playCue('impact'); }
+          const travel = Math.min(1, k / .62);                 // 0–.62：被撞飛，沿弧線衝向洞口
+          const sink = Math.max(0, (k - .62) / .38);           // .62–1：掉進洞裡，縮小、變暗
+          const glide = 1 - Math.pow(1 - travel, 2);
+          loser.x = loserStartX + (pocket.x - loserStartX) * glide;
+          loser.y = 365 + (pocket.y - 365) * glide - 80 * Math.sin(travel * Math.PI);
+          loser.wobble = 10 + travel * 16;
+          loser.scale = 1 - .58 * sink;
+          loser.stage.opacity(1 - .8 * sink * sink);
+          if (sink > 0 && !loser.pocketed) {
+            loser.pocketed = true;
+            const color = pocket.points === 3 ? '#ff8a3d' : '#7fd3ff';
+            burst(pocket.x, pocket.y, color, 1.2);
+            pocket.ring.animate(160).stroke({ color: '#ffffff', width: 9 }).animate(620).stroke({ color: '#2f8fd6', width: 5 });
+            const floatText = state.scene.impact.text(`+${pocket.points}`).font({ family: 'IBM Plex Mono', size: 34, weight: 700 }).fill(color).center(pocket.x, pocket.y - 30).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
+            floatText.animate(1100).ease('>').dy(-70).opacity(0).after(() => floatText.remove());
+            playCue('impact'); setTimeout(() => playCue('zap'), 90);
+            els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 300);
+          }
         } else {
           loser.x = playerWon ? 555 : 405;
           loser.y = 382 + Math.sin(k * Math.PI * 8) * 8 * (1 - k);
@@ -986,7 +1000,7 @@
     submitScore(recordScore, playerWon);
     if (state.scene) {
       const winner = playerWon ? state.scene.player : state.scene.enemy;
-      winner.x = playerWon ? 460 : 500; winner.y = 365; winner.wobble = 0;
+      winner.x = playerWon ? 460 : 500; winner.y = 365; winner.wobble = 0; winner.scale = 1;
       winner.stage.opacity(1); renderPose();
     }
   }
