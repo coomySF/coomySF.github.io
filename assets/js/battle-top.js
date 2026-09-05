@@ -348,14 +348,15 @@
     return (top.stats.stamina * .7 + top.stats.defense * .18 + top.stats.burst * .12) * (1 + typeEdge(top, rival) * .45);
   }
 
-  // 場地規則：撞進左上 / 左下洞 2 分、左中洞 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
-  const FINISH_POINTS = { 'pocket-top': 2, 'pocket-mid': 3, 'pocket-bottom': 2, spin: 1 };
-  const FINISH_LABELS = { 'pocket-top': '左上洞', 'pocket-mid': '左中洞', 'pocket-bottom': '左下洞', spin: '撞停' };
+  // 場地規則：撞進左上 / 左下 / 右上 / 右下洞 2 分、左中洞 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
+  const FINISH_POINTS = { 'pocket-top': 2, 'pocket-mid': 3, 'pocket-bottom': 2, 'pocket-right-top': 2, 'pocket-right-bottom': 2, spin: 1 };
+  const FINISH_LABELS = { 'pocket-top': '左上洞', 'pocket-mid': '左中洞', 'pocket-bottom': '左下洞', 'pocket-right-top': '右上洞', 'pocket-right-bottom': '右下洞', spin: '撞停' };
+  const SIDE_POCKETS = ['pocket-top', 'pocket-bottom', 'pocket-right-top', 'pocket-right-bottom'];
   function pickPocket(attacker) {
     const midWeight = clamp(.12, .4, .16 + attacker.stats.xdash / 300);
     const roll = Math.random();
     if (roll < midWeight) return 'pocket-mid';
-    return roll < midWeight + (1 - midWeight) / 2 ? 'pocket-top' : 'pocket-bottom';
+    return SIDE_POCKETS[Math.min(3, Math.floor((roll - midWeight) / (1 - midWeight) * 4))];
   }
   function simulateKnockoutBattle(player, enemy) {
     const playerRingOutChance = ringOutChance(enemy, player);
@@ -477,7 +478,9 @@
     const pockets = [
       { id: 'pocket-top', angle: -145, points: 2, label: '+2' },
       { id: 'pocket-mid', angle: 180, points: 3, label: '+3' },
-      { id: 'pocket-bottom', angle: 145, points: 2, label: '+2' }
+      { id: 'pocket-bottom', angle: 145, points: 2, label: '+2' },
+      { id: 'pocket-right-top', angle: -35, points: 2, label: '+2' },
+      { id: 'pocket-right-bottom', angle: 35, points: 2, label: '+2' }
     ];
     const pocketLayer = draw.group().attr({ id: 'arena-pockets' });
     pockets.forEach(pocket => {
