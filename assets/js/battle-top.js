@@ -410,17 +410,21 @@
     const spin = { player: spinScore(player, enemy), enemy: spinScore(enemy, player) };
     // 復活：進洞後在洞裡滾一滾還有機會跑出來，看防禦與持久；左中洞比較深，較難出來
     const escapeChance = (top, pocket) => clamp(.25, .7, .3 + (top.stats.defense * .3 + top.stats.stamina * .3) / 260) * (pocket === 'pocket-mid' ? .6 : 1);
-    const railSide = ['player', 'enemy']
-      .filter(key => hasRailGear(sides[key]))
-      .sort((a, b) => sides[b].stats.xdash - sides[a].stats.xdash)
-      .find(key => Math.random() < clamp(.35, .9, sides[key].stats.xdash / 60)) || '';
-    const railImpact = railSide ? randomInt(1, 2) : 0;
     const events = [];
     const points = { player: 0, enemy: 0 };
-    let ended = false;
+    const TARGET = 4;   // 先累積到 4 分的贏；每回合一個結局，回合之間重新發射
+    let round = 0;
+    while (points.player < TARGET && points.enemy < TARGET && round < 8) {
+      round += 1;
+      const railSide = ['player', 'enemy']
+        .filter(key => hasRailGear(sides[key]))
+        .sort((a, b) => sides[b].stats.xdash - sides[a].stats.xdash)
+        .find(key => Math.random() < clamp(.35, .9, sides[key].stats.xdash / 60)) || '';
+      const railImpact = railSide ? randomInt(1, 2) : 0;
+      let ended = false;
     for (let impact = 1; impact <= 4 && !ended; impact += 1) {
       const onRail = railSide && railImpact === impact;
-      if (onRail) events.push({ type: 'rail', rider: railSide, impact });
+      if (onRail) events.push({ type: 'rail', rider: railSide, impact, round });
       const boost = victim => (onRail && victim !== railSide ? 1.6 : 1);
       const rolls = [
         { victim: 'enemy', kind: 'pocket', margin: chance.enemy * boost('enemy') - Math.random() },
@@ -428,30 +432,31 @@
         { victim: 'enemy', kind: 'burst', margin: burstChance(player, enemy) * boost('enemy') - Math.random() },
         { victim: 'player', kind: 'burst', margin: burstChance(enemy, player) * boost('player') - Math.random() }
       ].filter(item => item.margin > 0).sort((a, b) => b.margin - a.margin);
-      if (!rolls.length) { events.push({ type: 'clash', impact }); continue; }
+      if (!rolls.length) { events.push({ type: 'clash', impact, round }); continue; }
       const victim = rolls[0].victim, attacker = victim === 'player' ? 'enemy' : 'player';
       if (rolls[0].kind === 'burst') {
         points[attacker] += FINISH_POINTS.burst;
-        events.push({ type: 'burst', victim, attacker, points: FINISH_POINTS.burst, label: FINISH_LABELS.burst, impact });
+        events.push({ type: 'burst', victim, attacker, points: FINISH_POINTS.burst, label: FINISH_LABELS.burst, impact, round });
         ended = true;
         continue;
       }
       const pocket = pickPocket(sides[attacker]);
       const escaped = Math.random() < escapeChance(sides[victim], pocket);
       points[attacker] += FINISH_POINTS[pocket];
-      events.push({ type: 'pocket', victim, attacker, pocket, points: FINISH_POINTS[pocket], label: FINISH_LABELS[pocket], escaped, impact });
+      events.push({ type: 'pocket', victim, attacker, pocket, points: FINISH_POINTS[pocket], label: FINISH_LABELS[pocket], escaped, impact, round });
       if (!escaped) ended = true;
     }
     if (!ended) {
       const playerSpinWins = Math.random() < clamp(.12, .88, spin.player / (spin.player + spin.enemy));
       const victim = playerSpinWins ? 'enemy' : 'player', attacker = playerSpinWins ? 'player' : 'enemy';
       points[attacker] += 1;
-      events.push({ type: 'spin', victim, attacker, points: 1, label: '撞停' });
+      events.push({ type: 'spin', victim, attacker, points: 1, label: '撞停', round });
+    }
     }
     const last = events[events.length - 1];
     const playerWon = points.player !== points.enemy ? points.player > points.enemy : last.attacker === 'player';
     const playerWinChance = clamp(.12, .88, (1 + chance.enemy + spin.player / 120) / (2 + chance.player + chance.enemy + (spin.player + spin.enemy) / 120));
-    return { playerWon, events, playerPoints: points.player, enemyPoints: points.enemy, outcome: last.type === 'pocket' ? last.pocket : last.type, finishPoints: last.points, finishLabel: last.label, railSide, playerWinChance, typeEdge: typeEdge(player, enemy) };
+    return { playerWon, events, rounds: round, target: TARGET, playerPoints: points.player, enemyPoints: points.enemy, outcome: last.type === 'pocket' ? last.pocket : last.type, finishPoints: last.points, finishLabel: last.label, playerWinChance, typeEdge: typeEdge(player, enemy) };
   }
 
   function polarPoints(count, outer, inner) {
@@ -780,15 +785,15 @@
   }
 
   function runCountdown() {
-    if (reducedMotion) { els.countdown.textContent = 'SHOOT!'; playCue('shoot'); return new Promise(resolve => setTimeout(() => { els.countdown.textContent = ''; resolve(); }, 180)); }
-    const beats = ['3', '2', '1', 'SHOOT!'];
+    if (reducedMotion) { els.countdown.textContent = 'GO SHOOT!'; playCue('shoot'); return new Promise(resolve => setTimeout(() => { els.countdown.textContent = ''; resolve(); }, 180)); }
+    const beats = ['3', '2', '1', 'GO SHOOT!'];
     return new Promise(resolve => {
       let index = 0;
       const next = () => {
         const beat = beats[index]; els.countdown.textContent = beat; els.countdown.classList.remove('is-beat'); void els.countdown.offsetWidth; els.countdown.classList.add('is-beat');
-        if (beat === 'SHOOT!') { playCue('shoot'); els.stageWrap.classList.add('is-launching'); } else playCue('count');
+        if (beat === 'GO SHOOT!') { playCue('shoot'); els.stageWrap.classList.add('is-launching'); } else playCue('count');
         index += 1;
-        if (index < beats.length) setTimeout(next, beat === 'SHOOT!' ? 350 : 520);
+        if (index < beats.length) setTimeout(next, beat === 'GO SHOOT!' ? 350 : 520);
         else setTimeout(() => { els.countdown.textContent = ''; els.countdown.classList.remove('is-beat'); els.stageWrap.classList.remove('is-launching'); resolve(); }, 420);
       };
       next();
@@ -868,13 +873,16 @@
     els.resultTitle.textContent = playerWon ? '你贏了！' : '你輸了！';
     const model = state.lastBattleModel;
     const who = key => (key === 'player' ? '你' : '對手');
-    const story = (model?.events || []).filter(event => event.type !== 'clash').map(event => {
+    const tell = event => {
       if (event.type === 'rail') return `${who(event.rider)}咬上藍色齒緣沿軌道衝刺`;
       if (event.type === 'pocket') return `${who(event.attacker)}把${who(event.victim)}撞進${event.label} +${event.points}${event.escaped ? `，${who(event.victim)}又彈了出來` : ''}`;
       if (event.type === 'burst') return `${who(event.attacker)}把${who(event.victim)}撞到爆裂 +${event.points}`;
       return `${who(event.victim)}被撞停，${who(event.attacker)} +${event.points}`;
-    }).join('；');
-    const outcomeCopy = `${story}。你 ${model?.playerPoints ?? 0}：對手 ${model?.enemyPoints ?? 0}。`;
+    };
+    const rounds = [];
+    (model?.events || []).filter(event => event.type !== 'clash').forEach(event => { (rounds[event.round - 1] ||= []).push(tell(event)); });
+    const story = rounds.map((lines, index) => `第 ${index + 1} 回合：${lines.join('；')}`).join('。');
+    const outcomeCopy = `${story}。你 ${model?.playerPoints ?? 0}：對手 ${model?.enemyPoints ?? 0}，先到 ${model?.target || 4} 分的贏。`;
     const typeCopy = model?.typeEdge > 0 ? '你克制對手！' : model?.typeEdge < 0 ? '對手克制你！' : '沒有類型克制。';
     const rankBonusCopy = model?.rankBonus > 0 ? ` 擊敗高分對手，排名加成 +${model.rankBonus}！` : '';
     els.resultCopy.textContent = `${outcomeCopy} ${typeCopy}${rankBonusCopy}`;
@@ -1028,8 +1036,9 @@
     const easeInOut = t => -Math.cos(clamp(0, 1, t) * Math.PI) / 2 + .5;
     // 依事件排段落：chaos（混戰，結尾撞一下）→ rail（咬上齒緣衝刺，結尾撞人）→ pocket（被撞進洞）→ escape（彈出來）→ spin（撞停）
     const phases = [];
-    let chaosCount = 0;
+    let chaosCount = 0, seenRound = 1;
     model.events.forEach(event => {
+      if (event.round > seenRound) { seenRound = event.round; phases.push({ kind: 'relaunch', dur: 2100, round: event.round }); }
       const last = phases[phases.length - 1];
       if (event.type === 'rail') { phases.push({ kind: 'chaos', dur: 900, index: chaosCount++ }); phases.push({ kind: 'rail', dur: 1150, rider: event.rider }); return; }
       if (event.type === 'clash') { if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true }); return; }
@@ -1073,6 +1082,13 @@
       if (!current) return;
       from = { px: p.x, py: p.y, ex: e.x, ey: e.y };
       if (current.kind === 'chaos') els.status.textContent = 'BATTLE IN PROGRESS';
+      if (current.kind === 'relaunch') {
+        current.beat = -1;
+        spinFactor.player = 1; spinFactor.enemy = 1;
+        p.pocketed = false; e.pocketed = false;
+        els.status.textContent = `ROUND ${current.round}`;
+        noteToast(`第 ${current.round} 回合！你 ${liveScore.player}：對手 ${liveScore.enemy}`);
+      }
       if (current.kind === 'rail') {
         const rider = actorOf(current.rider);
         current.a0 = Math.atan2((rider.y - A.cy) / A.ry, (rider.x - A.cx) / A.rx);
@@ -1108,7 +1124,23 @@
       trailFrame += 1;
       if (trailFrame % 3 === 0) { speedTrail(p); speedTrail(e); }
 
-      if (current.kind === 'chaos') {
+      if (current.kind === 'relaunch') {
+        // 回合之間：兩顆陀螺回到發射位置，重新倒數 3、2、1、GO SHOOT！
+        const back = easeInOut(k / .3);
+        p.x = lerp(from.px, 325, back); p.y = lerp(from.py, 365, back);
+        e.x = lerp(from.ex, 635, back); e.y = lerp(from.ey, 365, back);
+        p.scale = lerp(p.scale, 1, back); e.scale = lerp(e.scale, 1, back);
+        p.stage.opacity(1); e.stage.opacity(1); p.wobble = 0; e.wobble = 0;
+        const beats = ['3', '2', '1', 'GO SHOOT!'];
+        const beatIndex = Math.min(3, Math.floor(Math.max(0, k - .3) / .7 * 4));
+        if (k >= .3 && beatIndex !== current.beat) {
+          current.beat = beatIndex;
+          const beat = beats[beatIndex];
+          els.countdown.textContent = beat; els.countdown.classList.remove('is-beat'); void els.countdown.offsetWidth; els.countdown.classList.add('is-beat');
+          if (beat === 'GO SHOOT!') { playCue('shoot'); els.stageWrap.classList.add('is-launching'); } else playCue('count');
+        }
+        if (k >= .98 && current.beat !== 4) { current.beat = 4; els.countdown.textContent = ''; els.countdown.classList.remove('is-beat'); els.stageWrap.classList.remove('is-launching'); }
+      } else if (current.kind === 'chaos') {
         const phase = tt * Math.PI * 2.7;
         const mix = easeInOut(k / .3);
         const collision = current.clash ? Math.max(0, (k - .85) / .15) : 0;
