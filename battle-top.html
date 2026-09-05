@@ -4,7 +4,7 @@ title: 戰鬥陀螺模擬器｜免費線上陀螺對戰遊戲
 permalink: /battle-top/
 description: 免費玩戰鬥陀螺模擬器！抽取陀螺、比較六種能力、挑戰全站玩家並刷新排行榜。手機打開就能玩，不用下載。
 image: /assets/images/battle-top/og-battle-arena-v2.jpg
-last_modified_at: 2026-08-24
+last_modified_at: 2026-09-05
 keywords:
   - 戰鬥陀螺
   - 戰鬥陀螺模擬器
@@ -18,7 +18,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260824-56">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260905-1">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -47,7 +47,7 @@ keywords:
   "@type": "FAQPage",
   "mainEntity": [
     {"@type":"Question","name":"這個戰鬥陀螺模擬器怎麼玩？","acceptedAnswer":{"@type":"Answer","text":"選擇頭像和暱稱後進入競技場，抽一顆陀螺、挑選排行榜對手，再按下戰鬥開始。勝利後可以刷新自己的最高分。"}},
-    {"@type":"Question","name":"戰鬥陀螺的勝負怎麼計算？","acceptedAnswer":{"@type":"Answer","text":"模擬器會綜合攻擊、防禦、持久、防爆、X 衝刺與類型特性，判斷撞飛、爆裂或旋轉停止，再加入少量隨機變化。"}},
+    {"@type":"Question","name":"戰鬥陀螺的勝負怎麼計算？","acceptedAnswer":{"@type":"Answer","text":"場地是 BEYBLADE X 式的碗，左上、左中、左下各有一個洞，外圍有透明盒不會撞出場。把對手撞進左上或左下洞得 2 分、左中洞得 3 分、把對手撞停得 1 分。模擬器綜合攻擊、防禦、持久、防爆、X 衝刺與類型特性計算，再加入少量隨機變化。"}},
     {"@type":"Question","name":"需要下載或註冊嗎？","acceptedAnswer":{"@type":"Answer","text":"不用下載，也不用註冊。使用手機、平板或電腦瀏覽器打開網頁就能免費玩。"}}
   ]
 }
@@ -150,7 +150,7 @@ keywords:
     </div>
 
     <div class="arena-stage-wrap">
-      <div id="arena-stage" class="arena-stage" role="img" aria-label="玩家與對手的兩顆戰鬥陀螺在霓虹競技場中對戰"></div>
+      <div id="arena-stage" class="arena-stage" role="img" aria-label="玩家與對手的兩顆戰鬥陀螺在 BEYBLADE X 式場地中對戰：左上、左中、左下各有一個洞，外圍是透明盒"></div>
       <div class="battle-effect-banner" id="battle-effect-banner" aria-live="polite" hidden>
         <span id="battle-effect-icon">⚡</span>
         <div><small>ENHANCED IMPACT</small><strong id="battle-effect-name">雷霆強化</strong></div>
@@ -161,8 +161,9 @@ keywords:
         <button class="action-button action-button--collection" id="collection-picker-button" type="button">強化陀螺</button>
       </div>
       <div class="launch-countdown" id="launch-countdown" aria-live="assertive" aria-atomic="true"></div>
+      <p class="arena-rules">左上／左下洞 <b>+2</b> · 左中洞 <b>+3</b> · 撞停 <b>+1</b> · 透明盒會彈回</p>
       <div class="arena-hud" aria-hidden="true">
-        <span>ARENA // 01</span>
+        <span>STADIUM // X</span>
         <span id="arena-status">AWAITING CORE</span>
       </div>
       <div class="battle-result" id="battle-result" aria-live="polite">
@@ -216,10 +217,10 @@ keywords:
       </div>
       <h2 id="top-name">等待召喚</h2>
       <p id="top-class">尚未偵測到戰鬥核心</p>
-      <p class="product-parts" id="top-parts">Blade · Ratchet · Bit</p>
+      <div class="product-parts" id="top-parts"><span class="part-chip"><small>上蓋<i>Blade</i></small><strong>—</strong></span><span class="part-chip"><small>軸心<i>Ratchet</i></small><strong>—</strong></span><span class="part-chip"><small>固軸<i>Bit</i></small><strong>—</strong></span></div>
       <div class="stat-grid" id="stat-grid"></div>
       <p class="core-skill"><span>PRODUCT CHARACTER</span><strong id="top-skill">——</strong></p>
-      <p class="product-source">攻擊、防禦、持久、防爆、X 衝刺與類型相剋會共同決定撞飛、爆裂或旋轉停止；每次碰撞另含少量隨機。數值依官方商品特性轉換為遊戲模擬值，並非官方戰力或實測勝率。非官方同人模擬器；商品名稱與圖片 © TOMY。</p>
+      <p class="product-source">攻擊、防禦、持久、防爆、X 衝刺與類型相剋會共同決定對手被撞進哪個洞、或先被撞停：左上與左下洞 2 分、左中洞 3 分、撞停 1 分；外圍透明盒會把陀螺彈回場內。每次碰撞另含少量隨機。數值依官方商品特性轉換為遊戲模擬值，並非官方戰力或實測勝率。非官方同人模擬器；商品名稱與圖片 © TOMY。</p>
     </article>
 
     <div class="battle-collection-picker" id="battle-collection-picker" role="dialog" aria-modal="true" aria-labelledby="collection-picker-title" hidden>
@@ -332,14 +333,14 @@ keywords:
   <section class="battle-guide" aria-labelledby="battle-guide-title">
     <p class="section-index">03 / HOW TO PLAY</p>
     <h2 id="battle-guide-title">免費戰鬥陀螺模擬器<br>打開網頁就能玩</h2>
-    <p class="battle-guide__lead">這是一款免下載、免註冊的線上戰鬥陀螺遊戲。先抽取一顆陀螺，再從排行榜挑選對手；每次對戰會依六種能力模擬撞飛、爆裂或旋轉停止，勝利就有機會刷新最高分。</p>
+    <p class="battle-guide__lead">這是一款免下載、免註冊的線上戰鬥陀螺遊戲。先抽取一顆陀螺，再從排行榜挑選對手；場地是 BEYBLADE X 式的碗，左側三個洞、外圍透明盒；把對手撞進左上或左下洞 2 分、左中洞 3 分、撞停 1 分，勝利就有機會刷新最高分。</p>
     <div class="battle-guide__grid">
       <article><span>01</span><h3>抽取陀螺</h3><p>隨機取得攻擊型、防禦型、持久型或平衡型陀螺，查看攻擊、防禦、持久、防爆與 X 衝刺能力。</p></article>
       <article><span>02</span><h3>挑戰排行榜</h3><p>選擇全站玩家作為對手。打贏高分玩家後，你的個人最高紀錄就會往前爬。</p></article>
       <article><span>03</span><h3>收藏再出戰</h3><p>把喜歡的陀螺加入收藏，下一場直接換它出戰，也能分享自己的分數邀請朋友挑戰。</p></article>
     </div>
     <div class="battle-guide__faq">
-      <details><summary>戰鬥陀螺的勝負怎麼算？</summary><p>攻擊、防禦、持久、防爆、X 衝刺和類型特性都會影響結果，另外保留少量隨機變化，讓每一場不會完全相同。</p></details>
+      <details><summary>戰鬥陀螺的勝負怎麼算？</summary><p>撞進左上或左下洞 2 分、左中洞 3 分、把對手撞停 1 分；撞到外圍透明盒會彈回來，不會直接出場。攻擊、防禦、持久、防爆、X 衝刺和類型特性都會影響結果，另外保留少量隨機變化。</p></details>
       <details><summary>手機和平板可以玩嗎？</summary><p>可以。遊戲以手機和平板操作為主，不需要安裝 App，使用瀏覽器打開就能玩。</p></details>
       <details><summary>這是官方戰鬥陀螺遊戲嗎？</summary><p>不是。本頁是個人製作的非官方同人模擬器，遊戲能力值是依商品特性轉換的模擬數據，並非官方戰力或實測勝率。</p></details>
     </div>
@@ -359,4 +360,4 @@ keywords:
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260824-55" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260905-1" defer></script>

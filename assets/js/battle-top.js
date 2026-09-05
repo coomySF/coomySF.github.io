@@ -69,12 +69,12 @@
   const equipmentCatalog = [
     { id: 'power-gear', name: '猛攻齒輪', icon: '✹', stat: 'attack', label: '攻擊', amount: 8, color: '#ff6847' },
     { id: 'steel-armor', name: '鋼鐵護甲', icon: '⬢', stat: 'defense', label: '防禦', amount: 10, color: '#61e9ff' },
-    { id: 'eternal-core', name: '永動軸心', icon: '◎', stat: 'stamina', label: '持久', amount: 9, color: '#caFF3d' },
+    { id: 'eternal-core', name: '永動軸承', icon: '◎', stat: 'stamina', label: '持久', amount: 9, color: '#caFF3d' },
     { id: 'burst-lock', name: '防爆扣環', icon: '◇', stat: 'burst', label: '防爆', amount: 8, color: '#b781ff' },
     { id: 'dash-engine', name: '衝刺引擎', icon: 'ϟ', stat: 'xdash', label: 'X 衝刺', amount: 10, color: '#ffe25c' }
   ];
 
-  const state = { player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
+  const state = { arena: null, pockets: [], player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -305,6 +305,14 @@
     };
   }
   function findProduct(name) { return productCatalog.find(product => product.name === name) || null; }
+  // 配件固定三段：上蓋（Blade）· 軸心（Ratchet）· 固軸（Bit），來源是 product.parts 的「A · B · C」字串
+  const PART_LABELS = [['上蓋', 'Blade'], ['軸心', 'Ratchet'], ['固軸', 'Bit']];
+  function partsOf(top) {
+    const pieces = String(top?.parts || '').split('·').map(part => part.trim());
+    return PART_LABELS.map(([label, english], index) => ({ label, english, name: pieces[index] || '—' }));
+  }
+  function partsText(top) { return partsOf(top).map(part => `${part.label} ${part.name}`).join(' · '); }
+  function partsMarkup(top) { return partsOf(top).map(part => `<span class="part-chip"><small>${part.label}<i>${part.english}</i></small><strong>${escapeHTML(part.name)}</strong></span>`).join(''); }
   function createTop(isEnemy = false) {
     const choices = !isEnemy && state.player && productCatalog.length > 1
       ? productCatalog.filter(product => product.id !== state.player.id)
@@ -336,40 +344,40 @@
     return clamp(.04, .68, .19 + (impactForce - ringOutResistance(defender)) / 165);
   }
 
-  function burstChance(attacker, defender) {
-    const burstPressure = (attacker.stats.attack * .48 + attacker.stats.xdash * .22) * (1 + typeEdge(attacker, defender) * .7);
-    const burstResistance = defender.stats.burst * .72 + defender.stats.defense * .18 + defender.stats.stamina * .1;
-    return clamp(.015, .34, .08 + (burstPressure - burstResistance) / 230);
-  }
-
   function spinScore(top, rival) {
     return (top.stats.stamina * .7 + top.stats.defense * .18 + top.stats.burst * .12) * (1 + typeEdge(top, rival) * .45);
   }
 
+  // 場地規則：撞進左上 / 左下洞 2 分、左中洞 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
+  const FINISH_POINTS = { 'pocket-top': 2, 'pocket-mid': 3, 'pocket-bottom': 2, spin: 1 };
+  const FINISH_LABELS = { 'pocket-top': '左上洞', 'pocket-mid': '左中洞', 'pocket-bottom': '左下洞', spin: '撞停' };
+  function pickPocket(attacker) {
+    const midWeight = clamp(.12, .4, .16 + attacker.stats.xdash / 300);
+    const roll = Math.random();
+    if (roll < midWeight) return 'pocket-mid';
+    return roll < midWeight + (1 - midWeight) / 2 ? 'pocket-top' : 'pocket-bottom';
+  }
   function simulateKnockoutBattle(player, enemy) {
     const playerRingOutChance = ringOutChance(enemy, player);
     const enemyRingOutChance = ringOutChance(player, enemy);
-    const playerBurstChance = burstChance(enemy, player);
-    const enemyBurstChance = burstChance(player, enemy);
     const playerSpin = spinScore(player, enemy);
     const enemySpin = spinScore(enemy, player);
-    const playerWinChance = clamp(.12, .88, (1 + enemyRingOutChance + enemyBurstChance + playerSpin / 120) / (2 + playerRingOutChance + enemyRingOutChance + playerBurstChance + enemyBurstChance + (playerSpin + enemySpin) / 120));
+    const playerWinChance = clamp(.12, .88, (1 + enemyRingOutChance + playerSpin / 120) / (2 + playerRingOutChance + enemyRingOutChance + (playerSpin + enemySpin) / 120));
     let playerWon = false, outcome = 'spin', decidingImpact = 3;
     for (let impact = 1; impact <= 3; impact += 1) {
       const events = [
-        { margin: enemyRingOutChance - Math.random(), playerWon: true, outcome: 'over' },
-        { margin: playerRingOutChance - Math.random(), playerWon: false, outcome: 'over' },
-        { margin: enemyBurstChance - Math.random(), playerWon: true, outcome: 'burst' },
-        { margin: playerBurstChance - Math.random(), playerWon: false, outcome: 'burst' }
+        { margin: enemyRingOutChance - Math.random(), playerWon: true },
+        { margin: playerRingOutChance - Math.random(), playerWon: false }
       ].filter(event => event.margin > 0).sort((a, b) => b.margin - a.margin);
       if (events.length) {
-        ({ playerWon, outcome } = events[0]);
+        playerWon = events[0].playerWon;
+        outcome = pickPocket(playerWon ? player : enemy);
         decidingImpact = impact;
         break;
       }
     }
     if (outcome === 'spin') playerWon = Math.random() < clamp(.12, .88, playerSpin / (playerSpin + enemySpin));
-    return { playerWon, outcome, playerRingOutChance, enemyRingOutChance, playerBurstChance, enemyBurstChance, playerWinChance, decidingImpact, typeEdge: typeEdge(player, enemy) };
+    return { playerWon, outcome, finishPoints: FINISH_POINTS[outcome], finishLabel: FINISH_LABELS[outcome], playerRingOutChance, enemyRingOutChance, playerWinChance, decidingImpact, typeEdge: typeEdge(player, enemy) };
   }
 
   function polarPoints(count, outer, inner) {
@@ -454,20 +462,38 @@
       <filter id="arenaBlur"><feGaussianBlur stdDeviation="12"/></filter>
       <radialGradient id="floorGlow"><stop offset="0" stop-color="#28f4e8" stop-opacity=".16"/><stop offset=".5" stop-color="#123343" stop-opacity=".12"/><stop offset="1" stop-color="#020407" stop-opacity="0"/></radialGradient>`;
 
-    draw.ellipse(860, 430).center(480, 365).fill('url(#floorGlow)');
-    draw.ellipse(750, 360).center(480, 365).fill('#071018').stroke({ color: '#28f4e8', width: 3, opacity: .36 });
-    draw.ellipse(650, 295).center(480, 365).fill('#05090d').stroke({ color: '#28f4e8', width: 1, opacity: .2, dasharray: '8 14' });
-    draw.ellipse(450, 205).center(480, 365).fill('none').stroke({ color: '#caff3d', width: 1, opacity: .15 });
-    for (let i = 0; i < 20; i += 1) {
-      const a = (Math.PI * 2 * i) / 20;
-      const x1 = 480 + Math.cos(a) * 326, y1 = 365 + Math.sin(a) * 148;
-      const x2 = 480 + Math.cos(a) * 372, y2 = 365 + Math.sin(a) * 178;
-      draw.line(x1, y1, x2, y2).stroke({ color: '#28f4e8', width: i % 5 ? 1 : 3, opacity: i % 5 ? .16 : .48 });
-    }
+    // BEYBLADE X 式場地：外圍透明盒（撞到會彈回）→ 藍齒緣的碗 → 左上 / 左中 / 左下三個洞 → 中央橙環
+    const ARENA = { cx: 480, cy: 362, rx: 312, ry: 236 };
+    state.arena = ARENA;
+    draw.ellipse(860, 430).center(ARENA.cx, ARENA.cy).fill('url(#floorGlow)');
+    draw.rect(800, 560).radius(48).center(ARENA.cx, ARENA.cy).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
+    draw.rect(772, 532).radius(42).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
+    draw.ellipse(ARENA.rx * 2 + 36, ARENA.ry * 2 + 28).center(ARENA.cx, ARENA.cy).fill('#10365c').stroke({ color: '#2f8fd6', width: 6 });
+    draw.ellipse(ARENA.rx * 2 + 10, ARENA.ry * 2 + 8).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
+    draw.ellipse(ARENA.rx * 2, ARENA.ry * 2).center(ARENA.cx, ARENA.cy).fill('#0b1218').stroke({ color: '#1a6fb5', width: 2, opacity: .8 });
+    draw.ellipse(300, 226).center(ARENA.cx, ARENA.cy).fill('#101820').stroke({ color: '#1f2a33', width: 2 });
+    draw.ellipse(214, 162).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ff5a2a', width: 4, opacity: .85 });
+    draw.ellipse(190, 143).center(ARENA.cx, ARENA.cy).fill('#0a1015');
+    const pockets = [
+      { id: 'pocket-top', angle: -145, points: 2, label: '+2' },
+      { id: 'pocket-mid', angle: 180, points: 3, label: '+3' },
+      { id: 'pocket-bottom', angle: 145, points: 2, label: '+2' }
+    ];
+    const pocketLayer = draw.group().attr({ id: 'arena-pockets' });
+    pockets.forEach(pocket => {
+      const a = pocket.angle * Math.PI / 180, nx = Math.cos(a), ny = Math.sin(a);
+      const ex = ARENA.cx + nx * ARENA.rx, ey = ARENA.cy + ny * ARENA.ry;
+      pocket.x = ex + nx * 24; pocket.y = ey + ny * 24;
+      const g = pocketLayer.group().attr({ id: `arena-${pocket.id}` });
+      g.ellipse(118, 78).center(ex + nx * 28, ey + ny * 28).fill('#0a1b2c').stroke({ color: '#2f8fd6', width: 5 });
+      g.ellipse(80, 48).center(ex + nx * 30, ey + ny * 30).fill('#03080d').stroke({ color: '#000000', width: 2, opacity: .6 });
+      g.text(pocket.label).font({ family: 'IBM Plex Mono', size: 20, weight: 700 }).fill(pocket.points === 3 ? '#ff8a3d' : '#7fd3ff').center(ex + nx * 88, ey + ny * 88).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 4 });
+    });
+    state.pockets = pockets;
     const core = draw.group().attr({ id: 'arena-core' });
-    core.circle(68).center(480, 365).fill('none').stroke({ color: '#28f4e8', width: 1, opacity: .18, dasharray: '3 7' });
-    core.line(438, 365, 522, 365).stroke({ color: '#28f4e8', width: 1, opacity: .14 });
-    core.line(480, 323, 480, 407).stroke({ color: '#28f4e8', width: 1, opacity: .14 });
+    core.circle(68).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#7fd3ff', width: 1, opacity: .18, dasharray: '3 7' });
+    core.line(ARENA.cx - 42, ARENA.cy, ARENA.cx + 42, ARENA.cy).stroke({ color: '#7fd3ff', width: 1, opacity: .14 });
+    core.line(ARENA.cx, ARENA.cy - 42, ARENA.cx, ARENA.cy + 42).stroke({ color: '#7fd3ff', width: 1, opacity: .14 });
     const impact = draw.group().attr({ id: 'impact-layer' });
     const players = draw.group();
     const player = createRotor(players, state.player || createTop(), 'player');
@@ -727,7 +753,7 @@
     els.rarity.style.color = top.color;
     els.code.textContent = `PRODUCT // ${top.id}`;
     els.skill.textContent = top.skill;
-    els.parts.textContent = top.parts;
+    els.parts.innerHTML = partsMarkup(top);
     els.productImage.src = top.image; els.productImage.alt = `${top.name} 官方商品圖`; els.productLink.href = top.source;
     const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X衝刺' };
     els.stats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div class="stat-row"><span>${labels[key]}</span><div class="stat-track"><div class="stat-fill" data-value="${value}"></div></div><strong>${value}</strong></div>`).join('');
@@ -744,7 +770,7 @@
     els.opponentDetailImage.src = top.image;
     els.opponentDetailImage.alt = `${top.name} 官方商品圖`;
     els.opponentDetailName.textContent = top.name;
-    els.opponentDetailType.textContent = `${top.type} · ${top.parts}`;
+    els.opponentDetailType.textContent = `${top.type} · ${partsText(top)}`;
     els.opponentDetailStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><b>${value}</b><i><em style="width:${Math.min(100, value / 120 * 100)}%"></em></i></div>`).join('');
     els.opponentDetail.hidden = false;
     els.opponentDetailClose.focus({ preventScroll: true });
@@ -765,14 +791,13 @@
     els.resultOutcome.textContent = playerWon ? '🏆' : '💥';
     els.resultTitle.textContent = playerWon ? '你贏了！' : '你輸了！';
     const model = state.lastBattleModel;
-    const outcomeCopy = model?.outcome === 'burst'
-      ? (playerWon ? '對手爆裂了！' : '你的陀螺爆裂了！')
-      : model?.outcome === 'spin'
-        ? (playerWon ? '對手先停止旋轉！' : '你的陀螺先停止旋轉！')
-        : (playerWon ? '對手被撞出場！' : '你被撞出場！');
+    const points = model?.finishPoints || 0;
+    const outcomeCopy = model?.outcome === 'spin'
+      ? (playerWon ? `對手被撞停了！你得 ${points} 分。` : `你的陀螺被撞停了！對手得 ${points} 分。`)
+      : (playerWon ? `對手被撞進${model?.finishLabel || '洞'}！你得 ${points} 分。` : `你被撞進${model?.finishLabel || '洞'}！對手得 ${points} 分。`);
     const typeCopy = model?.typeEdge > 0 ? '你克制對手！' : model?.typeEdge < 0 ? '對手克制你！' : '沒有類型克制。';
     const rankBonusCopy = model?.rankBonus > 0 ? ` 擊敗高分對手，排名加成 +${model.rankBonus}！` : '';
-    els.resultCopy.textContent = `${outcomeCopy} ${typeCopy} 六項因素均已換算。${rankBonusCopy}`;
+    els.resultCopy.textContent = `${outcomeCopy} ${typeCopy}${rankBonusCopy}`;
     els.battleLoot.hidden = !playerWon || !state.lastLoot;
     if (playerWon && state.lastLoot) {
       els.battleLootImage.innerHTML = equipmentImage(state.lastLoot);
@@ -866,7 +891,7 @@
     const model = simulateKnockoutBattle(state.player, state.enemy);
     state.lastBattleModel = model;
     const playerWon = model.playerWon;
-    const modelScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 180 : 0) + Math.random() * 45));
+    const modelScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 120 + model.finishPoints * 40 : 0) + Math.random() * 45));
     const opponentScore = Number(state.opponent.score) || 1000;
     const challengeScore = playerWon && !state.opponent.bot && !isCurrentPlayer(state.opponent)
       ? opponentScore + randomInt(6, 18)
@@ -883,7 +908,17 @@
     const start = performance.now();
     const duration = 4200;
     const easeOut = t => 1 - Math.pow(1 - t, 3);
-    let impactOne = false, impactTwo = false, previousFrame = start, trailFrame = 0;
+    let impactOne = false, impactTwo = false, previousFrame = start, trailFrame = 0, lastWallHit = 0;
+    // 外圍透明盒：跑出碗緣就彈回來，並在盒子上閃一下火花
+    const bounceOffBox = (actor, now) => {
+      const A = state.arena; if (!A) return;
+      const limitX = A.rx - 58, limitY = A.ry - 46;
+      const dx = (actor.x - A.cx) / limitX, dy = (actor.y - A.cy) / limitY, d = Math.hypot(dx, dy);
+      if (d <= 1) return;
+      actor.x = A.cx + dx / d * limitX; actor.y = A.cy + dy / d * limitY;
+      actor.wobble = Math.max(actor.wobble, 4);
+      if (now - lastWallHit > 240) { lastWallHit = now; burst(actor.x + dx / d * 52, actor.y + dy / d * 40, '#bfe9ff', .55); playCue('impact'); }
+    };
     const frame = now => {
       const t = Math.min(1, (now - start) / duration);
       const dt = Math.min(32, now - previousFrame); previousFrame = now;
@@ -901,32 +936,31 @@
         const phase = t * Math.PI * 12;
         const collisionPulse = mark => Math.exp(-Math.pow((t - mark) / .026, 2));
         const collision = Math.max(collisionPulse(.32), collisionPulse(.62));
-        const px = 480 + 205 * Math.sin(phase) + 35 * Math.sin(phase * 2.73 + .4);
-        const py = 365 + 112 * Math.sin(phase * 1.57 + .55) + 18 * Math.cos(phase * 3.1);
-        const ex = 480 + 210 * Math.sin(phase * 1.13 + Math.PI) + 32 * Math.cos(phase * 2.41);
-        const ey = 365 + 108 * Math.sin(phase * 1.71 + 2.2) + 20 * Math.sin(phase * 2.9);
+        const px = 480 + 262 * Math.sin(phase) + 44 * Math.sin(phase * 2.73 + .4);
+        const py = 365 + 170 * Math.sin(phase * 1.57 + .55) + 26 * Math.cos(phase * 3.1);
+        const ex = 480 + 268 * Math.sin(phase * 1.13 + Math.PI) + 40 * Math.cos(phase * 2.41);
+        const ey = 365 + 166 * Math.sin(phase * 1.71 + 2.2) + 28 * Math.sin(phase * 2.9);
         p.x = px * (1 - collision) + 468 * collision;
         p.y = py * (1 - collision) + 360 * collision;
         e.x = ex * (1 - collision) + 492 * collision;
         e.y = ey * (1 - collision) + 370 * collision;
         p.wobble = collision * 5;
         e.wobble = collision * 6;
+        bounceOffBox(p, now); bounceOffBox(e, now);
       } else {
         const k = easeOut((t - .78) / .22);
         const winner = playerWon ? p : e, loser = playerWon ? e : p;
         winner.x = (playerWon ? 460 : 500) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
         winner.y = 365 + Math.sin(k * Math.PI) * 18;
-        if (model.outcome === 'over') {
+        if (model.outcome.startsWith('pocket')) {
+          // 被撞進洞：從碰撞點飛向該洞，掉進去就消失
+          const pocket = state.pockets.find(item => item.id === model.outcome) || state.pockets[1];
           const loserStartX = playerWon ? 527 : 433;
-          loser.x = loserStartX + (playerWon ? 1 : -1) * 365 * k;
-          loser.y = 365 - 155 * Math.sin(k * Math.PI) + 54 * k;
+          loser.x = loserStartX + (pocket.x - loserStartX) * k;
+          loser.y = 365 + (pocket.y - 365) * k - 70 * Math.sin(k * Math.PI);
           loser.wobble = 10 + k * 14;
-          loser.stage.opacity(Math.max(.04, 1 - k * .96));
-        } else if (model.outcome === 'burst') {
-          loser.x = (playerWon ? 535 : 425) + Math.sin(k * Math.PI * 12) * 26 * (1 - k);
-          loser.y = 378 + Math.cos(k * Math.PI * 10) * 18 * (1 - k);
-          loser.wobble = 12 + k * 18;
-          loser.stage.opacity(Math.max(.08, 1 - k * .92));
+          loser.stage.opacity(k < .82 ? 1 : Math.max(.04, 1 - (k - .82) / .18));
+          if (k > .82 && !loser.pocketed) { loser.pocketed = true; burst(pocket.x, pocket.y, pocket.points === 3 ? '#ff8a3d' : '#7fd3ff', 1); playCue('impact'); }
         } else {
           loser.x = playerWon ? 555 : 405;
           loser.y = 382 + Math.sin(k * Math.PI * 8) * 8 * (1 - k);
@@ -1296,7 +1330,7 @@
     const top = buildCustomTop();
     const isSaved = Boolean(state.customizingId && readCollection().some(item => item.id === state.customizingId));
     renderEquipmentOptions();
-    els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}"><small>${escapeHTML(top.parts)}</small>`;
+    els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}"><small>${escapeHTML(partsText(top))}</small>`;
     const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
     els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><i><b style="width:${value / 1.2}%"></b></i><strong>${value}</strong></div>`).join('');
     els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> ${top.effect.name}特效` : top.equipment.length ? '特效等待出戰鑑定' : '尚未裝備';
