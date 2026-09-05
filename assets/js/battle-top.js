@@ -130,7 +130,7 @@
     collectionPickerClose: document.querySelector('#collection-picker-close'), collectionPickerList: document.querySelector('#battle-collection-picker-list'),
     collectionSavedTab: document.querySelector('#collection-tab-saved'), collectionCustomTab: document.querySelector('#collection-tab-custom'), collectionSavedPanel: document.querySelector('#collection-saved-panel'), collectionCustomPanel: document.querySelector('#collection-custom-panel'), collectionSlotCount: document.querySelector('#collection-slot-count'), collectionSlotVisual: document.querySelector('#collection-slot-visual'),
     customPreview: document.querySelector('#custom-top-preview'), customRefineStage: document.querySelector('#custom-refine-stage'), customEffectReveal: document.querySelector('#custom-effect-reveal'), customName: document.querySelector('#custom-top-name'), customStats: document.querySelector('#custom-stat-preview'), customEquipmentOptions: document.querySelector('#custom-equipment-options'), customSlotTabs: document.querySelector('#custom-slot-tabs'), customPartStack: document.querySelector('#custom-part-stack'), customEquipmentSlots: document.querySelector('#custom-equipment-slots'), customSave: document.querySelector('#custom-save-button'), customBattle: document.querySelector('#custom-battle-button'), customStatus: document.querySelector('#custom-top-status'),
-    countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
+    countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'), scoreboard: document.querySelector('#arena-scoreboard'), scorePlayer: document.querySelector('#score-player'), scoreEnemy: document.querySelector('#score-enemy'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
     playerIdentity: document.querySelector('#player-identity-badge'), playerIdentityAvatar: document.querySelector('#player-identity-avatar'), playerIdentityName: document.querySelector('#player-identity-name'),
     productImage: document.querySelector('#top-product-image'), productLink: document.querySelector('#top-product-link'), parts: document.querySelector('#top-parts'),
@@ -941,6 +941,40 @@
     }
   }
 
+  // 場上即時計分：每次得分當下跳出「+3 左中洞」，YOU : RIVAL 跟著跳
+  const liveScore = { player: 0, enemy: 0 };
+  function resetLiveScore() {
+    liveScore.player = 0; liveScore.enemy = 0;
+    if (els.scorePlayer) els.scorePlayer.textContent = '0';
+    if (els.scoreEnemy) els.scoreEnemy.textContent = '0';
+    els.scoreboard?.classList.remove('is-lead-player', 'is-lead-enemy');
+    els.stageWrap?.querySelectorAll('.score-toast').forEach(node => node.remove());
+  }
+  function scorePop(attacker, points, label, note = '') {
+    liveScore[attacker] += points;
+    const counter = attacker === 'player' ? els.scorePlayer : els.scoreEnemy;
+    if (counter) {
+      counter.textContent = String(liveScore[attacker]);
+      counter.classList.remove('is-bump'); void counter.offsetWidth; counter.classList.add('is-bump');
+    }
+    els.scoreboard?.classList.toggle('is-lead-player', liveScore.player > liveScore.enemy);
+    els.scoreboard?.classList.toggle('is-lead-enemy', liveScore.enemy > liveScore.player);
+    if (!els.stageWrap) return;
+    const toast = document.createElement('div');
+    toast.className = `score-toast score-toast--${attacker}`;
+    toast.innerHTML = `<b>+${points}</b><span>${escapeHTML(label)}</span>${note ? `<small>${escapeHTML(note)}</small>` : ''}`;
+    els.stageWrap.appendChild(toast);
+    setTimeout(() => toast.remove(), 1500);
+  }
+  function noteToast(text) {
+    if (!els.stageWrap) return;
+    const toast = document.createElement('div');
+    toast.className = 'score-toast score-toast--note';
+    toast.innerHTML = `<span>${escapeHTML(text)}</span>`;
+    els.stageWrap.appendChild(toast);
+    setTimeout(() => toast.remove(), 1200);
+  }
+
   async function battle() {
     if (!state.player || state.battling) return;
     state.lastLoot = null;
@@ -958,7 +992,7 @@
     state.scene.player.x = 325; state.scene.player.y = 365;
     state.scene.enemy.x = 635; state.scene.enemy.y = 365;
     renderPose();
-    state.battling = true; hideResult(); els.status.textContent = 'LAUNCH SEQUENCE';
+    state.battling = true; hideResult(); resetLiveScore(); els.scoreboard?.removeAttribute('hidden'); els.status.textContent = 'LAUNCH SEQUENCE';
     els.battle.disabled = true; els.summon.disabled = true;
     await runCountdown();
     startSpinSound();
@@ -1037,6 +1071,7 @@
       phaseIndex += 1; current = phases[phaseIndex]; phaseStart = now;
       if (!current) return;
       from = { px: p.x, py: p.y, ex: e.x, ey: e.y };
+      if (current.kind === 'chaos') els.status.textContent = 'BATTLE IN PROGRESS';
       if (current.kind === 'rail') {
         const rider = actorOf(current.rider);
         current.a0 = Math.atan2((rider.y - A.cy) / A.ry, (rider.x - A.cx) / A.rx);
@@ -1048,8 +1083,9 @@
         const victim = actorOf(current.event.victim), pocket = pocketOf(current.event);
         burst(pocket.x, pocket.y, '#ffffff', 1.1); playCue('impact'); shake(240);
         victim.pocketed = false; els.status.textContent = 'BOUNCED BACK';
+        noteToast(`${current.event.victim === 'player' ? '你' : '對手'}彈回場內！繼續打`);
       }
-      if (current.kind === 'spin') els.status.textContent = 'SPIN FINISH';
+      if (current.kind === 'spin') { els.status.textContent = 'SPIN FINISH'; scorePop(current.event.attacker, current.event.points, `${current.event.attacker === 'player' ? '對手' : '你'}被撞停`); }
       if (current.kind === 'burst') { current.blown = false; els.status.textContent = 'BURST FINISH'; }
     };
     const endPhase = () => {
@@ -1123,6 +1159,7 @@
           const floatText = state.scene.impact.text(`+${pocket.points}`).font({ family: 'IBM Plex Mono', size: 34, weight: 700 }).fill(color).center(pocket.x, pocket.y - 30).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
           floatText.animate(1100).ease('>').dy(-70).opacity(0).after(() => floatText.remove());
           playCue('impact'); setTimeout(() => playCue('zap'), 90); shake(300);
+          scorePop(event.attacker, pocket.points, `${event.attacker === 'player' ? '對手' : '你'}被撞進${event.label}`);
         }
       } else if (current.kind === 'escape') {
         // 從洞裡彈回場內：沿弧線跳回碗裡，恢復大小
@@ -1155,6 +1192,7 @@
           const floatText = state.scene.impact.text('+3 BURST').font({ family: 'IBM Plex Mono', size: 30, weight: 700 }).fill('#ff8a3d').center(victim.x, victim.y - 40).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
           floatText.animate(1100).ease('>').dy(-70).opacity(0).after(() => floatText.remove());
           playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 90); shake(420);
+          scorePop(event.attacker, event.points, `${event.attacker === 'player' ? '對手' : '你'}爆裂`);
         }
       } else if (current.kind === 'spin') {
         const event = current.event, loser = actorOf(event.victim), winner = actorOf(event.attacker);
@@ -1176,6 +1214,8 @@
 
   function finishBattle(playerWon, recordScore) {
     state.battling = false; els.status.textContent = 'BATTLE COMPLETE';
+    const model = state.lastBattleModel;
+    if (model && els.scorePlayer && els.scoreEnemy) { liveScore.player = model.playerPoints; liveScore.enemy = model.enemyPoints; els.scorePlayer.textContent = String(model.playerPoints); els.scoreEnemy.textContent = String(model.enemyPoints); els.scoreboard?.classList.toggle('is-lead-player', model.playerPoints > model.enemyPoints); els.scoreboard?.classList.toggle('is-lead-enemy', model.enemyPoints > model.playerPoints); }
     els.stageWrap.classList.remove('is-high-speed');
     els.battle.disabled = false; els.summon.disabled = false;
     if (playerWon) grantEquipment();

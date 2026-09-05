@@ -18,7 +18,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260906-3">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260906-4">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -160,6 +160,7 @@ keywords:
         <button class="action-button action-button--primary" id="summon-button" type="button">抽陀螺</button>
         <button class="action-button action-button--collection" id="collection-picker-button" type="button">強化陀螺</button>
       </div>
+      <div class="arena-scoreboard" id="arena-scoreboard" aria-live="polite" hidden><span>YOU</span><b id="score-player">0</b><i>:</i><b id="score-enemy">0</b><span>RIVAL</span></div>
       <div class="launch-countdown" id="launch-countdown" aria-live="assertive" aria-atomic="true"></div>
       <p class="arena-rules">左中洞 <b>+3</b> · 爆裂 <b>+3</b> · 其他四個洞 <b>+2</b> · 撞停 <b>+1</b> · 進洞可能彈回來，分數累加 · 齒輪固軸會咬上藍線衝刺</p>
       <div class="arena-hud" aria-hidden="true">
@@ -362,4 +363,4 @@ keywords:
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260906-3" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260906-4" defer></script>
