@@ -547,22 +547,17 @@
     draw.ellipse(860, 430).center(ARENA.cx, ARENA.cy).fill('url(#floorGlow)');
     draw.rect(820, 612).radius(48).center(ARENA.cx, ARENA.cy + 14).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
     draw.rect(792, 584).radius(42).center(ARENA.cx, ARENA.cy + 14).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
-    // 藍線輪廓：從實物正上方照片量出關鍵數字，再用分段解析式畫（沒有量測雜訊）。0° = 右、90° = 下，值 = 相對大圓的半徑
-    // 大圓 → 肩膀平滑坡（188°→214°：1.00→0.90）→ 上緣同心弧 r=0.90 → 平台（243°→255°：0.88→0.79）→ 直壁 → 水平平底（y = -0.60R）→ 對稱回去
+    // 藍線輪廓：一個大圓 + 上緣兩個凸出來的圓弧（像貓耳）+ 兩耳之間一個方形小缺口（底部有小舌片）
     const rad = deg => deg * Math.PI / 180;
     const norm = deg => ((deg + 540) % 360) - 180;
-    const smooth = t => { const k = Math.max(0, Math.min(1, t)); return k * k * (3 - 2 * k); };
-    const RAIL = { shoulderIn: 188, shoulderOut: 214, arc: .90, platformIn: 243, platformOut: 255, platformEnd: .79, wallOut: 259.5, floor: .6015 };
+    const EAR = { d: .70, r: .44, spread: 31 };          // 耳朵：半徑 0.44R 的圓，圓心離中心 0.70R，位在正上方左右各 31°
+    const NOTCH = { half: 8.5, floor: .985, tabHalf: 2.6, tab: .95 };
+    const earArc = (theta, phi) => { const delta = rad(norm(theta - phi)); const s = EAR.d * Math.sin(delta); return Math.abs(s) >= EAR.r ? 0 : EAR.d * Math.cos(delta) + Math.sqrt(EAR.r * EAR.r - s * s); };
     const radial = theta => {
-      const t = ((theta % 360) + 360) % 360;
-      const a = 270 - Math.abs(norm(t - 270));            // 以正上方（270°）為軸鏡射：a 從 180（左側水平）走到 270（正上方）
-      if (a <= RAIL.shoulderIn) return 1;
-      if (a < RAIL.shoulderOut) return 1 - (1 - RAIL.arc) * smooth((a - RAIL.shoulderIn) / (RAIL.shoulderOut - RAIL.shoulderIn));
-      if (a <= RAIL.platformIn) return RAIL.arc;
-      if (a < RAIL.platformOut) return RAIL.arc - (RAIL.arc - RAIL.platformEnd) * smooth((a - RAIL.platformIn) / (RAIL.platformOut - RAIL.platformIn));
-      const floorR = RAIL.floor / Math.abs(Math.sin(rad(a)));   // 平底是一條水平線
-      if (a < RAIL.wallOut) return RAIL.platformEnd - (RAIL.platformEnd - floorR) * smooth((a - RAIL.platformOut) / (RAIL.wallOut - RAIL.platformOut));
-      return floorR;
+      const t = norm(theta), top = Math.abs(norm(t + 90));
+      if (top < NOTCH.tabHalf) return NOTCH.tab;
+      if (top < NOTCH.half) return NOTCH.floor;
+      return Math.max(1, earArc(t, -90 - EAR.spread), earArc(t, -90 + EAR.spread));
     };
     const bowlPoint = (theta, factor = 1) => [ARENA.cx + ARENA.rx * radial(theta) * factor * Math.cos(rad(theta)), ARENA.cy + ARENA.ry * radial(theta) * factor * Math.sin(rad(theta))];
     const bowlPath = (factor, from = 0, to = 360) => { const pts = []; for (let theta = from; theta <= to; theta += .5) pts.push(bowlPoint(theta, factor)); return 'M' + pts.map(pt => pt.map(v => v.toFixed(1)).join(' ')).join(' L') + (to - from >= 360 ? ' Z' : ''); };
