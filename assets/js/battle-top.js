@@ -3,7 +3,7 @@
 
   const SVG_NS_READY = typeof window.SVG === 'function';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const storageKeys = { collection: 'coomy-top-collection-v1', equipment: 'coomy-top-equipment-v2', legacyEquipment: 'coomy-top-equipment-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', presence: 'coomy-top-presence-v1' };
+  const storageKeys = { collection: 'coomy-top-collection-v1', parts: 'coomy-top-parts-v3', equipment: 'coomy-top-equipment-v2', legacyEquipment: 'coomy-top-equipment-v1', wishes: 'coomy-top-wishes-v2', scores: 'coomy-top-scores-v1', profile: 'coomy-top-profile-v1', presence: 'coomy-top-presence-v1' };
   const wishEndpoint = window.BATTLE_TOP_WISH_ENDPOINT || '';
   const scoreEndpoint = window.BATTLE_TOP_SCORE_ENDPOINT || '';
   const supabaseUrl = window.BATTLE_TOP_SUPABASE_URL || '';
@@ -74,6 +74,40 @@
     { id: 'dash-engine', name: '衝刺引擎', icon: 'ϟ', stat: 'xdash', label: 'X 衝刺', amount: 10, color: '#ffe25c' }
   ];
 
+
+  // ---------- 零件系統（v3）：獎勵是真的零件——上蓋 / 軸心 / 固軸，每層只能裝一個 ----------
+  const partSlots = [
+    { key: 'blade', label: '上蓋', english: 'Blade', rate: .30 },
+    { key: 'ratchet', label: '軸心', english: 'Ratchet', rate: .35 },
+    { key: 'bit', label: '固軸', english: 'Bit', rate: .35 }
+  ];
+  // 舊的數值道具 → 零件（v2 → v3 遷移，保留 instance id，收藏陀螺的參照不會斷）
+  const legacyEquipmentToPart = { 'power-gear': ['blade', 'dran'], 'steel-armor': ['blade', 'knight'], 'eternal-core': ['ratchet', '5-70'], 'burst-lock': ['ratchet', '4-60'], 'dash-engine': ['bit', 'flat'] };
+  const STAT_LABELS = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
+  const slotMeta = key => partSlots.find(slot => slot.key === key) || partSlots[0];
+  const partDelta = part => part?.delta || part?.stats || {};
+  const findPart = (slot, partId) => (customizationParts[slot] || []).find(part => part.id === partId) || null;
+  const findPartByName = (slot, name) => (customizationParts[slot] || []).find(part => part.name.toLowerCase() === String(name || '').trim().toLowerCase()) || null;
+  function averageDelta(slot) {
+    const list = customizationParts[slot], sum = {};
+    list.forEach(part => Object.entries(partDelta(part)).forEach(([key, value]) => { sum[key] = (sum[key] || 0) + value; }));
+    Object.keys(sum).forEach(key => { sum[key] = sum[key] / list.length; });
+    return sum;
+  }
+  // 原廠三件：從商品的 parts 字串比對零件表；比不到的（例如 Hexa、1-60）視為「未知原廠」，用該層平均值當基準
+  function stockPartsOf(product) {
+    const pieces = String(product.parts || '').split('·').map(part => part.trim());
+    return { blade: findPartByName('blade', pieces[0]), ratchet: findPartByName('ratchet', pieces[1]), bit: findPartByName('bit', pieces[2]) };
+  }
+  function deltaText(part) {
+    return Object.entries(partDelta(part)).filter(([, value]) => value).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([key, value]) => `${STAT_LABELS[key]} +${Math.round(value)}`).join(' · ');
+  }
+  function partGlyph(slot, part, color = '#28f4e8') {
+    const short = slot === 'ratchet' ? part.name : (part.code || part.name.split(' ').map(word => word[0]).join('').toUpperCase());
+    const label = slotMeta(slot).label;
+    return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><path d="M60 10 77 27 101 32 106 56 96 79 75 91 52 108 32 92 12 78 17 53 22 29 47 25Z" fill="#071017" stroke="${color}" stroke-width="4"/><circle cx="60" cy="58" r="30" fill="none" stroke="${color}" stroke-width="2.5" stroke-dasharray="7 5"/><text x="60" y="65" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="${short.length > 3 ? 17 : 24}" font-weight="700" fill="#fff">${escapeHTML(short)}</text><text x="60" y="101" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)}</text></svg>`;
+  }
+
   const state = { arena: null, pockets: [], player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
@@ -95,7 +129,7 @@
     collectionPickerButton: document.querySelector('#collection-picker-button'), collectionPicker: document.querySelector('#battle-collection-picker'),
     collectionPickerClose: document.querySelector('#collection-picker-close'), collectionPickerList: document.querySelector('#battle-collection-picker-list'),
     collectionSavedTab: document.querySelector('#collection-tab-saved'), collectionCustomTab: document.querySelector('#collection-tab-custom'), collectionSavedPanel: document.querySelector('#collection-saved-panel'), collectionCustomPanel: document.querySelector('#collection-custom-panel'), collectionSlotCount: document.querySelector('#collection-slot-count'), collectionSlotVisual: document.querySelector('#collection-slot-visual'),
-    customPreview: document.querySelector('#custom-top-preview'), customRefineStage: document.querySelector('#custom-refine-stage'), customEffectReveal: document.querySelector('#custom-effect-reveal'), customName: document.querySelector('#custom-top-name'), customStats: document.querySelector('#custom-stat-preview'), customEquipmentOptions: document.querySelector('#custom-equipment-options'), customEquipmentSlots: document.querySelector('#custom-equipment-slots'), customSave: document.querySelector('#custom-save-button'), customBattle: document.querySelector('#custom-battle-button'), customStatus: document.querySelector('#custom-top-status'),
+    customPreview: document.querySelector('#custom-top-preview'), customRefineStage: document.querySelector('#custom-refine-stage'), customEffectReveal: document.querySelector('#custom-effect-reveal'), customName: document.querySelector('#custom-top-name'), customStats: document.querySelector('#custom-stat-preview'), customEquipmentOptions: document.querySelector('#custom-equipment-options'), customSlotTabs: document.querySelector('#custom-slot-tabs'), customPartStack: document.querySelector('#custom-part-stack'), customEquipmentSlots: document.querySelector('#custom-equipment-slots'), customSave: document.querySelector('#custom-save-button'), customBattle: document.querySelector('#custom-battle-button'), customStatus: document.querySelector('#custom-top-status'),
     countdown: document.querySelector('#launch-countdown'), stageWrap: document.querySelector('.arena-stage-wrap'),
     avatarPicker: document.querySelector('#avatar-picker'), pilotName: document.querySelector('#pilot-name'),
     playerIdentity: document.querySelector('#player-identity-badge'), playerIdentityAvatar: document.querySelector('#player-identity-avatar'), playerIdentityName: document.querySelector('#player-identity-name'),
@@ -803,10 +837,10 @@
     els.resultCopy.textContent = `${outcomeCopy} ${typeCopy}${rankBonusCopy}`;
     els.battleLoot.hidden = !playerWon || !state.lastLoot;
     if (playerWon && state.lastLoot) {
-      els.battleLootImage.innerHTML = equipmentImage(state.lastLoot);
+      els.battleLootImage.innerHTML = partGlyph(state.lastLoot.slot, state.lastLoot.part, '#caff3d');
       els.battleLootName.textContent = state.lastLoot.name;
-      els.battleLootStat.textContent = `${state.lastLoot.label} +${state.lastLoot.amount}`;
-      els.battleLootCount.textContent = `獨立裝備 ${state.lastLoot.instanceId.slice(-6)} · 出戰時鑑定專屬特效`;
+      els.battleLootStat.textContent = deltaText(state.lastLoot.part);
+      els.battleLootCount.textContent = `${state.lastLoot.english.toUpperCase()} · #${state.lastLoot.instanceId.slice(-4)} · 到「強化陀螺」換上去`;
     }
     els.result.classList.add('is-visible');
     setTimeout(() => els.resultRetry.focus({ preventScroll: true }), 320);
@@ -1234,46 +1268,50 @@
   }
 
   function readEquipmentInventory() {
-    const saved = readStorage(storageKeys.equipment, null);
+    const saved = readStorage(storageKeys.parts, null);
     if (Array.isArray(saved)) {
-      return saved.map(instance => ({
-        id: String(instance.id || `GEAR-${makeId()}`),
-        itemId: equipmentCatalog.some(item => item.id === instance.itemId) ? instance.itemId : equipmentCatalog[0].id,
+      return saved.filter(instance => findPart(instance.slot, instance.partId)).map(instance => ({
+        id: String(instance.id || `PART-${makeId()}`), slot: instance.slot, partId: instance.partId,
         effectId: refineEffects.some(effect => effect.id === instance.effectId) ? instance.effectId : '',
         ownerTopId: String(instance.ownerTopId || '')
       }));
     }
-    const legacy = readStorage(storageKeys.legacyEquipment, {});
     const migrated = [];
-    equipmentCatalog.forEach(item => {
-      const entry = legacy[item.id];
-      const count = Math.max(0, Number(entry?.count ?? entry) || 0);
-      for (let index = 0; index < count; index += 1) {
-        migrated.push({ id: `GEAR-${makeId()}`, itemId: item.id, effectId: index === 0 && refineEffects.some(effect => effect.id === entry?.effectId) ? entry.effectId : '', ownerTopId: '' });
-      }
-    });
-    writeStorage(storageKeys.equipment, migrated);
+    const v2 = readStorage(storageKeys.equipment, null);
+    if (Array.isArray(v2)) {
+      v2.forEach(instance => {
+        const mapped = legacyEquipmentToPart[instance.itemId] || legacyEquipmentToPart['power-gear'];
+        migrated.push({ id: String(instance.id || `PART-${makeId()}`), slot: mapped[0], partId: mapped[1], effectId: refineEffects.some(effect => effect.id === instance.effectId) ? instance.effectId : '', ownerTopId: String(instance.ownerTopId || '') });
+      });
+    } else {
+      const v1 = readStorage(storageKeys.legacyEquipment, {});
+      Object.entries(legacyEquipmentToPart).forEach(([itemId, mapped]) => {
+        const entry = v1[itemId];
+        const count = Math.max(0, Number(entry?.count ?? entry) || 0);
+        for (let index = 0; index < count; index += 1) migrated.push({ id: `PART-${makeId()}`, slot: mapped[0], partId: mapped[1], effectId: index === 0 && refineEffects.some(effect => effect.id === entry?.effectId) ? entry.effectId : '', ownerTopId: '' });
+      });
+    }
+    writeEquipmentInventory(migrated);
     return migrated;
   }
 
-  function writeEquipmentInventory(inventory) { writeStorage(storageKeys.equipment, inventory); }
+  function writeEquipmentInventory(inventory) { writeStorage(storageKeys.parts, inventory); }
 
   function equipmentEffect(entry) {
     return refineEffects.find(effect => effect.id === entry?.effectId) || null;
   }
 
-  function equipmentImage(item) {
-    return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(item.name)}"><defs><radialGradient id="g-${item.id}"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="${item.color}"/><stop offset="1" stop-color="#071017"/></radialGradient></defs><circle cx="60" cy="60" r="48" fill="url(#g-${item.id})" opacity=".32"/><path d="M60 10 77 27 101 32 106 56 96 79 75 91 52 108 32 92 12 78 17 53 22 29 47 25Z" fill="#071017" stroke="${item.color}" stroke-width="4"/><circle cx="60" cy="60" r="27" fill="none" stroke="${item.color}" stroke-width="3" stroke-dasharray="8 5"/><text x="60" y="70" text-anchor="middle" font-size="34" font-weight="900" fill="#fff">${item.icon}</text></svg>`;
-  }
-
   function grantEquipment() {
-    const item = pick(equipmentCatalog);
+    const roll = Math.random();
+    let acc = 0;
+    const slot = partSlots.find(item => { acc += item.rate; return roll < acc; }) || partSlots[partSlots.length - 1];
+    const part = pick(customizationParts[slot.key]);
     const inventory = readEquipmentInventory();
-    const instance = { id: `GEAR-${makeId()}`, itemId: item.id, effectId: '', ownerTopId: '' };
+    const instance = { id: `PART-${makeId()}`, slot: slot.key, partId: part.id, effectId: '', ownerTopId: '' };
     inventory.push(instance);
     writeEquipmentInventory(inventory);
-    state.lastLoot = { ...item, instanceId: instance.id };
-    trackEvent('battle_top_equipment_drop', { equipment_id: item.id, equipment_stat: item.stat, equipment_instance_id: instance.id });
+    state.lastLoot = { slot: slot.key, part, instanceId: instance.id, name: `${slot.label} ${part.name}`, label: slot.label, english: slot.english };
+    trackEvent('battle_top_part_drop', { part_slot: slot.key, part_id: part.id, part_instance_id: instance.id });
     return state.lastLoot;
   }
 
@@ -1283,61 +1321,81 @@
       || productCatalog.find(product => product.image === seed?.image)
       || productCatalog[0];
     const inventory = readEquipmentInventory();
-    const used = new Set();
-    const equipment = (Array.isArray(seed?.equipment) ? seed.equipment : []).map(reference => {
-      const exact = inventory.find(instance => instance.id === reference && (!instance.ownerTopId || instance.ownerTopId === seed?.id));
-      const legacy = exact || inventory.find(instance => instance.itemId === reference && !used.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === seed?.id));
-      if (legacy) used.add(legacy.id);
-      return legacy?.id || '';
-    }).filter(Boolean).slice(0, 3);
-    return {
-      baseProductId: base.id,
-      equipment,
-      name: seed?.isCustom ? seed.name : ''
-    };
+    const parts = { blade: '', ratchet: '', bit: '' };
+    const wanted = seed?.partSlots ? Object.values(seed.partSlots) : (Array.isArray(seed?.equipment) ? seed.equipment : []);
+    wanted.forEach(reference => {
+      const instance = inventory.find(candidate => candidate.id === reference && (!candidate.ownerTopId || candidate.ownerTopId === seed?.id));
+      if (instance && !parts[instance.slot]) parts[instance.slot] = instance.id;
+    });
+    return { baseProductId: base.id, parts, activeSlot: 'ratchet', name: seed?.isCustom ? seed.name : '' };
   }
 
   function buildCustomTop() {
     const draft = state.customDraft;
     const base = productCatalog.find(product => product.id === draft.baseProductId) || productCatalog[0];
     const inventory = readEquipmentInventory();
-    const equipped = draft.equipment.map(id => {
-      const instance = inventory.find(candidate => candidate.id === id);
-      const item = equipmentCatalog.find(candidate => candidate.id === instance?.itemId);
-      return item ? { ...item, instance, effect: equipmentEffect(instance) } : null;
-    }).filter(Boolean);
+    const stock = stockPartsOf(base);
     const stats = { ...base.stats };
-    equipped.forEach(item => { stats[item.stat] = clamp(8, 150, stats[item.stat] + item.amount); });
-    const effect = [...equipped].reverse().find(item => item.effect)?.effect || null;
+    const installed = {};
+    partSlots.forEach(({ key }) => {
+      const instance = inventory.find(candidate => candidate.id === draft.parts[key]);
+      const part = instance ? findPart(key, instance.partId) : null;
+      if (!part) return;
+      installed[key] = { instance, part };
+      const remove = stock[key] ? partDelta(stock[key]) : averageDelta(key);
+      const add = partDelta(part);
+      Object.keys(stats).forEach(stat => { stats[stat] = clamp(8, 150, Math.round(stats[stat] - (remove[stat] || 0) + (add[stat] || 0))); });
+    });
+    const equipped = Object.values(installed);
+    const effect = [...equipped].reverse().map(item => equipmentEffect(item.instance)).find(Boolean) || null;
+    const pieces = String(base.parts).split('·').map(part => part.trim());
+    const names = { blade: installed.blade?.part.name || pieces[0], ratchet: installed.ratchet?.part.name || pieces[1], bit: installed.bit?.part.name || pieces[2] };
+    const bladeProduct = installed.blade ? productCatalog.find(product => product.id === installed.blade.part.productId) : null;
+    const bitCode = installed.bit ? installed.bit.part.code : ((base.name.match(/\d+-\d+([A-Z]+)$/) || [])[1] || '');
+    const autoName = equipped.length ? `${names.blade} ${names.ratchet}${bitCode}` : base.name;
     return {
-      ...cloneProduct(base), id: state.customizingId || `CUSTOM-${makeId()}`, baseProductId: base.id, name: draft.name.trim() || `我的${base.name.split(' ')[0]}`,
-      type: deriveCustomType(stats), stats, isCustom: true, equipment: [...draft.equipment],
+      ...cloneProduct(base), id: state.customizingId || `CUSTOM-${makeId()}`, baseProductId: base.id,
+      name: draft.name.trim() || autoName,
+      image: bladeProduct?.image || base.image, color: bladeProduct?.color || base.color, accent: bladeProduct?.accent || base.accent, source: bladeProduct?.source || base.source,
+      parts: `${names.blade} · ${names.ratchet} · ${names.bit}`,
+      type: deriveCustomType(stats), stats, isCustom: true,
+      equipment: Object.values(draft.parts).filter(Boolean), partSlots: { ...draft.parts },
       effect: effect ? { ...effect } : null,
-      skill: equipped.length ? `已裝備：${equipped.map(item => `${item.label}+${item.amount}`).join('、')}。` : '打贏對手取得裝備，再回來強化。'
+      skill: equipped.length ? `已換裝：${equipped.map(item => `${slotMeta(item.instance.slot).label} ${item.part.name}`).join('、')}。` : '打贏對手會掉零件，再回來換上蓋、軸心或固軸。'
     };
   }
 
   function renderEquipmentOptions() {
+    const draft = state.customDraft;
     const inventory = readEquipmentInventory();
-    const available = inventory.filter(instance => !instance.ownerTopId || instance.ownerTopId === state.customizingId);
-    els.customEquipmentSlots.textContent = `${state.customDraft.equipment.length} / 3`;
-    if (!available.length) {
-      els.customEquipmentOptions.innerHTML = '<p class="custom-equipment-empty">沒有可用裝備。打贏對手取得新裝備，或從其他收藏陀螺卸下。</p>';
-      return;
+    const base = productCatalog.find(product => product.id === draft.baseProductId) || productCatalog[0];
+    const stock = stockPartsOf(base);
+    const pieces = String(base.parts).split('·').map(part => part.trim());
+    const owned = key => inventory.filter(instance => instance.slot === key && (!instance.ownerTopId || instance.ownerTopId === state.customizingId));
+    if (!owned(draft.activeSlot).length && !draft.parts[draft.activeSlot]) {
+      const first = partSlots.find(({ key }) => owned(key).length || draft.parts[key]);
+      if (first) draft.activeSlot = first.key;
     }
-    els.customEquipmentOptions.innerHTML = available.map(instance => {
-      const item = equipmentCatalog.find(candidate => candidate.id === instance.itemId) || equipmentCatalog[0];
-      const equipped = state.customDraft.equipment.includes(instance.id);
+    const active = draft.activeSlot;
+    const meta = slotMeta(active);
+    els.customEquipmentSlots.textContent = `${Object.values(draft.parts).filter(Boolean).length} / 3`;
+    els.customSlotTabs.innerHTML = partSlots.map(slot => `<button type="button" role="tab" data-slot="${slot.key}" aria-selected="${slot.key === active}"${draft.parts[slot.key] ? ' class="has-part"' : ''}>${slot.label}<span>${slot.english} · ${owned(slot.key).length}</span></button>`).join('');
+    els.customSlotTabs.querySelectorAll('[data-slot]').forEach(button => button.addEventListener('click', () => { draft.activeSlot = button.dataset.slot; renderCustomPreview(); }));
+    const stockName = pieces[partSlots.findIndex(slot => slot.key === active)] || '原廠';
+    const list = owned(active);
+    const stockCard = `<button type="button" class="custom-part-card is-stock${draft.parts[active] ? '' : ' is-equipped'}" data-part="" aria-pressed="${!draft.parts[active]}"><span>${partGlyph(active, { name: stockName, code: stock[active]?.code }, '#7f959b')}</span><strong>${escapeHTML(stockName)}</strong><b>原廠${meta.label}</b><small>隨時可以換回來</small></button>`;
+    els.customEquipmentOptions.innerHTML = stockCard + list.map(instance => {
+      const part = findPart(active, instance.partId);
+      const equipped = draft.parts[active] === instance.id;
       const effect = equipmentEffect(instance);
-      return `<button type="button" class="custom-equipment-card${equipped ? ' is-equipped' : ''}" data-equipment="${instance.id}" style="--equipment-color:${effect?.color || item.color}" aria-pressed="${equipped}"><span>${equipmentImage(item)}<i>#${instance.id.slice(-4)}</i></span><strong>${escapeHTML(item.name)}</strong><b>${item.label} +${item.amount}</b><small>${effect ? `${effect.icon} ${effect.name}特效` : equipped ? '出戰時鑑定特效' : '尚未鑑定'}</small></button>`;
-    }).join('');
-    els.customEquipmentOptions.querySelectorAll('[data-equipment]').forEach(button => button.addEventListener('click', () => {
-      const id = button.dataset.equipment;
-      const index = state.customDraft.equipment.indexOf(id);
-      if (index >= 0) state.customDraft.equipment.splice(index, 1);
-      else if (state.customDraft.equipment.length < 3) state.customDraft.equipment.push(id);
-      else { els.customStatus.textContent = '最多裝 3 件，先拿掉一件。'; return; }
-      els.customStatus.textContent = index >= 0 ? '裝備已卸下。' : '裝備完成！能力已增加。';
+      const color = effect?.color || '#28f4e8';
+      return `<button type="button" class="custom-part-card${equipped ? ' is-equipped' : ''}" data-part="${instance.id}" style="--equipment-color:${color}" aria-pressed="${equipped}"><span>${partGlyph(active, part, color)}<i>#${instance.id.slice(-4)}</i></span><strong>${escapeHTML(part.name)}</strong><b>${deltaText(part)}</b><small>${effect ? `${effect.icon} ${effect.name}特效` : equipped ? '出戰時鑑定特效' : '尚未鑑定'}</small></button>`;
+    }).join('') + (list.length ? '' : `<p class="custom-equipment-empty">還沒有可以換的${meta.label}。打贏對手有 ${Math.round(meta.rate * 100)}% 機率掉${meta.label}。</p>`);
+    els.customEquipmentOptions.querySelectorAll('[data-part]').forEach(button => button.addEventListener('click', () => {
+      const id = button.dataset.part;
+      draft.parts[active] = id;
+      const chosen = id ? findPart(active, inventory.find(instance => instance.id === id)?.partId) : null;
+      els.customStatus.textContent = chosen ? `${meta.label}已換成 ${chosen.name}。` : `${meta.label}換回原廠。`;
       persistCustomName(false);
       renderCustomPreview();
     }));
@@ -1345,12 +1403,21 @@
 
   function renderCustomPreview() {
     const top = buildCustomTop();
+    const base = productCatalog.find(product => product.id === state.customDraft.baseProductId) || productCatalog[0];
     const isSaved = Boolean(state.customizingId && readCollection().some(item => item.id === state.customizingId));
     renderEquipmentOptions();
-    els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}"><small>${escapeHTML(partsText(top))}</small>`;
-    const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
-    els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><i><b style="width:${value / 1.2}%"></b></i><strong>${value}</strong></div>`).join('');
-    els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> ${top.effect.name}特效` : top.equipment.length ? '特效等待出戰鑑定' : '尚未裝備';
+    els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}">`;
+    const names = partsOf(top);
+    els.customPartStack.innerHTML = partSlots.map((slot, index) => {
+      const id = state.customDraft.parts[slot.key];
+      return `<button type="button" class="custom-part-slab${slot.key === state.customDraft.activeSlot ? ' is-active' : ''}" data-stack-slot="${slot.key}" aria-pressed="${slot.key === state.customDraft.activeSlot}"><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="${id ? '' : 'is-stock'}">${id ? '換裝' : '原廠'}</b></button>`;
+    }).join('');
+    els.customPartStack.querySelectorAll('[data-stack-slot]').forEach(button => button.addEventListener('click', () => { state.customDraft.activeSlot = button.dataset.stackSlot; renderCustomPreview(); }));
+    els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => {
+      const diff = value - base.stats[key];
+      return `<div><span>${STAT_LABELS[key]}</span><i><b style="width:${value / 1.2}%"></b></i><strong>${value}${diff ? ` <em class="${diff > 0 ? '' : 'down'}">${diff > 0 ? '+' : ''}${diff}</em>` : ''}</strong></div>`;
+    }).join('');
+    els.customEffectReveal.innerHTML = top.effect ? `<span>${top.effect.icon}</span> ${top.effect.name}特效` : top.equipment.length ? '特效等待出戰鑑定' : '尚未換零件';
     els.customEffectReveal.style.setProperty('--effect-color', top.effect?.color || '#789096');
     els.customSave.disabled = !isSaved && !top.equipment.length;
     els.customSave.textContent = isSaved ? '取消收藏' : '加到收藏';
@@ -1362,7 +1429,7 @@
     const seed = readCollection().find(top => top.id === productId) || state.player || productCatalog[0];
     state.customizingId = seed.isCustom ? seed.id : '';
     state.customDraft = makeCustomDraft(seed);
-    els.customStatus.textContent = seed.isCustom ? '點裝備圖片就能更換。改名字會自動儲存。' : '選擇打贏後取得的裝備。';
+    els.customStatus.textContent = seed.isCustom ? '點左邊的上蓋 / 軸心 / 固軸，右邊挑零件換上去。改名字會自動儲存。' : '打贏拿到的零件在這裡換上去：上蓋、軸心、固軸各一個。';
     showCollectionPanel('custom');
     renderCustomPreview();
   }
@@ -1417,7 +1484,7 @@
       els.customStatus.textContent = `「${removed.name}」已取消收藏，仍可直接出戰。`;
       return;
     }
-    if (!state.customDraft?.equipment.length) return;
+    if (!Object.values(state.customDraft?.parts || {}).some(Boolean)) return;
     const top = buildCustomTop();
     const existingIndex = collection.findIndex(item => item.id === top.id);
     if (existingIndex < 0 && collection.length >= 5) { els.customStatus.textContent = '收藏已滿 5 顆，先回「我的收藏」刪掉一顆。'; return; }
@@ -1451,13 +1518,13 @@
   async function battleWithCustomTop() {
     if (state.battling || !state.customDraft) return;
     const inventory = readEquipmentInventory();
-    const unidentifiedId = [...state.customDraft.equipment].reverse().find(id => {
+    const unidentifiedId = Object.values(state.customDraft.parts).filter(Boolean).reverse().find(id => {
       const instance = inventory.find(candidate => candidate.id === id);
       return instance && !instance.effectId;
     });
     if (unidentifiedId) {
       const instance = inventory.find(candidate => candidate.id === unidentifiedId);
-      const item = equipmentCatalog.find(candidate => candidate.id === instance.itemId);
+      const item = { name: `${slotMeta(instance.slot).label} ${findPart(instance.slot, instance.partId)?.name || ''}` };
       const effect = pick(refineEffects);
       instance.effectId = effect.id;
       writeEquipmentInventory(inventory);
@@ -1521,15 +1588,26 @@
       if (!top.isCustom || !Array.isArray(top.equipment)) return;
       const resolved = top.equipment.map(reference => {
         const exact = inventory.find(instance => instance.id === reference && !claimed.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === top.id));
-        const legacy = exact || inventory.find(instance => instance.itemId === reference && !claimed.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === top.id));
+        const mapped = legacyEquipmentToPart[reference];
+        const legacy = exact || (mapped ? inventory.find(instance => instance.slot === mapped[0] && instance.partId === mapped[1] && !claimed.has(instance.id) && (!instance.ownerTopId || instance.ownerTopId === top.id)) : null);
         if (!legacy) return '';
         if (legacy.ownerTopId !== top.id) migrated = true;
         legacy.ownerTopId = top.id;
         claimed.add(legacy.id);
         return legacy.id;
       }).filter(Boolean).slice(0, 3);
-      if (resolved.join('|') !== top.equipment.join('|')) migrated = true;
-      top.equipment = resolved;
+      // 每層只留一個零件；多出來的釋放回庫存
+      const perSlot = {};
+      const kept = resolved.filter(id => {
+        const instance = inventory.find(candidate => candidate.id === id);
+        if (!instance || perSlot[instance.slot]) { if (instance) { instance.ownerTopId = ''; claimed.delete(instance.id); } migrated = true; return false; }
+        perSlot[instance.slot] = id;
+        return true;
+      });
+      if (kept.join('|') !== top.equipment.join('|')) migrated = true;
+      top.equipment = kept;
+      const nextSlots = { blade: perSlot.blade || '', ratchet: perSlot.ratchet || '', bit: perSlot.bit || '' };
+      if (JSON.stringify(top.partSlots || null) !== JSON.stringify(nextSlots)) { top.partSlots = nextSlots; migrated = true; }
     });
     inventory.forEach(instance => {
       if (instance.ownerTopId && !claimed.has(instance.id)) { instance.ownerTopId = ''; migrated = true; }

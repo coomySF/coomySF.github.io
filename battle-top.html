@@ -18,7 +18,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260905-2">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260906-1">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -183,8 +183,8 @@ keywords:
         <div class="battle-loot" id="battle-loot" hidden>
           <span>WIN REWARD</span>
           <div id="battle-loot-image" aria-hidden="true"></div>
-          <strong id="battle-loot-name">獲得裝備</strong>
-          <b id="battle-loot-stat">防禦 +10</b>
+          <strong id="battle-loot-name">獲得零件</strong>
+          <b id="battle-loot-stat">防禦 +13 · 持久 +12</b>
           <small id="battle-loot-count">持有 ×1</small>
         </div>
         <div class="battle-share-composer" id="battle-share-composer" hidden>
@@ -245,14 +245,16 @@ keywords:
           <div class="custom-top-preview">
             <div class="custom-top-preview__visual" id="custom-top-preview" aria-label="強化陀螺預覽"></div>
             <div class="custom-refine-stage" id="custom-refine-stage" aria-hidden="true"></div>
-            <p class="custom-effect-reveal" id="custom-effect-reveal">尚未強化</p>
+            <p class="custom-effect-reveal" id="custom-effect-reveal">尚未換零件</p>
+            <div class="custom-part-stack" id="custom-part-stack" aria-label="這顆陀螺的三層零件"></div>
             <label class="custom-top-name">替它命名<input id="custom-top-name" type="text" maxlength="18" autocomplete="off" placeholder="我的無敵陀螺"></label>
             <div class="custom-stat-preview" id="custom-stat-preview"></div>
           </div>
           <div class="custom-top-controls">
-            <div class="custom-equipment-heading"><span>MY POWER ITEMS</span><strong>我的強化道具</strong><b id="custom-equipment-slots">0 / 3</b></div>
+            <div class="custom-equipment-heading"><span>MY PARTS · 上蓋 / 軸心 / 固軸</span><strong>換零件</strong><b id="custom-equipment-slots">0 / 3</b></div>
+            <div class="custom-slot-tabs" id="custom-slot-tabs" role="tablist" aria-label="選擇要換的那一層"></div>
             <div class="custom-equipment-options" id="custom-equipment-options"></div>
-            <p class="custom-top-note">每次打贏都會獲得一件獨立裝備，每件都有自己的編號與專屬特效。收藏會鎖定當下裝備，不能同時借給其他收藏陀螺；取消收藏後才會釋放。</p>
+            <p class="custom-top-note">每次打贏都會掉一個零件：上蓋、軸心或固軸。每一層只能裝一個，原廠零件永遠在，換回去不花任何東西。特效綁在零件上，換掉零件特效跟著走；收藏會鎖定當下零件，取消收藏後才會釋放。</p>
             <div class="custom-top-actions">
               <button type="button" id="custom-save-button" disabled>加到收藏</button>
               <button type="button" id="custom-battle-button">出戰</button>
@@ -360,4 +362,4 @@ keywords:
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260905-2" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260906-1" defer></script>
