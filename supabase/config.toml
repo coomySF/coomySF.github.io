@@ -1,0 +1,5 @@
+[functions.battle-top-wish]
+verify_jwt = false
+
+[functions.battle-top-score]
+verify_jwt = false
