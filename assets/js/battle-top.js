@@ -419,7 +419,7 @@
       const railSide = ['player', 'enemy']
         .filter(key => hasRailGear(sides[key]))
         .sort((a, b) => sides[b].stats.xdash - sides[a].stats.xdash)
-        .find(key => Math.random() < clamp(.35, .9, sides[key].stats.xdash / 60)) || '';
+        .find(key => Math.random() < clamp(.7, .97, .5 + sides[key].stats.xdash / 60)) || '';
       const railImpact = railSide ? randomInt(1, 2) : 0;
       let ended = false;
     for (let impact = 1; impact <= 4 && !ended; impact += 1) {
@@ -547,16 +547,45 @@
     draw.ellipse(860, 430).center(ARENA.cx, ARENA.cy).fill('url(#floorGlow)');
     draw.rect(820, 612).radius(48).center(ARENA.cx, ARENA.cy + 14).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
     draw.rect(792, 584).radius(42).center(ARENA.cx, ARENA.cy + 14).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
-    // 藍線是一條完整的環：主圓 + 上緣兩個比主圓小的圓弧凸起（交接處有轉角）+ 中間直壁的方形缺口（底部一個小舌片）
-    // 凹槽不在軌道上，而是在藍線外面的平台：左下 +2、右下 +2、底部中間長的 +3；陀螺被撞到出軌才掉進去
+    // 藍線輪廓是從實物照片（正上方拍的產品圖）一度一度量出來的：0° = 右、90° = 下，值 = 相對主圓的半徑
+    // 上緣（約 206°–334°）比正圓平、兩端是圓角，正中央是深的方形缺口；其餘是正圓。凹槽在線外，不在輪廓裡
+    const RAIL_PROFILE = [
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 0.952, 0.935, 0.918, 0.916, 0.914, 0.913, 0.914, 0.915, 0.916, 0.918,
+      0.918, 0.918, 0.918, 0.916, 0.914, 0.911, 0.907, 0.902, 0.898, 0.895, 0.893, 0.892,
+      0.892, 0.892, 0.891, 0.892, 0.892, 0.893, 0.894, 0.896, 0.897, 0.898, 0.898, 0.899,
+      0.898, 0.897, 0.895, 0.891, 0.887, 0.881, 0.875, 0.868, 0.861, 0.853, 0.844, 0.833,
+      0.827, 0.821, 0.803, 0.791, 0.756, 0.713, 0.663, 0.608, 0.608, 0.608, 0.608, 0.608,
+      0.608, 0.608, 0.608, 0.608, 0.608, 0.608, 0.608, 0.608, 0.608, 0.608, 0.608, 0.608,
+      0.608, 0.608, 0.608, 0.608, 0.608, 0.633, 0.645, 0.701, 0.748, 0.788, 0.801, 0.808,
+      0.814, 0.825, 0.838, 0.848, 0.858, 0.867, 0.875, 0.881, 0.887, 0.892, 0.896, 0.899,
+      0.901, 0.902, 0.903, 0.904, 0.904, 0.903, 0.903, 0.901, 0.900, 0.898, 0.897, 0.895,
+      0.894, 0.893, 0.892, 0.892, 0.894, 0.896, 0.898, 0.901, 0.903, 0.905, 0.907, 0.909,
+      0.910, 0.911, 0.911, 0.912, 0.912, 0.913, 0.915, 0.916, 0.919, 0.936, 0.953, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+      1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000, 1.000,
+    ];
     const rad = deg => deg * Math.PI / 180;
     const norm = deg => ((deg + 540) % 360) - 180;
-    const bumpArc = (theta, phi, d, rb) => { const delta = rad(norm(theta - phi)); const s = d * Math.sin(delta); return Math.abs(s) >= rb ? 0 : d * Math.cos(delta) + Math.sqrt(rb * rb - s * s); };
     const radial = theta => {
-      const t = norm(theta), top = Math.abs(norm(t + 90));
-      if (top < 2.6) return .95;
-      if (top < 8.5) return .985;
-      return Math.max(1, bumpArc(t, -121, .70, .44), bumpArc(t, -59, .70, .44));
+      const t = ((theta % 360) + 360) % 360, i = Math.floor(t), f = t - i;
+      return RAIL_PROFILE[i] * (1 - f) + RAIL_PROFILE[(i + 1) % 360] * f;
     };
     const bowlPoint = (theta, factor = 1) => [ARENA.cx + ARENA.rx * radial(theta) * factor * Math.cos(rad(theta)), ARENA.cy + ARENA.ry * radial(theta) * factor * Math.sin(rad(theta))];
     const bowlPath = (factor, from = 0, to = 360) => { const pts = []; for (let theta = from; theta <= to; theta += 1) pts.push(bowlPoint(theta, factor)); return 'M' + pts.map(pt => pt.map(v => v.toFixed(1)).join(' ')).join(' L') + (to - from >= 360 ? ' Z' : ''); };
@@ -1063,7 +1092,7 @@
     model.events.forEach(event => {
       if (event.round > seenRound) { seenRound = event.round; phases.push({ kind: 'relaunch', dur: 2100, round: event.round }); }
       const last = phases[phases.length - 1];
-      if (event.type === 'rail') { phases.push({ kind: 'chaos', dur: 900, index: chaosCount++ }); phases.push({ kind: 'rail', dur: 1150, rider: event.rider }); return; }
+      if (event.type === 'rail') { phases.push({ kind: 'chaos', dur: 900, index: chaosCount++ }); phases.push({ kind: 'rail', dur: 1500, rider: event.rider }); return; }
       if (event.type === 'clash') { if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true }); return; }
       if (event.type === 'pocket') {
         if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true });
@@ -1088,7 +1117,11 @@
       if (d <= limit) return;
       actor.x = A.cx + dx / d * limit * A.rx; actor.y = A.cy + dy / d * limit * A.ry;
       actor.wobble = Math.max(actor.wobble, 4);
-      if (now - lastWallHit > 240) { lastWallHit = now; burst(actor.x + dx / d * 52, actor.y + dy / d * 40, '#bfe9ff', .55); playCue('impact'); }
+      if (now - lastWallHit > 240) {
+        lastWallHit = now; burst(actor.x + dx / d * 52, actor.y + dy / d * 40, '#bfe9ff', .55); playCue('impact');
+        // 撞到藍線：那一段閃白
+        if (state.railTrail && state.bowlPath) { const deg = Math.atan2(dy, dx) * 180 / Math.PI; state.railTrail.plot(state.bowlPath(1, deg - 14, deg + 14)).stroke({ opacity: 1 }).animate(320).ease('>').stroke({ opacity: 0 }); }
+      }
     };
     const shake = ms => { els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), ms); };
     const clashBurst = big => {
