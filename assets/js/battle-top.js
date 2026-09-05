@@ -1647,7 +1647,7 @@
       const instance = inventory.find(candidate => candidate.id === reference && (!candidate.ownerTopId || candidate.ownerTopId === seed?.id));
       if (instance && !parts[instance.slot]) parts[instance.slot] = instance.id;
     });
-    return { baseProductId: base.id, parts, activeSlot: 'ratchet', name: seed?.isCustom ? seed.name : '' };
+    return { baseProductId: base.id, parts, activeSlot: 'ratchet', slotChosen: false, name: seed?.isCustom ? seed.name : '' };
   }
 
   function buildCustomTop() {
@@ -1692,7 +1692,8 @@
     const stock = stockPartsOf(base);
     const pieces = String(base.parts).split('·').map(part => part.trim());
     const owned = key => inventory.filter(instance => instance.slot === key && (!instance.ownerTopId || instance.ownerTopId === state.customizingId));
-    if (!owned(draft.activeSlot).length && !draft.parts[draft.activeSlot]) {
+    // 只在第一次打開時自動選到有零件的分層；使用者點過分層後就照使用者的
+    if (!draft.slotChosen && !owned(draft.activeSlot).length && !draft.parts[draft.activeSlot]) {
       const first = partSlots.find(({ key }) => owned(key).length || draft.parts[key]);
       if (first) draft.activeSlot = first.key;
     }
@@ -1700,7 +1701,7 @@
     const meta = slotMeta(active);
     els.customEquipmentSlots.textContent = `${Object.values(draft.parts).filter(Boolean).length} / 3`;
     els.customSlotTabs.innerHTML = partSlots.map(slot => `<button type="button" role="tab" data-slot="${slot.key}" aria-selected="${slot.key === active}"${draft.parts[slot.key] ? ' class="has-part"' : ''}>${slot.label}<span>${slot.english} · ${owned(slot.key).length}</span></button>`).join('');
-    els.customSlotTabs.querySelectorAll('[data-slot]').forEach(button => button.addEventListener('click', () => { draft.activeSlot = button.dataset.slot; renderCustomPreview(); }));
+    els.customSlotTabs.querySelectorAll('[data-slot]').forEach(button => button.addEventListener('click', () => { draft.activeSlot = button.dataset.slot; draft.slotChosen = true; renderCustomPreview(); }));
     const stockName = pieces[partSlots.findIndex(slot => slot.key === active)] || '原廠';
     const list = owned(active);
     const stockCard = `<button type="button" class="custom-part-card is-stock${draft.parts[active] ? '' : ' is-equipped'}" data-part="" aria-pressed="${!draft.parts[active]}"><span>${partGlyph(active, { name: stockName, code: stock[active]?.code }, '#7f959b', active === 'blade' ? base.image : '')}</span><strong>${escapeHTML(stockName)}</strong><b>原廠${meta.label}</b><small>隨時可以換回來</small></button>`;
@@ -1734,7 +1735,7 @@
       const glyphPart = instance ? findPart(slot.key, instance.partId) : { name: names[index].name, code: stockPartsOf(base)[slot.key]?.code };
       return `<button type="button" class="custom-part-slab${slot.key === state.customDraft.activeSlot ? ' is-active' : ''}" data-stack-slot="${slot.key}" aria-pressed="${slot.key === state.customDraft.activeSlot}"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, id ? '#caff3d' : '#7f959b', slot.key === 'blade' && !instance ? base.image : '')}</span><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="${id ? '' : 'is-stock'}">${id ? '換裝' : '原廠'}</b></button>`;
     }).join('');
-    els.customPartStack.querySelectorAll('[data-stack-slot]').forEach(button => button.addEventListener('click', () => { state.customDraft.activeSlot = button.dataset.stackSlot; renderCustomPreview(); }));
+    els.customPartStack.querySelectorAll('[data-stack-slot]').forEach(button => button.addEventListener('click', () => { state.customDraft.activeSlot = button.dataset.stackSlot; state.customDraft.slotChosen = true; renderCustomPreview(); }));
     els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => {
       const diff = value - base.stats[key];
       return `<div><span>${STAT_LABELS[key]}</span><i><b style="width:${value / 1.2}%"></b></i><strong>${value}${diff ? ` <em class="${diff > 0 ? '' : 'down'}">${diff > 0 ? '+' : ''}${diff}</em>` : ''}</strong></div>`;
