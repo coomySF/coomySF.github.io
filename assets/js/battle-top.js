@@ -383,22 +383,22 @@
     return (top.stats.stamina * .7 + top.stats.defense * .18 + top.stats.burst * .12) * (1 + typeEdge(top, rival) * .45);
   }
 
-  // 場地規則：撞進左上 / 左下 / 右上 / 右下洞 2 分、左中洞 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
+  // 場地規則：撞進左下 / 右下洞 2 分、底部長洞 3 分、爆裂 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
   // 一場是一連串事件：被撞進洞的還有機會彈回場內，所以分數會累加；有齒輪固軸的可以咬上藍色齒緣（X 軌道）衝刺再撞
-  const FINISH_POINTS = { 'pocket-top': 2, 'pocket-mid': 3, 'pocket-bottom': 2, 'pocket-right-top': 2, 'pocket-right-bottom': 2, burst: 3, spin: 1 };
-  const FINISH_LABELS = { 'pocket-top': '左上洞', 'pocket-mid': '左中洞', 'pocket-bottom': '左下洞', 'pocket-right-top': '右上洞', 'pocket-right-bottom': '右下洞', burst: '爆裂', spin: '撞停' };
+  const FINISH_POINTS = { 'pocket-left': 2, 'pocket-mid': 3, 'pocket-right': 2, burst: 3, spin: 1 };
+  const FINISH_LABELS = { 'pocket-left': '左下洞', 'pocket-mid': '底部長洞', 'pocket-right': '右下洞', burst: '爆裂', spin: '撞停' };
   // 爆裂：攻擊 + X 衝刺壓過對方的防爆，陀螺當場散開，+3 且比賽結束
   function burstChance(attacker, defender) {
     const pressure = (attacker.stats.attack * .48 + attacker.stats.xdash * .22) * (1 + typeEdge(attacker, defender) * .7);
     const resistance = defender.stats.burst * .72 + defender.stats.defense * .18 + defender.stats.stamina * .1;
     return clamp(.015, .3, .06 + (pressure - resistance) / 230);
   }
-  const SIDE_POCKETS = ['pocket-top', 'pocket-bottom', 'pocket-right-top', 'pocket-right-bottom'];
+  const SIDE_POCKETS = ['pocket-left', 'pocket-right'];
   function pickPocket(attacker) {
     const midWeight = clamp(.12, .4, .16 + attacker.stats.xdash / 300);
     const roll = Math.random();
     if (roll < midWeight) return 'pocket-mid';
-    return SIDE_POCKETS[Math.min(3, Math.floor((roll - midWeight) / (1 - midWeight) * 4))];
+    return SIDE_POCKETS[Math.min(1, Math.floor((roll - midWeight) / (1 - midWeight) * 2))];
   }
   // 齒輪固軸（Gear / Accel / Rush，或 X 衝刺 ≥ 40）才咬得上藍色齒緣
   function hasRailGear(top) {
@@ -408,7 +408,7 @@
     const sides = { player, enemy };
     const chance = { player: ringOutChance(enemy, player), enemy: ringOutChance(player, enemy) };   // key = 被撞進洞的一方
     const spin = { player: spinScore(player, enemy), enemy: spinScore(enemy, player) };
-    // 復活：進洞後在洞裡滾一滾還有機會跑出來，看防禦與持久；左中洞比較深，較難出來
+    // 復活：進洞後在洞裡滾一滾還有機會跑出來，看防禦與持久；底部長洞比較深，較難出來
     const escapeChance = (top, pocket) => clamp(.25, .7, .3 + (top.stats.defense * .3 + top.stats.stamina * .3) / 260) * (pocket === 'pocket-mid' ? .6 : 1);
     const events = [];
     const points = { player: 0, enemy: 0 };
@@ -542,16 +542,15 @@
       <radialGradient id="floorGlow"><stop offset="0" stop-color="#28f4e8" stop-opacity=".16"/><stop offset=".5" stop-color="#123343" stop-opacity=".12"/><stop offset="1" stop-color="#020407" stop-opacity="0"/></radialGradient>`;
 
     // BEYBLADE X 式場地：外圍透明盒（撞到會彈回）→ 藍齒緣的碗 → 左上 / 左中 / 左下三個洞 → 中央橙環
-    const ARENA = { cx: 480, cy: 362, rx: 312, ry: 236 };
+    const ARENA = { cx: 480, cy: 340, rx: 312, ry: 232 };
     state.arena = ARENA;
     draw.ellipse(860, 430).center(ARENA.cx, ARENA.cy).fill('url(#floorGlow)');
-    draw.rect(800, 560).radius(48).center(ARENA.cx, ARENA.cy).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
-    draw.rect(772, 532).radius(42).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
-    // 碗不是正圓：左側整段鼓出一個 X 區——兩個圓弧凹槽（左上 / 左下 +2）夾一個往內凸的舌頭，舌根是方形深洞（左中 +3）；右側只有兩個小缺口（右上 / 右下 +2）
+    draw.rect(800, 590).radius(48).center(ARENA.cx, ARENA.cy + 10).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
+    draw.rect(772, 562).radius(42).center(ARENA.cx, ARENA.cy + 10).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
+    // 碗不是正圓：上緣兩個圓凸起夾一個平滑點（造型，不得分）；能得分的三個凹槽都在底部——左下 +2、右下 +2、底部中間一個比較長的 +3
     const rad = deg => deg * Math.PI / 180;
     const hump = (theta, center, width) => { const d = Math.abs(((theta - center + 540) % 360) - 180); return d >= width ? 0 : (Math.cos(d / width * Math.PI) + 1) / 2; };
-    // 一個寬的鼓出（X 區）減掉中間一道窄的內凹（舌頭）= 兩個圓弧凹槽；右側兩個淺缺口
-    const radial = theta => 1 + .17 * hump(theta, 180, 48) - .13 * hump(theta, 180, 11) + .045 * hump(theta, -35, 9) + .045 * hump(theta, 35, 9);
+    const radial = theta => 1 + .13 * hump(theta, -118, 24) + .13 * hump(theta, -62, 24) + .085 * hump(theta, 122, 11) + .085 * hump(theta, 58, 11) + .07 * hump(theta, 90, 20);
     const bowlPoint = (theta, factor = 1) => [ARENA.cx + ARENA.rx * radial(theta) * factor * Math.cos(rad(theta)), ARENA.cy + ARENA.ry * radial(theta) * factor * Math.sin(rad(theta))];
     const bowlPath = factor => { const pts = []; for (let theta = 0; theta < 360; theta += 2) pts.push(bowlPoint(theta, factor)); return 'M' + pts.map(pt => pt.map(v => v.toFixed(1)).join(' ')).join(' L') + ' Z'; };
     draw.path(bowlPath(1.06)).fill('#10365c').stroke({ color: '#2f8fd6', width: 6, linejoin: 'round' });
@@ -561,21 +560,19 @@
     draw.ellipse(214, 162).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ff5a2a', width: 4, opacity: .85 });
     draw.ellipse(190, 143).center(ARENA.cx, ARENA.cy).fill('#0a1015');
     const pockets = [
-      { id: 'pocket-top', angle: 160, factor: 1.09, points: 2, label: '+2', w: 84, h: 56 },
-      { id: 'pocket-mid', angle: 180, factor: 1.0, points: 3, label: '+3', w: 40, h: 34, slot: true },
-      { id: 'pocket-bottom', angle: 200, factor: 1.09, points: 2, label: '+2', w: 84, h: 56 },
-      { id: 'pocket-right-top', angle: -35, factor: 1.02, points: 2, label: '+2', w: 50, h: 34 },
-      { id: 'pocket-right-bottom', angle: 35, factor: 1.02, points: 2, label: '+2', w: 50, h: 34 }
+      { id: 'pocket-left', angle: 122, factor: 1.04, points: 2, label: '+2', w: 60, h: 40 },
+      { id: 'pocket-mid', angle: 90, factor: 1.03, points: 3, label: '+3', w: 150, h: 34, slot: true },
+      { id: 'pocket-right', angle: 58, factor: 1.04, points: 2, label: '+2', w: 60, h: 40 }
     ];
     const pocketLayer = draw.group().attr({ id: 'arena-pockets' });
     pockets.forEach(pocket => {
       [pocket.x, pocket.y] = bowlPoint(pocket.angle, pocket.factor);
       const g = pocketLayer.group().attr({ id: `arena-${pocket.id}` });
       pocket.ring = pocket.slot
-        ? g.rect(pocket.w, pocket.h).radius(6).center(pocket.x, pocket.y).fill('#03080d').stroke({ color: '#2f8fd6', width: 4 })
+        ? g.rect(pocket.w, pocket.h).radius(pocket.h / 2).center(pocket.x, pocket.y).fill('#03080d').stroke({ color: '#2f8fd6', width: 4 })
         : g.ellipse(pocket.w, pocket.h).center(pocket.x, pocket.y).fill('#05101a').stroke({ color: '#1a6fb5', width: 2, opacity: .7 });
       if (!pocket.slot) g.ellipse(pocket.w * .62, pocket.h * .6).center(pocket.x, pocket.y).fill('#03080d');
-      const [lx, ly] = bowlPoint(pocket.angle, pocket.slot ? 1.16 : pocket.factor + .14);
+      const [lx, ly] = bowlPoint(pocket.angle, pocket.factor + .12);
       g.text(pocket.label).font({ family: 'IBM Plex Mono', size: 20, weight: 700 }).fill(pocket.points === 3 ? '#ff8a3d' : '#7fd3ff').center(lx, ly).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 4 });
     });
     state.pockets = pockets;
