@@ -547,28 +547,36 @@
     draw.ellipse(860, 430).center(ARENA.cx, ARENA.cy).fill('url(#floorGlow)');
     draw.rect(800, 560).radius(48).center(ARENA.cx, ARENA.cy).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
     draw.rect(772, 532).radius(42).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
-    draw.ellipse(ARENA.rx * 2 + 36, ARENA.ry * 2 + 28).center(ARENA.cx, ARENA.cy).fill('#10365c').stroke({ color: '#2f8fd6', width: 6 });
-    state.railRing = draw.ellipse(ARENA.rx * 2 + 10, ARENA.ry * 2 + 8).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
-    draw.ellipse(ARENA.rx * 2, ARENA.ry * 2).center(ARENA.cx, ARENA.cy).fill('#0b1218').stroke({ color: '#1a6fb5', width: 2, opacity: .8 });
+    // 碗不是正圓：左側整段鼓出一個 X 區——兩個圓弧凹槽（左上 / 左下 +2）夾一個往內凸的舌頭，舌根是方形深洞（左中 +3）；右側只有兩個小缺口（右上 / 右下 +2）
+    const rad = deg => deg * Math.PI / 180;
+    const hump = (theta, center, width) => { const d = Math.abs(((theta - center + 540) % 360) - 180); return d >= width ? 0 : (Math.cos(d / width * Math.PI) + 1) / 2; };
+    // 一個寬的鼓出（X 區）減掉中間一道窄的內凹（舌頭）= 兩個圓弧凹槽；右側兩個淺缺口
+    const radial = theta => 1 + .17 * hump(theta, 180, 48) - .13 * hump(theta, 180, 11) + .045 * hump(theta, -35, 9) + .045 * hump(theta, 35, 9);
+    const bowlPoint = (theta, factor = 1) => [ARENA.cx + ARENA.rx * radial(theta) * factor * Math.cos(rad(theta)), ARENA.cy + ARENA.ry * radial(theta) * factor * Math.sin(rad(theta))];
+    const bowlPath = factor => { const pts = []; for (let theta = 0; theta < 360; theta += 2) pts.push(bowlPoint(theta, factor)); return 'M' + pts.map(pt => pt.map(v => v.toFixed(1)).join(' ')).join(' L') + ' Z'; };
+    draw.path(bowlPath(1.06)).fill('#10365c').stroke({ color: '#2f8fd6', width: 6, linejoin: 'round' });
+    state.railRing = draw.path(bowlPath(1.018)).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
+    draw.path(bowlPath(1)).fill('#0b1218').stroke({ color: '#1a6fb5', width: 2, opacity: .8 });
     draw.ellipse(300, 226).center(ARENA.cx, ARENA.cy).fill('#101820').stroke({ color: '#1f2a33', width: 2 });
     draw.ellipse(214, 162).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ff5a2a', width: 4, opacity: .85 });
     draw.ellipse(190, 143).center(ARENA.cx, ARENA.cy).fill('#0a1015');
     const pockets = [
-      { id: 'pocket-top', angle: -145, points: 2, label: '+2' },
-      { id: 'pocket-mid', angle: 180, points: 3, label: '+3' },
-      { id: 'pocket-bottom', angle: 145, points: 2, label: '+2' },
-      { id: 'pocket-right-top', angle: -35, points: 2, label: '+2' },
-      { id: 'pocket-right-bottom', angle: 35, points: 2, label: '+2' }
+      { id: 'pocket-top', angle: 160, factor: 1.09, points: 2, label: '+2', w: 84, h: 56 },
+      { id: 'pocket-mid', angle: 180, factor: 1.0, points: 3, label: '+3', w: 40, h: 34, slot: true },
+      { id: 'pocket-bottom', angle: 200, factor: 1.09, points: 2, label: '+2', w: 84, h: 56 },
+      { id: 'pocket-right-top', angle: -35, factor: 1.02, points: 2, label: '+2', w: 50, h: 34 },
+      { id: 'pocket-right-bottom', angle: 35, factor: 1.02, points: 2, label: '+2', w: 50, h: 34 }
     ];
     const pocketLayer = draw.group().attr({ id: 'arena-pockets' });
     pockets.forEach(pocket => {
-      const a = pocket.angle * Math.PI / 180, nx = Math.cos(a), ny = Math.sin(a);
-      const ex = ARENA.cx + nx * ARENA.rx, ey = ARENA.cy + ny * ARENA.ry;
-      pocket.x = ex + nx * 24; pocket.y = ey + ny * 24;
+      [pocket.x, pocket.y] = bowlPoint(pocket.angle, pocket.factor);
       const g = pocketLayer.group().attr({ id: `arena-${pocket.id}` });
-      pocket.ring = g.ellipse(118, 78).center(ex + nx * 28, ey + ny * 28).fill('#0a1b2c').stroke({ color: '#2f8fd6', width: 5 });
-      g.ellipse(80, 48).center(ex + nx * 30, ey + ny * 30).fill('#03080d').stroke({ color: '#000000', width: 2, opacity: .6 });
-      g.text(pocket.label).font({ family: 'IBM Plex Mono', size: 20, weight: 700 }).fill(pocket.points === 3 ? '#ff8a3d' : '#7fd3ff').center(ex + nx * 88, ey + ny * 88).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 4 });
+      pocket.ring = pocket.slot
+        ? g.rect(pocket.w, pocket.h).radius(6).center(pocket.x, pocket.y).fill('#03080d').stroke({ color: '#2f8fd6', width: 4 })
+        : g.ellipse(pocket.w, pocket.h).center(pocket.x, pocket.y).fill('#05101a').stroke({ color: '#1a6fb5', width: 2, opacity: .7 });
+      if (!pocket.slot) g.ellipse(pocket.w * .62, pocket.h * .6).center(pocket.x, pocket.y).fill('#03080d');
+      const [lx, ly] = bowlPoint(pocket.angle, pocket.slot ? 1.16 : pocket.factor + .14);
+      g.text(pocket.label).font({ family: 'IBM Plex Mono', size: 20, weight: 700 }).fill(pocket.points === 3 ? '#ff8a3d' : '#7fd3ff').center(lx, ly).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 4 });
     });
     state.pockets = pockets;
     const core = draw.group().attr({ id: 'arena-core' });
