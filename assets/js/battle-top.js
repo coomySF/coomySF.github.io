@@ -108,7 +108,7 @@
     return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><path d="M60 10 77 27 101 32 106 56 96 79 75 91 52 108 32 92 12 78 17 53 22 29 47 25Z" fill="#071017" stroke="${color}" stroke-width="4"/><circle cx="60" cy="58" r="30" fill="none" stroke="${color}" stroke-width="2.5" stroke-dasharray="7 5"/><text x="60" y="65" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="${short.length > 3 ? 17 : 24}" font-weight="700" fill="#fff">${escapeHTML(short)}</text><text x="60" y="101" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)}</text></svg>`;
   }
 
-  const state = { arena: null, pockets: [], railRing: null, radial: null, bowlPoint: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
+  const state = { arena: null, pockets: [], railRing: null, railGlow: null, railTrail: null, radial: null, bowlPoint: null, bowlPath: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -560,7 +560,7 @@
     };
     const bowlPoint = (theta, factor = 1) => [ARENA.cx + ARENA.rx * radial(theta) * factor * Math.cos(rad(theta)), ARENA.cy + ARENA.ry * radial(theta) * factor * Math.sin(rad(theta))];
     const bowlPath = (factor, from = 0, to = 360) => { const pts = []; for (let theta = from; theta <= to; theta += 1) pts.push(bowlPoint(theta, factor)); return 'M' + pts.map(pt => pt.map(v => v.toFixed(1)).join(' ')).join(' L') + (to - from >= 360 ? ' Z' : ''); };
-    state.radial = radial; state.bowlPoint = bowlPoint;
+    state.radial = radial; state.bowlPoint = bowlPoint; state.bowlPath = bowlPath;
     // 軌道外的平台（藍線與透明盒之間）
     draw.path(bowlPath(1.2)).fill('#0c1826').stroke({ color: '#173a5a', width: 2, opacity: .8, linejoin: 'round' });
     const pockets = [
@@ -582,6 +582,9 @@
     // 碗底 + 藍色齒緣（軌道）
     draw.path(bowlPath(1)).fill('#0b1218').stroke({ color: '#2f8fd6', width: 7, linejoin: 'round' });
     state.railRing = draw.path(bowlPath(.982)).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
+    // X 軌道衝刺時的閃白：整條線的白光層 + 跟著陀螺跑的亮白光帶
+    state.railGlow = draw.path(bowlPath(1)).fill('none').stroke({ color: '#ffffff', width: 10, opacity: 0, linejoin: 'round' }).attr({ filter: 'url(#speedGlow)' });
+    state.railTrail = draw.path('M0 0').fill('none').stroke({ color: '#ffffff', width: 7, opacity: 0, linecap: 'round' });
     // 凹槽前的低矮閘口：藍線在這裡比較低，陀螺容易出軌
     pockets.forEach(pocket => {
       const span = pocket.slot ? 17 : 9;
@@ -1112,8 +1115,9 @@
       if (current.kind === 'rail') {
         const rider = actorOf(current.rider);
         current.a0 = Math.atan2((rider.y - A.cy) / A.ry, (rider.x - A.cx) / A.rx);
-        state.railRing?.stroke({ color: '#ffffff', opacity: .95, width: 3.5 });
-        playCue('summon'); els.status.textContent = 'XTREME DASH';
+        state.railRing?.stroke({ color: '#ffffff', opacity: 1, width: 3.5 });
+        state.railGlow?.opacity(1).animate(260).ease('>').opacity(.35);
+        playCue('summon'); playCue('zap'); els.status.textContent = 'XTREME DASH';
       }
       if (current.kind === 'pocket') { current.sunk = false; els.status.textContent = 'POCKET!'; }
       if (current.kind === 'escape') {
@@ -1128,7 +1132,7 @@
     const endPhase = () => {
       if (!current) return;
       if (current.kind === 'chaos' && current.clash) clashBurst(current.index > 0);
-      if (current.kind === 'rail') { clashBurst(true); state.railRing?.stroke({ color: '#7fd3ff', opacity: .55, width: 2 }); }
+      if (current.kind === 'rail') { clashBurst(true); state.railRing?.stroke({ color: '#7fd3ff', opacity: .55, width: 2 }); state.railGlow?.opacity(0); state.railTrail?.plot('M0 0').stroke({ opacity: 0 }); }
     };
     const frame = now => {
       const dt = Math.min(32, now - previousFrame); previousFrame = now;
@@ -1188,7 +1192,15 @@
         rider.x = lerp(onRailX, other.x + (current.rider === 'player' ? -34 : 34), launch);
         rider.y = lerp(onRailY, other.y, launch);
         rider.wobble = 2 + ride * 3; other.wobble = launch * 8;
-        if (k > .18 && k < .84 && now - lastRailSpark > 70) { lastRailSpark = now; burst(railX, railY, '#bfe9ff', .35); speedTrail(rider); }
+        const riding = k > .18 && k < .84;
+        const pulse = .3 + .35 * (0.5 + 0.5 * Math.sin(now / 45));
+        state.railGlow?.opacity(riding ? pulse : Math.max(0, .35 - launch));
+        state.railRing?.stroke({ opacity: riding ? .6 + .4 * Math.sin(now / 30) ** 2 : 1 });
+        if (state.railTrail && state.bowlPath) {
+          const deg = angle * 180 / Math.PI;
+          state.railTrail.plot(riding ? state.bowlPath(.89, deg - 42, deg) : 'M0 0').stroke({ opacity: riding ? .9 : 0 });
+        }
+        if (riding && now - lastRailSpark > 70) { lastRailSpark = now; burst(railX, railY, '#ffffff', .35); speedTrail(rider); }
       } else if (current.kind === 'pocket') {
         const event = current.event, victim = actorOf(event.victim), attacker = actorOf(event.attacker), pocket = pocketOf(event);
         const vx0 = event.victim === 'player' ? from.px : from.ex, vy0 = event.victim === 'player' ? from.py : from.ey;
