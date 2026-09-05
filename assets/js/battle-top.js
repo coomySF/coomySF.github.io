@@ -385,8 +385,14 @@
 
   // 場地規則：撞進左上 / 左下 / 右上 / 右下洞 2 分、左中洞 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
   // 一場是一連串事件：被撞進洞的還有機會彈回場內，所以分數會累加；有齒輪固軸的可以咬上藍色齒緣（X 軌道）衝刺再撞
-  const FINISH_POINTS = { 'pocket-top': 2, 'pocket-mid': 3, 'pocket-bottom': 2, 'pocket-right-top': 2, 'pocket-right-bottom': 2, spin: 1 };
-  const FINISH_LABELS = { 'pocket-top': '左上洞', 'pocket-mid': '左中洞', 'pocket-bottom': '左下洞', 'pocket-right-top': '右上洞', 'pocket-right-bottom': '右下洞', spin: '撞停' };
+  const FINISH_POINTS = { 'pocket-top': 2, 'pocket-mid': 3, 'pocket-bottom': 2, 'pocket-right-top': 2, 'pocket-right-bottom': 2, burst: 3, spin: 1 };
+  const FINISH_LABELS = { 'pocket-top': '左上洞', 'pocket-mid': '左中洞', 'pocket-bottom': '左下洞', 'pocket-right-top': '右上洞', 'pocket-right-bottom': '右下洞', burst: '爆裂', spin: '撞停' };
+  // 爆裂：攻擊 + X 衝刺壓過對方的防爆，陀螺當場散開，+3 且比賽結束
+  function burstChance(attacker, defender) {
+    const pressure = (attacker.stats.attack * .48 + attacker.stats.xdash * .22) * (1 + typeEdge(attacker, defender) * .7);
+    const resistance = defender.stats.burst * .72 + defender.stats.defense * .18 + defender.stats.stamina * .1;
+    return clamp(.015, .3, .06 + (pressure - resistance) / 230);
+  }
   const SIDE_POCKETS = ['pocket-top', 'pocket-bottom', 'pocket-right-top', 'pocket-right-bottom'];
   function pickPocket(attacker) {
     const midWeight = clamp(.12, .4, .16 + attacker.stats.xdash / 300);
@@ -416,11 +422,19 @@
       if (onRail) events.push({ type: 'rail', rider: railSide, impact });
       const boost = victim => (onRail && victim !== railSide ? 1.6 : 1);
       const rolls = [
-        { victim: 'enemy', margin: chance.enemy * boost('enemy') - Math.random() },
-        { victim: 'player', margin: chance.player * boost('player') - Math.random() }
+        { victim: 'enemy', kind: 'pocket', margin: chance.enemy * boost('enemy') - Math.random() },
+        { victim: 'player', kind: 'pocket', margin: chance.player * boost('player') - Math.random() },
+        { victim: 'enemy', kind: 'burst', margin: burstChance(player, enemy) * boost('enemy') - Math.random() },
+        { victim: 'player', kind: 'burst', margin: burstChance(enemy, player) * boost('player') - Math.random() }
       ].filter(item => item.margin > 0).sort((a, b) => b.margin - a.margin);
       if (!rolls.length) { events.push({ type: 'clash', impact }); continue; }
       const victim = rolls[0].victim, attacker = victim === 'player' ? 'enemy' : 'player';
+      if (rolls[0].kind === 'burst') {
+        points[attacker] += FINISH_POINTS.burst;
+        events.push({ type: 'burst', victim, attacker, points: FINISH_POINTS.burst, label: FINISH_LABELS.burst, impact });
+        ended = true;
+        continue;
+      }
       const pocket = pickPocket(sides[attacker]);
       const escaped = Math.random() < escapeChance(sides[victim]);
       points[attacker] += FINISH_POINTS[pocket];
@@ -436,7 +450,7 @@
     const last = events[events.length - 1];
     const playerWon = points.player !== points.enemy ? points.player > points.enemy : last.attacker === 'player';
     const playerWinChance = clamp(.12, .88, (1 + chance.enemy + spin.player / 120) / (2 + chance.player + chance.enemy + (spin.player + spin.enemy) / 120));
-    return { playerWon, events, playerPoints: points.player, enemyPoints: points.enemy, outcome: last.type === 'spin' ? 'spin' : last.pocket, finishPoints: last.points, finishLabel: last.label, railSide, playerWinChance, typeEdge: typeEdge(player, enemy) };
+    return { playerWon, events, playerPoints: points.player, enemyPoints: points.enemy, outcome: last.type === 'pocket' ? last.pocket : last.type, finishPoints: last.points, finishLabel: last.label, railSide, playerWinChance, typeEdge: typeEdge(player, enemy) };
   }
 
   function polarPoints(count, outer, inner) {
@@ -856,6 +870,7 @@
     const story = (model?.events || []).filter(event => event.type !== 'clash').map(event => {
       if (event.type === 'rail') return `${who(event.rider)}咬上藍色齒緣沿軌道衝刺`;
       if (event.type === 'pocket') return `${who(event.attacker)}把${who(event.victim)}撞進${event.label} +${event.points}${event.escaped ? `，${who(event.victim)}又彈了出來` : ''}`;
+      if (event.type === 'burst') return `${who(event.attacker)}把${who(event.victim)}撞到爆裂 +${event.points}`;
       return `${who(event.victim)}被撞停，${who(event.attacker)} +${event.points}`;
     }).join('；');
     const outcomeCopy = `${story}。你 ${model?.playerPoints ?? 0}：對手 ${model?.enemyPoints ?? 0}。`;
@@ -989,6 +1004,11 @@
         if (event.escaped) phases.push({ kind: 'escape', dur: 700, event });
         return;
       }
+      if (event.type === 'burst') {
+        if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true });
+        phases.push({ kind: 'burst', dur: 1200, event });
+        return;
+      }
       if (event.type === 'spin') { phases.push({ kind: 'chaos', dur: 1000, index: chaosCount++ }); phases.push({ kind: 'spin', dur: 1100, event }); }
     });
     phases.push({ kind: 'settle', dur: 350 });
@@ -1030,6 +1050,7 @@
         victim.pocketed = false; els.status.textContent = 'BOUNCED BACK';
       }
       if (current.kind === 'spin') els.status.textContent = 'SPIN FINISH';
+      if (current.kind === 'burst') { current.blown = false; els.status.textContent = 'BURST FINISH'; }
     };
     const endPhase = () => {
       if (!current) return;
@@ -1113,6 +1134,28 @@
         victim.scale = lerp(.6, 1, w);
         victim.stage.opacity(lerp(.65, 1, w));
         victim.wobble = 12 * (1 - k);
+      } else if (current.kind === 'burst') {
+        // 爆裂：受害者狂抖、瞬間脹大，然後零件散開（火花四射）、縮小變暗留在原地
+        const event = current.event, victim = actorOf(event.victim), attacker = actorOf(event.attacker);
+        const vx0 = event.victim === 'player' ? from.px : from.ex, vy0 = event.victim === 'player' ? from.py : from.ey;
+        const ax0 = event.attacker === 'player' ? from.px : from.ex, ay0 = event.attacker === 'player' ? from.py : from.ey;
+        const shakePhase = clamp(0, 1, k / .35), blow = clamp(0, 1, (k - .35) / .65);
+        victim.x = vx0 + Math.sin(k * Math.PI * 22) * 9 * (1 - blow);
+        victim.y = vy0 + Math.cos(k * Math.PI * 18) * 6 * (1 - blow);
+        victim.wobble = 14 + shakePhase * 16;
+        victim.scale = blow ? lerp(1.18, .55, easeOut(blow)) : lerp(1, 1.18, shakePhase);
+        victim.stage.opacity(1 - .7 * blow * blow);
+        attacker.x = lerp(ax0, A.cx + (event.attacker === 'player' ? -40 : 40), easeOut(k));
+        attacker.y = lerp(ay0, A.cy, easeOut(k)) + Math.sin(k * Math.PI) * 12;
+        attacker.wobble = 0;
+        if (blow > 0 && !current.blown) {
+          current.blown = true;
+          burst(victim.x, victim.y, '#ffffff', 1.7); burst(victim.x, victim.y, attacker.top.color, 1.3);
+          lightningStrike(victim.x, victim.y - 10, '#ff8a3d');
+          const floatText = state.scene.impact.text('+3 BURST').font({ family: 'IBM Plex Mono', size: 30, weight: 700 }).fill('#ff8a3d').center(victim.x, victim.y - 40).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
+          floatText.animate(1100).ease('>').dy(-70).opacity(0).after(() => floatText.remove());
+          playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 90); shake(420);
+        }
       } else if (current.kind === 'spin') {
         const event = current.event, loser = actorOf(event.victim), winner = actorOf(event.attacker);
         spinFactor[event.victim] = Math.max(.025, 1 - k);
