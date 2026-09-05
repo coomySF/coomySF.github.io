@@ -408,7 +408,8 @@
     const sides = { player, enemy };
     const chance = { player: ringOutChance(enemy, player), enemy: ringOutChance(player, enemy) };   // key = 被撞進洞的一方
     const spin = { player: spinScore(player, enemy), enemy: spinScore(enemy, player) };
-    const escapeChance = top => clamp(.08, .45, .1 + (top.stats.defense * .32 + top.stats.stamina * .28) / 260);
+    // 復活：進洞後在洞裡滾一滾還有機會跑出來，看防禦與持久；左中洞比較深，較難出來
+    const escapeChance = (top, pocket) => clamp(.25, .7, .3 + (top.stats.defense * .3 + top.stats.stamina * .3) / 260) * (pocket === 'pocket-mid' ? .6 : 1);
     const railSide = ['player', 'enemy']
       .filter(key => hasRailGear(sides[key]))
       .sort((a, b) => sides[b].stats.xdash - sides[a].stats.xdash)
@@ -436,7 +437,7 @@
         continue;
       }
       const pocket = pickPocket(sides[attacker]);
-      const escaped = Math.random() < escapeChance(sides[victim]);
+      const escaped = Math.random() < escapeChance(sides[victim], pocket);
       points[attacker] += FINISH_POINTS[pocket];
       events.push({ type: 'pocket', victim, attacker, pocket, points: FINISH_POINTS[pocket], label: FINISH_LABELS[pocket], escaped, impact });
       if (!escaped) ended = true;
@@ -1034,7 +1035,7 @@
       if (event.type === 'clash') { if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true }); return; }
       if (event.type === 'pocket') {
         if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true });
-        phases.push({ kind: 'pocket', dur: 1150, event });
+        phases.push({ kind: 'pocket', dur: event.escaped ? 1700 : 1500, event });
         if (event.escaped) phases.push({ kind: 'escape', dur: 700, event });
         return;
       }
@@ -1141,17 +1142,24 @@
         const event = current.event, victim = actorOf(event.victim), attacker = actorOf(event.attacker), pocket = pocketOf(event);
         const vx0 = event.victim === 'player' ? from.px : from.ex, vy0 = event.victim === 'player' ? from.py : from.ey;
         const ax0 = event.attacker === 'player' ? from.px : from.ex, ay0 = event.attacker === 'player' ? from.py : from.ey;
-        const travel = clamp(0, 1, k / .6), sink = clamp(0, 1, (k - .6) / .4);
+        // 0–.4 被撞飛進洞；.4 之後在洞裡滾（繞圈 + 火花）；跑不出來的最後 25% 沉下去
+        const travel = clamp(0, 1, k / .4);
+        const roll = clamp(0, 1, (k - .4) / (event.escaped ? .6 : .35));
+        const sink = event.escaped ? 0 : clamp(0, 1, (k - .75) / .25);
         const glide = 1 - Math.pow(1 - travel, 2);
-        victim.x = lerp(vx0, pocket.x, glide);
-        victim.y = lerp(vy0, pocket.y, glide) - 80 * Math.sin(travel * Math.PI);
-        victim.wobble = 10 + travel * 16;
-        victim.scale = 1 - (event.escaped ? .4 : .58) * sink;
-        victim.stage.opacity(1 - (event.escaped ? .35 : .8) * sink * sink);
+        const inHole = travel >= 1;
+        const rollAngle = roll * Math.PI * (event.escaped ? 5 : 3);
+        const rollRadius = 20 * (1 - sink);
+        victim.x = lerp(vx0, pocket.x, glide) + (inHole ? Math.cos(rollAngle) * rollRadius : 0);
+        victim.y = lerp(vy0, pocket.y, glide) - 80 * Math.sin(travel * Math.PI) + (inHole ? Math.sin(rollAngle) * rollRadius * .6 : 0);
+        victim.wobble = inHole ? 18 : 10 + travel * 16;
+        victim.scale = inHole ? lerp(.8, .42, sink) : 1;
+        victim.stage.opacity(inHole ? lerp(.9, .2, sink * sink) : 1);
         attacker.x = lerp(ax0, A.cx + (event.attacker === 'player' ? -30 : 30), easeOut(k));
         attacker.y = lerp(ay0, A.cy, easeOut(k)) + Math.sin(k * Math.PI) * 14;
         attacker.wobble = 0;
-        if (sink > 0 && !current.sunk) {
+        if (inHole && roll < 1 && now - lastRailSpark > 110) { lastRailSpark = now; burst(victim.x + 10, victim.y + 6, '#7fd3ff', .3); }
+        if (inHole && !current.sunk) {
           current.sunk = true; victim.pocketed = true;
           const color = pocket.points === 3 ? '#ff8a3d' : '#7fd3ff';
           burst(pocket.x, pocket.y, color, 1.2);
@@ -1164,12 +1172,13 @@
       } else if (current.kind === 'escape') {
         // 從洞裡彈回場內：沿弧線跳回碗裡，恢復大小
         const event = current.event, victim = actorOf(event.victim), pocket = pocketOf(event);
+        const vx0 = event.victim === 'player' ? from.px : from.ex, vy0 = event.victim === 'player' ? from.py : from.ey;
         const targetX = A.cx + (pocket.x - A.cx) * .4, targetY = A.cy + (pocket.y - A.cy) * .4;
         const w = easeOut(k);
-        victim.x = lerp(pocket.x, targetX, w);
-        victim.y = lerp(pocket.y, targetY, w) - 70 * Math.sin(k * Math.PI);
-        victim.scale = lerp(.6, 1, w);
-        victim.stage.opacity(lerp(.65, 1, w));
+        victim.x = lerp(vx0, targetX, w);
+        victim.y = lerp(vy0, targetY, w) - 70 * Math.sin(k * Math.PI);
+        victim.scale = lerp(.8, 1, w);
+        victim.stage.opacity(lerp(.9, 1, w));
         victim.wobble = 12 * (1 - k);
       } else if (current.kind === 'burst') {
         // 爆裂：受害者狂抖、瞬間脹大，然後零件散開（火花四射）、縮小變暗留在原地
