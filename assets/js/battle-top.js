@@ -75,11 +75,11 @@
   ];
 
 
-  // ---------- 零件系統（v3）：獎勵是真的零件——上蓋 / 軸心 / 固軸，每層只能裝一個 ----------
+  // ---------- 零件系統（v3）：獎勵是真的零件——上蓋 / 軸心 / 固鎖，每層只能裝一個 ----------
   const partSlots = [
     { key: 'blade', label: '上蓋', english: 'Blade', rate: .30 },
     { key: 'ratchet', label: '軸心', english: 'Ratchet', rate: .35 },
-    { key: 'bit', label: '固軸', english: 'Bit', rate: .35 }
+    { key: 'bit', label: '固鎖', english: 'Bit', rate: .35 }
   ];
   // 舊的數值道具 → 零件（v2 → v3 遷移，保留 instance id，收藏陀螺的參照不會斷）
   const legacyEquipmentToPart = { 'power-gear': ['blade', 'dran'], 'steel-armor': ['blade', 'knight'], 'eternal-core': ['ratchet', '5-70'], 'burst-lock': ['ratchet', '4-60'], 'dash-engine': ['bit', 'flat'] };
@@ -339,8 +339,8 @@
     };
   }
   function findProduct(name) { return productCatalog.find(product => product.name === name) || null; }
-  // 配件固定三段：上蓋（Blade）· 軸心（Ratchet）· 固軸（Bit），來源是 product.parts 的「A · B · C」字串
-  const PART_LABELS = [['上蓋', 'Blade'], ['軸心', 'Ratchet'], ['固軸', 'Bit']];
+  // 配件固定三段：上蓋（Blade）· 軸心（Ratchet）· 固鎖（Bit），來源是 product.parts 的「A · B · C」字串
+  const PART_LABELS = [['上蓋', 'Blade'], ['軸心', 'Ratchet'], ['固鎖', 'Bit']];
   function partsOf(top) {
     const pieces = String(top?.parts || '').split('·').map(part => part.trim());
     return PART_LABELS.map(([label, english], index) => ({ label, english, name: pieces[index] || '—' }));
@@ -384,7 +384,7 @@
   }
 
   // 場地規則：撞進左下 / 右下洞 2 分、底部長洞 3 分、爆裂 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
-  // 一場是一連串事件：被撞進洞的還有機會彈回場內，所以分數會累加；有齒輪固軸的可以咬上藍色齒緣（X 軌道）衝刺再撞
+  // 一場是一連串事件：被撞進洞的還有機會彈回場內，所以分數會累加；有齒輪固鎖的可以咬上藍色齒緣（X 軌道）衝刺再撞
   const FINISH_POINTS = { 'pocket-left': 2, 'pocket-mid': 3, 'pocket-right': 2, burst: 3, spin: 1 };
   const FINISH_LABELS = { 'pocket-left': '左下洞', 'pocket-mid': '底部長洞', 'pocket-right': '右下洞', burst: '爆裂', spin: '撞停' };
   // 爆裂：攻擊 + X 衝刺壓過對方的防爆，陀螺當場散開，+3 且比賽結束
@@ -400,7 +400,7 @@
     if (roll < midWeight) return 'pocket-mid';
     return SIDE_POCKETS[Math.min(1, Math.floor((roll - midWeight) / (1 - midWeight) * 2))];
   }
-  // 齒輪固軸（Gear / Accel / Rush，或 X 衝刺 ≥ 40）才咬得上藍色齒緣
+  // 齒輪固鎖（Gear / Accel / Rush，或 X 衝刺 ≥ 40）才咬得上藍色齒緣
   function hasRailGear(top) {
     return /gear|accel|rush/i.test(partsOf(top)[2].name) || top.stats.xdash >= 40;
   }
@@ -416,7 +416,7 @@
     let round = 0;
     while (points.player < TARGET && points.enemy < TARGET && round < 8) {
       round += 1;
-      // 齒輪固軸幾乎每回合都會上軌道；沒人擲中的話，第一回合由 X 衝刺較高的一方上，保證每場至少看得到一次
+      // 齒輪固鎖幾乎每回合都會上軌道；沒人擲中的話，第一回合由 X 衝刺較高的一方上，保證每場至少看得到一次
       let railSide = ['player', 'enemy']
         .filter(key => hasRailGear(sides[key]))
         .sort((a, b) => sides[b].stats.xdash - sides[a].stats.xdash)
@@ -1659,7 +1659,7 @@
       type: deriveCustomType(stats), stats, isCustom: true,
       equipment: Object.values(draft.parts).filter(Boolean), partSlots: { ...draft.parts },
       effect: effect ? { ...effect } : null,
-      skill: equipped.length ? `已換裝：${equipped.map(item => `${slotMeta(item.instance.slot).label} ${item.part.name}`).join('、')}。` : '打贏對手會掉零件，再回來換上蓋、軸心或固軸。'
+      skill: equipped.length ? `已換裝：${equipped.map(item => `${slotMeta(item.instance.slot).label} ${item.part.name}`).join('、')}。` : '打贏對手會掉零件，再回來換上蓋、軸心或固鎖。'
     };
   }
 
@@ -1727,7 +1727,7 @@
     const seed = readCollection().find(top => top.id === productId) || state.player || productCatalog[0];
     state.customizingId = seed.isCustom ? seed.id : '';
     state.customDraft = makeCustomDraft(seed);
-    els.customStatus.textContent = seed.isCustom ? '點左邊的上蓋 / 軸心 / 固軸，右邊挑零件換上去。改名字會自動儲存。' : '打贏拿到的零件在這裡換上去：上蓋、軸心、固軸各一個。';
+    els.customStatus.textContent = seed.isCustom ? '點左邊的上蓋 / 軸心 / 固鎖，右邊挑零件換上去。改名字會自動儲存。' : '打贏拿到的零件在這裡換上去：上蓋、軸心、固鎖各一個。';
     showCollectionPanel('custom');
     renderCustomPreview();
   }
