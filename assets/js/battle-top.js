@@ -790,7 +790,9 @@
     spinHalo(x, y, winnerColor);
   }
 
+  // 特效只是輔助：畫面上只演特效本身，不再用大字橫幅宣告觸發了什麼
   function showBattleEffect(effect, impact = false) {
+    return;
     if (!effect || !els.battleEffectBanner) return;
     els.battleEffectIcon.textContent = effect.icon;
     els.battleEffectName.textContent = `${effect.name}強化`;
@@ -1176,7 +1178,6 @@
         state.railRing?.stroke({ color: '#ffffff', opacity: 1, width: 3.5 });
         state.railGlow?.opacity(1).animate(260).ease('>').opacity(.35);
         playCue('summon'); playCue('zap'); els.status.textContent = 'XTREME DASH';
-        noteToast(`${current.rider === 'player' ? '你' : '對手'}咬上藍線 XTREME DASH！`);
       }
       if (current.kind === 'pocket') { current.sunk = false; els.status.textContent = 'POCKET!'; }
       if (current.kind === 'escape') {
