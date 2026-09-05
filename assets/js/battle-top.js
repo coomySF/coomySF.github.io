@@ -416,10 +416,12 @@
     let round = 0;
     while (points.player < TARGET && points.enemy < TARGET && round < 8) {
       round += 1;
-      const railSide = ['player', 'enemy']
+      // 齒輪固軸幾乎每回合都會上軌道；沒人擲中的話，第一回合由 X 衝刺較高的一方上，保證每場至少看得到一次
+      let railSide = ['player', 'enemy']
         .filter(key => hasRailGear(sides[key]))
         .sort((a, b) => sides[b].stats.xdash - sides[a].stats.xdash)
         .find(key => Math.random() < clamp(.7, .97, .5 + sides[key].stats.xdash / 60)) || '';
+      if (!railSide && round === 1) railSide = sides.player.stats.xdash >= sides.enemy.stats.xdash ? 'player' : 'enemy';
       const railImpact = railSide ? randomInt(1, 2) : 0;
       let ended = false;
     for (let impact = 1; impact <= 4 && !ended; impact += 1) {
@@ -1152,6 +1154,7 @@
         state.railRing?.stroke({ color: '#ffffff', opacity: 1, width: 3.5 });
         state.railGlow?.opacity(1).animate(260).ease('>').opacity(.35);
         playCue('summon'); playCue('zap'); els.status.textContent = 'XTREME DASH';
+        noteToast(`${current.rider === 'player' ? '你' : '對手'}咬上藍線 XTREME DASH！`);
       }
       if (current.kind === 'pocket') { current.sunk = false; els.status.textContent = 'POCKET!'; }
       if (current.kind === 'escape') {
