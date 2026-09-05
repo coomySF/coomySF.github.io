@@ -102,10 +102,32 @@
   function deltaText(part) {
     return Object.entries(partDelta(part)).filter(([, value]) => value).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([key, value]) => `${STAT_LABELS[key]} +${Math.round(value)}`).join(' · ');
   }
-  function partGlyph(slot, part, color = '#28f4e8') {
-    const short = slot === 'ratchet' ? part.name : (part.code || part.name.split(' ').map(word => word[0]).join('').toUpperCase());
+  // 三種零件各自長得不一樣：上蓋 = 官方商品圖（上蓋就是陀螺的外觀）；軸心 = 有棘齒環的塑膠齒輪，齒數 = 名字前面的數字、高度 = 後面的數字；固鎖 = 側視的底座 + 軸尖形狀
+  function partGlyph(slot, part, color = '#28f4e8', image = '') {
     const label = slotMeta(slot).label;
-    return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><path d="M60 10 77 27 101 32 106 56 96 79 75 91 52 108 32 92 12 78 17 53 22 29 47 25Z" fill="#071017" stroke="${color}" stroke-width="4"/><circle cx="60" cy="58" r="30" fill="none" stroke="${color}" stroke-width="2.5" stroke-dasharray="7 5"/><text x="60" y="65" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="${short.length > 3 ? 17 : 24}" font-weight="700" fill="#fff">${escapeHTML(short)}</text><text x="60" y="101" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)}</text></svg>`;
+    if (slot === 'blade') {
+      const product = productCatalog.find(item => item.id === part.productId);
+      const src = image || product?.image || '';
+      if (src) return `<span class="part-blade-img"><img src="${src}" alt="${escapeHTML(label)} ${escapeHTML(part.name)}"><b style="color:${color}">${escapeHTML(label)}</b></span>`;
+      return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><circle cx="60" cy="60" r="44" fill="#1a232c" stroke="${color}" stroke-width="4"/><path d="M60 16 84 40 60 64 36 40Z M60 56 84 80 60 104 36 80Z" fill="${color}" opacity=".35"/><circle cx="60" cy="60" r="12" fill="#071017" stroke="${color}" stroke-width="3"/><text x="60" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)}</text></svg>`;
+    }
+    if (slot === 'ratchet') {
+      const [prongs, height] = String(part.name).split('-').map(Number);
+      const n = Math.max(2, prongs || 3);
+      const teeth = [...Array(20)].map((_, i) => { const a = i / 20 * Math.PI * 2, a2 = (i + .5) / 20 * Math.PI * 2; return `${(60 + Math.cos(a) * 48).toFixed(1)} ${(58 + Math.sin(a) * 48).toFixed(1)} ${(60 + Math.cos(a2) * 42).toFixed(1)} ${(58 + Math.sin(a2) * 42).toFixed(1)}`; }).join(' ');
+      const prongPaths = [...Array(n)].map((_, i) => { const a = i / n * Math.PI * 2 - Math.PI / 2, w = .42; const p1 = [60 + Math.cos(a - w) * 18, 58 + Math.sin(a - w) * 18], p2 = [60 + Math.cos(a - w * .55) * 40, 58 + Math.sin(a - w * .55) * 40], p3 = [60 + Math.cos(a + w * .55) * 40, 58 + Math.sin(a + w * .55) * 40], p4 = [60 + Math.cos(a + w) * 18, 58 + Math.sin(a + w) * 18]; return `M${p1.map(v => v.toFixed(1)).join(' ')} L${p2.map(v => v.toFixed(1)).join(' ')} L${p3.map(v => v.toFixed(1)).join(' ')} L${p4.map(v => v.toFixed(1)).join(' ')}Z`; }).join(' ');
+      return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><polygon points="${teeth}" fill="#1c2a36" stroke="${color}" stroke-width="2"/><circle cx="60" cy="58" r="40" fill="#0f1a24" stroke="${color}" stroke-width="2" opacity=".9"/><path d="${prongPaths}" fill="${color}" opacity=".9" stroke="#071017" stroke-width="1.5"/><circle cx="60" cy="58" r="17" fill="#071017" stroke="${color}" stroke-width="3"/><circle cx="60" cy="58" r="6" fill="${color}"/><text x="60" y="114" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="700" fill="${color}">${escapeHTML(label)} ${n}齒 · 高${height || '?'}</text></svg>`;
+    }
+    const name = String(part.name);
+    const gear = /gear|accel/i.test(name);
+    const family = /ball/i.test(name) ? 'ball' : /needle/i.test(name) ? 'needle' : /taper/i.test(name) ? 'taper' : /hexa/i.test(name) ? 'hexa' : 'flat';
+    const tip = family === 'ball' ? `<circle cx="60" cy="86" r="13" fill="${color}"/>`
+      : family === 'needle' ? `<path d="M52 74 60 100 68 74Z" fill="${color}"/>`
+      : family === 'taper' ? `<path d="M46 74 74 74 66 96 54 96Z" fill="${color}"/>`
+      : family === 'hexa' ? `<path d="M48 74 72 74 78 84 72 94 48 94 42 84Z" fill="${color}"/>`
+      : `<rect x="38" y="76" width="44" height="14" rx="4" fill="${color}"/>`;
+    const gearRing = gear ? `<path d="${[...Array(14)].map((_, i) => { const x = 24 + i * 5.5; return `M${x} 50 l2.5 -6 l2.5 6`; }).join(' ')}" fill="none" stroke="${color}" stroke-width="2.5"/>` : '';
+    return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><rect x="26" y="26" width="68" height="14" rx="4" fill="#1c2a36" stroke="${color}" stroke-width="2"/><path d="M30 40 90 40 82 76 38 76Z" fill="#0f1a24" stroke="${color}" stroke-width="2.5"/>${gearRing}${tip}<text x="60" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)} ${escapeHTML(part.code || '')}</text></svg>`;
   }
 
   const state = { arena: null, pockets: [], railRing: null, railGlow: null, railTrail: null, radial: null, bowlPoint: null, bowlPath: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
@@ -1681,7 +1703,7 @@
     els.customSlotTabs.querySelectorAll('[data-slot]').forEach(button => button.addEventListener('click', () => { draft.activeSlot = button.dataset.slot; renderCustomPreview(); }));
     const stockName = pieces[partSlots.findIndex(slot => slot.key === active)] || '原廠';
     const list = owned(active);
-    const stockCard = `<button type="button" class="custom-part-card is-stock${draft.parts[active] ? '' : ' is-equipped'}" data-part="" aria-pressed="${!draft.parts[active]}"><span>${partGlyph(active, { name: stockName, code: stock[active]?.code }, '#7f959b')}</span><strong>${escapeHTML(stockName)}</strong><b>原廠${meta.label}</b><small>隨時可以換回來</small></button>`;
+    const stockCard = `<button type="button" class="custom-part-card is-stock${draft.parts[active] ? '' : ' is-equipped'}" data-part="" aria-pressed="${!draft.parts[active]}"><span>${partGlyph(active, { name: stockName, code: stock[active]?.code }, '#7f959b', active === 'blade' ? base.image : '')}</span><strong>${escapeHTML(stockName)}</strong><b>原廠${meta.label}</b><small>隨時可以換回來</small></button>`;
     els.customEquipmentOptions.innerHTML = stockCard + list.map(instance => {
       const part = findPart(active, instance.partId);
       const equipped = draft.parts[active] === instance.id;
@@ -1708,7 +1730,9 @@
     const names = partsOf(top);
     els.customPartStack.innerHTML = partSlots.map((slot, index) => {
       const id = state.customDraft.parts[slot.key];
-      return `<button type="button" class="custom-part-slab${slot.key === state.customDraft.activeSlot ? ' is-active' : ''}" data-stack-slot="${slot.key}" aria-pressed="${slot.key === state.customDraft.activeSlot}"><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="${id ? '' : 'is-stock'}">${id ? '換裝' : '原廠'}</b></button>`;
+      const instance = id ? readEquipmentInventory().find(item => item.id === id) : null;
+      const glyphPart = instance ? findPart(slot.key, instance.partId) : { name: names[index].name, code: stockPartsOf(base)[slot.key]?.code };
+      return `<button type="button" class="custom-part-slab${slot.key === state.customDraft.activeSlot ? ' is-active' : ''}" data-stack-slot="${slot.key}" aria-pressed="${slot.key === state.customDraft.activeSlot}"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, id ? '#caff3d' : '#7f959b', slot.key === 'blade' && !instance ? base.image : '')}</span><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="${id ? '' : 'is-stock'}">${id ? '換裝' : '原廠'}</b></button>`;
     }).join('');
     els.customPartStack.querySelectorAll('[data-stack-slot]').forEach(button => button.addEventListener('click', () => { state.customDraft.activeSlot = button.dataset.stackSlot; renderCustomPreview(); }));
     els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => {

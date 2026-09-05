@@ -475,7 +475,12 @@
 .custom-slot-tabs button[aria-selected="true"] { color:var(--arena-paper); border-color:var(--arena-cyan); background:#0f1a22; box-shadow:inset 0 -3px 0 var(--arena-cyan); }
 .custom-slot-tabs button.has-part { color:var(--arena-lime); }
 .custom-part-stack { position:relative; z-index:4; display:grid; gap:6px; }
-.custom-part-slab { display:grid; grid-template-columns:52px 1fr auto; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--arena-line); background:#0f1a22; color:var(--arena-paper); text-align:left; cursor:pointer; }
+.custom-part-slab { display:grid; grid-template-columns:44px 52px 1fr auto; align-items:center; gap:10px; padding:9px 11px; border:1px solid var(--arena-line); background:#0f1a22; color:var(--arena-paper); text-align:left; cursor:pointer; }
+.slab-glyph { width:44px; height:44px; display:block; }
+.slab-glyph svg, .slab-glyph .part-blade-img { width:44px; height:44px; }
+.part-blade-img { position:relative; display:block; width:100%; height:100%; }
+.part-blade-img img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 4px 6px #000); }
+.part-blade-img b { position:absolute; left:50%; bottom:-2px; transform:translateX(-50%); padding:1px 5px; background:#03080d; font:800 9px/1.2 system-ui,sans-serif; white-space:nowrap; }
 .custom-part-slab.is-active { border-color:var(--arena-cyan); box-shadow:inset 3px 0 0 var(--arena-cyan); }
 .custom-part-slab small { display:grid; gap:2px; color:var(--arena-cyan); font:700 11px/1 system-ui,sans-serif; white-space:nowrap; }
 .custom-part-slab small i { color:#7f959b; font:600 7px/1 "IBM Plex Mono",monospace; font-style:normal; letter-spacing:.1em; text-transform:uppercase; }
