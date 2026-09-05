@@ -108,7 +108,7 @@
     return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><path d="M60 10 77 27 101 32 106 56 96 79 75 91 52 108 32 92 12 78 17 53 22 29 47 25Z" fill="#071017" stroke="${color}" stroke-width="4"/><circle cx="60" cy="58" r="30" fill="none" stroke="${color}" stroke-width="2.5" stroke-dasharray="7 5"/><text x="60" y="65" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="${short.length > 3 ? 17 : 24}" font-weight="700" fill="#fff">${escapeHTML(short)}</text><text x="60" y="101" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)}</text></svg>`;
   }
 
-  const state = { arena: null, pockets: [], railRing: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
+  const state = { arena: null, pockets: [], railRing: null, radial: null, bowlPoint: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -542,27 +542,31 @@
       <radialGradient id="floorGlow"><stop offset="0" stop-color="#28f4e8" stop-opacity=".16"/><stop offset=".5" stop-color="#123343" stop-opacity=".12"/><stop offset="1" stop-color="#020407" stop-opacity="0"/></radialGradient>`;
 
     // BEYBLADE X 式場地：外圍透明盒（撞到會彈回）→ 藍齒緣的碗 → 左上 / 左中 / 左下三個洞 → 中央橙環
-    const ARENA = { cx: 480, cy: 340, rx: 312, ry: 232 };
+    const ARENA = { cx: 480, cy: 332, rx: 300, ry: 224 };
     state.arena = ARENA;
     draw.ellipse(860, 430).center(ARENA.cx, ARENA.cy).fill('url(#floorGlow)');
-    draw.rect(800, 590).radius(48).center(ARENA.cx, ARENA.cy + 10).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
-    draw.rect(772, 562).radius(42).center(ARENA.cx, ARENA.cy + 10).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
-    // 碗不是正圓：上緣兩個圓凸起夾一個平滑點（造型，不得分）；能得分的三個凹槽都在底部——左下 +2、右下 +2、底部中間一個比較長的 +3
+    draw.rect(820, 612).radius(48).center(ARENA.cx, ARENA.cy + 14).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
+    draw.rect(792, 584).radius(42).center(ARENA.cx, ARENA.cy + 14).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
+    // 藍線是一條完整的環：主圓 + 上緣兩個比主圓小的圓弧凸起（交接處有轉角）+ 中間直壁的方形缺口（底部一個小舌片）
+    // 凹槽不在軌道上，而是在藍線外面的平台：左下 +2、右下 +2、底部中間長的 +3；陀螺被撞到出軌才掉進去
     const rad = deg => deg * Math.PI / 180;
-    const hump = (theta, center, width) => { const d = Math.abs(((theta - center + 540) % 360) - 180); return d >= width ? 0 : (Math.cos(d / width * Math.PI) + 1) / 2; };
-    const radial = theta => 1 + .13 * hump(theta, -118, 24) + .13 * hump(theta, -62, 24) + .085 * hump(theta, 122, 11) + .085 * hump(theta, 58, 11) + .07 * hump(theta, 90, 20);
+    const norm = deg => ((deg + 540) % 360) - 180;
+    const bumpArc = (theta, phi, d, rb) => { const delta = rad(norm(theta - phi)); const s = d * Math.sin(delta); return Math.abs(s) >= rb ? 0 : d * Math.cos(delta) + Math.sqrt(rb * rb - s * s); };
+    const radial = theta => {
+      const t = norm(theta), top = Math.abs(norm(t + 90));
+      if (top < 2.6) return .95;
+      if (top < 8.5) return .985;
+      return Math.max(1, bumpArc(t, -121, .70, .44), bumpArc(t, -59, .70, .44));
+    };
     const bowlPoint = (theta, factor = 1) => [ARENA.cx + ARENA.rx * radial(theta) * factor * Math.cos(rad(theta)), ARENA.cy + ARENA.ry * radial(theta) * factor * Math.sin(rad(theta))];
-    const bowlPath = factor => { const pts = []; for (let theta = 0; theta < 360; theta += 2) pts.push(bowlPoint(theta, factor)); return 'M' + pts.map(pt => pt.map(v => v.toFixed(1)).join(' ')).join(' L') + ' Z'; };
-    draw.path(bowlPath(1.06)).fill('#10365c').stroke({ color: '#2f8fd6', width: 6, linejoin: 'round' });
-    state.railRing = draw.path(bowlPath(1.018)).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
-    draw.path(bowlPath(1)).fill('#0b1218').stroke({ color: '#1a6fb5', width: 2, opacity: .8 });
-    draw.ellipse(300, 226).center(ARENA.cx, ARENA.cy).fill('#101820').stroke({ color: '#1f2a33', width: 2 });
-    draw.ellipse(214, 162).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ff5a2a', width: 4, opacity: .85 });
-    draw.ellipse(190, 143).center(ARENA.cx, ARENA.cy).fill('#0a1015');
+    const bowlPath = (factor, from = 0, to = 360) => { const pts = []; for (let theta = from; theta <= to; theta += 1) pts.push(bowlPoint(theta, factor)); return 'M' + pts.map(pt => pt.map(v => v.toFixed(1)).join(' ')).join(' L') + (to - from >= 360 ? ' Z' : ''); };
+    state.radial = radial; state.bowlPoint = bowlPoint;
+    // 軌道外的平台（藍線與透明盒之間）
+    draw.path(bowlPath(1.2)).fill('#0c1826').stroke({ color: '#173a5a', width: 2, opacity: .8, linejoin: 'round' });
     const pockets = [
-      { id: 'pocket-left', angle: 122, factor: 1.04, points: 2, label: '+2', w: 60, h: 40 },
-      { id: 'pocket-mid', angle: 90, factor: 1.03, points: 3, label: '+3', w: 150, h: 34, slot: true },
-      { id: 'pocket-right', angle: 58, factor: 1.04, points: 2, label: '+2', w: 60, h: 40 }
+      { id: 'pocket-left', angle: 122, factor: 1.115, points: 2, label: '+2', w: 74, h: 46 },
+      { id: 'pocket-mid', angle: 90, factor: 1.105, points: 3, label: '+3', w: 176, h: 36, slot: true },
+      { id: 'pocket-right', angle: 58, factor: 1.115, points: 2, label: '+2', w: 74, h: 46 }
     ];
     const pocketLayer = draw.group().attr({ id: 'arena-pockets' });
     pockets.forEach(pocket => {
@@ -570,12 +574,23 @@
       const g = pocketLayer.group().attr({ id: `arena-${pocket.id}` });
       pocket.ring = pocket.slot
         ? g.rect(pocket.w, pocket.h).radius(pocket.h / 2).center(pocket.x, pocket.y).fill('#03080d').stroke({ color: '#2f8fd6', width: 4 })
-        : g.ellipse(pocket.w, pocket.h).center(pocket.x, pocket.y).fill('#05101a').stroke({ color: '#1a6fb5', width: 2, opacity: .7 });
-      if (!pocket.slot) g.ellipse(pocket.w * .62, pocket.h * .6).center(pocket.x, pocket.y).fill('#03080d');
-      const [lx, ly] = bowlPoint(pocket.angle, pocket.factor + .12);
+        : g.ellipse(pocket.w, pocket.h).center(pocket.x, pocket.y).fill('#03080d').stroke({ color: '#2f8fd6', width: 4 });
+      const [lx, ly] = bowlPoint(pocket.angle, pocket.factor + .1);
       g.text(pocket.label).font({ family: 'IBM Plex Mono', size: 20, weight: 700 }).fill(pocket.points === 3 ? '#ff8a3d' : '#7fd3ff').center(lx, ly).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 4 });
     });
     state.pockets = pockets;
+    // 碗底 + 藍色齒緣（軌道）
+    draw.path(bowlPath(1)).fill('#0b1218').stroke({ color: '#2f8fd6', width: 7, linejoin: 'round' });
+    state.railRing = draw.path(bowlPath(.982)).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
+    // 凹槽前的低矮閘口：藍線在這裡比較低，陀螺容易出軌
+    pockets.forEach(pocket => {
+      const span = pocket.slot ? 17 : 9;
+      draw.path(bowlPath(1, pocket.angle - span, pocket.angle + span)).fill('none').stroke({ color: '#0b1218', width: 7 });
+      draw.path(bowlPath(1, pocket.angle - span, pocket.angle + span)).fill('none').stroke({ color: '#7fd3ff', width: 2.5, dasharray: '6 6', opacity: .9 });
+    });
+    draw.ellipse(300, 226).center(ARENA.cx, ARENA.cy).fill('#101820').stroke({ color: '#1f2a33', width: 2 });
+    draw.ellipse(214, 162).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ff5a2a', width: 4, opacity: .85 });
+    draw.ellipse(190, 143).center(ARENA.cx, ARENA.cy).fill('#0a1015');
     const core = draw.group().attr({ id: 'arena-core' });
     core.circle(68).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#7fd3ff', width: 1, opacity: .18, dasharray: '3 7' });
     core.line(ARENA.cx - 42, ARENA.cy, ARENA.cx + 42, ARENA.cy).stroke({ color: '#7fd3ff', width: 1, opacity: .14 });
@@ -1065,10 +1080,10 @@
     let phaseIndex = -1, phaseStart = start, current = null, from = null, previousFrame = start, trailFrame = 0, lastWallHit = 0, lastRailSpark = 0;
     // 外圍透明盒：跑出碗緣就彈回來，並在盒子上閃一下火花
     const bounceOffBox = (actor, now) => {
-      const limitX = A.rx - 58, limitY = A.ry - 46;
-      const dx = (actor.x - A.cx) / limitX, dy = (actor.y - A.cy) / limitY, d = Math.hypot(dx, dy);
-      if (d <= 1) return;
-      actor.x = A.cx + dx / d * limitX; actor.y = A.cy + dy / d * limitY;
+      const dx = (actor.x - A.cx) / A.rx, dy = (actor.y - A.cy) / A.ry, d = Math.hypot(dx, dy);
+      const limit = (state.radial ? state.radial(Math.atan2(dy, dx) * 180 / Math.PI) : 1) - .19;
+      if (d <= limit) return;
+      actor.x = A.cx + dx / d * limit * A.rx; actor.y = A.cy + dy / d * limit * A.ry;
       actor.wobble = Math.max(actor.wobble, 4);
       if (now - lastWallHit > 240) { lastWallHit = now; burst(actor.x + dx / d * 52, actor.y + dy / d * 40, '#bfe9ff', .55); playCue('impact'); }
     };
@@ -1163,10 +1178,9 @@
       } else if (current.kind === 'rail') {
         // 咬上齒緣：先滑到藍線，沿線衝 1.3 圈，最後從線上射向對手
         const rider = actorOf(current.rider), other = otherOf(current.rider);
-        const rx = A.rx - 34, ry = A.ry - 26;
         const snap = easeInOut(k / .18), ride = easeInOut((k - .18) / .64), launch = easeOut(clamp(0, 1, (k - .84) / .16));
         const angle = current.a0 + ride * Math.PI * 2 * 1.3;
-        const railX = A.cx + Math.cos(angle) * rx, railY = A.cy + Math.sin(angle) * ry;
+        const [railX, railY] = state.bowlPoint ? state.bowlPoint(angle * 180 / Math.PI, .89) : [A.cx + Math.cos(angle) * (A.rx - 34), A.cy + Math.sin(angle) * (A.ry - 26)];
         const fromX = current.rider === 'player' ? from.px : from.ex, fromY = current.rider === 'player' ? from.py : from.ey;
         const onRailX = lerp(fromX, railX, snap), onRailY = lerp(fromY, railY, snap);
         other.x = A.cx + (current.rider === 'player' ? 40 : -40) + Math.sin(tt * 5) * 22;
