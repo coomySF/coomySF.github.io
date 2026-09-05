@@ -18,7 +18,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260906-1">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260906-2">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -161,7 +161,7 @@ keywords:
         <button class="action-button action-button--collection" id="collection-picker-button" type="button">強化陀螺</button>
       </div>
       <div class="launch-countdown" id="launch-countdown" aria-live="assertive" aria-atomic="true"></div>
-      <p class="arena-rules">左中洞 <b>+3</b> · 其他四個洞 <b>+2</b> · 撞停 <b>+1</b> · 透明盒會彈回</p>
+      <p class="arena-rules">左中洞 <b>+3</b> · 其他四個洞 <b>+2</b> · 撞停 <b>+1</b> · 進洞可能彈回來，分數累加 · 齒輪固軸會咬上藍線衝刺</p>
       <div class="arena-hud" aria-hidden="true">
         <span>STADIUM // X</span>
         <span id="arena-status">AWAITING CORE</span>
@@ -220,7 +220,7 @@ keywords:
       <div class="product-parts" id="top-parts"><span class="part-chip"><small>上蓋<i>Blade</i></small><strong>—</strong></span><span class="part-chip"><small>軸心<i>Ratchet</i></small><strong>—</strong></span><span class="part-chip"><small>固軸<i>Bit</i></small><strong>—</strong></span></div>
       <div class="stat-grid" id="stat-grid"></div>
       <p class="core-skill"><span>PRODUCT CHARACTER</span><strong id="top-skill">——</strong></p>
-      <p class="product-source">攻擊、防禦、持久、防爆、X 衝刺與類型相剋會共同決定對手被撞進哪個洞、或先被撞停：左上、左下、右上、右下洞 2 分、左中洞 3 分、撞停 1 分；外圍透明盒會把陀螺彈回場內。每次碰撞另含少量隨機。數值依官方商品特性轉換為遊戲模擬值，並非官方戰力或實測勝率。非官方同人模擬器；商品名稱與圖片 © TOMY。</p>
+      <p class="product-source">攻擊、防禦、持久、防爆、X 衝刺與類型相剋會共同決定對手被撞進哪個洞、或先被撞停：左上、左下、右上、右下洞 2 分、左中洞 3 分、撞停 1 分；被撞進洞的還有機會彈回場內，一場的分數會累加；有齒輪固軸的陀螺會咬上藍色齒緣沿軌道衝刺。每次碰撞另含少量隨機。數值依官方商品特性轉換為遊戲模擬值，並非官方戰力或實測勝率。非官方同人模擬器；商品名稱與圖片 © TOMY。</p>
     </article>
 
     <div class="battle-collection-picker" id="battle-collection-picker" role="dialog" aria-modal="true" aria-labelledby="collection-picker-title" hidden>
@@ -342,7 +342,7 @@ keywords:
       <article><span>03</span><h3>收藏再出戰</h3><p>把喜歡的陀螺加入收藏，下一場直接換它出戰，也能分享自己的分數邀請朋友挑戰。</p></article>
     </div>
     <div class="battle-guide__faq">
-      <details><summary>戰鬥陀螺的勝負怎麼算？</summary><p>撞進左中洞 3 分、左上、左下、右上、右下洞 2 分、把對手撞停 1 分；撞到外圍透明盒會彈回來，不會直接出場。攻擊、防禦、持久、防爆、X 衝刺和類型特性都會影響結果，另外保留少量隨機變化。</p></details>
+      <details><summary>戰鬥陀螺的勝負怎麼算？</summary><p>撞進左中洞 3 分、左上、左下、右上、右下洞 2 分、把對手撞停 1 分；被撞進洞的還有機會彈回場內，所以一場會累加好幾次得分，總分高的贏。有齒輪固軸（Gear、Accel、Rush）的陀螺會咬上藍色齒緣沿軌道衝刺，那一撞更容易把對手撞進洞。攻擊、防禦、持久、防爆、X 衝刺和類型特性都會影響結果，另外保留少量隨機變化。</p></details>
       <details><summary>手機和平板可以玩嗎？</summary><p>可以。遊戲以手機和平板操作為主，不需要安裝 App，使用瀏覽器打開就能玩。</p></details>
       <details><summary>這是官方戰鬥陀螺遊戲嗎？</summary><p>不是。本頁是個人製作的非官方同人模擬器，遊戲能力值是依商品特性轉換的模擬數據，並非官方戰力或實測勝率。</p></details>
     </div>
@@ -362,4 +362,4 @@ keywords:
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260906-1" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260906-2" defer></script>

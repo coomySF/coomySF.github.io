@@ -108,7 +108,7 @@
     return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><path d="M60 10 77 27 101 32 106 56 96 79 75 91 52 108 32 92 12 78 17 53 22 29 47 25Z" fill="#071017" stroke="${color}" stroke-width="4"/><circle cx="60" cy="58" r="30" fill="none" stroke="${color}" stroke-width="2.5" stroke-dasharray="7 5"/><text x="60" y="65" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="${short.length > 3 ? 17 : 24}" font-weight="700" fill="#fff">${escapeHTML(short)}</text><text x="60" y="101" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)}</text></svg>`;
   }
 
-  const state = { arena: null, pockets: [], player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
+  const state = { arena: null, pockets: [], railRing: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -361,6 +361,7 @@
   }
 
   function clamp(min, max, value) { return Math.max(min, Math.min(max, value)); }
+  const lerp = (a, b, t) => a + (b - a) * t;
 
   function typeEdge(attacker, defender) {
     const winsAgainst = { '攻擊型': '持久型', '持久型': '防禦型', '防禦型': '攻擊型' };
@@ -383,6 +384,7 @@
   }
 
   // 場地規則：撞進左上 / 左下 / 右上 / 右下洞 2 分、左中洞 3 分、把對手撞停 1 分；外圍透明盒會把陀螺彈回來，沒有「撞出場」
+  // 一場是一連串事件：被撞進洞的還有機會彈回場內，所以分數會累加；有齒輪固軸的可以咬上藍色齒緣（X 軌道）衝刺再撞
   const FINISH_POINTS = { 'pocket-top': 2, 'pocket-mid': 3, 'pocket-bottom': 2, 'pocket-right-top': 2, 'pocket-right-bottom': 2, spin: 1 };
   const FINISH_LABELS = { 'pocket-top': '左上洞', 'pocket-mid': '左中洞', 'pocket-bottom': '左下洞', 'pocket-right-top': '右上洞', 'pocket-right-bottom': '右下洞', spin: '撞停' };
   const SIDE_POCKETS = ['pocket-top', 'pocket-bottom', 'pocket-right-top', 'pocket-right-bottom'];
@@ -392,27 +394,49 @@
     if (roll < midWeight) return 'pocket-mid';
     return SIDE_POCKETS[Math.min(3, Math.floor((roll - midWeight) / (1 - midWeight) * 4))];
   }
+  // 齒輪固軸（Gear / Accel / Rush，或 X 衝刺 ≥ 40）才咬得上藍色齒緣
+  function hasRailGear(top) {
+    return /gear|accel|rush/i.test(partsOf(top)[2].name) || top.stats.xdash >= 40;
+  }
   function simulateKnockoutBattle(player, enemy) {
-    const playerRingOutChance = ringOutChance(enemy, player);
-    const enemyRingOutChance = ringOutChance(player, enemy);
-    const playerSpin = spinScore(player, enemy);
-    const enemySpin = spinScore(enemy, player);
-    const playerWinChance = clamp(.12, .88, (1 + enemyRingOutChance + playerSpin / 120) / (2 + playerRingOutChance + enemyRingOutChance + (playerSpin + enemySpin) / 120));
-    let playerWon = false, outcome = 'spin', decidingImpact = 3;
-    for (let impact = 1; impact <= 3; impact += 1) {
-      const events = [
-        { margin: enemyRingOutChance - Math.random(), playerWon: true },
-        { margin: playerRingOutChance - Math.random(), playerWon: false }
-      ].filter(event => event.margin > 0).sort((a, b) => b.margin - a.margin);
-      if (events.length) {
-        playerWon = events[0].playerWon;
-        outcome = pickPocket(playerWon ? player : enemy);
-        decidingImpact = impact;
-        break;
-      }
+    const sides = { player, enemy };
+    const chance = { player: ringOutChance(enemy, player), enemy: ringOutChance(player, enemy) };   // key = 被撞進洞的一方
+    const spin = { player: spinScore(player, enemy), enemy: spinScore(enemy, player) };
+    const escapeChance = top => clamp(.08, .45, .1 + (top.stats.defense * .32 + top.stats.stamina * .28) / 260);
+    const railSide = ['player', 'enemy']
+      .filter(key => hasRailGear(sides[key]))
+      .sort((a, b) => sides[b].stats.xdash - sides[a].stats.xdash)
+      .find(key => Math.random() < clamp(.35, .9, sides[key].stats.xdash / 60)) || '';
+    const railImpact = railSide ? randomInt(1, 2) : 0;
+    const events = [];
+    const points = { player: 0, enemy: 0 };
+    let ended = false;
+    for (let impact = 1; impact <= 4 && !ended; impact += 1) {
+      const onRail = railSide && railImpact === impact;
+      if (onRail) events.push({ type: 'rail', rider: railSide, impact });
+      const boost = victim => (onRail && victim !== railSide ? 1.6 : 1);
+      const rolls = [
+        { victim: 'enemy', margin: chance.enemy * boost('enemy') - Math.random() },
+        { victim: 'player', margin: chance.player * boost('player') - Math.random() }
+      ].filter(item => item.margin > 0).sort((a, b) => b.margin - a.margin);
+      if (!rolls.length) { events.push({ type: 'clash', impact }); continue; }
+      const victim = rolls[0].victim, attacker = victim === 'player' ? 'enemy' : 'player';
+      const pocket = pickPocket(sides[attacker]);
+      const escaped = Math.random() < escapeChance(sides[victim]);
+      points[attacker] += FINISH_POINTS[pocket];
+      events.push({ type: 'pocket', victim, attacker, pocket, points: FINISH_POINTS[pocket], label: FINISH_LABELS[pocket], escaped, impact });
+      if (!escaped) ended = true;
     }
-    if (outcome === 'spin') playerWon = Math.random() < clamp(.12, .88, playerSpin / (playerSpin + enemySpin));
-    return { playerWon, outcome, finishPoints: FINISH_POINTS[outcome], finishLabel: FINISH_LABELS[outcome], playerRingOutChance, enemyRingOutChance, playerWinChance, decidingImpact, typeEdge: typeEdge(player, enemy) };
+    if (!ended) {
+      const playerSpinWins = Math.random() < clamp(.12, .88, spin.player / (spin.player + spin.enemy));
+      const victim = playerSpinWins ? 'enemy' : 'player', attacker = playerSpinWins ? 'player' : 'enemy';
+      points[attacker] += 1;
+      events.push({ type: 'spin', victim, attacker, points: 1, label: '撞停' });
+    }
+    const last = events[events.length - 1];
+    const playerWon = points.player !== points.enemy ? points.player > points.enemy : last.attacker === 'player';
+    const playerWinChance = clamp(.12, .88, (1 + chance.enemy + spin.player / 120) / (2 + chance.player + chance.enemy + (spin.player + spin.enemy) / 120));
+    return { playerWon, events, playerPoints: points.player, enemyPoints: points.enemy, outcome: last.type === 'spin' ? 'spin' : last.pocket, finishPoints: last.points, finishLabel: last.label, railSide, playerWinChance, typeEdge: typeEdge(player, enemy) };
   }
 
   function polarPoints(count, outer, inner) {
@@ -504,7 +528,7 @@
     draw.rect(800, 560).radius(48).center(ARENA.cx, ARENA.cy).fill({ color: '#9fd8ff', opacity: .045 }).stroke({ color: '#bfe9ff', width: 2.5, opacity: .32 });
     draw.rect(772, 532).radius(42).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ffffff', width: 1, opacity: .1 });
     draw.ellipse(ARENA.rx * 2 + 36, ARENA.ry * 2 + 28).center(ARENA.cx, ARENA.cy).fill('#10365c').stroke({ color: '#2f8fd6', width: 6 });
-    draw.ellipse(ARENA.rx * 2 + 10, ARENA.ry * 2 + 8).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
+    state.railRing = draw.ellipse(ARENA.rx * 2 + 10, ARENA.ry * 2 + 8).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#7fd3ff', width: 2, opacity: .55, dasharray: '3 5' });
     draw.ellipse(ARENA.rx * 2, ARENA.ry * 2).center(ARENA.cx, ARENA.cy).fill('#0b1218').stroke({ color: '#1a6fb5', width: 2, opacity: .8 });
     draw.ellipse(300, 226).center(ARENA.cx, ARENA.cy).fill('#101820').stroke({ color: '#1f2a33', width: 2 });
     draw.ellipse(214, 162).center(ARENA.cx, ARENA.cy).fill('none').stroke({ color: '#ff5a2a', width: 4, opacity: .85 });
@@ -828,10 +852,13 @@
     els.resultOutcome.textContent = playerWon ? '🏆' : '💥';
     els.resultTitle.textContent = playerWon ? '你贏了！' : '你輸了！';
     const model = state.lastBattleModel;
-    const points = model?.finishPoints || 0;
-    const outcomeCopy = model?.outcome === 'spin'
-      ? (playerWon ? `對手被撞停了！你得 ${points} 分。` : `你的陀螺被撞停了！對手得 ${points} 分。`)
-      : (playerWon ? `對手被撞進${model?.finishLabel || '洞'}！你得 ${points} 分。` : `你被撞進${model?.finishLabel || '洞'}！對手得 ${points} 分。`);
+    const who = key => (key === 'player' ? '你' : '對手');
+    const story = (model?.events || []).filter(event => event.type !== 'clash').map(event => {
+      if (event.type === 'rail') return `${who(event.rider)}咬上藍色齒緣沿軌道衝刺`;
+      if (event.type === 'pocket') return `${who(event.attacker)}把${who(event.victim)}撞進${event.label} +${event.points}${event.escaped ? `，${who(event.victim)}又彈了出來` : ''}`;
+      return `${who(event.victim)}被撞停，${who(event.attacker)} +${event.points}`;
+    }).join('；');
+    const outcomeCopy = `${story}。你 ${model?.playerPoints ?? 0}：對手 ${model?.enemyPoints ?? 0}。`;
     const typeCopy = model?.typeEdge > 0 ? '你克制對手！' : model?.typeEdge < 0 ? '對手克制你！' : '沒有類型克制。';
     const rankBonusCopy = model?.rankBonus > 0 ? ` 擊敗高分對手，排名加成 +${model.rankBonus}！` : '';
     els.resultCopy.textContent = `${outcomeCopy} ${typeCopy}${rankBonusCopy}`;
@@ -928,7 +955,7 @@
     const model = simulateKnockoutBattle(state.player, state.enemy);
     state.lastBattleModel = model;
     const playerWon = model.playerWon;
-    const modelScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 120 + model.finishPoints * 40 : 0) + Math.random() * 45));
+    const modelScore = Math.max(100, Math.round(820 + model.playerWinChance * 420 + (playerWon ? 120 + model.playerPoints * 40 : 0) + Math.random() * 45));
     const opponentScore = Number(state.opponent.score) || 1000;
     const challengeScore = playerWon && !state.opponent.bot && !isCurrentPlayer(state.opponent)
       ? opponentScore + randomInt(6, 18)
@@ -943,13 +970,32 @@
     }
 
     const start = performance.now();
-    // 進洞結局多留 1.2 秒：飛向洞口 → 掉進去 → 洞口閃光 + 飄分數，讓人看得到「被撞進洞裡」
-    const duration = model.outcome.startsWith('pocket') ? 5400 : 4200;
+    const p = state.scene.player, e = state.scene.enemy;
+    const actorOf = key => (key === 'player' ? p : e);
+    const otherOf = key => (key === 'player' ? e : p);
+    const A = state.arena;
     const easeOut = t => 1 - Math.pow(1 - t, 3);
-    let impactOne = false, impactTwo = false, previousFrame = start, trailFrame = 0, lastWallHit = 0;
+    const easeInOut = t => -Math.cos(clamp(0, 1, t) * Math.PI) / 2 + .5;
+    // 依事件排段落：chaos（混戰，結尾撞一下）→ rail（咬上齒緣衝刺，結尾撞人）→ pocket（被撞進洞）→ escape（彈出來）→ spin（撞停）
+    const phases = [];
+    let chaosCount = 0;
+    model.events.forEach(event => {
+      const last = phases[phases.length - 1];
+      if (event.type === 'rail') { phases.push({ kind: 'chaos', dur: 900, index: chaosCount++ }); phases.push({ kind: 'rail', dur: 1150, rider: event.rider }); return; }
+      if (event.type === 'clash') { if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true }); return; }
+      if (event.type === 'pocket') {
+        if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true });
+        phases.push({ kind: 'pocket', dur: 1150, event });
+        if (event.escaped) phases.push({ kind: 'escape', dur: 700, event });
+        return;
+      }
+      if (event.type === 'spin') { phases.push({ kind: 'chaos', dur: 1000, index: chaosCount++ }); phases.push({ kind: 'spin', dur: 1100, event }); }
+    });
+    phases.push({ kind: 'settle', dur: 350 });
+    const spinFactor = { player: 1, enemy: 1 };
+    let phaseIndex = -1, phaseStart = start, current = null, from = null, previousFrame = start, trailFrame = 0, lastWallHit = 0, lastRailSpark = 0;
     // 外圍透明盒：跑出碗緣就彈回來，並在盒子上閃一下火花
     const bounceOffBox = (actor, now) => {
-      const A = state.arena; if (!A) return;
       const limitX = A.rx - 58, limitY = A.ry - 46;
       const dx = (actor.x - A.cx) / limitX, dy = (actor.y - A.cy) / limitY, d = Math.hypot(dx, dy);
       if (d <= 1) return;
@@ -957,70 +1003,130 @@
       actor.wobble = Math.max(actor.wobble, 4);
       if (now - lastWallHit > 240) { lastWallHit = now; burst(actor.x + dx / d * 52, actor.y + dy / d * 40, '#bfe9ff', .55); playCue('impact'); }
     };
+    const shake = ms => { els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), ms); };
+    const clashBurst = big => {
+      const cx = (p.x + e.x) / 2, cy = (p.y + e.y) / 2;
+      if (big && state.player.effect) refinedClash(state.player.effect, cx - 24, cy, 1);
+      else if (big) elementalClash(cx, cy, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1);
+      else { burst(cx, cy, '#ffffff', 1.2); lightningStrike(cx, cy - 15); }
+      playCue('impact'); playCue(big ? 'fire' : 'zap');
+      shake(big ? 420 : 260);
+    };
+    const pocketOf = event => state.pockets.find(item => item.id === event.pocket) || state.pockets[1];
+    const startPhase = now => {
+      phaseIndex += 1; current = phases[phaseIndex]; phaseStart = now;
+      if (!current) return;
+      from = { px: p.x, py: p.y, ex: e.x, ey: e.y };
+      if (current.kind === 'rail') {
+        const rider = actorOf(current.rider);
+        current.a0 = Math.atan2((rider.y - A.cy) / A.ry, (rider.x - A.cx) / A.rx);
+        state.railRing?.stroke({ color: '#ffffff', opacity: .95, width: 3.5 });
+        playCue('summon'); els.status.textContent = 'XTREME DASH';
+      }
+      if (current.kind === 'pocket') { current.sunk = false; els.status.textContent = 'POCKET!'; }
+      if (current.kind === 'escape') {
+        const victim = actorOf(current.event.victim), pocket = pocketOf(current.event);
+        burst(pocket.x, pocket.y, '#ffffff', 1.1); playCue('impact'); shake(240);
+        victim.pocketed = false; els.status.textContent = 'BOUNCED BACK';
+      }
+      if (current.kind === 'spin') els.status.textContent = 'SPIN FINISH';
+    };
+    const endPhase = () => {
+      if (!current) return;
+      if (current.kind === 'chaos' && current.clash) clashBurst(current.index > 0);
+      if (current.kind === 'rail') { clashBurst(true); state.railRing?.stroke({ color: '#7fd3ff', opacity: .55, width: 2 }); }
+    };
     const frame = now => {
-      const t = Math.min(1, (now - start) / duration);
       const dt = Math.min(32, now - previousFrame); previousFrame = now;
-      const p = state.scene.player, e = state.scene.enemy;
-      const stopFactor = model.outcome === 'spin' && t > .78 ? Math.max(.025, 1 - (t - .78) / .22) : 1;
-      const playerSpinFactor = !playerWon ? stopFactor : 1;
-      const enemySpinFactor = playerWon ? stopFactor : 1;
-      p.rotation = (p.rotation + (28.8 + t * 5.4) * dt * playerSpinFactor) % 360;
-      e.rotation = (e.rotation - (27.4 + t * 5) * dt * enemySpinFactor) % 360;
+      if (!current || now - phaseStart >= current.dur) {
+        endPhase();
+        startPhase(now);
+        if (!current) { finishBattle(playerWon, recordScore); return; }
+      }
+      const k = clamp(0, 1, (now - phaseStart) / current.dur);
+      const tt = (now - start) / 1000;
+      p.rotation = (p.rotation + (28.8 + Math.min(tt, 4) * 1.3) * dt * spinFactor.player) % 360;
+      e.rotation = (e.rotation - (27.4 + Math.min(tt, 4) * 1.2) * dt * spinFactor.enemy) % 360;
       trailFrame += 1;
       if (trailFrame % 3 === 0) { speedTrail(p); speedTrail(e); }
-      if (t >= .32 && !impactOne) { burst(480, 365, '#ffffff', 1.2); lightningStrike(480, 350); playCue('impact'); playCue('zap'); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 260); impactOne = true; }
-      if (t >= .62 && !impactTwo) { if (state.player.effect) refinedClash(state.player.effect, 456, 360, 1); else elementalClash(480, 360, playerWon ? state.player.color : state.enemy.color, playerWon ? 1 : -1); defenseShield(state.player.stats.defense >= state.enemy.stats.defense ? p : e); playCue('impact'); playCue(state.player.effect?.id === 'lightning' ? 'zap' : 'fire'); setTimeout(() => playCue('zap'), 80); els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 420); impactTwo = true; }
-      if (t < .78) {
-        const phase = t * Math.PI * 12;
-        const collisionPulse = mark => Math.exp(-Math.pow((t - mark) / .026, 2));
-        const collision = Math.max(collisionPulse(.32), collisionPulse(.62));
+
+      if (current.kind === 'chaos') {
+        const phase = tt * Math.PI * 2.7;
+        const mix = easeInOut(k / .3);
+        const collision = current.clash ? Math.max(0, (k - .85) / .15) : 0;
         const px = 480 + 262 * Math.sin(phase) + 44 * Math.sin(phase * 2.73 + .4);
         const py = 365 + 170 * Math.sin(phase * 1.57 + .55) + 26 * Math.cos(phase * 3.1);
         const ex = 480 + 268 * Math.sin(phase * 1.13 + Math.PI) + 40 * Math.cos(phase * 2.41);
         const ey = 365 + 166 * Math.sin(phase * 1.71 + 2.2) + 28 * Math.sin(phase * 2.9);
-        p.x = px * (1 - collision) + 468 * collision;
-        p.y = py * (1 - collision) + 360 * collision;
-        e.x = ex * (1 - collision) + 492 * collision;
-        e.y = ey * (1 - collision) + 370 * collision;
-        p.wobble = collision * 5;
-        e.wobble = collision * 6;
+        p.x = lerp(from.px, px, mix) * (1 - collision) + 468 * collision;
+        p.y = lerp(from.py, py, mix) * (1 - collision) + 360 * collision;
+        e.x = lerp(from.ex, ex, mix) * (1 - collision) + 492 * collision;
+        e.y = lerp(from.ey, ey, mix) * (1 - collision) + 370 * collision;
+        p.wobble = collision * 5; e.wobble = collision * 6;
+        p.scale = 1; e.scale = 1; p.stage.opacity(1); e.stage.opacity(1);
         bounceOffBox(p, now); bounceOffBox(e, now);
-      } else {
-        const k = easeOut((t - .78) / .22);
-        const winner = playerWon ? p : e, loser = playerWon ? e : p;
-        winner.x = (playerWon ? 460 : 500) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
-        winner.y = 365 + Math.sin(k * Math.PI) * 18;
-        if (model.outcome.startsWith('pocket')) {
-          // 被撞進洞：從碰撞點飛向該洞，掉進去就消失
-          const pocket = state.pockets.find(item => item.id === model.outcome) || state.pockets[1];
-          const loserStartX = playerWon ? 527 : 433;
-          const travel = Math.min(1, k / .62);                 // 0–.62：被撞飛，沿弧線衝向洞口
-          const sink = Math.max(0, (k - .62) / .38);           // .62–1：掉進洞裡，縮小、變暗
-          const glide = 1 - Math.pow(1 - travel, 2);
-          loser.x = loserStartX + (pocket.x - loserStartX) * glide;
-          loser.y = 365 + (pocket.y - 365) * glide - 80 * Math.sin(travel * Math.PI);
-          loser.wobble = 10 + travel * 16;
-          loser.scale = 1 - .58 * sink;
-          loser.stage.opacity(1 - .8 * sink * sink);
-          if (sink > 0 && !loser.pocketed) {
-            loser.pocketed = true;
-            const color = pocket.points === 3 ? '#ff8a3d' : '#7fd3ff';
-            burst(pocket.x, pocket.y, color, 1.2);
-            pocket.ring.animate(160).stroke({ color: '#ffffff', width: 9 }).animate(620).stroke({ color: '#2f8fd6', width: 5 });
-            const floatText = state.scene.impact.text(`+${pocket.points}`).font({ family: 'IBM Plex Mono', size: 34, weight: 700 }).fill(color).center(pocket.x, pocket.y - 30).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
-            floatText.animate(1100).ease('>').dy(-70).opacity(0).after(() => floatText.remove());
-            playCue('impact'); setTimeout(() => playCue('zap'), 90);
-            els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), 300);
-          }
-        } else {
-          loser.x = playerWon ? 555 : 405;
-          loser.y = 382 + Math.sin(k * Math.PI * 8) * 8 * (1 - k);
-          loser.wobble = 5 + k * 19;
-          loser.stage.opacity(1);
+      } else if (current.kind === 'rail') {
+        // 咬上齒緣：先滑到藍線，沿線衝 1.3 圈，最後從線上射向對手
+        const rider = actorOf(current.rider), other = otherOf(current.rider);
+        const rx = A.rx - 34, ry = A.ry - 26;
+        const snap = easeInOut(k / .18), ride = easeInOut((k - .18) / .64), launch = easeOut(clamp(0, 1, (k - .84) / .16));
+        const angle = current.a0 + ride * Math.PI * 2 * 1.3;
+        const railX = A.cx + Math.cos(angle) * rx, railY = A.cy + Math.sin(angle) * ry;
+        const fromX = current.rider === 'player' ? from.px : from.ex, fromY = current.rider === 'player' ? from.py : from.ey;
+        const onRailX = lerp(fromX, railX, snap), onRailY = lerp(fromY, railY, snap);
+        other.x = A.cx + (current.rider === 'player' ? 40 : -40) + Math.sin(tt * 5) * 22;
+        other.y = A.cy + 10 + Math.cos(tt * 4) * 16;
+        rider.x = lerp(onRailX, other.x + (current.rider === 'player' ? -34 : 34), launch);
+        rider.y = lerp(onRailY, other.y, launch);
+        rider.wobble = 2 + ride * 3; other.wobble = launch * 8;
+        if (k > .18 && k < .84 && now - lastRailSpark > 70) { lastRailSpark = now; burst(railX, railY, '#bfe9ff', .35); speedTrail(rider); }
+      } else if (current.kind === 'pocket') {
+        const event = current.event, victim = actorOf(event.victim), attacker = actorOf(event.attacker), pocket = pocketOf(event);
+        const vx0 = event.victim === 'player' ? from.px : from.ex, vy0 = event.victim === 'player' ? from.py : from.ey;
+        const ax0 = event.attacker === 'player' ? from.px : from.ex, ay0 = event.attacker === 'player' ? from.py : from.ey;
+        const travel = clamp(0, 1, k / .6), sink = clamp(0, 1, (k - .6) / .4);
+        const glide = 1 - Math.pow(1 - travel, 2);
+        victim.x = lerp(vx0, pocket.x, glide);
+        victim.y = lerp(vy0, pocket.y, glide) - 80 * Math.sin(travel * Math.PI);
+        victim.wobble = 10 + travel * 16;
+        victim.scale = 1 - (event.escaped ? .4 : .58) * sink;
+        victim.stage.opacity(1 - (event.escaped ? .35 : .8) * sink * sink);
+        attacker.x = lerp(ax0, A.cx + (event.attacker === 'player' ? -30 : 30), easeOut(k));
+        attacker.y = lerp(ay0, A.cy, easeOut(k)) + Math.sin(k * Math.PI) * 14;
+        attacker.wobble = 0;
+        if (sink > 0 && !current.sunk) {
+          current.sunk = true; victim.pocketed = true;
+          const color = pocket.points === 3 ? '#ff8a3d' : '#7fd3ff';
+          burst(pocket.x, pocket.y, color, 1.2);
+          pocket.ring.animate(160).stroke({ color: '#ffffff', width: 9 }).animate(620).stroke({ color: '#2f8fd6', width: 5 });
+          const floatText = state.scene.impact.text(`+${pocket.points}`).font({ family: 'IBM Plex Mono', size: 34, weight: 700 }).fill(color).center(pocket.x, pocket.y - 30).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
+          floatText.animate(1100).ease('>').dy(-70).opacity(0).after(() => floatText.remove());
+          playCue('impact'); setTimeout(() => playCue('zap'), 90); shake(300);
         }
+      } else if (current.kind === 'escape') {
+        // 從洞裡彈回場內：沿弧線跳回碗裡，恢復大小
+        const event = current.event, victim = actorOf(event.victim), pocket = pocketOf(event);
+        const targetX = A.cx + (pocket.x - A.cx) * .4, targetY = A.cy + (pocket.y - A.cy) * .4;
+        const w = easeOut(k);
+        victim.x = lerp(pocket.x, targetX, w);
+        victim.y = lerp(pocket.y, targetY, w) - 70 * Math.sin(k * Math.PI);
+        victim.scale = lerp(.6, 1, w);
+        victim.stage.opacity(lerp(.65, 1, w));
+        victim.wobble = 12 * (1 - k);
+      } else if (current.kind === 'spin') {
+        const event = current.event, loser = actorOf(event.victim), winner = actorOf(event.attacker);
+        spinFactor[event.victim] = Math.max(.025, 1 - k);
+        const lx0 = event.victim === 'player' ? from.px : from.ex, ly0 = event.victim === 'player' ? from.py : from.ey;
+        loser.x = lerp(lx0, event.victim === 'player' ? 405 : 555, easeOut(k)) + Math.sin(k * Math.PI * 8) * 6 * (1 - k);
+        loser.y = lerp(ly0, 382, easeOut(k));
+        loser.wobble = 5 + k * 19; loser.scale = 1; loser.stage.opacity(1);
+        const wx0 = event.attacker === 'player' ? from.px : from.ex, wy0 = event.attacker === 'player' ? from.py : from.ey;
+        winner.x = lerp(wx0, event.attacker === 'player' ? 460 : 500, easeOut(k)) + Math.sin(k * Math.PI * 2) * 18 * (1 - k);
+        winner.y = lerp(wy0, 365, easeOut(k)) + Math.sin(k * Math.PI) * 18;
+        winner.wobble = 0;
       }
       renderPose();
-      if (t < 1) requestAnimationFrame(frame); else finishBattle(playerWon, recordScore);
+      requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
   }
@@ -1034,7 +1140,7 @@
     submitScore(recordScore, playerWon);
     if (state.scene) {
       const winner = playerWon ? state.scene.player : state.scene.enemy;
-      winner.x = playerWon ? 460 : 500; winner.y = 365; winner.wobble = 0; winner.scale = 1;
+      winner.wobble = 0; winner.scale = 1;
       winner.stage.opacity(1); renderPose();
     }
   }
