@@ -657,9 +657,19 @@
     core.line(ARENA.cx - 42, ARENA.cy, ARENA.cx + 42, ARENA.cy).stroke({ color: '#7fd3ff', width: 1, opacity: .14 });
     core.line(ARENA.cx, ARENA.cy - 42, ARENA.cx, ARENA.cy + 42).stroke({ color: '#7fd3ff', width: 1, opacity: .14 });
     const impact = draw.group().attr({ id: 'impact-layer' });
+    const trails = draw.group().attr({ id: 'trail-layer' });
     const players = draw.group();
     const player = createRotor(players, state.player || createTop(), 'player');
     const enemy = createRotor(players, state.enemy || createTop(true), 'enemy');
+    // 同色系拖尾：外圈柔光 + 內芯亮線，跟著陀螺最近 16 個位置畫
+    [player, enemy].forEach(actor => {
+      actor.trail = {
+        pts: [],
+        glow: trails.path('M0 0').fill('none').stroke({ color: actor.top.color, width: 30, opacity: .32, linecap: 'round', linejoin: 'round' }).attr({ filter: 'url(#speedGlow)' }),
+        mid: trails.path('M0 0').fill('none').stroke({ color: actor.top.color, width: 12, opacity: .45, linecap: 'round', linejoin: 'round' }),
+        core: trails.path('M0 0').fill('none').stroke({ color: actor.top.accent || '#ffffff', width: 4, opacity: .85, linecap: 'round', linejoin: 'round' })
+      };
+    });
     player.x = 325; player.y = 365; enemy.x = 635; enemy.y = 365;
     player.stage.translate(player.x, player.y); enemy.stage.translate(enemy.x, enemy.y);
     const labels = draw.group().attr({ id: 'fighter-labels' });
@@ -1155,6 +1165,21 @@
       }
     };
     const shake = ms => { els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), ms); };
+    const pushTrail = actor => {
+      const t = actor.trail; if (!t) return;
+      const last = t.pts[t.pts.length - 1];
+      if (last && Math.hypot(actor.x - last[0], actor.y + 10 - last[1]) < 3) return;   // 沒動就不加點，避免堆在原地
+      t.pts.push([actor.x, actor.y + 10]);
+      if (t.pts.length > 12) t.pts.shift();
+      if (t.pts.length < 3) return;
+      // 用二次曲線經過相鄰點的中點串起來，拖尾是平滑的帶子而不是折線
+      const P = t.pts;
+      let d = `M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+      for (let i = 1; i < P.length - 1; i += 1) { const mx = (P[i][0] + P[i + 1][0]) / 2, my = (P[i][1] + P[i + 1][1]) / 2; d += ` Q${P[i][0].toFixed(1)} ${P[i][1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`; }
+      d += ` L${P[P.length - 1][0].toFixed(1)} ${P[P.length - 1][1].toFixed(1)}`;
+      t.glow.plot(d); t.mid.plot(d); t.core.plot(d);
+    };
+    const clearTrail = actor => { const t = actor.trail; if (!t) return; t.pts = []; t.glow.plot('M0 0'); t.mid.plot('M0 0'); t.core.plot('M0 0'); };
     const clashBurst = big => {
       const cx = (p.x + e.x) / 2, cy = (p.y + e.y) / 2;
       if (big && state.player.effect) refinedClash(state.player.effect, cx - 24, cy, 1);
@@ -1172,7 +1197,7 @@
       if (current.kind === 'relaunch') {
         current.beat = -1;
         spinFactor.player = 1; spinFactor.enemy = 1;
-        p.pocketed = false; e.pocketed = false;
+        p.pocketed = false; e.pocketed = false; clearTrail(p); clearTrail(e);
         els.status.textContent = `ROUND ${current.round}`;
         noteToast(`第 ${current.round} 回合！你 ${liveScore.player}：對手 ${liveScore.enemy}`);
       }
@@ -1316,13 +1341,27 @@
         victim.x = vx0 + Math.sin(k * Math.PI * 22) * 9 * (1 - blow);
         victim.y = vy0 + Math.cos(k * Math.PI * 18) * 6 * (1 - blow);
         victim.wobble = 14 + shakePhase * 16;
-        victim.scale = blow ? lerp(1.18, .55, easeOut(blow)) : lerp(1, 1.18, shakePhase);
-        victim.stage.opacity(1 - .7 * blow * blow);
+        victim.scale = blow ? lerp(1.18, .6, easeOut(blow)) : lerp(1, 1.18, shakePhase);
+        victim.stage.opacity(blow > 0 ? Math.max(0, 1 - blow * 6) : 1);   // 一炸開本體就消失，剩下飛出去的碎片
         attacker.x = lerp(ax0, A.cx + (event.attacker === 'player' ? -40 : 40), easeOut(k));
         attacker.y = lerp(ay0, A.cy, easeOut(k)) + Math.sin(k * Math.PI) * 12;
         attacker.wobble = 0;
         if (blow > 0 && !current.blown) {
           current.blown = true;
+          clearTrail(victim);
+          // 拆成三塊：上蓋（大片刃）、固鎖（棘齒環）、軸心（小軸尖），各自往不同方向飛出去旋轉消失
+          const frag = state.scene.impact.group();
+          const topColor = victim.top.color, accent = victim.top.accent || '#ffffff';
+          const pieces = [
+            { shape: frag.polygon(polarPoints(6, 40, 26)).fill(topColor).stroke({ color: '#ffffff', width: 2.5, linejoin: 'round' }), dx: -1.1, dy: -.7, spin: -560 },
+            { shape: frag.circle(34).fill('none').stroke({ color: accent, width: 7, dasharray: '6 4' }), dx: 1, dy: -.9, spin: 640 },
+            { shape: frag.rect(16, 24).radius(4).fill('#dfe7ea').stroke({ color: '#2b3238', width: 2 }), dx: .25, dy: 1.05, spin: 420 }
+          ];
+          pieces.forEach((piece, index) => {
+            piece.shape.center(victim.x, victim.y);
+            piece.shape.animate(950 + index * 80).ease('>').transform({ translateX: piece.dx * 160, translateY: piece.dy * 120 - 50, rotate: piece.spin }).opacity(0).after(() => piece.shape.remove());
+          });
+          setTimeout(() => frag.remove(), 1400);
           burst(victim.x, victim.y, '#ffffff', 1.7); burst(victim.x, victim.y, attacker.top.color, 1.3);
           lightningStrike(victim.x, victim.y - 10, '#ff8a3d');
           const floatText = state.scene.impact.text('+3 BURST').font({ family: 'IBM Plex Mono', size: 30, weight: 700 }).fill('#ff8a3d').center(victim.x, victim.y - 40).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
@@ -1342,6 +1381,7 @@
         winner.y = lerp(wy0, 365, easeOut(k)) + Math.sin(k * Math.PI) * 18;
         winner.wobble = 0;
       }
+      if (current.kind !== 'settle') { pushTrail(p); pushTrail(e); }
       renderPose();
       requestAnimationFrame(frame);
     };
