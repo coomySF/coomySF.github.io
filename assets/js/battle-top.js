@@ -134,7 +134,7 @@
     return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><rect x="26" y="26" width="68" height="14" rx="4" fill="#1c2a36" stroke="${color}" stroke-width="2"/><path d="M30 40 90 40 82 76 38 76Z" fill="#0f1a24" stroke="${color}" stroke-width="2.5"/>${gearRing}${tip}<text x="60" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)} ${escapeHTML(part.code || '')}</text></svg>`;
   }
 
-  const state = { arena: null, pockets: [], railRing: null, railGlow: null, railTrail: null, radial: null, bowlPoint: null, bowlPath: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
+  const state = { arena: null, pockets: [], railRing: null, railGlow: null, railTrail: null, radial: null, bowlPoint: null, bowlPath: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardLoading: false, rivalChosen: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
   const els = {
     game: document.querySelector('#top-game'), joinButton: document.querySelector('#join-arena-button'),
     joinModal: document.querySelector('#join-modal'), joinClose: document.querySelector('#join-modal-close'),
@@ -197,9 +197,15 @@
       if (els.onlineCount) els.onlineCount.hidden = true;
       return;
     }
-    const client = window.supabase.createClient(supabaseUrl, supabasePublishableKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-    });
+    let client;
+    try {
+      client = window.supabase.createClient(supabaseUrl, supabasePublishableKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+      });
+    } catch (error) {
+      els.onlineCount.hidden = true;
+      return;
+    }
     const channel = client.channel('battle-top-online', { config: { presence: { key: presenceId() } } });
     const paint = () => {
       const online = Object.keys(channel.presenceState()).length;
@@ -1467,6 +1473,7 @@
     state.setupReturnPhase = els.game.dataset.phase === 'game' ? 'game' : 'intro';
     els.game.dataset.phase = 'setup';
     els.joinModal.hidden = false;
+    if (!state.leaderboardLoaded && !state.leaderboardLoading) loadLeaderboard();
     renderJoinRivals();
     els.joinModal.querySelector('[data-avatar].is-selected')?.focus();
   }
@@ -1485,10 +1492,40 @@
     trackEvent('battle_top_enter_arena', { opponent_type: state.opponent.bot ? 'bot' : 'player' });
   }
 
+  // 排行榜上可以挑戰的玩家（排除魔王與自己），依名次排序
+  function rivalCandidates(limit = 8) {
+    return state.ranked.filter(entry => !entry.bot && !isCurrentPlayer(entry)).slice(0, limit);
+  }
+
+  // 加入畫面的三個選項：排行榜前幾名，且一定包含目前選到的對手；排行榜還沒回來才退回魔王
+  function joinRivalChoices() {
+    const candidates = rivalCandidates();
+    if (!candidates.length) return [state.opponent];
+    const picked = candidates.slice(0, 3);
+    if (!state.opponent.bot && !picked.some(entry => entry.id === state.opponent.id)) {
+      const current = candidates.find(entry => entry.id === state.opponent.id) || state.opponent;
+      picked.splice(2, 1, current);
+    }
+    return picked;
+  }
+
+  // 排行榜抓回來後，第一次進來的人預設對手改成排行榜玩家，而不是永遠只有魔王
+  function autoPickRival() {
+    if (state.rivalChosen || state.requestedChallengeId || !state.opponent.bot || state.battling) return;
+    if (els.game.dataset.phase === 'game' && state.lastBattleModel) return;
+    const candidates = rivalCandidates(8).filter(entry => findProduct(entry.top));
+    const pool = candidates.length ? candidates : rivalCandidates(8);
+    if (!pool.length) return;
+    setOpponent(pool[Math.floor(Math.random() * pool.length)], true);
+  }
+
   function renderJoinRivals() {
     if (!els.joinRivals) return;
-    const rivals = state.ranked.length ? state.ranked.slice(0, 3) : [state.opponent];
-    els.joinRivals.innerHTML = rivals.map((entry, index) => `<button type="button" class="join-rival${state.opponent.id === entry.id ? ' is-selected' : ''}" data-join-rival="${index}"><span><i>${avatarMarkup(entry.avatar)}</i><strong>${escapeHTML(entry.name)}</strong></span><b>${Number(entry.score).toLocaleString('zh-TW')} PTS</b></button>`).join('');
+    const rivals = joinRivalChoices();
+    const note = !state.leaderboardLoaded
+      ? `<p class="join-rival-note">${state.leaderboardLoading || !scoreEndpoint ? '正在抓排行榜的玩家…' : '排行榜沒連上，先跟魔王打。'}</p>`
+      : '';
+    els.joinRivals.innerHTML = note + rivals.map((entry, index) => `<button type="button" class="join-rival${state.opponent.id === entry.id ? ' is-selected' : ''}" data-join-rival="${index}"><span><i>${avatarMarkup(entry.avatar)}</i><strong>${escapeHTML(entry.name)}</strong></span><b>${Number(entry.score).toLocaleString('zh-TW')} PTS</b></button>`).join('');
     els.joinRivals.querySelectorAll('[data-join-rival]').forEach(button => button.addEventListener('click', () => {
       setOpponent(rivals[Number(button.dataset.joinRival)]);
       renderJoinRivals();
@@ -2071,6 +2108,7 @@
     state.leaderboardFilteredTotal = Number(data?.filteredPlayers) || state.globalScores.length;
     state.leaderboardHasMore = data?.hasMore === true;
     renderLeaderboard();
+    if (!append) autoPickRival();
   }
 
   function renderLeaderboard(serverScores) {
@@ -2122,6 +2160,8 @@
       els.leaderboardRefreshStatus.textContent = '正在抓最新排名…';
     }
     const requestId = ++state.leaderboardRequestId;
+    state.leaderboardLoading = true;
+    if (!state.leaderboardLoaded) renderJoinRivals();
     const params = new URLSearchParams({ limit: '50', offset: String(append ? state.globalScores.length : 0), _: String(Date.now()) });
     if (state.leaderboardQuery.trim()) params.set('q', state.leaderboardQuery.trim());
     return fetch(`${scoreEndpoint}?${params}`, { cache: 'no-store' })
@@ -2153,14 +2193,18 @@
         return false;
       })
       .finally(() => {
-        if (!manual || requestId !== state.leaderboardRequestId) return;
+        if (requestId !== state.leaderboardRequestId) return;
+        state.leaderboardLoading = false;
+        if (!state.leaderboardLoaded) renderJoinRivals();
+        if (!manual) return;
         els.leaderboardRefresh.disabled = false;
         els.leaderboardRefresh.classList.remove('is-loading');
       });
   }
 
-  function setOpponent(entry) {
+  function setOpponent(entry, auto = false) {
     if (!entry || state.battling || isCurrentPlayer(entry)) return;
+    if (!auto) state.rivalChosen = true;
     state.opponent = { ...entry, score: Number(entry.score) || 1000 };
     state.enemy = cloneProduct(findProduct(entry.top) || productCatalog[1]);
     paintAvatar(els.opponentAvatar, entry.avatar);
@@ -2171,6 +2215,7 @@
     els.opponentScore.textContent = `${state.opponent.score.toLocaleString('zh-TW')} PTS`;
     els.status.textContent = 'TARGET LOCKED';
     hideResult(); buildScene(); renderLeaderboard();
+    if (auto) return;
     trackEvent('battle_top_rival_select', {
       opponent_type: state.opponent.bot ? 'bot' : 'player',
       opponent_top: state.enemy.name,
