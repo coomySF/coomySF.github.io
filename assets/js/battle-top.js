@@ -1473,7 +1473,7 @@
     state.setupReturnPhase = els.game.dataset.phase === 'game' ? 'game' : 'intro';
     els.game.dataset.phase = 'setup';
     els.joinModal.hidden = false;
-    if (!state.leaderboardLoaded && !state.leaderboardLoading) loadLeaderboard();
+    if (!state.leaderboardLoaded && !state.leaderboardLoading) loadLeaderboard(false, false, 4);
     renderJoinRivals();
     els.joinModal.querySelector('[data-avatar].is-selected')?.focus();
   }
@@ -2149,7 +2149,8 @@
     renderJoinRivals();
   }
 
-  function loadLeaderboard(manual = false, append = false) {
+  // limit：剛進站只要「先揍誰？」的前幾名，撈 4 筆就好（扣掉自己還有 3 個）；打開排行榜才抓完整 50 筆
+  function loadLeaderboard(manual = false, append = false, limit = 50) {
     if (!scoreEndpoint) {
       if (manual) els.leaderboardRefreshStatus.textContent = '排行榜目前沒有連上。';
       return Promise.resolve(false);
@@ -2162,7 +2163,7 @@
     const requestId = ++state.leaderboardRequestId;
     state.leaderboardLoading = true;
     if (!state.leaderboardLoaded) renderJoinRivals();
-    const params = new URLSearchParams({ limit: '50', offset: String(append ? state.globalScores.length : 0), _: String(Date.now()) });
+    const params = new URLSearchParams({ limit: String(limit), offset: String(append ? state.globalScores.length : 0), _: String(Date.now()) });
     if (state.leaderboardQuery.trim()) params.set('q', state.leaderboardQuery.trim());
     return fetch(`${scoreEndpoint}?${params}`, { cache: 'no-store' })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('leaderboard request failed')))
@@ -2311,7 +2312,7 @@
     else if (event.key === 'Escape' && !els.opponentDetail.hidden) closeOpponentDetail();
     else if (event.key === 'Escape' && !els.collectionPicker.hidden) closeCollectionPicker();
   });
-  renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(); initWishes(); initOnlinePresence(); initTabletActionDock();
+  renderCollection(); initProfile(); renderLeaderboard(); loadLeaderboard(false, false, 4); initWishes(); initOnlinePresence(); initTabletActionDock();
   state.player = createTop(false); state.enemy = createTop(true); updateCard(); buildScene(); renderCollection();
   els.battle.disabled = false; els.save.disabled = false; els.summon.textContent = '抽陀螺';
   els.status.textContent = 'CORE SYNCHRONIZED';
