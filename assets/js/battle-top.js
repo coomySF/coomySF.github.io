@@ -1366,6 +1366,9 @@
 
   function returnToArena() {
     hideResult();
+    resetLiveScore();
+    if (els.scoreboard) els.scoreboard.hidden = true;
+    if (els.countdown) els.countdown.textContent = '';
     buildScene();
     els.status.textContent = 'READY TO BATTLE';
     els.battle.disabled = false;
