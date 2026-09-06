@@ -117,17 +117,20 @@ async function leaderboard(request: Request, supabase: ReturnType<typeof createC
   if (/^[A-Z0-9]{5,16}$/.test(requestedId)) scoresQuery = scoresQuery.eq('client_event_id', requestedId);
   else if (search) scoresQuery = scoresQuery.or(`nickname.ilike.%${search}%,top_name.ilike.%${search}%`);
 
+  // battle_top_player_bests 現在是實體表（每位玩家一列，trigger 維護），前 N 名走索引；
+  // 沒有篩選時 filteredPlayers 就是全站人數，不必再多查一次 count
+  const filtered = /^[A-Z0-9]{5,16}$/.test(requestedId) || Boolean(search);
   const [scoresResult, totalResult] = await Promise.all([
     scoresQuery.range(offset, offset + limit - 1),
-    supabase.from('battle_top_player_bests').select('client_event_id', { count: 'exact', head: true })
+    filtered ? supabase.from('battle_top_player_bests').select('player_key', { count: 'exact', head: true }) : Promise.resolve(null)
   ]);
-  if (scoresResult.error || totalResult.error) return json({ error: 'leaderboard unavailable' }, 500, cors);
+  if (scoresResult.error || totalResult?.error) return json({ error: 'leaderboard unavailable' }, 500, cors);
 
   const scores = scoresResult.data.map(row => ({ id: row.client_event_id, playerId: row.player_id, name: row.nickname, avatar: row.avatar, top: row.top_name, score: row.score, won: row.won, createdAt: row.created_at }));
   const filteredPlayers = scoresResult.count || 0;
   return json({
     scores,
-    totalPlayers: totalResult.count || 0,
+    totalPlayers: totalResult ? (totalResult.count || 0) : filteredPlayers,
     filteredPlayers,
     offset,
     limit,
