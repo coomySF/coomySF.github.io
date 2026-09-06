@@ -661,21 +661,12 @@
     const players = draw.group();
     const player = createRotor(players, state.player || createTop(), 'player');
     const enemy = createRotor(players, state.enemy || createTop(true), 'enemy');
-    // 同色系拖尾：外圈柔光 + 內芯亮線，跟著陀螺最近 16 個位置畫
-    [player, enemy].forEach(actor => {
-      actor.trail = {
-        pts: [],
-        glow: trails.path('M0 0').fill('none').stroke({ color: actor.top.color, width: 30, opacity: .32, linecap: 'round', linejoin: 'round' }).attr({ filter: 'url(#speedGlow)' }),
-        mid: trails.path('M0 0').fill('none').stroke({ color: actor.top.color, width: 12, opacity: .45, linecap: 'round', linejoin: 'round' }),
-        core: trails.path('M0 0').fill('none').stroke({ color: actor.top.accent || '#ffffff', width: 4, opacity: .85, linecap: 'round', linejoin: 'round' })
-      };
-    });
     player.x = 325; player.y = 365; enemy.x = 635; enemy.y = 365;
     player.stage.translate(player.x, player.y); enemy.stage.translate(enemy.x, enemy.y);
     const labels = draw.group().attr({ id: 'fighter-labels' });
     labels.text('YOU').font({ family: 'IBM Plex Mono', size: 12, weight: 700 }).fill(state.player?.color || '#28f4e8').center(325, 492).attr({ 'letter-spacing': 3 });
     labels.text('RIVAL').font({ family: 'IBM Plex Mono', size: 12, weight: 700 }).fill(state.enemy?.color || '#ff4d67').center(635, 492).attr({ 'letter-spacing': 3 });
-    state.scene = { player, enemy, core, impact };
+    state.scene = { player, enemy, core, impact, trails };
     renderPose();
     startIdleLoop();
   }
@@ -1165,21 +1156,35 @@
       }
     };
     const shake = ms => { els.stageWrap.classList.add('is-impacting'); setTimeout(() => els.stageWrap.classList.remove('is-impacting'), ms); };
-    const pushTrail = actor => {
-      const t = actor.trail; if (!t) return;
+    // 線的殘影：同色拖尾，但每個點只活 TRAIL_LIFE ms，越靠尾端越淡越細，不會拖成一條長帶子
+    const TRAIL_LIFE = 220, TRAIL_MAX = 14;
+    const pushTrail = (actor, now) => {
+      const layer = state.scene?.trails; if (!layer) return;
+      const t = actor.trail || (actor.trail = { pts: [], segs: [] });
       const last = t.pts[t.pts.length - 1];
-      if (last && Math.hypot(actor.x - last[0], actor.y + 10 - last[1]) < 3) return;   // 沒動就不加點，避免堆在原地
-      t.pts.push([actor.x, actor.y + 10]);
-      if (t.pts.length > 12) t.pts.shift();
-      if (t.pts.length < 3) return;
-      // 用二次曲線經過相鄰點的中點串起來，拖尾是平滑的帶子而不是折線
-      const P = t.pts;
-      let d = `M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
-      for (let i = 1; i < P.length - 1; i += 1) { const mx = (P[i][0] + P[i + 1][0]) / 2, my = (P[i][1] + P[i + 1][1]) / 2; d += ` Q${P[i][0].toFixed(1)} ${P[i][1].toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`; }
-      d += ` L${P[P.length - 1][0].toFixed(1)} ${P[P.length - 1][1].toFixed(1)}`;
-      t.glow.plot(d); t.mid.plot(d); t.core.plot(d);
+      if (!last || Math.hypot(actor.x - last.x, actor.y - last.y) >= 3) t.pts.push({ x: actor.x, y: actor.y, at: now });
+      while (t.pts.length && (now - t.pts[0].at > TRAIL_LIFE || t.pts.length > TRAIL_MAX)) t.pts.shift();
+      const accent = actor.top.accent || '#ffffff';
+      for (let i = 0; i < TRAIL_MAX; i++) {
+        let seg = t.segs[i];
+        if (!seg) {
+          seg = t.segs[i] = {
+            glow: layer.line(0, 0, 0, 0).stroke({ color: actor.top.color, width: 1, linecap: 'round' }).attr({ filter: 'url(#speedGlow)' }),
+            core: layer.line(0, 0, 0, 0).stroke({ color: accent, width: 1, linecap: 'round' })
+          };
+        }
+        const a = t.pts[i], b = t.pts[i + 1];
+        if (!a || !b) { seg.glow.opacity(0); seg.core.opacity(0); continue; }
+        const life = 1 - clamp(0, 1, (now - a.at) / TRAIL_LIFE);
+        seg.glow.plot(a.x, a.y, b.x, b.y).stroke({ width: 4 + 20 * life }).opacity(.34 * life);
+        seg.core.plot(a.x, a.y, b.x, b.y).stroke({ width: 1 + 4 * life }).opacity(.9 * life);
+      }
     };
-    const clearTrail = actor => { const t = actor.trail; if (!t) return; t.pts = []; t.glow.plot('M0 0'); t.mid.plot('M0 0'); t.core.plot('M0 0'); };
+    const clearTrail = actor => {
+      const t = actor.trail; if (!t) return;
+      t.pts.length = 0;
+      t.segs.forEach(seg => { seg.glow.opacity(0); seg.core.opacity(0); });
+    };
     const clashBurst = big => {
       const cx = (p.x + e.x) / 2, cy = (p.y + e.y) / 2;
       if (big && state.player.effect) refinedClash(state.player.effect, cx - 24, cy, 1);
@@ -1381,7 +1386,7 @@
         winner.y = lerp(wy0, 365, easeOut(k)) + Math.sin(k * Math.PI) * 18;
         winner.wobble = 0;
       }
-      if (current.kind !== 'settle') { pushTrail(p); pushTrail(e); }
+      if (current.kind === 'settle' || current.kind === 'relaunch') { clearTrail(p); clearTrail(e); } else { pushTrail(p, now); pushTrail(e, now); }
       renderPose();
       requestAnimationFrame(frame);
     };
