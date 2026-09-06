@@ -76,13 +76,17 @@
 
 
   // ---------- 零件系統（v3）：獎勵是真的零件——上蓋 / 軸心 / 固鎖，每層只能裝一個 ----------
+  // 上蓋固定不換（它就是這顆陀螺）；能換的只有軸心與固鎖
   const partSlots = [
-    { key: 'blade', label: '上蓋', english: 'Blade', rate: .30 },
-    { key: 'ratchet', label: '軸心', english: 'Ratchet', rate: .35 },
-    { key: 'bit', label: '固鎖', english: 'Bit', rate: .35 }
+    { key: 'blade', label: '上蓋', english: 'Blade', rate: 0, swap: false },
+    { key: 'ratchet', label: '軸心', english: 'Ratchet', rate: .5, swap: true },
+    { key: 'bit', label: '固鎖', english: 'Bit', rate: .5, swap: true }
   ];
+  const swapSlots = partSlots.filter(slot => slot.swap);
   // 舊的數值道具 → 零件（v2 → v3 遷移，保留 instance id，收藏陀螺的參照不會斷）
-  const legacyEquipmentToPart = { 'power-gear': ['blade', 'dran'], 'steel-armor': ['blade', 'knight'], 'eternal-core': ['ratchet', '5-70'], 'burst-lock': ['ratchet', '4-60'], 'dash-engine': ['bit', 'flat'] };
+  const legacyEquipmentToPart = { 'power-gear': ['ratchet', '3-60'], 'steel-armor': ['ratchet', '3-80'], 'eternal-core': ['ratchet', '5-70'], 'burst-lock': ['ratchet', '4-60'], 'dash-engine': ['bit', 'flat'] };
+  // 曾經掉過的上蓋零件 → 換成軸心（保留編號與特效）
+  const bladeToRatchet = { dran: '3-60', hells: '4-60', wizard: '3-80', knight: '3-80', phoenix: '9-60', leon: '7-60' };
   const STAT_LABELS = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X 衝刺' };
   const slotMeta = key => partSlots.find(slot => slot.key === key) || partSlots[0];
   const partDelta = part => part?.delta || part?.stats || {};
@@ -1591,7 +1595,7 @@
   function readEquipmentInventory() {
     const saved = readStorage(storageKeys.parts, null);
     if (Array.isArray(saved)) {
-      return saved.filter(instance => findPart(instance.slot, instance.partId)).map(instance => ({
+      return saved.map(instance => instance.slot === 'blade' ? { ...instance, slot: 'ratchet', partId: bladeToRatchet[instance.partId] || '4-60' } : instance).filter(instance => findPart(instance.slot, instance.partId)).map(instance => ({
         id: String(instance.id || `PART-${makeId()}`), slot: instance.slot, partId: instance.partId,
         effectId: refineEffects.some(effect => effect.id === instance.effectId) ? instance.effectId : '',
         ownerTopId: String(instance.ownerTopId || '')
@@ -1625,7 +1629,7 @@
   function grantEquipment() {
     const roll = Math.random();
     let acc = 0;
-    const slot = partSlots.find(item => { acc += item.rate; return roll < acc; }) || partSlots[partSlots.length - 1];
+    const slot = swapSlots.find(item => { acc += item.rate; return roll < acc; }) || swapSlots[swapSlots.length - 1];
     const part = pick(customizationParts[slot.key]);
     const inventory = readEquipmentInventory();
     const instance = { id: `PART-${makeId()}`, slot: slot.key, partId: part.id, effectId: '', ownerTopId: '' };
@@ -1646,7 +1650,7 @@
     const wanted = seed?.partSlots ? Object.values(seed.partSlots) : (Array.isArray(seed?.equipment) ? seed.equipment : []);
     wanted.forEach(reference => {
       const instance = inventory.find(candidate => candidate.id === reference && (!candidate.ownerTopId || candidate.ownerTopId === seed?.id));
-      if (instance && !parts[instance.slot]) parts[instance.slot] = instance.id;
+      if (instance && instance.slot !== 'blade' && !parts[instance.slot]) parts[instance.slot] = instance.id;
     });
     return { baseProductId: base.id, parts, activeSlot: 'ratchet', slotChosen: false, name: seed?.isCustom ? seed.name : '' };
   }
@@ -1682,7 +1686,7 @@
       type: deriveCustomType(stats), stats, isCustom: true,
       equipment: Object.values(draft.parts).filter(Boolean), partSlots: { ...draft.parts },
       effect: effect ? { ...effect } : null,
-      skill: equipped.length ? `已換裝：${equipped.map(item => `${slotMeta(item.instance.slot).label} ${item.part.name}`).join('、')}。` : '打贏對手會掉零件，再回來換上蓋、軸心或固鎖。'
+      skill: equipped.length ? `已換裝：${equipped.map(item => `${slotMeta(item.instance.slot).label} ${item.part.name}`).join('、')}。` : '打贏對手會掉零件，再回來換軸心或固鎖。'
     };
   }
 
@@ -1694,14 +1698,15 @@
     const pieces = String(base.parts).split('·').map(part => part.trim());
     const owned = key => inventory.filter(instance => instance.slot === key && (!instance.ownerTopId || instance.ownerTopId === state.customizingId));
     // 只在第一次打開時自動選到有零件的分層；使用者點過分層後就照使用者的
+    if (!swapSlots.some(slot => slot.key === draft.activeSlot)) draft.activeSlot = 'ratchet';
     if (!draft.slotChosen && !owned(draft.activeSlot).length && !draft.parts[draft.activeSlot]) {
-      const first = partSlots.find(({ key }) => owned(key).length || draft.parts[key]);
+      const first = swapSlots.find(({ key }) => owned(key).length || draft.parts[key]);
       if (first) draft.activeSlot = first.key;
     }
     const active = draft.activeSlot;
     const meta = slotMeta(active);
-    els.customEquipmentSlots.textContent = `${Object.values(draft.parts).filter(Boolean).length} / 3`;
-    els.customSlotTabs.innerHTML = partSlots.map(slot => `<button type="button" role="tab" data-slot="${slot.key}" aria-selected="${slot.key === active}"${draft.parts[slot.key] ? ' class="has-part"' : ''}>${slot.label}<span>${slot.english} · ${owned(slot.key).length}</span></button>`).join('');
+    els.customEquipmentSlots.textContent = `${Object.values(draft.parts).filter(Boolean).length} / 2`;
+    els.customSlotTabs.innerHTML = swapSlots.map(slot => `<button type="button" role="tab" data-slot="${slot.key}" aria-selected="${slot.key === active}"${draft.parts[slot.key] ? ' class="has-part"' : ''}>${slot.label}<span>${slot.english} · ${owned(slot.key).length}</span></button>`).join('');
     els.customSlotTabs.querySelectorAll('[data-slot]').forEach(button => button.addEventListener('click', () => { draft.activeSlot = button.dataset.slot; draft.slotChosen = true; renderCustomPreview(); }));
     const stockName = pieces[partSlots.findIndex(slot => slot.key === active)] || '原廠';
     const list = owned(active);
@@ -1734,7 +1739,8 @@
       const id = state.customDraft.parts[slot.key];
       const instance = id ? readEquipmentInventory().find(item => item.id === id) : null;
       const glyphPart = instance ? findPart(slot.key, instance.partId) : { name: names[index].name, code: stockPartsOf(base)[slot.key]?.code };
-      return `<button type="button" class="custom-part-slab${slot.key === state.customDraft.activeSlot ? ' is-active' : ''}" data-stack-slot="${slot.key}" aria-pressed="${slot.key === state.customDraft.activeSlot}"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, id ? '#caff3d' : '#7f959b', slot.key === 'blade' && !instance ? base.image : '')}</span><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="${id ? '' : 'is-stock'}">${id ? '換裝' : '原廠'}</b></button>`;
+      if (!slot.swap) return `<div class="custom-part-slab is-fixed"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, '#7f959b', base.image)}</span><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="is-stock">固定</b></div>`;
+      return `<button type="button" class="custom-part-slab${slot.key === state.customDraft.activeSlot ? ' is-active' : ''}" data-stack-slot="${slot.key}" aria-pressed="${slot.key === state.customDraft.activeSlot}"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, id ? '#caff3d' : '#7f959b')}</span><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="${id ? '' : 'is-stock'}">${id ? '換裝' : '原廠'}</b></button>`;
     }).join('');
     els.customPartStack.querySelectorAll('[data-stack-slot]').forEach(button => button.addEventListener('click', () => { state.customDraft.activeSlot = button.dataset.stackSlot; state.customDraft.slotChosen = true; renderCustomPreview(); }));
     els.customStats.innerHTML = Object.entries(top.stats).map(([key, value]) => {
@@ -1753,7 +1759,7 @@
     const seed = readCollection().find(top => top.id === productId) || state.player || productCatalog[0];
     state.customizingId = seed.isCustom ? seed.id : '';
     state.customDraft = makeCustomDraft(seed);
-    els.customStatus.textContent = seed.isCustom ? '點左邊的上蓋 / 軸心 / 固鎖，右邊挑零件換上去。改名字會自動儲存。' : '打贏拿到的零件在這裡換上去：上蓋、軸心、固鎖各一個。';
+    els.customStatus.textContent = seed.isCustom ? '點左邊的軸心 / 固鎖，右邊挑零件換上去。改名字會自動儲存。' : '打贏拿到的零件在這裡換上去：軸心、固鎖各一個，上蓋固定。';
     showCollectionPanel('custom');
     renderCustomPreview();
   }

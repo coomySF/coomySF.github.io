@@ -18,7 +18,7 @@ keywords:
   - 想法變產品
   - MVP 快速上線
 ---
-<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260906-11">
+<link rel="stylesheet" href="{{ '/assets/css/battle-top.css' | relative_url }}?v=20260906-12">
 <script>document.documentElement.classList.add('battle-top-page');</script>
 <script type="application/ld+json">
 {
@@ -252,10 +252,10 @@ keywords:
             <div class="custom-stat-preview" id="custom-stat-preview"></div>
           </div>
           <div class="custom-top-controls">
-            <div class="custom-equipment-heading"><span>MY PARTS · 上蓋 / 軸心 / 固鎖</span><strong>換零件</strong><b id="custom-equipment-slots">0 / 3</b></div>
+            <div class="custom-equipment-heading"><span>MY PARTS · 軸心 / 固鎖</span><strong>換零件</strong><b id="custom-equipment-slots">0 / 2</b></div>
             <div class="custom-slot-tabs" id="custom-slot-tabs" role="tablist" aria-label="選擇要換的那一層"></div>
             <div class="custom-equipment-options" id="custom-equipment-options"></div>
-            <p class="custom-top-note">每次打贏都會掉一個零件：上蓋、軸心或固鎖。每一層只能裝一個，原廠零件永遠在，換回去不花任何東西。特效綁在零件上，換掉零件特效跟著走；收藏會鎖定當下零件，取消收藏後才會釋放。</p>
+            <p class="custom-top-note">每次打贏都會掉一個零件：軸心或固鎖（上蓋是這顆陀螺本身，不換）。每一層只能裝一個，原廠零件永遠在，換回去不花任何東西。特效綁在零件上，換掉零件特效跟著走；收藏會鎖定當下零件，取消收藏後才會釋放。</p>
             <div class="custom-top-actions">
               <button type="button" id="custom-save-button" disabled>加到收藏</button>
               <button type="button" id="custom-battle-button">出戰</button>
@@ -363,4 +363,4 @@ keywords:
 <script>window.BATTLE_TOP_SCORE_ENDPOINT = {{ site.battle_top_score_endpoint | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_URL = {{ site.battle_top_supabase_url | default: '' | jsonify }};</script>
 <script>window.BATTLE_TOP_SUPABASE_PUBLISHABLE_KEY = {{ site.battle_top_supabase_publishable_key | default: '' | jsonify }};</script>
-<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260906-11" defer></script>
+<script src="{{ '/assets/js/battle-top.js' | relative_url }}?v=20260906-12" defer></script>
