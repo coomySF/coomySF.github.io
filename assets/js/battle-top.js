@@ -19,27 +19,27 @@
   }
 
   const productCatalog = [
-    { id: 'BX-01', name: 'Dran Sword 3-60F', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX01_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx01.html', parts: 'Dran Sword · 3-60 · Flat', skill: '高衝刺力的 Flat 軸尖，鎖定 Xtreme Dash 發動強攻。', color: '#258dff', accent: '#ff334f', stats: { attack: 110, defense: 49, stamina: 36, burst: 80, xdash: 35 }, teeth: 3, core: 3 },
-    { id: 'BX-02', name: 'Hells Scythe 4-60T', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx02.html', parts: 'Hells Scythe · 4-60 · Taper', skill: '攻防兼備的鐮刀刃與 Taper 軸尖，能依碰撞改變節奏。', color: '#e33a32', accent: '#ffb128', stats: { attack: 76, defense: 68, stamina: 61, burst: 80, xdash: 25 }, teeth: 4, core: 4 },
-    { id: 'BX-03', name: 'Wizard Arrow 4-80B', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX03_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx03.html', parts: 'Wizard Arrow · 4-80 · Ball', skill: '離心力刃搭配 Ball 軸尖，靠穩定旋轉把戰局拖進終盤。', color: '#f2c31b', accent: '#59d36c', stats: { attack: 41, defense: 66, stamina: 113, burst: 30, xdash: 10 }, teeth: 4, core: 5 },
-    { id: 'BX-04', name: 'Knight Shield 3-80N', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX04_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx04.html', parts: 'Knight Shield · 3-80 · Needle', skill: '吸收衝擊的盾形刃與 Needle 軸尖，專門抵抗場外擊飛。', color: '#4c63c7', accent: '#e9b339', stats: { attack: 45, defense: 112, stamina: 63, burst: 30, xdash: 10 }, teeth: 3, core: 6 },
-    { id: 'BX-23', name: 'Phoenix Wing 9-60GF', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX23_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx23.html', parts: 'Phoenix Wing · 9-60 · Gear Flat', skill: '塗裝金屬重型三枚刃搭配 Gear Flat，以重量與高速 X Dash 強烈彈飛對手。', color: '#d92f36', accent: '#f2b729', stats: { attack: 116, defense: 76, stamina: 48, burst: 82, xdash: 50 }, teeth: 3, core: 5 },
-    { id: 'UX-01', name: 'Dran Buster 1-60A', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX01_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux01.html', parts: 'Dran Buster · 1-60 · Accel', skill: '大型攻擊刃追求瞬間重擊，Accel 大型齒輪把 X Dash 加速到極限。', color: '#2f72e8', accent: '#ff3358', stats: { attack: 120, defense: 42, stamina: 32, burst: 88, xdash: 58 }, teeth: 2, core: 4 },
-    { id: 'UX-02', name: 'Hells Hammer 3-70H', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX02_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux02.html', parts: 'Hells Hammer · 3-70 · Hexa', skill: '厚重槌刃施加向下衝擊，Hexa 軸尖在攻擊與穩定防守間切換。', color: '#cf3034', accent: '#ff9c2a', stats: { attack: 83, defense: 82, stamina: 64, burst: 72, xdash: 24 }, teeth: 6, core: 5 },
-    { id: 'UX-03', name: 'Wizard Rod 5-70DB', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX03_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux03.html', parts: 'Wizard Rod · 5-70 · Disc Ball', skill: '外周金屬配置提高離心力，Disc Ball 擴大穩定面積，擅長長時間旋轉。', color: '#d9b423', accent: '#6cd7ef', stats: { attack: 38, defense: 84, stamina: 120, burst: 68, xdash: 8 }, teeth: 8, core: 7 },
-    { id: 'UX-06', name: 'Leon Crest 7-60GN', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX06_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux06.html', parts: 'Leon Crest · 7-60 · Gear Needle', skill: '厚實外周與多重防禦刃承受撞擊，Gear Needle 守住場地中央。', color: '#2eaa78', accent: '#e1c64b', stats: { attack: 52, defense: 120, stamina: 72, burst: 76, xdash: 14 }, teeth: 7, core: 6 },
-    { id: 'UX-08', name: 'Silver Wolf 3-80FB', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX08_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux08.html', parts: 'Silver Wolf · 3-80 · Free Ball', skill: '自由旋轉結構卸除碰撞力，Free Ball 軸尖維持穩定並拖長戰局。', color: '#aab8c8', accent: '#67c8dc', stats: { attack: 42, defense: 94, stamina: 115, burst: 62, xdash: 7 }, teeth: 5, core: 8 },
-    { id: 'UX-09', name: 'Samurai Saber 2-70L', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX09_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux09.html', parts: 'Samurai Saber · 2-70 · Level', skill: '刀刃造型集中斬擊，Level 軸尖讓移動節奏改變後再切入攻擊。', color: '#38a86b', accent: '#f0d5a1', stats: { attack: 102, defense: 58, stamina: 54, burst: 74, xdash: 43 }, teeth: 4, core: 6 },
-    { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 },
+    { id: 'BX-01', name: 'Dran Sword 3-60F', zh: '蒼龍神劍', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX01_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx01.html', parts: 'Dran Sword · 3-60 · Flat', skill: '高衝刺力的 Flat 軸尖，鎖定 Xtreme Dash 發動強攻。', color: '#258dff', accent: '#ff334f', stats: { attack: 110, defense: 49, stamina: 36, burst: 80, xdash: 35 }, teeth: 3, core: 3 },
+    { id: 'BX-02', name: 'Hells Scythe 4-60T', zh: '惡魔紅鐮', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX02_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx02.html', parts: 'Hells Scythe · 4-60 · Taper', skill: '攻防兼備的鐮刀刃與 Taper 軸尖，能依碰撞改變節奏。', color: '#e33a32', accent: '#ffb128', stats: { attack: 76, defense: 68, stamina: 61, burst: 80, xdash: 25 }, teeth: 4, core: 4 },
+    { id: 'BX-03', name: 'Wizard Arrow 4-80B', zh: '魔導幻箭', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX03_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx03.html', parts: 'Wizard Arrow · 4-80 · Ball', skill: '離心力刃搭配 Ball 軸尖，靠穩定旋轉把戰局拖進終盤。', color: '#f2c31b', accent: '#59d36c', stats: { attack: 41, defense: 66, stamina: 113, burst: 30, xdash: 10 }, teeth: 4, core: 5 },
+    { id: 'BX-04', name: 'Knight Shield 3-80N', zh: '騎士重盾', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX04_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx04.html', parts: 'Knight Shield · 3-80 · Needle', skill: '吸收衝擊的盾形刃與 Needle 軸尖，專門抵抗場外擊飛。', color: '#4c63c7', accent: '#e9b339', stats: { attack: 45, defense: 112, stamina: 63, burst: 30, xdash: 10 }, teeth: 3, core: 6 },
+    { id: 'BX-23', name: 'Phoenix Wing 9-60GF', zh: '鳳凰飛翼', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX23_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/bx23.html', parts: 'Phoenix Wing · 9-60 · Gear Flat', skill: '塗裝金屬重型三枚刃搭配 Gear Flat，以重量與高速 X Dash 強烈彈飛對手。', color: '#d92f36', accent: '#f2b729', stats: { attack: 116, defense: 76, stamina: 48, burst: 82, xdash: 50 }, teeth: 3, core: 5 },
+    { id: 'UX-01', name: 'Dran Buster 1-60A', zh: '蒼龍爆刃', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX01_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux01.html', parts: 'Dran Buster · 1-60 · Accel', skill: '大型攻擊刃追求瞬間重擊，Accel 大型齒輪把 X Dash 加速到極限。', color: '#2f72e8', accent: '#ff3358', stats: { attack: 120, defense: 42, stamina: 32, burst: 88, xdash: 58 }, teeth: 2, core: 4 },
+    { id: 'UX-02', name: 'Hells Hammer 3-70H', zh: '惡魔戰鎚', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX02_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux02.html', parts: 'Hells Hammer · 3-70 · Hexa', skill: '厚重槌刃施加向下衝擊，Hexa 軸尖在攻擊與穩定防守間切換。', color: '#cf3034', accent: '#ff9c2a', stats: { attack: 83, defense: 82, stamina: 64, burst: 72, xdash: 24 }, teeth: 6, core: 5 },
+    { id: 'UX-03', name: 'Wizard Rod 5-70DB', zh: '魔導神杖', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX03_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux03.html', parts: 'Wizard Rod · 5-70 · Disc Ball', skill: '外周金屬配置提高離心力，Disc Ball 擴大穩定面積，擅長長時間旋轉。', color: '#d9b423', accent: '#6cd7ef', stats: { attack: 38, defense: 84, stamina: 120, burst: 68, xdash: 8 }, teeth: 8, core: 7 },
+    { id: 'UX-06', name: 'Leon Crest 7-60GN', zh: '雄獅巔峰', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX06_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux06.html', parts: 'Leon Crest · 7-60 · Gear Needle', skill: '厚實外周與多重防禦刃承受撞擊，Gear Needle 守住場地中央。', color: '#2eaa78', accent: '#e1c64b', stats: { attack: 52, defense: 120, stamina: 72, burst: 76, xdash: 14 }, teeth: 7, core: 6 },
+    { id: 'UX-08', name: 'Silver Wolf 3-80FB', zh: '霜輝銀狼', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX08_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux08.html', parts: 'Silver Wolf · 3-80 · Free Ball', skill: '自由旋轉結構卸除碰撞力，Free Ball 軸尖維持穩定並拖長戰局。', color: '#aab8c8', accent: '#67c8dc', stats: { attack: 42, defense: 94, stamina: 115, burst: 62, xdash: 7 }, teeth: 5, core: 8 },
+    { id: 'UX-09', name: 'Samurai Saber 2-70L', zh: '武士星劍', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX09_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux09.html', parts: 'Samurai Saber · 2-70 · Level', skill: '刀刃造型集中斬擊，Level 軸尖讓移動節奏改變後再切入攻擊。', color: '#38a86b', accent: '#f0d5a1', stats: { attack: 102, defense: 58, stamina: 54, burst: 74, xdash: 43 }, teeth: 4, core: 6 },
+    { id: 'UX-11', name: 'Impact Drake 9-60LR', zh: '衝擊龍神', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 },
     // ---------- 玩家改造配置（mod: true）：2026 賽場 / 論壇推薦的組合，上蓋沿用官方商品圖，出處連到論壇或賽場資料 ----------
-    { id: 'MOD-01', mod: true, name: 'Shark Scale 1-70LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX15_01_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Shark Scale · 1-70 · Low Rush', skill: '鮫鯊狂鱗：不對稱長刃畫出侵略軌道，1-70 高位配 Low Rush 由下往上勾。現版本最強攻擊手，WBO 12 冠。', color: '#3ab6ff', accent: '#ff3d7a', stats: { attack: 124, defense: 52, stamina: 40, burst: 84, xdash: 56 }, teeth: 3, core: 4 },
-    { id: 'MOD-02', mod: true, name: 'Wizard Rod 1-60H', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX03_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Wizard Rod · 1-60 · Hexa', skill: '魔導神杖：1 齒固鎖幾乎鎖死爆裂，Hexa 六角軸尖守住中央。WBO 28 冠，史上最多獎的組合。', color: '#d9b423', accent: '#6cd7ef', stats: { attack: 48, defense: 98, stamina: 118, burst: 86, xdash: 14 }, teeth: 8, core: 7 },
-    { id: 'MOD-03', mod: true, name: 'Silver Wolf 9-60FB', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX08_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Silver Wolf · 9-60 · Free Ball', skill: '銀狼：9-60 重心配 Free Ball 自由軸，軌道難以預測，攻擊型和持久型都不好打。WBO 勝率 72%。', color: '#aab8c8', accent: '#67c8dc', stats: { attack: 56, defense: 96, stamina: 112, burst: 74, xdash: 18 }, teeth: 5, core: 8 },
-    { id: 'MOD-04', mod: true, name: 'Cobalt Dragoon 5-60E', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX34_01_list.png', source: 'https://beybladehub.app/combos', parts: 'Cobalt Dragoon · 5-60 · Elevate', skill: '蒼穹龍騎士：賽場唯一的左旋 meta，每次碰撞吸走右旋對手的轉速，Elevate 軸尖把持久拉到終盤。', color: '#2f5fd0', accent: '#c9d6e8', stats: { attack: 58, defense: 104, stamina: 96, burst: 68, xdash: 14 }, teeth: 3, core: 6 },
-    { id: 'MOD-05', mod: true, name: 'Meteor Dragoon 9-60E', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX17_01_list.png', source: 'https://beybase.com/best-beyblade-x-combos-players-guide/', parts: 'Meteor Dragoon · 9-60 · Elevate', skill: '隕星龍騎士：左旋大型橡膠顎吸收右旋能量，9-60 配 Elevate 的寬軌道躲過強攻。大型賽事決賽常客。', color: '#e8e8f0', accent: '#e33a4a', stats: { attack: 74, defense: 66, stamina: 104, burst: 70, xdash: 22 }, teeth: 3, core: 5 },
-    { id: 'MOD-06', mod: true, name: 'Phoenix Wing 3-60R', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX23_list.png', source: 'https://forum.gamer.com.tw/C.php?bsn=2696&snA=1117', parts: 'Phoenix Wing · 3-60 · Rush', skill: '鳳凰飛翼：金屬重型刃換上 Rush 衝刺軸，用重量輾壓對手。巴哈阿土梯度表 T0，配右旋旋風發射器。', color: '#d92f36', accent: '#f2b729', stats: { attack: 122, defense: 70, stamina: 44, burst: 80, xdash: 54 }, teeth: 3, core: 5 },
-    { id: 'MOD-07', mod: true, name: 'Dran Buster 1-60R', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX01_list.png', source: 'https://forum.gamer.com.tw/C.php?bsn=2696&snA=1117', parts: 'Dran Buster · 1-60 · Rush', skill: '蒼龍爆刃：1-60 鎖死爆裂後全力衝刺，一擊定勝負。巴哈新手入坑指南 T1 標配。', color: '#2f72e8', accent: '#ff3358', stats: { attack: 126, defense: 44, stamina: 34, burst: 86, xdash: 60 }, teeth: 2, core: 4 },
-    { id: 'MOD-08', mod: true, name: 'Emperor Might 7-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/CX11_01_list.png', source: 'https://hackmd.io/@liangyutw/beyblade-important-record', parts: 'Emperor Might · 7-60 · Low Rush', skill: '帝王威能：總重約 55g 的重型戰車，迴旋抵銷對手攻擊，Low Rush 低位猛推。台灣賽場公認毒瘤配置。', color: '#e0a521', accent: '#2a2a2e', stats: { attack: 118, defense: 86, stamina: 42, burst: 84, xdash: 46 }, teeth: 6, core: 6 }
+    { id: 'MOD-01', mod: true, name: 'Shark Scale 1-70LR', zh: '鮫鯊狂鱗', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX15_01_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Shark Scale · 1-70 · Low Rush', skill: '鮫鯊狂鱗：不對稱長刃畫出侵略軌道，1-70 高位配 Low Rush 由下往上勾。現版本最強攻擊手，WBO 12 冠。', color: '#3ab6ff', accent: '#ff3d7a', stats: { attack: 124, defense: 52, stamina: 40, burst: 84, xdash: 56 }, teeth: 3, core: 4 },
+    { id: 'MOD-02', mod: true, name: 'Wizard Rod 1-60H', zh: '魔導神杖', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX03_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Wizard Rod · 1-60 · Hexa', skill: '魔導神杖：1 齒固鎖幾乎鎖死爆裂，Hexa 六角軸尖守住中央。WBO 28 冠，史上最多獎的組合。', color: '#d9b423', accent: '#6cd7ef', stats: { attack: 48, defense: 98, stamina: 118, burst: 86, xdash: 14 }, teeth: 8, core: 7 },
+    { id: 'MOD-03', mod: true, name: 'Silver Wolf 9-60FB', zh: '霜輝銀狼', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX08_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Silver Wolf · 9-60 · Free Ball', skill: '銀狼：9-60 重心配 Free Ball 自由軸，軌道難以預測，攻擊型和持久型都不好打。WBO 勝率 72%。', color: '#aab8c8', accent: '#67c8dc', stats: { attack: 56, defense: 96, stamina: 112, burst: 74, xdash: 18 }, teeth: 5, core: 8 },
+    { id: 'MOD-04', mod: true, name: 'Cobalt Dragoon 5-60E', zh: '蒼穹龍騎士', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX34_01_list.png', source: 'https://beybladehub.app/combos', parts: 'Cobalt Dragoon · 5-60 · Elevate', skill: '蒼穹龍騎士：賽場唯一的左旋 meta，每次碰撞吸走右旋對手的轉速，Elevate 軸尖把持久拉到終盤。', color: '#2f5fd0', accent: '#c9d6e8', stats: { attack: 58, defense: 104, stamina: 96, burst: 68, xdash: 14 }, teeth: 3, core: 6 },
+    { id: 'MOD-05', mod: true, name: 'Meteor Dragoon 9-60E', zh: '隕星龍騎士', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX17_01_list.png', source: 'https://beybase.com/best-beyblade-x-combos-players-guide/', parts: 'Meteor Dragoon · 9-60 · Elevate', skill: '隕星龍騎士：左旋大型橡膠顎吸收右旋能量，9-60 配 Elevate 的寬軌道躲過強攻。大型賽事決賽常客。', color: '#e8e8f0', accent: '#e33a4a', stats: { attack: 74, defense: 66, stamina: 104, burst: 70, xdash: 22 }, teeth: 3, core: 5 },
+    { id: 'MOD-06', mod: true, name: 'Phoenix Wing 3-60R', zh: '鳳凰飛翼', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX23_list.png', source: 'https://forum.gamer.com.tw/C.php?bsn=2696&snA=1117', parts: 'Phoenix Wing · 3-60 · Rush', skill: '鳳凰飛翼：金屬重型刃換上 Rush 衝刺軸，用重量輾壓對手。巴哈阿土梯度表 T0，配右旋旋風發射器。', color: '#d92f36', accent: '#f2b729', stats: { attack: 122, defense: 70, stamina: 44, burst: 80, xdash: 54 }, teeth: 3, core: 5 },
+    { id: 'MOD-07', mod: true, name: 'Dran Buster 1-60R', zh: '蒼龍爆刃', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX01_list.png', source: 'https://forum.gamer.com.tw/C.php?bsn=2696&snA=1117', parts: 'Dran Buster · 1-60 · Rush', skill: '蒼龍爆刃：1-60 鎖死爆裂後全力衝刺，一擊定勝負。巴哈新手入坑指南 T1 標配。', color: '#2f72e8', accent: '#ff3358', stats: { attack: 126, defense: 44, stamina: 34, burst: 86, xdash: 60 }, teeth: 2, core: 4 },
+    { id: 'MOD-08', mod: true, name: 'Emperor Might 7-60LR', zh: '帝王威能', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/CX11_01_list.png', source: 'https://hackmd.io/@liangyutw/beyblade-important-record', parts: 'Emperor Might · 7-60 · Low Rush', skill: '帝王威能：總重約 55g 的重型戰車，迴旋抵銷對手攻擊，Low Rush 低位猛推。台灣賽場公認毒瘤配置。', color: '#e0a521', accent: '#2a2a2e', stats: { attack: 118, defense: 86, stamina: 42, burst: 84, xdash: 46 }, teeth: 6, core: 6 }
   ];
 
   const customizationParts = {
@@ -402,15 +402,19 @@
   const seriesTag = top => top?.mod ? 'MOD BUILD' : 'BX SERIES';
   const seriesCode = top => top?.mod ? `BUILD // ${top.id}` : `PRODUCT // ${top.id}`;
   const seriesLine = top => top?.mod ? '玩家改造配置' : 'BEYBLADE X 完整商品組合';
-  const imageAlt = top => `${top.name} ${top?.mod ? '上蓋商品圖' : '官方商品圖'}`;
+  // 顯示名稱：台灣代理中文名 + 固鎖軸心代號（鮫鯊狂鱗 1-70LR）；name 仍是英文，當作排行榜 / 收藏的鍵
+  const comboCode = name => (String(name || '').match(/(\d+-\d+[A-Z]*)$/) || [])[1] || '';
+  const displayName = top => { if (!top) return ''; if (top.isCustom || !top.zh) return top.name; const code = comboCode(top.name); return code ? `${top.zh} ${code}` : top.zh; };
+  const topLabel = name => displayName(findProduct(name)) || name || '';
+  const imageAlt = top => `${displayName(top)} ${top?.mod ? '上蓋商品圖' : '官方商品圖'}`;
   // 配件固定三段：上蓋（Blade）· 固鎖（Ratchet）· 軸心（Bit），來源是 product.parts 的「A · B · C」字串
   const PART_LABELS = [['上蓋', 'Blade'], ['固鎖', 'Ratchet'], ['軸心', 'Bit']];
   function partsOf(top) {
     const pieces = String(top?.parts || '').split('·').map(part => part.trim());
-    return PART_LABELS.map(([label, english], index) => ({ label, english, name: pieces[index] || '—' }));
+    return PART_LABELS.map(([label, english], index) => ({ label, english, name: pieces[index] || '—', zh: index === 0 && !top?.isCustom ? (top?.zh || '') : '' }));
   }
-  function partsText(top) { return partsOf(top).map(part => `${part.label} ${part.name}`).join(' · '); }
-  function partsMarkup(top) { return partsOf(top).map(part => `<span class="part-chip"><small>${part.label}<i>${part.english}</i></small><strong>${escapeHTML(part.name)}</strong></span>`).join(''); }
+  function partsText(top) { return partsOf(top).map(part => `${part.label} ${part.zh || part.name}`).join(' · '); }
+  function partsMarkup(top) { return partsOf(top).map(part => `<span class="part-chip"><small>${part.label}<i>${part.english}</i></small><strong title="${escapeHTML(part.name)}">${escapeHTML(part.zh || part.name)}</strong></span>`).join(''); }
   function createTop(isEnemy = false) {
     const choices = !isEnemy && state.player && productCatalog.length > 1
       ? productCatalog.filter(product => product.id !== state.player.id)
@@ -950,7 +954,7 @@
   function updateCard() {
     const top = state.player;
     if (!top) return;
-    els.name.textContent = top.name;
+    els.name.textContent = displayName(top);
     els.className.textContent = `${top.type} · ${seriesLine(top)}`;
     els.rarity.textContent = seriesTag(top);
     els.rarity.style.color = top.color;
@@ -973,7 +977,7 @@
     els.opponentDetailScore.textContent = `${Number(state.opponent.score).toLocaleString('zh-TW')} PTS`;
     els.opponentDetailImage.src = top.image;
     els.opponentDetailImage.alt = imageAlt(top);
-    els.opponentDetailName.textContent = top.name;
+    els.opponentDetailName.textContent = displayName(top);
     els.opponentDetailType.textContent = `${top.type} · ${partsText(top)}`;
     els.opponentDetailStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><b>${value}</b><i><em style="width:${Math.min(100, value / 120 * 100)}%"></em></i></div>`).join('');
     els.opponentDetail.hidden = false;
@@ -1032,7 +1036,7 @@
     const profile = readProfile();
     const entry = state.lastScoreEntry;
     return entry
-      ? `我用 ${entry.top} 打上 ${Number(entry.score).toLocaleString('zh-TW')} 分！\n敢不敢來挑戰 ${profile.name || '旋核手'}？\n${challengeURL()}\n\n#戰鬥陀螺 #旋核競技場`
+      ? `我用 ${topLabel(entry.top)} 打上 ${Number(entry.score).toLocaleString('zh-TW')} 分！\n敢不敢來挑戰 ${profile.name || '旋核手'}？\n${challengeURL()}\n\n#戰鬥陀螺 #旋核競技場`
       : `敢不敢來挑戰我的戰鬥陀螺？\n${challengeURL()}\n\n#戰鬥陀螺 #旋核競技場`;
   }
 
@@ -1587,7 +1591,7 @@
     els.battleHistoryCount.textContent = history.length;
     els.battleHistoryCount.hidden = history.length === 0;
     els.battleHistoryNote.textContent = history.length ? `最近 ${history.length} 次有人挑戰你` : '還沒有人來揍你。先把分數打上排行榜吧！';
-    els.battleHistoryList.innerHTML = history.map((entry, index) => `<li><i class="battle-history__avatar">${avatarMarkup(entry.avatar)}</i><span class="battle-history__copy"><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)} · ${formatHistoryTime(entry.createdAt)}</small><b class="${entry.defended ? '' : 'is-defeated'}">${entry.defended ? '你守住了！' : '你被擊敗'}</b></span><button type="button" data-revenge="${index}">揍回去</button></li>`).join('');
+    els.battleHistoryList.innerHTML = history.map((entry, index) => `<li><i class="battle-history__avatar">${avatarMarkup(entry.avatar)}</i><span class="battle-history__copy"><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(topLabel(entry.top))} · ${formatHistoryTime(entry.createdAt)}</small><b class="${entry.defended ? '' : 'is-defeated'}">${entry.defended ? '你守住了！' : '你被擊敗'}</b></span><button type="button" data-revenge="${index}">揍回去</button></li>`).join('');
     els.battleHistoryList.querySelectorAll('[data-revenge]').forEach(button => button.addEventListener('click', () => {
       const entry = history[Number(button.dataset.revenge)];
       setOpponent(entry);
@@ -1670,7 +1674,7 @@
     }
     els.collectionPickerList.innerHTML = products.map(top => {
       const equipped = state.player?.id === top.id;
-      return `<article class="battle-collection-choice-row"><button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.isCustom ? `${top.effect?.icon || '✦'} 強化核心` : `${top.mod ? '改造' : top.id} · ${escapeHTML(top.type)}`}</small><strong>${escapeHTML(top.name)}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button><div class="battle-collection-choice-actions"><button type="button" data-customize="${top.id}">強化</button><button type="button" data-picker-remove="${top.id}">刪除</button>${top.source ? `<a href="${top.source}" target="_blank" rel="noopener">商品資訊 ↗</a>` : ''}</div></article>`;
+      return `<article class="battle-collection-choice-row"><button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.isCustom ? `${top.effect?.icon || '✦'} 強化核心` : `${top.mod ? '改造' : top.id} · ${escapeHTML(top.type)}`}</small><strong>${escapeHTML(displayName(top))}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button><div class="battle-collection-choice-actions"><button type="button" data-customize="${top.id}">強化</button><button type="button" data-picker-remove="${top.id}">刪除</button>${top.source ? `<a href="${top.source}" target="_blank" rel="noopener">商品資訊 ↗</a>` : ''}</div></article>`;
     }).join('');
     els.collectionPickerList.querySelectorAll('[data-picker-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.pickerEquip)));
     els.collectionPickerList.querySelectorAll('[data-customize]').forEach(button => button.addEventListener('click', () => startCustomizing(button.dataset.customize)));
@@ -1797,7 +1801,7 @@
     const names = { blade: installed.blade?.part.name || pieces[0], ratchet: installed.ratchet?.part.name || pieces[1], bit: installed.bit?.part.name || pieces[2] };
     const bladeProduct = installed.blade ? productCatalog.find(product => product.id === installed.blade.part.productId) : null;
     const bitCode = installed.bit ? installed.bit.part.code : ((base.name.match(/\d+-\d+([A-Z]+)$/) || [])[1] || '');
-    const autoName = equipped.length ? `${names.blade} ${names.ratchet}${bitCode}` : base.name;
+    const autoName = equipped.length ? `${base.zh || names.blade} ${names.ratchet}${bitCode}` : displayName(base);
     return {
       ...cloneProduct(base), id: state.customizingId || `CUSTOM-${makeId()}`, baseProductId: base.id,
       name: draft.name.trim() || autoName,
@@ -1853,13 +1857,13 @@
     const base = productCatalog.find(product => product.id === state.customDraft.baseProductId) || productCatalog[0];
     const isSaved = Boolean(state.customizingId && readCollection().some(item => item.id === state.customizingId));
     renderEquipmentOptions();
-    els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(top.name)}">`;
+    els.customPreview.innerHTML = `<span style="--custom-color:${top.color}"></span><img src="${top.image}" alt="${escapeHTML(displayName(top))}">`;
     const names = partsOf(top);
     els.customPartStack.innerHTML = partSlots.map((slot, index) => {
       const id = state.customDraft.parts[slot.key];
       const instance = id ? readEquipmentInventory().find(item => item.id === id) : null;
       const glyphPart = instance ? findPart(slot.key, instance.partId) : { name: names[index].name, code: stockPartsOf(base)[slot.key]?.code };
-      if (!slot.swap) return `<div class="custom-part-slab is-fixed"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, '#7f959b', base.image)}</span><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="is-stock">固定</b></div>`;
+      if (!slot.swap) return `<div class="custom-part-slab is-fixed"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, '#7f959b', base.image)}</span><small>${slot.label}<i>${slot.english}</i></small><strong title="${escapeHTML(names[index].name)}">${escapeHTML(base.zh || names[index].name)}</strong><b class="is-stock">固定</b></div>`;
       return `<button type="button" class="custom-part-slab${slot.key === state.customDraft.activeSlot ? ' is-active' : ''}" data-stack-slot="${slot.key}" aria-pressed="${slot.key === state.customDraft.activeSlot}"><span class="slab-glyph">${partGlyph(slot.key, glyphPart, id ? '#caff3d' : '#7f959b')}</span><small>${slot.label}<i>${slot.english}</i></small><strong>${escapeHTML(names[index].name)}</strong><b class="${id ? '' : 'is-stock'}">${id ? '換裝' : '原廠'}</b></button>`;
     }).join('');
     els.customPartStack.querySelectorAll('[data-stack-slot]').forEach(button => button.addEventListener('click', () => { state.customDraft.activeSlot = button.dataset.stackSlot; state.customDraft.slotChosen = true; renderCustomPreview(); }));
@@ -2004,7 +2008,7 @@
     els.collection.innerHTML = collection.map(saved => {
       const top = saved;
       const equipped = state.player?.id === top.id;
-      return `<article class="saved-core${equipped ? ' is-equipped' : ''}" style="--core-color:${top.color}"><button class="saved-core__remove" type="button" data-remove="${top.id}" aria-label="移除 ${top.name}">×</button><span>${top.isCustom ? `${top.effect?.icon || '✦'} CUSTOM CORE` : `${seriesTag(top)} // ${top.id}`}</span><img src="${top.image || ''}" alt="${escapeHTML(top.name)} 商品圖"><h3>${escapeHTML(top.name)}</h3><p>${escapeHTML(top.type)} · 戰力 ${Math.round(scoreWithoutLuck(top))}</p><button class="saved-core__customize" type="button" data-card-customize="${top.id}">強化</button><button class="saved-core__equip" type="button" data-equip="${top.id}" ${equipped ? 'disabled' : ''}>${equipped ? '出戰中 ✓' : '選這顆出戰'}</button></article>`;
+      return `<article class="saved-core${equipped ? ' is-equipped' : ''}" style="--core-color:${top.color}"><button class="saved-core__remove" type="button" data-remove="${top.id}" aria-label="移除 ${top.name}">×</button><span>${top.isCustom ? `${top.effect?.icon || '✦'} CUSTOM CORE` : `${seriesTag(top)} // ${top.id}`}</span><img src="${top.image || ''}" alt="${escapeHTML(displayName(top))} 商品圖"><h3>${escapeHTML(displayName(top))}</h3><p>${escapeHTML(top.type)} · 戰力 ${Math.round(scoreWithoutLuck(top))}</p><button class="saved-core__customize" type="button" data-card-customize="${top.id}">強化</button><button class="saved-core__equip" type="button" data-equip="${top.id}" ${equipped ? 'disabled' : ''}>${equipped ? '出戰中 ✓' : '選這顆出戰'}</button></article>`;
     }).join('');
     els.collection.querySelectorAll('[data-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.equip)));
     els.collection.querySelectorAll('[data-card-customize]').forEach(button => button.addEventListener('click', () => { openCollectionPicker(); startCustomizing(button.dataset.cardCustomize); }));
@@ -2175,7 +2179,7 @@
     }
     els.leaderboard.innerHTML = visibleEntries.map(({ entry, index }) => {
       const ownRecord = isCurrentPlayer(entry);
-      return `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}${ownRecord ? ' is-player' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${avatarMarkup(entry.avatar)}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(entry.top)}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}" ${ownRecord ? 'disabled' : ''}>${ownRecord ? '你' : 'PK'}</button></li>`;
+      return `<li class="${entry.bot ? 'is-bot' : ''}${state.opponent.id === entry.id ? ' is-target' : ''}${ownRecord ? ' is-player' : ''}"><span>${String(index + 1).padStart(2, '0')}</span><i>${avatarMarkup(entry.avatar)}</i><div><strong>${escapeHTML(entry.name)}</strong><small>${escapeHTML(topLabel(entry.top))}</small></div><b>${Number(entry.score).toLocaleString('zh-TW')}</b><button type="button" data-challenge="${index}" ${ownRecord ? 'disabled' : ''}>${ownRecord ? '你' : 'PK'}</button></li>`;
     }).join('');
     els.leaderboard.querySelectorAll('[data-challenge]').forEach(button => button.addEventListener('click', () => {
       setOpponent(ranked[Number(button.dataset.challenge)]);
@@ -2245,7 +2249,7 @@
     state.enemy = cloneProduct(findProduct(entry.top) || productCatalog[1]);
     paintAvatar(els.opponentAvatar, entry.avatar);
     els.opponentName.textContent = entry.name;
-    els.opponentTop.textContent = state.enemy.name;
+    els.opponentTop.textContent = displayName(state.enemy);
     els.opponentImage.src = state.enemy.image;
     els.opponentImage.alt = `${state.enemy.name} 官方商品圖`;
     els.opponentScore.textContent = `${state.opponent.score.toLocaleString('zh-TW')} PTS`;
