@@ -30,7 +30,16 @@
     { id: 'UX-06', name: 'Leon Crest 7-60GN', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX06_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux06.html', parts: 'Leon Crest · 7-60 · Gear Needle', skill: '厚實外周與多重防禦刃承受撞擊，Gear Needle 守住場地中央。', color: '#2eaa78', accent: '#e1c64b', stats: { attack: 52, defense: 120, stamina: 72, burst: 76, xdash: 14 }, teeth: 7, core: 6 },
     { id: 'UX-08', name: 'Silver Wolf 3-80FB', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX08_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux08.html', parts: 'Silver Wolf · 3-80 · Free Ball', skill: '自由旋轉結構卸除碰撞力，Free Ball 軸尖維持穩定並拖長戰局。', color: '#aab8c8', accent: '#67c8dc', stats: { attack: 42, defense: 94, stamina: 115, burst: 62, xdash: 7 }, teeth: 5, core: 8 },
     { id: 'UX-09', name: 'Samurai Saber 2-70L', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX09_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux09.html', parts: 'Samurai Saber · 2-70 · Level', skill: '刀刃造型集中斬擊，Level 軸尖讓移動節奏改變後再切入攻擊。', color: '#38a86b', accent: '#f0d5a1', stats: { attack: 102, defense: 58, stamina: 54, burst: 74, xdash: 43 }, teeth: 4, core: 6 },
-    { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 }
+    { id: 'UX-11', name: 'Impact Drake 9-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX11_list.png', source: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/ux11.html', parts: 'Impact Drake · 9-60 · Low Rush', skill: '厚重四枚刃加入高反發橡膠，Low Rush 從低位發動猛烈上勾攻擊。', color: '#733aa9', accent: '#e54e63', stats: { attack: 118, defense: 69, stamina: 38, burst: 86, xdash: 48 }, teeth: 4, core: 7 },
+    // ---------- 玩家改造配置（mod: true）：2026 賽場 / 論壇推薦的組合，上蓋沿用官方商品圖，出處連到論壇或賽場資料 ----------
+    { id: 'MOD-01', mod: true, name: 'Shark Scale 1-70LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX15_01_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Shark Scale · 1-70 · Low Rush', skill: '鮫鯊狂鱗：不對稱長刃畫出侵略軌道，1-70 高位配 Low Rush 由下往上勾。現版本最強攻擊手，WBO 12 冠。', color: '#3ab6ff', accent: '#ff3d7a', stats: { attack: 124, defense: 52, stamina: 40, burst: 84, xdash: 56 }, teeth: 3, core: 4 },
+    { id: 'MOD-02', mod: true, name: 'Wizard Rod 1-60H', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX03_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Wizard Rod · 1-60 · Hexa', skill: '魔導神杖：1 齒固鎖幾乎鎖死爆裂，Hexa 六角軸尖守住中央。WBO 28 冠，史上最多獎的組合。', color: '#d9b423', accent: '#6cd7ef', stats: { attack: 48, defense: 98, stamina: 118, burst: 86, xdash: 14 }, teeth: 8, core: 7 },
+    { id: 'MOD-03', mod: true, name: 'Silver Wolf 9-60FB', type: '平衡型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX08_list.png', source: 'https://beyxhub.org/en/guide/best-beyblade-x-combos-2026', parts: 'Silver Wolf · 9-60 · Free Ball', skill: '銀狼：9-60 重心配 Free Ball 自由軸，軌道難以預測，攻擊型和持久型都不好打。WBO 勝率 72%。', color: '#aab8c8', accent: '#67c8dc', stats: { attack: 56, defense: 96, stamina: 112, burst: 74, xdash: 18 }, teeth: 5, core: 8 },
+    { id: 'MOD-04', mod: true, name: 'Cobalt Dragoon 5-60E', type: '防禦型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX34_01_list.png', source: 'https://beybladehub.app/combos', parts: 'Cobalt Dragoon · 5-60 · Elevate', skill: '蒼穹龍騎士：賽場唯一的左旋 meta，每次碰撞吸走右旋對手的轉速，Elevate 軸尖把持久拉到終盤。', color: '#2f5fd0', accent: '#c9d6e8', stats: { attack: 58, defense: 104, stamina: 96, burst: 68, xdash: 14 }, teeth: 3, core: 6 },
+    { id: 'MOD-05', mod: true, name: 'Meteor Dragoon 9-60E', type: '持久型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX17_01_list.png', source: 'https://beybase.com/best-beyblade-x-combos-players-guide/', parts: 'Meteor Dragoon · 9-60 · Elevate', skill: '隕星龍騎士：左旋大型橡膠顎吸收右旋能量，9-60 配 Elevate 的寬軌道躲過強攻。大型賽事決賽常客。', color: '#e8e8f0', accent: '#e33a4a', stats: { attack: 74, defense: 66, stamina: 104, burst: 70, xdash: 22 }, teeth: 3, core: 5 },
+    { id: 'MOD-06', mod: true, name: 'Phoenix Wing 3-60R', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/BX23_list.png', source: 'https://forum.gamer.com.tw/C.php?bsn=2696&snA=1117', parts: 'Phoenix Wing · 3-60 · Rush', skill: '鳳凰飛翼：金屬重型刃換上 Rush 衝刺軸，用重量輾壓對手。巴哈阿土梯度表 T0，配右旋旋風發射器。', color: '#d92f36', accent: '#f2b729', stats: { attack: 122, defense: 70, stamina: 44, burst: 80, xdash: 54 }, teeth: 3, core: 5 },
+    { id: 'MOD-07', mod: true, name: 'Dran Buster 1-60R', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/UX01_list.png', source: 'https://forum.gamer.com.tw/C.php?bsn=2696&snA=1117', parts: 'Dran Buster · 1-60 · Rush', skill: '蒼龍爆刃：1-60 鎖死爆裂後全力衝刺，一擊定勝負。巴哈新手入坑指南 T1 標配。', color: '#2f72e8', accent: '#ff3358', stats: { attack: 126, defense: 44, stamina: 34, burst: 86, xdash: 60 }, teeth: 2, core: 4 },
+    { id: 'MOD-08', mod: true, name: 'Emperor Might 7-60LR', type: '攻擊型', image: 'https://beyblade.takaratomy.co.jp/beyblade-x/lineup/_image/CX11_01_list.png', source: 'https://hackmd.io/@liangyutw/beyblade-important-record', parts: 'Emperor Might · 7-60 · Low Rush', skill: '帝王威能：總重約 55g 的重型戰車，迴旋抵銷對手攻擊，Low Rush 低位猛推。台灣賽場公認毒瘤配置。', color: '#e0a521', accent: '#2a2a2e', stats: { attack: 118, defense: 86, stamina: 42, burst: 84, xdash: 46 }, teeth: 6, core: 6 }
   ];
 
   const customizationParts = {
@@ -40,7 +49,11 @@
       { id: 'wizard', name: 'Wizard Arrow', productId: 'BX-03', stats: { attack: 24, defense: 42, stamina: 76, burst: 21, xdash: 6 } },
       { id: 'knight', name: 'Knight Shield', productId: 'BX-04', stats: { attack: 26, defense: 77, stamina: 42, burst: 21, xdash: 6 } },
       { id: 'phoenix', name: 'Phoenix Wing', productId: 'BX-23', stats: { attack: 78, defense: 48, stamina: 31, burst: 52, xdash: 27 } },
-      { id: 'leon', name: 'Leon Crest', productId: 'UX-06', stats: { attack: 31, defense: 82, stamina: 48, burst: 48, xdash: 8 } }
+      { id: 'leon', name: 'Leon Crest', productId: 'UX-06', stats: { attack: 31, defense: 82, stamina: 48, burst: 48, xdash: 8 } },
+      { id: 'shark', name: 'Shark Scale', productId: 'MOD-01', stats: { attack: 82, defense: 40, stamina: 34, burst: 52, xdash: 30 } },
+      { id: 'cobalt-dragoon', name: 'Cobalt Dragoon', productId: 'MOD-04', stats: { attack: 44, defense: 66, stamina: 62, burst: 44, xdash: 8 } },
+      { id: 'meteor-dragoon', name: 'Meteor Dragoon', productId: 'MOD-05', stats: { attack: 60, defense: 50, stamina: 60, burst: 46, xdash: 14 } },
+      { id: 'emperor', name: 'Emperor Might', productId: 'MOD-08', stats: { attack: 74, defense: 62, stamina: 36, burst: 50, xdash: 18 } }
     ],
     ratchet: [
       { id: '3-60', name: '3-60', delta: { attack: 9, defense: 4, stamina: 1, burst: 25, xdash: 5 }, teeth: 3 },
@@ -48,7 +61,10 @@
       { id: '5-70', name: '5-70', delta: { attack: 1, defense: 13, stamina: 12, burst: 17, xdash: 0 }, teeth: 5 },
       { id: '7-60', name: '7-60', delta: { attack: 3, defense: 18, stamina: 7, burst: 24, xdash: 1 }, teeth: 7 },
       { id: '9-60', name: '9-60', delta: { attack: 12, defense: 8, stamina: 4, burst: 27, xdash: 5 }, teeth: 9 },
-      { id: '3-80', name: '3-80', delta: { attack: 0, defense: 10, stamina: 13, burst: 9, xdash: 0 }, teeth: 3 }
+      { id: '3-80', name: '3-80', delta: { attack: 0, defense: 10, stamina: 13, burst: 9, xdash: 0 }, teeth: 3 },
+      { id: '1-60', name: '1-60', delta: { attack: 11, defense: 3, stamina: 2, burst: 26, xdash: 6 }, teeth: 1 },
+      { id: '1-70', name: '1-70', delta: { attack: 12, defense: 4, stamina: 3, burst: 24, xdash: 6 }, teeth: 1 },
+      { id: '5-60', name: '5-60', delta: { attack: 4, defense: 11, stamina: 9, burst: 20, xdash: 1 }, teeth: 5 }
     ],
     bit: [
       { id: 'flat', name: 'Flat', code: 'F', delta: { attack: 28, defense: 8, stamina: 5, burst: 7, xdash: 18 } },
@@ -56,7 +72,15 @@
       { id: 'ball', name: 'Ball', code: 'B', delta: { attack: 5, defense: 14, stamina: 29, burst: 0, xdash: 2 } },
       { id: 'needle', name: 'Needle', code: 'N', delta: { attack: 4, defense: 27, stamina: 8, burst: 0, xdash: 2 } },
       { id: 'gear-flat', name: 'Gear Flat', code: 'GF', delta: { attack: 27, defense: 13, stamina: 6, burst: 7, xdash: 23 } },
-      { id: 'disc-ball', name: 'Disc Ball', code: 'DB', delta: { attack: 4, defense: 18, stamina: 31, burst: 3, xdash: 1 } }
+      { id: 'disc-ball', name: 'Disc Ball', code: 'DB', delta: { attack: 4, defense: 18, stamina: 31, burst: 3, xdash: 1 } },
+      { id: 'hexa', name: 'Hexa', code: 'H', delta: { attack: 12, defense: 20, stamina: 14, burst: 12, xdash: 6 } },
+      { id: 'free-ball', name: 'Free Ball', code: 'FB', delta: { attack: 3, defense: 20, stamina: 30, burst: 2, xdash: 1 } },
+      { id: 'elevate', name: 'Elevate', code: 'E', delta: { attack: 10, defense: 16, stamina: 22, burst: 5, xdash: 5 } },
+      { id: 'rush', name: 'Rush', code: 'R', delta: { attack: 30, defense: 6, stamina: 4, burst: 6, xdash: 24 } },
+      { id: 'low-rush', name: 'Low Rush', code: 'LR', delta: { attack: 31, defense: 9, stamina: 3, burst: 8, xdash: 22 } },
+      // 非官方彩蛋：副廠 / 3D 列印零件。比賽不合法、只能休閒玩，所以掉落率很低，卡片會標「非官方」
+      { id: 'metal-ball', name: 'Metal Ball', code: 'MB', unofficial: true, delta: { attack: 6, defense: 24, stamina: 34, burst: 2, xdash: 2 } },
+      { id: 'black-wall', name: 'Black Wall', code: 'BW', unofficial: true, delta: { attack: 22, defense: 22, stamina: 8, burst: 14, xdash: 12 } }
     ]
   };
   const refineEffects = [
@@ -83,6 +107,7 @@
     { key: 'bit', label: '軸心', english: 'Bit', rate: .5, swap: true }
   ];
   const swapSlots = partSlots.filter(slot => slot.swap);
+  const UNOFFICIAL_DROP_RATE = .06;
   // 舊的數值道具 → 零件（v2 → v3 遷移，保留 instance id，收藏陀螺的參照不會斷）
   const legacyEquipmentToPart = { 'power-gear': ['ratchet', '3-60'], 'steel-armor': ['ratchet', '3-80'], 'eternal-core': ['ratchet', '5-70'], 'burst-lock': ['ratchet', '4-60'], 'dash-engine': ['bit', 'flat'] };
   // 曾經掉過的上蓋零件 → 換成固鎖（保留編號與特效）
@@ -120,7 +145,7 @@
       const n = Math.max(2, prongs || 3);
       const teeth = [...Array(20)].map((_, i) => { const a = i / 20 * Math.PI * 2, a2 = (i + .5) / 20 * Math.PI * 2; return `${(60 + Math.cos(a) * 48).toFixed(1)} ${(58 + Math.sin(a) * 48).toFixed(1)} ${(60 + Math.cos(a2) * 42).toFixed(1)} ${(58 + Math.sin(a2) * 42).toFixed(1)}`; }).join(' ');
       const prongPaths = [...Array(n)].map((_, i) => { const a = i / n * Math.PI * 2 - Math.PI / 2, w = .42; const p1 = [60 + Math.cos(a - w) * 18, 58 + Math.sin(a - w) * 18], p2 = [60 + Math.cos(a - w * .55) * 40, 58 + Math.sin(a - w * .55) * 40], p3 = [60 + Math.cos(a + w * .55) * 40, 58 + Math.sin(a + w * .55) * 40], p4 = [60 + Math.cos(a + w) * 18, 58 + Math.sin(a + w) * 18]; return `M${p1.map(v => v.toFixed(1)).join(' ')} L${p2.map(v => v.toFixed(1)).join(' ')} L${p3.map(v => v.toFixed(1)).join(' ')} L${p4.map(v => v.toFixed(1)).join(' ')}Z`; }).join(' ');
-      return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><polygon points="${teeth}" fill="#1c2a36" stroke="${color}" stroke-width="2"/><circle cx="60" cy="58" r="40" fill="#0f1a24" stroke="${color}" stroke-width="2" opacity=".9"/><path d="${prongPaths}" fill="${color}" opacity=".9" stroke="#071017" stroke-width="1.5"/><circle cx="60" cy="58" r="17" fill="#071017" stroke="${color}" stroke-width="3"/><circle cx="60" cy="58" r="6" fill="${color}"/><text x="60" y="114" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="700" fill="${color}">${escapeHTML(label)} ${n}齒 · 高${height || '?'}</text></svg>`;
+      return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><polygon points="${teeth}" fill="#1c2a36" stroke="${color}" stroke-width="2"/><circle cx="60" cy="58" r="40" fill="#0f1a24" stroke="${color}" stroke-width="2" opacity=".9"/><path d="${prongPaths}" fill="${color}" opacity=".9" stroke="#071017" stroke-width="1.5"/><circle cx="60" cy="58" r="17" fill="#071017" stroke="${color}" stroke-width="3"/><circle cx="60" cy="58" r="6" fill="${color}"/><text x="60" y="114" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" font-weight="700" fill="${color}">${escapeHTML(label)} ${prongs || n}齒 · 高${height || '?'}</text></svg>`;
     }
     const name = String(part.name);
     const gear = /gear|accel/i.test(name);
@@ -131,7 +156,9 @@
       : family === 'hexa' ? `<path d="M48 74 72 74 78 84 72 94 48 94 42 84Z" fill="${color}"/>`
       : `<rect x="38" y="76" width="44" height="14" rx="4" fill="${color}"/>`;
     const gearRing = gear ? `<path d="${[...Array(14)].map((_, i) => { const x = 24 + i * 5.5; return `M${x} 50 l2.5 -6 l2.5 6`; }).join(' ')}" fill="none" stroke="${color}" stroke-width="2.5"/>` : '';
-    return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><rect x="26" y="26" width="68" height="14" rx="4" fill="#1c2a36" stroke="${color}" stroke-width="2"/><path d="M30 40 90 40 82 76 38 76Z" fill="#0f1a24" stroke="${color}" stroke-width="2.5"/>${gearRing}${tip}<text x="60" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(label)} ${escapeHTML(part.code || '')}</text></svg>`;
+    const dash = part.unofficial ? ' stroke-dasharray="5 3"' : '';
+    const caption = part.unofficial ? `非官方 ${part.code || ''}` : `${label} ${part.code || ''}`;
+    return `<svg viewBox="0 0 120 120" role="img" aria-label="${escapeHTML(label)} ${escapeHTML(part.name)}"><rect x="26" y="26" width="68" height="14" rx="4" fill="#1c2a36" stroke="${color}" stroke-width="2"${dash}/><path d="M30 40 90 40 82 76 38 76Z" fill="#0f1a24" stroke="${color}" stroke-width="2.5"${dash}/>${gearRing}${tip}<text x="60" y="114" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${color}">${escapeHTML(caption)}</text></svg>`;
   }
 
   const state = { arena: null, pockets: [], railRing: null, railGlow: null, railTrail: null, radial: null, bowlPoint: null, bowlPath: null, player: null, enemy: null, opponent: { id: 'demon-boss', name: '魔王', avatar: '👹', top: 'Hells Scythe 4-60T', score: 1000, bot: true }, ranked: [], globalScores: [], battleHistory: [], historyLoaded: false, historyLoading: false, leaderboardQuery: '', leaderboardLoaded: false, leaderboardLoading: false, rivalChosen: false, leaderboardTotal: 0, leaderboardFilteredTotal: 0, leaderboardHasMore: false, leaderboardSearchTimer: 0, leaderboardRequestId: 0, setupReturnPhase: 'intro', draw: null, scene: null, battling: false, raf: 0, sound: false, audio: null, spinAudio: null, lastBattleModel: null, lastScoreEntry: null, lastLoot: null, requestedChallengeId: new URLSearchParams(window.location.search).get('challenge') || '', customDraft: null, customizingId: '', customNameTimer: 0 };
@@ -371,6 +398,11 @@
     };
   }
   function findProduct(name) { return productCatalog.find(product => product.name === name) || null; }
+  // 官方商品 vs 玩家改造配置：改造配置的編號、系列名與圖片說明都不該長得像官方商品
+  const seriesTag = top => top?.mod ? 'MOD BUILD' : 'BX SERIES';
+  const seriesCode = top => top?.mod ? `BUILD // ${top.id}` : `PRODUCT // ${top.id}`;
+  const seriesLine = top => top?.mod ? '玩家改造配置' : 'BEYBLADE X 完整商品組合';
+  const imageAlt = top => `${top.name} ${top?.mod ? '上蓋商品圖' : '官方商品圖'}`;
   // 配件固定三段：上蓋（Blade）· 固鎖（Ratchet）· 軸心（Bit），來源是 product.parts 的「A · B · C」字串
   const PART_LABELS = [['上蓋', 'Blade'], ['固鎖', 'Ratchet'], ['軸心', 'Bit']];
   function partsOf(top) {
@@ -919,13 +951,14 @@
     const top = state.player;
     if (!top) return;
     els.name.textContent = top.name;
-    els.className.textContent = `${top.type} · BEYBLADE X 完整商品組合`;
-    els.rarity.textContent = 'BX SERIES';
+    els.className.textContent = `${top.type} · ${seriesLine(top)}`;
+    els.rarity.textContent = seriesTag(top);
     els.rarity.style.color = top.color;
-    els.code.textContent = `PRODUCT // ${top.id}`;
+    els.code.textContent = seriesCode(top);
     els.skill.textContent = top.skill;
     els.parts.innerHTML = partsMarkup(top);
-    els.productImage.src = top.image; els.productImage.alt = `${top.name} 官方商品圖`; els.productLink.href = top.source;
+    els.productImage.src = top.image; els.productImage.alt = imageAlt(top); els.productLink.href = top.source;
+    const linkCaption = els.productLink.querySelector('span'); if (linkCaption) linkCaption.textContent = top.mod ? 'BUILD SOURCE ↗' : 'OFFICIAL PRODUCT IMAGE ↗';
     const labels = { attack: '攻擊', defense: '防禦', stamina: '持久', burst: '防爆', xdash: 'X衝刺' };
     els.stats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div class="stat-row"><span>${labels[key]}</span><div class="stat-track"><div class="stat-fill" data-value="${value}"></div></div><strong>${value}</strong></div>`).join('');
     requestAnimationFrame(() => els.stats.querySelectorAll('.stat-fill').forEach(bar => { bar.style.width = `${Math.min(100, Number(bar.dataset.value) / 120 * 100)}%`; }));
@@ -939,7 +972,7 @@
     els.opponentDetailPlayer.textContent = state.opponent.name;
     els.opponentDetailScore.textContent = `${Number(state.opponent.score).toLocaleString('zh-TW')} PTS`;
     els.opponentDetailImage.src = top.image;
-    els.opponentDetailImage.alt = `${top.name} 官方商品圖`;
+    els.opponentDetailImage.alt = imageAlt(top);
     els.opponentDetailName.textContent = top.name;
     els.opponentDetailType.textContent = `${top.type} · ${partsText(top)}`;
     els.opponentDetailStats.innerHTML = Object.entries(top.stats).map(([key, value]) => `<div><span>${labels[key]}</span><b>${value}</b><i><em style="width:${Math.min(100, value / 120 * 100)}%"></em></i></div>`).join('');
@@ -1637,7 +1670,7 @@
     }
     els.collectionPickerList.innerHTML = products.map(top => {
       const equipped = state.player?.id === top.id;
-      return `<article class="battle-collection-choice-row"><button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.isCustom ? `${top.effect?.icon || '✦'} 強化核心` : `${top.id} · ${escapeHTML(top.type)}`}</small><strong>${escapeHTML(top.name)}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button><div class="battle-collection-choice-actions"><button type="button" data-customize="${top.id}">強化</button><button type="button" data-picker-remove="${top.id}">刪除</button>${top.source ? `<a href="${top.source}" target="_blank" rel="noopener">商品資訊 ↗</a>` : ''}</div></article>`;
+      return `<article class="battle-collection-choice-row"><button type="button" class="battle-collection-choice${equipped ? ' is-equipped' : ''}" data-picker-equip="${top.id}" ${equipped ? 'disabled' : ''}><img src="${top.image}" alt=""><span><small>${top.isCustom ? `${top.effect?.icon || '✦'} 強化核心` : `${top.mod ? '改造' : top.id} · ${escapeHTML(top.type)}`}</small><strong>${escapeHTML(top.name)}</strong><em>${equipped ? '目前出戰中' : '選這顆出戰 →'}</em></span></button><div class="battle-collection-choice-actions"><button type="button" data-customize="${top.id}">強化</button><button type="button" data-picker-remove="${top.id}">刪除</button>${top.source ? `<a href="${top.source}" target="_blank" rel="noopener">商品資訊 ↗</a>` : ''}</div></article>`;
     }).join('');
     els.collectionPickerList.querySelectorAll('[data-picker-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.pickerEquip)));
     els.collectionPickerList.querySelectorAll('[data-customize]').forEach(button => button.addEventListener('click', () => startCustomizing(button.dataset.customize)));
@@ -1715,12 +1748,14 @@
     const roll = Math.random();
     let acc = 0;
     const slot = swapSlots.find(item => { acc += item.rate; return roll < acc; }) || swapSlots[swapSlots.length - 1];
-    const part = pick(customizationParts[slot.key]);
+    const pool = customizationParts[slot.key];
+    const unofficial = pool.filter(item => item.unofficial);
+    const part = unofficial.length && Math.random() < UNOFFICIAL_DROP_RATE ? pick(unofficial) : pick(pool.filter(item => !item.unofficial));
     const inventory = readEquipmentInventory();
     const instance = { id: `PART-${makeId()}`, slot: slot.key, partId: part.id, effectId: '', ownerTopId: '' };
     inventory.push(instance);
     writeEquipmentInventory(inventory);
-    state.lastLoot = { slot: slot.key, part, instanceId: instance.id, name: `${slot.label} ${part.name}`, label: slot.label, english: slot.english };
+    state.lastLoot = { slot: slot.key, part, instanceId: instance.id, name: `${part.unofficial ? '非官方' : slot.label} ${part.name}`, label: slot.label, english: slot.english };
     trackEvent('battle_top_part_drop', { part_slot: slot.key, part_id: part.id, part_instance_id: instance.id });
     return state.lastLoot;
   }
@@ -1801,7 +1836,7 @@
       const equipped = draft.parts[active] === instance.id;
       const effect = equipmentEffect(instance);
       const color = effect?.color || '#28f4e8';
-      return `<button type="button" class="custom-part-card${equipped ? ' is-equipped' : ''}" data-part="${instance.id}" style="--equipment-color:${color}" aria-pressed="${equipped}"><span>${partGlyph(active, part, color)}<i>#${instance.id.slice(-4)}</i></span><strong>${escapeHTML(part.name)}</strong><b>${deltaText(part)}</b><small>${effect ? `${effect.icon} ${effect.name}特效` : equipped ? '出戰時鑑定特效' : '尚未鑑定'}</small></button>`;
+      return `<button type="button" class="custom-part-card${equipped ? ' is-equipped' : ''}" data-part="${instance.id}" style="--equipment-color:${color}" aria-pressed="${equipped}"><span>${partGlyph(active, part, color)}<i>#${instance.id.slice(-4)}</i></span><strong>${escapeHTML(part.name)}</strong><b>${deltaText(part)}</b><small>${part.unofficial ? '非官方 · 休閒限定 · ' : ''}${effect ? `${effect.icon} ${effect.name}特效` : equipped ? '出戰時鑑定特效' : '尚未鑑定'}</small></button>`;
     }).join('') + (list.length ? '' : `<p class="custom-equipment-empty">還沒有可以換的${meta.label}。打贏對手有 ${Math.round(meta.rate * 100)}% 機率掉${meta.label}。</p>`);
     els.customEquipmentOptions.querySelectorAll('[data-part]').forEach(button => button.addEventListener('click', () => {
       const id = button.dataset.part;
@@ -1969,7 +2004,7 @@
     els.collection.innerHTML = collection.map(saved => {
       const top = saved;
       const equipped = state.player?.id === top.id;
-      return `<article class="saved-core${equipped ? ' is-equipped' : ''}" style="--core-color:${top.color}"><button class="saved-core__remove" type="button" data-remove="${top.id}" aria-label="移除 ${top.name}">×</button><span>${top.isCustom ? `${top.effect?.icon || '✦'} CUSTOM CORE` : `BX SERIES // ${top.id}`}</span><img src="${top.image || ''}" alt="${escapeHTML(top.name)} 商品圖"><h3>${escapeHTML(top.name)}</h3><p>${escapeHTML(top.type)} · 戰力 ${Math.round(scoreWithoutLuck(top))}</p><button class="saved-core__customize" type="button" data-card-customize="${top.id}">強化</button><button class="saved-core__equip" type="button" data-equip="${top.id}" ${equipped ? 'disabled' : ''}>${equipped ? '出戰中 ✓' : '選這顆出戰'}</button></article>`;
+      return `<article class="saved-core${equipped ? ' is-equipped' : ''}" style="--core-color:${top.color}"><button class="saved-core__remove" type="button" data-remove="${top.id}" aria-label="移除 ${top.name}">×</button><span>${top.isCustom ? `${top.effect?.icon || '✦'} CUSTOM CORE` : `${seriesTag(top)} // ${top.id}`}</span><img src="${top.image || ''}" alt="${escapeHTML(top.name)} 商品圖"><h3>${escapeHTML(top.name)}</h3><p>${escapeHTML(top.type)} · 戰力 ${Math.round(scoreWithoutLuck(top))}</p><button class="saved-core__customize" type="button" data-card-customize="${top.id}">強化</button><button class="saved-core__equip" type="button" data-equip="${top.id}" ${equipped ? 'disabled' : ''}>${equipped ? '出戰中 ✓' : '選這顆出戰'}</button></article>`;
     }).join('');
     els.collection.querySelectorAll('[data-equip]').forEach(button => button.addEventListener('click', () => equipTop(button.dataset.equip)));
     els.collection.querySelectorAll('[data-card-customize]').forEach(button => button.addEventListener('click', () => { openCollectionPicker(); startCustomizing(button.dataset.cardCustomize); }));
