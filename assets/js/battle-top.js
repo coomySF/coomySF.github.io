@@ -705,10 +705,11 @@
     const enemy = createRotor(players, state.enemy || createTop(true), 'enemy');
     player.x = 325; player.y = 365; enemy.x = 635; enemy.y = 365;
     player.stage.translate(player.x, player.y); enemy.stage.translate(enemy.x, enemy.y);
+    const debris = draw.group().attr({ id: 'burst-debris-layer' });   // 爆裂碎片要壓在陀螺與特效上面才看得清楚
     const labels = draw.group().attr({ id: 'fighter-labels' });
     labels.text('YOU').font({ family: 'IBM Plex Mono', size: 12, weight: 700 }).fill(state.player?.color || '#28f4e8').center(325, 492).attr({ 'letter-spacing': 3 });
     labels.text('RIVAL').font({ family: 'IBM Plex Mono', size: 12, weight: 700 }).fill(state.enemy?.color || '#ff4d67').center(635, 492).attr({ 'letter-spacing': 3 });
-    state.scene = { player, enemy, core, impact, trails };
+    state.scene = { player, enemy, core, impact, trails, debris };
     renderPose();
     startIdleLoop();
   }
@@ -809,6 +810,125 @@
     const core = group.circle(34).center(x, y).fill('#ffffff').opacity(.95).attr({ filter: 'url(#coreGlow)' });
     core.animate(260).ease('>').size(180, 180).center(x, y).opacity(0);
     setTimeout(() => group.remove(), 520);
+  }
+
+  // 爆裂前兆：裂痕畫在 rotor 上跟著轉，刃和固鎖之間的接縫發亮；progress 0→1 由戰鬥 frame 推進
+  function burstCracks(actor) {
+    const group = actor.spin.group().addClass('burst-cracks');
+    const seam = group.circle(88).center(0, 0).fill('none').stroke({ color: '#ffffff', width: 5, opacity: 0 }).attr({ filter: 'url(#coreGlow)' });
+    const lines = [];
+    for (let i = 0; i < 5; i += 1) {
+      const base = (Math.PI * 2 * i) / 5 + Math.random() * .5;
+      const points = [];
+      for (let step = 0; step <= 4; step += 1) {
+        const r = 30 + step * 14, a = base + (step % 2 ? .22 : -.12) * Math.random();
+        points.push([Math.cos(a) * r, Math.sin(a) * r]);
+      }
+      const length = points.slice(1).reduce((sum, pt, j) => sum + Math.hypot(pt[0] - points[j][0], pt[1] - points[j][1]), 0);
+      const line = group.polyline(points).fill('none').stroke({ color: '#ffffff', width: 3.5, linecap: 'round', linejoin: 'round', dasharray: `${length} ${length}`, dashoffset: length }).attr({ filter: 'url(#coreGlow)' });
+      lines.push({ line, length });
+    }
+    return {
+      group,
+      update(progress) {
+        lines.forEach(({ line, length }, i) => line.attr({ 'stroke-dashoffset': length * (1 - clamp(0, 1, progress * 1.6 - i * .12)) }));
+        seam.stroke({ opacity: clamp(0, 1, progress * 1.4) * (.55 + .45 * Math.sin(performance.now() / 28) ** 2), width: 3 + progress * 5 });
+      }
+    };
+  }
+
+  // 爆裂分解：照 Beyblade X 實際結構拆成 刃 / 固鎖 / 軸心 三件 + 碎屑，各自拋物線飛出、落地彈一下、躺在碗裡並標上零件名
+  function burstApart(actor, attackerX, attackerY) {
+    const layer = state.scene.debris, top = actor.top, A = state.arena;
+    const root = layer.group().attr({ id: `fx-burst-debris-${makeId()}` });
+    const [bladeName = top.name, ratchetName = '', bitName = ''] = String(top.parts || '').split('·').map(text => text.trim());
+    const ratchetTeeth = clamp(3, 9, parseInt(ratchetName, 10) || top.teeth);
+    const glow = `drop-shadow(0 0 6px ${top.color}) drop-shadow(0 0 16px ${top.color}aa)`;
+    const away = Math.atan2(actor.y - attackerY, actor.x - attackerX);   // 以攻擊方「最後停的位置」為準
+    const startScale = actor.scale || 1;
+    const drawBlade = g => {
+      g.polygon(polarPoints(top.teeth, 85, 62)).fill('#020406').stroke({ color: '#010203', width: 9, linejoin: 'round' });
+      g.polygon(polarPoints(top.teeth, 83, 61)).fill(top.color).stroke({ color: '#eaffff', width: 2, opacity: .8 });
+      g.polygon(polarPoints(top.teeth, 67, 48)).fill('#0c1720').stroke({ color: top.accent, width: 5, opacity: .9 }).rotate(180 / top.teeth, 0, 0);
+      for (let i = 0; i < top.teeth; i += 1) {
+        g.path('M 0 -56 C 15 -58 28 -49 36 -34 L 25 -27 C 17 -38 10 -42 0 -42 Z').fill(top.accent).opacity(i % 2 ? .55 : .85).rotate((360 / top.teeth) * i, 0, 0);
+      }
+      g.circle(62).center(0, 0).fill('#010305').stroke({ color: '#ffffff', width: 2.5, opacity: .7, dasharray: '5 4' });   // 固鎖脫離後留下的空洞
+      g.path('M -55 -42 C -25 -70 24 -70 54 -42 C 22 -54 -20 -54 -55 -42 Z').fill('#ffffff').opacity(.3);
+    };
+    const drawRatchet = g => {
+      g.polygon(polarPoints(ratchetTeeth, 46, 34)).fill('#020406').stroke({ color: '#010203', width: 7, linejoin: 'round' });
+      g.polygon(polarPoints(ratchetTeeth, 44, 33)).fill(top.accent).stroke({ color: '#ffffff', width: 1.5, opacity: .7 });
+      g.circle(44).center(0, 0).fill('#0b141b').stroke({ color: top.color, width: 3 });
+      g.polygon(polarPoints(top.core, 15, 8)).fill(top.color).stroke({ color: '#efffff', width: 1.2 });
+    };
+    const drawBit = g => {
+      g.path('M -17 -20 L 17 -20 L 19 -4 L 6 18 L 0 26 L -6 18 L -19 -4 Z').fill('#dfe7ea').stroke({ color: '#11181d', width: 4, linejoin: 'round' });
+      g.rect(38, 8).center(0, -12).radius(2).fill(top.color).stroke({ color: '#11181d', width: 2 });
+      g.path('M -10 -1 L 10 -1').stroke({ color: '#8a979e', width: 2, linecap: 'round' });
+    };
+    // 三件都往遠離攻擊方的扇形散開，避免掉回攻擊方身上；dist：地面上滑多遠；vz：往上拋的速度（px/s）；w：自轉角速度（deg/s）；flip：空中翻滾速度
+    const specs = [
+      { key: 'blade', draw: drawBlade, label: bladeName, angle: away, dist: 180, vz: 560, w: 820, flip: 7, shadow: 150 },
+      { key: 'ratchet', draw: drawRatchet, label: ratchetName, angle: away + 1.3, dist: 145, vz: 700, w: -1100, flip: 11, shadow: 80 },
+      { key: 'bit', draw: drawBit, label: bitName, angle: away - 1.3, dist: 125, vz: 820, w: 1300, flip: 15, shadow: 42 }
+    ];
+    const limit = .74;
+    const insideBowl = (x, y) => {
+      const dx = (x - A.cx) / A.rx, dy = (y - A.cy) / A.ry, d = Math.hypot(dx, dy);
+      return d <= limit ? [x, y] : [A.cx + dx / d * limit * A.rx, A.cy + dy / d * limit * A.ry];
+    };
+    const pieces = specs.map(spec => {
+      let [tx, ty] = insideBowl(actor.x + Math.cos(spec.angle) * spec.dist, actor.y + Math.sin(spec.angle) * spec.dist * .7);
+      const gap = Math.hypot(tx - attackerX, ty - attackerY);
+      if (gap < 130) [tx, ty] = insideBowl(tx + (tx - attackerX) / (gap || 1) * (130 - gap), ty + (ty - attackerY) / (gap || 1) * (130 - gap));   // 別掉在攻擊方身上
+      const shadow = root.ellipse(spec.shadow, spec.shadow * .3).fill('#000').opacity(0).attr({ filter: 'blur(5px)' });
+      const g = root.group().attr({ style: `filter:${glow}` });
+      const tumble = g.group(), body = tumble.group();
+      spec.draw(body);
+      const tag = root.text(spec.label || '').font({ family: 'IBM Plex Mono', size: 15, weight: 700 }).fill('#ffffff').attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 5, 'text-anchor': 'middle' }).opacity(0);
+      return { ...spec, g, tumble, body, shadow, tag, tx, ty, x0: actor.x, y0: actor.y, rot0: actor.rotation };
+    });
+    const shards = Array.from({ length: 14 }, (_, i) => {
+      const angle = Math.random() * Math.PI * 2, dist = randomInt(70, 230);
+      const shard = root.polygon('0,-9 5,4 0,8 -5,4').fill(i % 3 === 0 ? '#ffffff' : (i % 3 === 1 ? top.color : top.accent)).stroke({ color: '#020406', width: 1.5 });
+      return { shard, angle, dist, vz: randomInt(380, 760), w: randomInt(-900, 900) };
+    });
+    const G = 2100, FRICTION = 2.4;
+    // 空中高度：拋物線 + 落地後以 .32 反彈一次
+    const height = (vz, t) => {
+      const land = 2 * vz / G;
+      if (t < land) return vz * t - G * t * t / 2;
+      const vz2 = vz * .32, t2 = t - land, land2 = 2 * vz2 / G;
+      return t2 < land2 ? vz2 * t2 - G * t2 * t2 / 2 : 0;
+    };
+    const slide = t => 1 - Math.exp(-FRICTION * t);
+    return {
+      root,
+      // t：爆開後經過的「戲劇時間」（秒），呼叫端負責子彈時間的慢動作
+      update(t) {
+        const travel = slide(t) / slide(1.6);
+        pieces.forEach(piece => {
+          const z = Math.max(0, height(piece.vz, t));
+          const settled = t > 2 * piece.vz / G * 1.32;
+          const x = lerp(piece.x0, piece.tx, Math.min(1, travel)), y = lerp(piece.y0, piece.ty, Math.min(1, travel));
+          const lift = 1 + z / 700;
+          const spinAngle = piece.rot0 + piece.w * (1 - Math.exp(-1.7 * t)) / 1.7;
+          const flip = z > 0 ? Math.abs(Math.cos(t * piece.flip)) : 1;   // 空中翻滾：看到刃的側面變窄
+          piece.g.transform({ translateX: x, translateY: y - z, scale: startScale * lift });
+          piece.tumble.transform({ rotate: z > 0 ? Math.sin(t * piece.flip * .7) * 28 : 9, origin: [0, 0], scaleX: 1.04, scaleY: .82 * (.35 + .65 * flip) });
+          piece.body.transform({ rotate: spinAngle, origin: [0, 0] });
+          piece.shadow.center(x, y + 30 * startScale).opacity(.55 / (1 + z / 120)).transform({ scale: 1 / (1 + z / 260) });
+          piece.tag.center(x, y + (piece.key === 'blade' ? 92 : 58) * startScale).opacity(settled ? clamp(0, 1, (t - 2 * piece.vz / G * 1.32) * 4) : 0);
+        });
+        shards.forEach(item => {
+          const z = Math.max(0, height(item.vz, t));
+          const x = lerp(pieces[0].x0, pieces[0].x0 + Math.cos(item.angle) * item.dist, Math.min(1, travel));
+          const y = lerp(pieces[0].y0, pieces[0].y0 + Math.sin(item.angle) * item.dist * .7, Math.min(1, travel));
+          item.shard.transform({ translateX: x, translateY: y - z, rotate: item.w * t, scale: 1.3 }).opacity(clamp(0, 1, 2.2 - t));
+        });
+      }
+    };
   }
 
   function flameBurst(x, y, direction = 1) {
@@ -1177,7 +1297,7 @@
       }
       if (event.type === 'burst') {
         if (last?.kind !== 'rail') phases.push({ kind: 'chaos', dur: 1250, index: chaosCount++, clash: true });
-        phases.push({ kind: 'burst', dur: 1200, event });
+        phases.push({ kind: 'burst', dur: 2600, event });
         return;
       }
       if (event.type === 'spin') { phases.push({ kind: 'chaos', dur: 1000, index: chaosCount++ }); phases.push({ kind: 'spin', dur: 1100, event }); }
@@ -1246,6 +1366,8 @@
         current.beat = -1;
         spinFactor.player = 1; spinFactor.enemy = 1;
         p.pocketed = false; e.pocketed = false; clearTrail(p); clearTrail(e);
+        [p, e].forEach(actor => { actor.burstOut = false; actor.cracks?.group.remove(); actor.cracks = null; });
+        state.scene.debris.clear();
         els.status.textContent = `ROUND ${current.round}`;
         noteToast(`第 ${current.round} 回合！你 ${liveScore.player}：對手 ${liveScore.enemy}`);
       }
@@ -1264,7 +1386,7 @@
         noteToast(`${current.event.victim === 'player' ? '你' : '對手'}彈回場內！繼續打`);
       }
       if (current.kind === 'spin') { els.status.textContent = 'SPIN FINISH'; scorePop(current.event.attacker, current.event.points, `${current.event.attacker === 'player' ? '對手' : '你'}被撞停`); }
-      if (current.kind === 'burst') { current.blown = false; els.status.textContent = 'BURST FINISH'; }
+      if (current.kind === 'burst') { current.blown = false; current.debris = null; els.status.textContent = 'BURST WARNING'; }
     };
     const endPhase = () => {
       if (!current) return;
@@ -1283,7 +1405,7 @@
       p.rotation = (p.rotation + (28.8 + Math.min(tt, 4) * 1.3) * dt * spinFactor.player) % 360;
       e.rotation = (e.rotation - (27.4 + Math.min(tt, 4) * 1.2) * dt * spinFactor.enemy) % 360;
       trailFrame += 1;
-      if (trailFrame % 3 === 0) { speedTrail(p); speedTrail(e); }
+      if (trailFrame % 3 === 0) { if (!p.burstOut) speedTrail(p); if (!e.burstOut) speedTrail(e); }
 
       if (current.kind === 'relaunch') {
         // 回合之間：兩顆陀螺回到發射位置，重新倒數 3、2、1、GO SHOOT！
@@ -1381,41 +1503,45 @@
         victim.stage.opacity(lerp(.9, 1, w));
         victim.wobble = 12 * (1 - k);
       } else if (current.kind === 'burst') {
-        // 爆裂：受害者狂抖、瞬間脹大，然後零件散開（火花四射）、縮小變暗留在原地
+        // 爆裂：0–.32 受害者狂抖、轉速掉、裂痕爬滿、接縫發亮 → 爆開瞬間子彈時間 → 刃 / 固鎖 / 軸心分三路飛出，落地後躺在碗裡標上零件名
         const event = current.event, victim = actorOf(event.victim), attacker = actorOf(event.attacker);
         const vx0 = event.victim === 'player' ? from.px : from.ex, vy0 = event.victim === 'player' ? from.py : from.ey;
         const ax0 = event.attacker === 'player' ? from.px : from.ex, ay0 = event.attacker === 'player' ? from.py : from.ey;
-        const shakePhase = clamp(0, 1, k / .35), blow = clamp(0, 1, (k - .35) / .65);
-        victim.x = vx0 + Math.sin(k * Math.PI * 22) * 9 * (1 - blow);
-        victim.y = vy0 + Math.cos(k * Math.PI * 18) * 6 * (1 - blow);
-        victim.wobble = 14 + shakePhase * 16;
-        victim.scale = blow ? lerp(1.18, .6, easeOut(blow)) : lerp(1, 1.18, shakePhase);
-        victim.stage.opacity(blow > 0 ? Math.max(0, 1 - blow * 6) : 1);   // 一炸開本體就消失，剩下飛出去的碎片
-        attacker.x = lerp(ax0, A.cx + (event.attacker === 'player' ? -40 : 40), easeOut(k));
+        const BLOW_AT = .32;
+        const shakePhase = clamp(0, 1, k / BLOW_AT);
+        attacker.x = lerp(ax0, A.cx + (event.attacker === 'player' ? -60 : 60), easeOut(k));
         attacker.y = lerp(ay0, A.cy, easeOut(k)) + Math.sin(k * Math.PI) * 12;
         attacker.wobble = 0;
-        if (blow > 0 && !current.blown) {
-          current.blown = true;
-          clearTrail(victim);
-          // 拆成三塊：上蓋（大片刃）、固鎖（棘齒環）、軸心（小軸尖），各自往不同方向飛出去旋轉消失
-          const frag = state.scene.impact.group();
-          const topColor = victim.top.color, accent = victim.top.accent || '#ffffff';
-          const pieces = [
-            { shape: frag.polygon(polarPoints(6, 40, 26)).fill(topColor).stroke({ color: '#ffffff', width: 2.5, linejoin: 'round' }), dx: -1.1, dy: -.7, spin: -560 },
-            { shape: frag.circle(34).fill('none').stroke({ color: accent, width: 7, dasharray: '6 4' }), dx: 1, dy: -.9, spin: 640 },
-            { shape: frag.rect(16, 24).radius(4).fill('#dfe7ea').stroke({ color: '#2b3238', width: 2 }), dx: .25, dy: 1.05, spin: 420 }
-          ];
-          pieces.forEach((piece, index) => {
-            piece.shape.center(victim.x, victim.y);
-            piece.shape.animate(950 + index * 80).ease('>').transform({ translateX: piece.dx * 160, translateY: piece.dy * 120 - 50, rotate: piece.spin }).opacity(0).after(() => piece.shape.remove());
-          });
-          setTimeout(() => frag.remove(), 1400);
-          burst(victim.x, victim.y, '#ffffff', 1.7); burst(victim.x, victim.y, attacker.top.color, 1.3);
-          lightningStrike(victim.x, victim.y - 10, '#ff8a3d');
-          const floatText = state.scene.impact.text('+3 BURST').font({ family: 'IBM Plex Mono', size: 30, weight: 700 }).fill('#ff8a3d').center(victim.x, victim.y - 40).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
-          floatText.animate(1100).ease('>').dy(-70).opacity(0).after(() => floatText.remove());
-          playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 90); shake(420);
-          scorePop(event.attacker, event.points, `${event.attacker === 'player' ? '對手' : '你'}爆裂`);
+        if (k < BLOW_AT) {
+          if (!victim.cracks) { victim.cracks = burstCracks(victim); playCue('zap'); }
+          victim.cracks.update(shakePhase);
+          spinFactor[event.victim] = lerp(1, .18, shakePhase);
+          victim.x = vx0 + Math.sin(k * Math.PI * 40) * (4 + 8 * shakePhase);
+          victim.y = vy0 + Math.cos(k * Math.PI * 34) * (3 + 5 * shakePhase);
+          victim.wobble = 10 + shakePhase * 22;
+          victim.scale = lerp(1, 1.16, shakePhase * shakePhase);
+          victim.stage.opacity(1);
+        } else {
+          if (!current.blown) {
+            current.blown = true; current.blowAt = now;
+            victim.x = vx0; victim.y = vy0; victim.burstOut = true;
+            clearTrail(victim); victim.stage.opacity(0);
+            current.debris = burstApart(victim, A.cx + (event.attacker === 'player' ? -60 : 60), A.cy);
+            // 特效都在 impact 層（碎片下面），所以閃光不會蓋住分裂的瞬間
+            burst(vx0, vy0, '#ffffff', 1.3); burst(vx0, vy0, attacker.top.color, 1);
+            lightningStrike(vx0, vy0 - 10, '#ff8a3d');
+            const shock = state.scene.impact.ellipse(60, 40).center(vx0, vy0 + 20).fill('none').stroke({ color: '#ffffff', width: 6, opacity: .95 });
+            shock.animate(520).ease('>').size(420, 230).center(vx0, vy0 + 20).stroke({ width: 1 }).opacity(0).after(() => shock.remove());
+            const floatText = state.scene.debris.text('+3 BURST').font({ family: 'IBM Plex Mono', size: 30, weight: 700 }).fill('#ff8a3d').center(vx0, vy0 - 110).attr({ 'paint-order': 'stroke', stroke: '#03080d', 'stroke-width': 6 });
+            floatText.animate(1400).ease('>').dy(-60).opacity(0).after(() => floatText.remove());
+            playCue('impact'); playCue('fire'); setTimeout(() => playCue('zap'), 90); shake(420);
+            els.status.textContent = 'BURST FINISH';
+            scorePop(event.attacker, event.points, `${event.attacker === 'player' ? '對手' : '你'}爆裂`);
+          }
+          // 子彈時間：爆開後前 320ms 以 0.22 倍速播放，讓三個零件剛分開的樣子停留在畫面上
+          const real = now - current.blowAt, SLOW = 320;
+          const t = (real < SLOW ? real * .22 : SLOW * .22 + (real - SLOW)) / 1000;
+          current.debris.update(t);
         }
       } else if (current.kind === 'spin') {
         const event = current.event, loser = actorOf(event.victim), winner = actorOf(event.attacker);
