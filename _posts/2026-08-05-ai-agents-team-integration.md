@@ -53,13 +53,13 @@ AI 在 POC 前期確實很好用。問題出現在四個人各自帶著 Agent，
 - 每位開發者與 Agent 負責哪一段規格。
 - 哪些可觀察結果通過，才算完成。
 
-## 如果當時有 Specformula
+## 如果當時有 AllWill
 
-我在 Automation Team 時已經開始理解 SDD，但還沒有真正導入團隊就離開了。後來我們團隊在開發 Specformula、實際使用 SDD 與 BDD 的過程中，才把當時的問題整理成一套可操作的流程。
+我在 Automation Team 時已經開始理解 SDD，但還沒有真正導入團隊就離開了。後來我們團隊在開發 AllWill、實際使用 SDD 與 BDD 的過程中，才把當時的問題整理成一套可操作的流程。
 
-我自己很喜歡的一點是，這些規格不只留在文字裡。Specformula 會把 Activity Flow、Feature、API 與資料表之間的關係視覺化，讓使用者先從圖上看懂功能怎麼走、規格怎麼串，再回到對應規格看實作設計。多人與 Agent 一起開發時，大家可以先看同一張圖，不必各自讀完文件後再在腦中拼出整套系統。
+我自己很喜歡的一點是，這些規格不只留在文字裡。AllWill 會把 Activity Flow、Feature、API 與資料表之間的關係視覺化，讓使用者先從圖上看懂功能怎麼走、規格怎麼串，再回到對應規格看實作設計。多人與 Agent 一起開發時，大家可以先看同一張圖，不必各自讀完文件後再在腦中拼出整套系統。
 
-例如這輪要測 CTA 文案，Agent 收到的不只有一句「幫我改按鈕」。Specformula 會先保留完整需求，對齊可能受影響的 flow、feature、API、資料模型與外部依賴，再把工作分到對應的規格階段。
+例如這輪要測 CTA 文案，Agent 收到的不只有一句「幫我改按鈕」。AllWill 會先保留完整需求，對齊可能受影響的 flow、feature、API、資料模型與外部依賴，再把工作分到對應的規格階段。
 
 接著，團隊把預期行為寫成具體的 Rule 與 Example：
 
@@ -83,9 +83,9 @@ Agent 完成實作後，不同開發者與 Agent 使用同一組 BDD 情境驗�
 
 Agent workflow 用得越多，團隊接著就要回答一個問題：誰來負責需求理解、跨職能整合與落地？從公開職缺來看，企業已經開始把這些責任放進正式角色。OpenAI 的 [FDE](https://openai.com/careers/forward-deployed-engineer-%28fde%29-seattle-seattle/) 從需求探索、技術範圍一路負責到 production adoption 和 eval feedback；AWS Taiwan 的 [Professional Services](https://amazon.jobs/en/jobs/10471889/engagement-manager-professional-services-taiwan) 則同時負責商業結果、跨職能交付、風險與客戶採用。
 
-把採用數據和職缺放在一起看，我目前只敢確認一件事：企業正在把 Agent 協作從個人工具使用，推進成需要團隊流程與正式分工的工作。這不能替 Specformula 證明產品成效，但能確認我們想解決的協作問題，已經出現在企業的工作流程與職位設計裡。
+把採用數據和職缺放在一起看，我目前只敢確認一件事：企業正在把 Agent 協作從個人工具使用，推進成需要團隊流程與正式分工的工作。這不能替 AllWill 證明產品成效，但能確認我們想解決的協作問題，已經出現在企業的工作流程與職位設計裡。
 
-目前 Specformula 仍是我們團隊正在開發、需要放進真實多人專案驗證的解法。
+目前 AllWill 仍是我們團隊正在開發、需要放進真實多人專案驗證的解法。
 
 但如果回到那個四個人各自帶著 Agent 一起撞車的現場，我一定會用它。
 
