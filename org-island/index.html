@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>組織SDD 島</title>
+<meta name="description" content="一個組織的 spec 不是一份文件：5 個單位、3 個外部服務、10 份約定，每一條都需要被管理。">
+<meta property="og:title" content="組織SDD 島">
+<meta property="og:description" content="5 個單位、3 個外部服務、10 份約定。組織的 spec，需要被管理。">
+<meta property="og:image" content="https://coomysf.github.io/org-island/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  :root {
+    --ink: #1d2433;
+    --muted: #5b6577;
+    --paper: rgba(255, 255, 255, 0.86);
+    --line: rgba(29, 36, 51, 0.12);
+    --accent: #ff7a45;
+    --sky: #bfe3f2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--sky); color: var(--ink);
+    font-family: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  #stage { position: fixed; inset: 0; }
+  #labels { position: fixed; inset: 0; pointer-events: none; }
+  .veil { position: fixed; left: 0; right: 0; top: 0; height: 190px; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(214,238,248,0.92) 0%, rgba(214,238,248,0.7) 55%, rgba(214,238,248,0) 100%); }
+
+  .head { position: fixed; top: max(16px, env(safe-area-inset-top)); left: 16px; right: 16px; pointer-events: none; }
+  .head h1 { margin: 0; font-size: clamp(30px, 7vw, 52px); font-weight: 900; letter-spacing: 0.02em; line-height: 1.05;
+    text-shadow: 0 2px 0 #fff, 0 0 18px rgba(255,255,255,0.9); }
+  .head p { margin: 8px 0 0; font-size: clamp(14px, 3.6vw, 18px); font-weight: 600; color: var(--ink); max-width: 30em;
+    text-shadow: 0 1px 0 #fff, 0 0 12px rgba(255,255,255,0.95); }
+  .head p b { color: var(--accent); }
+
+  .caption { position: fixed; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); margin: 0 auto; max-width: 560px;
+    background: var(--paper); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(29,36,51,0.12);
+    transition: opacity .35s ease, transform .35s ease; }
+  .caption.hide { opacity: 0; transform: translateY(8px); }
+  .caption .route { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; flex-wrap: wrap; }
+  .caption .chip { padding: 2px 10px; border-radius: 999px; color: #fff; font-size: 15px; }
+  .caption .arrow { color: var(--muted); }
+  .caption .what { margin-left: auto; color: var(--accent); }
+  .caption .body { margin-top: 6px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+  .caption .step { margin-top: 8px; display: flex; gap: 4px; }
+  .caption .step i { flex: 1; height: 3px; border-radius: 2px; background: var(--line); }
+  .caption .step i.on { background: var(--accent); }
+
+  .ctrl { position: fixed; right: 16px; top: max(16px, env(safe-area-inset-top)); display: flex; gap: 8px; pointer-events: auto; }
+  .ctrl button { border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 999px; padding: 8px 12px;
+    font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  .src { position: fixed; right: 16px; bottom: 6px; font-size: 11px; color: var(--muted); pointer-events: none; opacity: .8; }
+
+  .isl { transform: translateY(-6px); text-align: center; white-space: nowrap; transition: opacity .3s ease; }
+  .isl .n { display: inline-block; padding: 4px 12px; border-radius: 999px; color: #fff; font-weight: 800; font-size: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18); border: 2px solid #fff; }
+  .isl.ext .n { font-size: 12px; padding: 3px 9px; }
+  .isl .r { margin-top: 3px; font-size: 11px; font-weight: 600; color: var(--ink); text-shadow: 0 0 6px #fff, 0 0 6px #fff; }
+  .isl.dim { opacity: .35; }
+  .brl { font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 8px; background: #fff; border: 1.5px solid; white-space: nowrap;
+    transition: opacity .3s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+  .brl.off { opacity: 0; }
+  .brl.q { border-style: dashed; color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .isl .r { display: none; }
+    .ctrl { top: auto; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 148px); }
+  }
+  body.rec .ctrl { display: none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="labels"></div>
+<div class="veil"></div>
+<header class="head">
+  <h1>組織SDD</h1>
+  <p>一個組織的 spec 不是一份文件：<b>5 個單位、3 個外部服務、10 份約定</b>。每一條，都需要被管理。</p>
+</header>
+<div class="ctrl"><button id="tourBtn" type="button">暫停導覽</button></div>
+<section class="caption" id="caption" aria-live="polite"></section>
+<div class="src">資料取自 SpecFormula 範例組織（課程關懷）</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+
+// ── 資料：取自 specformula-vibe benchmarks/domains/software/scenarios（projects、contracts）──
+const UNITS = [
+  { id: "course",    name: "課程平台", say: "保存學員的學習進度與作業", color: "#ff7a45", angle: null, r: 0,  size: 6.2 },
+  { id: "assistant", name: "助教",     say: "記錄助教任務與執行情況",   color: "#7c5cff", angle: 90,  r: 17, size: 4.4 },
+  { id: "crm",       name: "CRM",      say: "保存學員關懷紀錄",         color: "#1fb58f", angle: 28,  r: 17, size: 4.0 },
+  { id: "finance",   name: "財務",     say: "處理助教報酬",             color: "#f2b705", angle: 152, r: 17, size: 4.0 },
+  { id: "hr",        name: "人資",     say: "保存助教的聘僱狀態",       color: "#e8538f", angle: 118, r: 29, size: 3.8 },
+  { id: "ecpay",      name: "綠界金流",          say: "付款請求與結果通知", color: "#6b7a90", angle: 228, r: 18, size: 2.6, ext: "bank" },
+  { id: "cloudfront", name: "AWS CloudFront", say: "課程教材分發",       color: "#6b7a90", angle: 268, r: 16, size: 2.6, ext: "tower" },
+  { id: "discord",    name: "Discord",        say: "發送課程通知",       color: "#6b7a90", angle: 312, r: 18, size: 2.6, ext: "bubble" },
+];
+const DEALS = [
+  { from: "hr",        to: "assistant", what: "聘僱狀態",           body: "人資提供既有助教的聘僱狀態，助教服務以在職者為可承接對象。" },
+  { from: "course",    to: "assistant", what: "學習進度",           body: "學習進度及作業提交事實由課程平台維護，助教人工查看進度並挑選關懷對象。" },
+  { from: "assistant", to: "crm",       what: "關懷紀錄",           body: "助教的關懷紀錄由使用者在 CRM 人工填寫聯繫時間及結果摘要。" },
+  { from: "assistant", to: "finance",   what: "計酬依據",           body: "助教服務向財務提供既有計酬依據；完成關懷任務不新增報酬。" },
+  { from: "course",    to: "crm",       what: "學員、上課與訂單資料", body: "課程平台是這些資料的 Data Truth；CRM 的聯繫紀錄不能改變學習與訂單事實。" },
+  { from: "course",    to: "finance",   what: "電商資料",           body: "課程平台向財務提供電商資料；關懷任務與聯繫紀錄不取代訂單及付款資料。" },
+  { from: "course",    to: "ecpay",     what: "付款請求",           body: "課程平台使用綠界金流的付款介面送出付款請求；送出請求不等於付款成功。" },
+  { from: "ecpay",     to: "course",    what: "付款結果通知",       body: "綠界金流呼叫課程平台的接收端點，回傳付款結果通知。" },
+  { from: "course",    to: "discord",   what: "課程通知",           body: "課程平台透過組織使用的固定 Discord 對象發送課程通知。" },
+  { from: "course",    to: "cloudfront", what: "教材分發", unknown: true, body: "學員經 CloudFront 取得教材；這份約定還沒寫清楚誰把資料交給誰，方向待確認。" },
+];
+const unitById = Object.fromEntries(UNITS.map((u) => [u.id, u]));
+const params = new URLSearchParams(location.search);
+if (params.has("rec")) document.body.classList.add("rec");
+
+// ── 場景 ──
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: params.has("rec") });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+stage.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer({ element: document.getElementById("labels") });
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#bfe3f2");
+scene.fog = new THREE.Fog("#bfe3f2", 70, 150);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 400);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = 1.32;
+controls.minDistance = 18;
+controls.maxDistance = 220;
+controls.target.set(0, 0, -6);
+
+scene.add(new THREE.HemisphereLight("#ffffff", "#5aa0b8", 1.15));
+const sun = new THREE.DirectionalLight("#fff4e0", 2.1);
+sun.position.set(-30, 48, 26);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -48, right: 48, top: 48, bottom: -48, near: 1, far: 140 });
+sun.shadow.bias = -0.0006;
+scene.add(sun);
+
+// 海：頂點起伏
+const seaGeo = new THREE.PlaneGeometry(400, 400, 120, 120);
+seaGeo.rotateX(-Math.PI / 2);
+const seaBase = seaGeo.attributes.position.array.slice();
+const sea = new THREE.Mesh(seaGeo, new THREE.MeshStandardMaterial({ color: "#4fb3d9", roughness: 0.35, metalness: 0.05, flatShading: true }));
+sea.receiveShadow = true;
+scene.add(sea);
+function waveSea(t) {
+  const p = seaGeo.attributes.position.array;
+  for (let i = 0; i < p.length; i += 3) {
+    const x = seaBase[i], z = seaBase[i + 2];
+    p[i + 1] = Math.sin(x * 0.18 + t * 0.9) * 0.18 + Math.cos(z * 0.21 + t * 0.7) * 0.18 - 0.35;
+  }
+  seaGeo.attributes.position.needsUpdate = true;
+  seaGeo.computeVertexNormals();
+}
+
+const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...extra });
+const shadowed = (m) => { m.castShadow = true; m.receiveShadow = true; return m; };
+
+function posOf(u) {
+  if (u.angle === null) return new THREE.Vector3(0, 0, 0);
+  const a = THREE.MathUtils.degToRad(u.angle);
+  return new THREE.Vector3(Math.cos(a) * u.r, 0, -Math.sin(a) * u.r);
+}
+
+// ── 島 ──
+const islands = {};
+function makeIsland(u) {
+  const g = new THREE.Group();
+  g.position.copy(posOf(u));
+  const s = u.size;
+  const sand = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(s * 1.08, s * 1.22, 1.1, 9), mat("#f1d9a6")));
+  sand.position.y = -0.2;
+  const grass = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(s, s * 1.04, 0.5, 9), mat(u.ext ? "#a9c4a0" : "#8fd07a")));
+  grass.position.y = 0.55;
+  g.add(sand, grass);
+  // 單位色的地磚環，讓島一眼可分
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(s * 0.98, 0.12, 6, 36), mat(u.color));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.82;
+  g.add(ring);
+  if (u.ext) addExternal(g, u); else addUnit(g, u);
+  // 樹
+  const trees = u.ext ? 1 : 3;
+  for (let i = 0; i < trees; i++) {
+    const a = (i / trees) * Math.PI * 2 + 0.6;
+    const t = new THREE.Group();
+    const trunk = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.7, 6), mat("#8a5a3b")));
+    trunk.position.y = 0.35;
+    const top = shadowed(new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 0), mat("#3f9e5a", { flatShading: true })));
+    top.position.y = 1.0;
+    t.add(trunk, top);
+    t.position.set(Math.cos(a) * s * 0.78, 0.8, Math.sin(a) * s * 0.78);
+    g.add(t);
+  }
+  scene.add(g);
+
+  const el = document.createElement("div");
+  el.className = "isl" + (u.ext ? " ext" : "");
+  el.innerHTML = `<span class="n" style="background:${u.color}">${u.name}</span><div class="r">${u.say}</div>`;
+  const label = new CSS2DObject(el);
+  label.position.set(0, u.ext ? 4.4 : 5.6, 0);
+  g.add(label);
+  islands[u.id] = { group: g, unit: u, el };
+}
+
+function addUnit(g, u) {
+  const s = u.size;
+  // 前端：有屋頂與門窗的店面
+  const front = new THREE.Group();
+  const wall = shadowed(new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 1.8), mat("#fdf7ec")));
+  wall.position.y = 0.8;
+  const roof = shadowed(new THREE.Mesh(new THREE.ConeGeometry(1.75, 1.1, 4), mat(u.color, { flatShading: true })));
+  roof.position.y = 2.15;
+  roof.rotation.y = Math.PI / 4;
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.05), mat("#4a3a2a"));
+  door.position.set(0, 0.4, 0.92);
+  const win = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.05), mat("#9fd8ff", { emissive: "#3a7fb0", emissiveIntensity: 0.25 }));
+  win.position.set(0, 1.25, 0.92);
+  front.add(wall, roof, door, win);
+  front.position.set(-s * 0.33, 0.8, s * 0.12);
+  // 後端：堆疊的資料櫃
+  const back = new THREE.Group();
+  for (let i = 0; i < 3; i++) {
+    const box = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.75, 1.5), mat(i % 2 ? "#3a4256" : "#4a5470")));
+    box.position.y = 0.38 + i * 0.78;
+    const led = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.08, 0.04), mat(u.color, { emissive: u.color, emissiveIntensity: 0.9 }));
+    led.position.set(0, 0.38 + i * 0.78, 0.77);
+    back.add(box, led);
+  }
+  back.position.set(s * 0.36, 0.8, -s * 0.18);
+  g.add(front, back);
+  // 中心島（課程平台）多一座小塔，表示它是多數資料的來源
+  if (u.id === "course") {
+    const tower = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 4.2, 8), mat("#fdf7ec")));
+    tower.position.set(0, 2.9, -s * 0.5);
+    const cap = shadowed(new THREE.Mesh(new THREE.ConeGeometry(0.85, 1.2, 8), mat(u.color)));
+    cap.position.set(0, 5.6, -s * 0.5);
+    g.add(tower, cap);
+  }
+}
+
+function addExternal(g, u) {
+  const c = new THREE.Group();
+  if (u.ext === "bank") {
+    const base = shadowed(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.3, 1.6), mat("#e8e2d4")));
+    base.position.y = 0.15;
+    c.add(base);
+    for (let i = 0; i < 4; i++) {
+      const col = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 1.2, 8), mat("#fbf8f1")));
+      col.position.set(-0.75 + i * 0.5, 0.9, 0.5);
+      c.add(col);
+    }
+    const body = shadowed(new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.2, 0.9), mat("#fbf8f1")));
+    body.position.set(0, 0.9, -0.25);
+    const roof = shadowed(new THREE.Mesh(new THREE.ConeGeometry(1.5, 0.7, 3), mat("#2fa36b", { flatShading: true })));
+    roof.rotation.set(0, 0, 0);
+    roof.scale.set(1, 1, 0.65);
+    roof.position.y = 1.85;
+    c.add(body, roof);
+  } else if (u.ext === "tower") {
+    const mast = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.3, 3.4, 6), mat("#d7dde6")));
+    mast.position.y = 1.7;
+    const dish = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat("#f4a340", { side: THREE.DoubleSide })));
+    dish.rotation.x = -Math.PI / 2.6;
+    dish.position.set(0, 2.9, 0.2);
+    const hut = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 1.0), mat("#e9ecf2")));
+    hut.position.set(0.8, 0.4, -0.3);
+    c.add(mast, dish, hut);
+  } else {
+    const bubble = shadowed(new THREE.Mesh(new THREE.SphereGeometry(1.0, 16, 12), mat("#5865f2")));
+    bubble.scale.set(1.25, 0.9, 0.7);
+    bubble.position.y = 1.8;
+    const tail = shadowed(new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.8, 6), mat("#5865f2")));
+    tail.rotation.z = Math.PI * 0.8;
+    tail.position.set(-0.7, 0.95, 0);
+    const stand = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.2, 6), mat("#d7dde6")));
+    stand.position.y = 0.6;
+    c.add(stand, bubble, tail);
+    for (let i = -1; i <= 1; i++) {
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), mat("#ffffff"));
+      dot.position.set(i * 0.38, 1.8, 0.66);
+      c.add(dot);
+    }
+  }
+  c.position.y = 0.8;
+  g.add(c);
+}
+UNITS.forEach(makeIsland);
+
+// ── 橋：每份約定一座，方向未定的用虛線浮標 ──
+const bridges = [];
+DEALS.forEach((d, i) => {
+  const a = unitById[d.from], b = unitById[d.to];
+  const pa = posOf(a), pb = posOf(b);
+  const dir = pb.clone().sub(pa).setY(0).normalize();
+  const side = new THREE.Vector3(-dir.z, 0, dir.x);
+  // 同一對單位有雙向約定時往兩側錯開
+  const pair = DEALS.some((o) => o.from === d.to && o.to === d.from);
+  const off = pair ? 1.1 : 0;
+  const start = pa.clone().addScaledVector(dir, a.size * 0.92).addScaledVector(side, off).setY(0.82);
+  const end = pb.clone().addScaledVector(dir, -b.size * 0.92).addScaledVector(side, off).setY(0.82);
+  const mid = start.clone().lerp(end, 0.5).addScaledVector(side, off * 1.2);
+  mid.y = 1.6;
+  const curve = new THREE.QuadraticBezierCurve3(start, mid, end);
+  const len = curve.getLength();
+  const color = new THREE.Color(a.ext ? b.color : a.color);
+
+  const group = new THREE.Group();
+  const deckMat = mat(d.unknown ? "#c9d2de" : "#c99a6b", { transparent: true });
+  const railMat = mat(color, { transparent: true, emissive: color, emissiveIntensity: 0 });
+  const planks = Math.max(8, Math.round(len / (d.unknown ? 1.1 : 0.55)));
+  for (let k = 0; k <= planks; k++) {
+    if (d.unknown && k % 2) continue;
+    const t = k / planks;
+    const p = curve.getPointAt(t);
+    const tan = curve.getTangentAt(t);
+    const plank = shadowed(new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.12, 0.42), deckMat));
+    plank.position.copy(p);
+    plank.lookAt(p.clone().add(tan));
+    group.add(plank);
+  }
+  if (!d.unknown) {
+    for (const s of [-0.62, 0.62]) {
+      const pts = curve.getSpacedPoints(40).map((p, k, arr) => {
+        const tan = curve.getTangentAt(k / (arr.length - 1));
+        const sd = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+        return p.clone().addScaledVector(sd, s).setY(p.y + 0.35);
+      });
+      const rail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.06, 5), railMat);
+      group.add(rail);
+    }
+  }
+  scene.add(group);
+
+  const el = document.createElement("div");
+  el.className = "brl off" + (d.unknown ? " q" : "");
+  el.style.borderColor = color.getStyle();
+  el.textContent = d.unknown ? `${d.what}（方向待確認）` : d.what;
+  const label = new CSS2DObject(el);
+  label.position.copy(curve.getPointAt(0.5)).add(new THREE.Vector3(0, 1.3, 0));
+  scene.add(label);
+  bridges.push({ deal: d, curve, len, group, deckMat, railMat, el, color, index: i });
+});
+
+// ── 小人 ──
+const walkers = [];
+function makePerson(color) {
+  const g = new THREE.Group();
+  const body = shadowed(new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.42, 4, 8), mat(color)));
+  body.position.y = 0.75;
+  const head = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), mat("#ffd9b8")));
+  head.position.y = 1.32;
+  const legs = [];
+  for (const x of [-0.1, 0.1]) {
+    const leg = new THREE.Group();
+    const m = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.42, 0.11), mat("#2d3446")));
+    m.position.y = -0.21;
+    leg.add(m);
+    leg.position.set(x, 0.45, 0);
+    legs.push(leg);
+    g.add(leg);
+  }
+  const box = shadowed(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.32), mat("#fff3c4")));
+  box.position.set(0, 1.0, 0.32);
+  const tape = new THREE.Mesh(new THREE.BoxGeometry(0.43, 0.06, 0.33), mat(color));
+  tape.position.copy(box.position);
+  g.add(body, head, box, tape);
+  g.scale.setScalar(0.95);
+  scene.add(g);
+  return { g, legs, box, tape };
+}
+bridges.forEach((br) => {
+  if (br.deal.unknown) return;
+  const n = 3;
+  for (let k = 0; k < n; k++) {
+    const p = makePerson(br.color);
+    walkers.push({ ...p, br, t: k / n, dir: 1, speed: 2.2 + Math.random() * 0.6, phase: Math.random() * 6 });
+  }
+});
+// 方向待確認的橋：一個站在中間、頭上有問號的小人
+const unknownBr = bridges.find((b) => b.deal.unknown);
+const puzzled = makePerson("#9aa6b8");
+puzzled.box.visible = puzzled.tape.visible = false;
+puzzled.g.position.copy(unknownBr.curve.getPointAt(0.5)).add(new THREE.Vector3(0, 0.05, 0));
+const qEl = document.createElement("div");
+qEl.style.cssText = "font-weight:900;font-size:20px;color:#5b6577;text-shadow:0 0 6px #fff";
+qEl.textContent = "?";
+const qLabel = new CSS2DObject(qEl);
+qLabel.position.set(0, 2.1, 0);
+puzzled.g.add(qLabel);
+
+// 島上閒晃的人
+const idlers = [];
+UNITS.filter((u) => !u.ext).forEach((u) => {
+  for (let k = 0; k < 2; k++) {
+    const p = makePerson(u.color);
+    p.box.visible = p.tape.visible = false;
+    idlers.push({ ...p, center: posOf(u), rad: u.size * 0.62, a: Math.random() * 6.28, speed: (0.25 + Math.random() * 0.2) * (k ? -1 : 1) });
+  }
+});
+
+// ── 導覽：先看全貌，再逐條約定 ──
+const caption = document.getElementById("caption");
+const steps = [{ overview: true }, ...bridges.map((b) => ({ br: b }))];
+let stepIndex = 0, stepTime = 0, touring = true;
+const STEP_SEC = params.has("rec") ? 3.2 : 4.2;
+const OVERVIEW_SEC = 4.5;
+const camGoal = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
+
+// 讓指定的半寬、半高（世界座標）剛好放進畫面
+function fitDistance(halfW, halfH) {
+  const v = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  return Math.max(halfW / (v * camera.aspect), halfH / v);
+}
+function placeCamera(target, dist, pitchDeg) {
+  const a = THREE.MathUtils.degToRad(pitchDeg);
+  camGoal.target.copy(target);
+  camGoal.pos.copy(target).add(new THREE.Vector3(0, Math.sin(a) * dist, Math.cos(a) * dist));
+}
+function overviewView() {
+  const portrait = innerHeight > innerWidth;
+  // 全島群約寬 42、深 48；直式畫面上下還要留給標題與說明卡
+  placeCamera(new THREE.Vector3(0, 0, portrait ? -7 : -8), fitDistance(portrait ? 18.5 : 24, portrait ? 30 : 28), portrait ? 62 : 50);
+}
+function focusView(br) {
+  const portrait = innerHeight > innerWidth;
+  const a = unitById[br.deal.from], b = unitById[br.deal.to];
+  const half = br.len / 2 + Math.max(a.size, b.size);
+  placeCamera(br.curve.getPointAt(0.5).setY(0), fitDistance(half * (portrait ? 1.15 : 0.9), half * 0.9) * 1.1, portrait ? 58 : 48);
+}
+function chip(u) { return `<span class="chip" style="background:${u.color}">${u.name}</span>`; }
+function stepBar() {
+  return `<div class="step">${steps.map((_, i) => `<i class="${i <= stepIndex ? "on" : ""}"></i>`).join("")}</div>`;
+}
+function applyStep() {
+  const s = steps[stepIndex];
+  if (s.overview) {
+    overviewView();
+    caption.innerHTML = `<div class="route">一張組織的 spec 地圖</div>
+      <div class="body">每座島是一個單位，每座橋是一份約定：誰交給誰什麼資料、誰負責什麼。小人搬的箱子，就是約定裡寫好的資料。</div>${stepBar()}`;
+    highlight(null);
+  } else {
+    const d = s.br.deal;
+    focusView(s.br);
+    caption.innerHTML = `<div class="route">${chip(unitById[d.from])}<span class="arrow">${d.unknown ? "↔" : "→"}</span>${chip(unitById[d.to])}
+      <span class="what">${d.what}</span></div><div class="body">${d.body}</div>${stepBar()}`;
+    highlight(s.br);
+  }
+}
+function highlight(active) {
+  bridges.forEach((b) => {
+    const on = !active || b === active;
+    b.deckMat.opacity = on ? 1 : 0.28;
+    b.railMat.opacity = on ? 1 : 0.25;
+    b.railMat.emissiveIntensity = b === active ? 0.8 : 0;
+    b.el.classList.toggle("off", !(active ? b === active : innerWidth > 640));
+  });
+  Object.values(islands).forEach(({ unit, el }) => {
+    const on = !active || unit.id === active.deal.from || unit.id === active.deal.to;
+    el.classList.toggle("dim", !on);
+  });
+  walkers.forEach((w) => w.g.visible = !active || w.br === active || innerWidth > 640);
+}
+
+const tourBtn = document.getElementById("tourBtn");
+tourBtn.addEventListener("click", () => {
+  touring = !touring;
+  tourBtn.textContent = touring ? "暫停導覽" : "繼續導覽";
+  if (touring) { stepTime = 0; applyStep(); } else { highlight(null); }
+});
+controls.addEventListener("start", () => {
+  if (!touring) return;
+  touring = false;
+  tourBtn.textContent = "繼續導覽";
+  highlight(null);
+});
+
+// 點橋或島看約定
+const ray = new THREE.Raycaster();
+const ptr = new THREE.Vector2();
+let downAt = null;
+renderer.domElement.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener("pointerup", (e) => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) return;
+  ptr.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hit = ray.intersectObjects(bridges.map((b) => b.group), true)[0];
+  const br = hit && bridges.find((b) => b.group === hit.object.parent);
+  if (!br) return;
+  touring = false;
+  tourBtn.textContent = "繼續導覽";
+  stepIndex = steps.findIndex((s) => s.br === br);
+  applyStep();
+});
+
+// ── 迴圈 ──
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h);
+  labelRenderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  if (touring) applyStep();
+}
+addEventListener("resize", resize);
+resize();
+overviewView();
+camera.position.copy(camGoal.pos).add(new THREE.Vector3(0, 30, 40));
+controls.target.copy(camGoal.target);
+applyStep();
+
+const clock = new THREE.Clock();
+let elapsed = 0;
+function tick(dt) {
+  elapsed += dt;
+  waveSea(elapsed);
+
+  if (touring) {
+    stepTime += dt;
+    const limit = steps[stepIndex].overview ? OVERVIEW_SEC : STEP_SEC;
+    if (stepTime > limit) { stepTime = 0; stepIndex = (stepIndex + 1) % steps.length; applyStep(); }
+    const k = 1 - Math.exp(-dt * 1.6);
+    camera.position.lerp(camGoal.pos, k);
+    controls.target.lerp(camGoal.target, k);
+  }
+
+  for (const w of walkers) {
+    w.t += (w.dir * w.speed * dt) / w.br.len;
+    if (w.t >= 1) { w.t = 1; w.dir = -1; }
+    if (w.t <= 0) { w.t = 0; w.dir = 1; }
+    // 去程搬著箱子，回程空手
+    w.box.visible = w.tape.visible = w.dir === 1;
+    const t = THREE.MathUtils.clamp(w.t, 0.001, 0.999);
+    const p = w.br.curve.getPointAt(t);
+    const tan = w.br.curve.getTangentAt(t).multiplyScalar(w.dir);
+    const sd = new THREE.Vector3(-tan.z, 0, tan.x).normalize();
+    w.g.position.copy(p).addScaledVector(sd, 0.28).setY(p.y + 0.06);
+    w.g.rotation.y = Math.atan2(tan.x, tan.z);
+    const swing = Math.sin(elapsed * 9 + w.phase) * 0.6;
+    w.legs[0].rotation.x = swing;
+    w.legs[1].rotation.x = -swing;
+  }
+  for (const w of idlers) {
+    w.a += w.speed * dt;
+    w.g.position.set(w.center.x + Math.cos(w.a) * w.rad, 0.8, w.center.z + Math.sin(w.a) * w.rad);
+    w.g.rotation.y = Math.atan2(-Math.sin(w.a) * Math.sign(w.speed), Math.cos(w.a) * Math.sign(w.speed));
+    const swing = Math.sin(elapsed * 7 + w.a * 3) * 0.5;
+    w.legs[0].rotation.x = swing;
+    w.legs[1].rotation.x = -swing;
+  }
+  puzzled.g.rotation.y = Math.sin(elapsed * 1.5) * 0.8;
+
+  controls.update();
+  // 霧跟著相機距離走，拉遠時島不會被洗白
+  const camDist = camera.position.distanceTo(controls.target);
+  scene.fog.near = camDist * 1.1;
+  scene.fog.far = camDist * 2.6;
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+// ?rec：由錄影腳本逐格推進，影片不受截圖速度影響；其餘情況照實際時間跑
+if (params.has("rec")) window.__frame = (dt) => tick(dt);
+else renderer.setAnimationLoop(() => tick(Math.min(clock.getDelta(), 0.05)));
+</script>
+</body>
+</html>
