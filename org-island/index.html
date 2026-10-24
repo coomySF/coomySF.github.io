@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>組織 Spec 島嶼</title>
-<meta name="description" content="我把公司的組織 Spec 變成島嶼：5 個單位、3 個外部服務，用 10 份約定組成共識。">
+<meta name="description" content="我把公司的組織 Spec 變成島嶼：改一個地方，好幾個部門跟著受影響；AllWill 幫你在開工前找出來。">
 <meta property="og:title" content="我把公司的組織 Spec 變成島嶼">
-<meta property="og:description" content="5 個單位、3 個外部服務，用 10 份約定組成共識。#組織 AI-native co-work">
+<meta property="og:description" content="改一個地方，好幾個部門跟著受影響；AllWill 幫你在開工前找出來。#組織 AI-native co-work">
 <meta property="og:image" content="https://coomysf.github.io/org-island/og.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -30,8 +30,8 @@
   .vignette { position: fixed; inset: 0; pointer-events: none;
     background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 60%, rgba(30,38,48,0.14) 100%); }
 
-  .veil { position: fixed; left: 0; right: 0; top: 0; height: 210px; pointer-events: none;
-    background: linear-gradient(to bottom, rgba(246,228,204,0.88) 0%, rgba(246,228,204,0.6) 50%, rgba(246,228,204,0) 100%); }
+  .veil { position: fixed; left: 0; right: 0; top: 0; height: 240px; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(246,228,204,0.95) 0%, rgba(246,228,204,0.82) 62%, rgba(246,228,204,0) 100%); }
   .head { position: fixed; top: max(18px, env(safe-area-inset-top)); left: 18px; right: 18px; pointer-events: none; }
   .tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--accent);
     background: rgba(255,252,246,0.85); padding: 3px 9px; border-radius: 999px; }
@@ -43,6 +43,15 @@
     text-shadow: 0 0 14px rgba(255,248,236,1), 0 0 4px rgba(255,248,236,1);
     transition: opacity .5s var(--ease), transform .5s var(--ease); }
   body.focus .head h1 { font-size: clamp(18px, 4.6vw, 26px); }
+  .play-cta { pointer-events: auto; margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer;
+    background: #1c2430; color: #fff; font: inherit; font-size: clamp(14px, 3.8vw, 16px); font-weight: 700; padding: 10px 16px 10px 10px;
+    border-radius: 999px; box-shadow: 0 8px 22px rgba(28,36,48,0.28); transition: transform .25s var(--ease), opacity .4s var(--ease); }
+  .play-cta i { font-style: normal; width: 28px; height: 28px; border-radius: 50%; background: #14b89c; display: grid; place-items: center; font-size: 12px; }
+  .play-cta em { font-style: normal; font-weight: 500; opacity: .7; font-size: 12px; }
+  .play-cta:hover { transform: translateY(-1px); }
+  body.playing .play-cta { opacity: 0; pointer-events: none; transform: translateY(-6px); }
+  @media (prefers-reduced-motion: no-preference) { body:not(.playing) .play-cta i { animation: pulse 1.8s ease-in-out infinite; } }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(20,184,156,0.6); } 50% { box-shadow: 0 0 0 8px rgba(20,184,156,0); } }
   body.focus .head .sub { opacity: 0; transform: translateY(-6px); }
 
   .caption { position: fixed; left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); margin: 0 auto; max-width: 540px;
@@ -63,9 +72,16 @@
   .msg .hint { color: var(--muted); font-size: 12px; }
   .qcard { display: flex; align-items: center; gap: 4px; padding: 3px 8px 3px 3px; border-radius: 999px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     font-size: 15px; font-weight: 900; color: #e8613a; transition: opacity .3s var(--ease), transform .4s cubic-bezier(0.34, 1.36, 0.64, 1); }
-  .qcard img { width: 22px; height: 22px; border-radius: 50%; }
+  .qcard img { width: 30px; height: 30px; border-radius: 50%; }
   .qcard.done { color: #14b89c; }
   .qcard.off { opacity: 0; transform: scale(0.5); }
+  .caption.chat-mode { max-height: 32vh; }
+  .vs { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .vs div { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 7px 9px; font-size: 12.5px; line-height: 1.5; }
+  .vs span { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
+  .vs div:last-child { border-color: rgba(230,180,34,0.6); }
+  .msg .rule { display: inline-block; font-size: 10.5px; font-weight: 700; color: var(--muted); background: rgba(34,42,54,0.06); border-radius: 6px; padding: 0 5px; margin-right: 5px; }
+  .qcard span { font-size: 12px; color: var(--ink); }
   .msg img { width: 34px; height: 34px; border-radius: 50%; background: #e9f6f3; flex: none; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
   .msg .b { background: #fff; border: 1px solid var(--line); border-radius: 4px 14px 14px 14px; padding: 7px 10px; font-size: 13px; line-height: 1.5; }
   .msg .b .n { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 2px; }
@@ -88,6 +104,7 @@
     font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .25s var(--ease), color .25s var(--ease); }
   .seg { display: flex; padding: 3px; border-radius: 999px; background: var(--paper); box-shadow: 0 4px 14px rgba(40,30,20,0.14); }
   .seg button.on { background: var(--ink); color: #fff; }
+  .ctrl .snd { background: var(--paper); color: var(--ink); width: 34px; height: 34px; padding: 0; box-shadow: 0 4px 14px rgba(40,30,20,0.14); }
   .ctrl .bot-btn { background: #1f9e8f; color: #fff; box-shadow: 0 4px 14px rgba(31,158,143,0.35); }
   .caption { max-height: 48vh; overflow-y: auto; }
   .caption .sec { margin-top: 10px; font-size: 12px; font-weight: 700; color: var(--muted); }
@@ -122,6 +139,7 @@
   .brl.off { opacity: 0; }
 
   @media (max-width: 640px) {
+    body.cap-hidden .ctrl { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 56px); }
     .ctrl { top: auto; right: 14px; left: 14px; justify-content: space-between; bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--cap-h, 150px) + 10px); }
   }
   body.rec .ctrl { display: none; }
@@ -145,9 +163,9 @@
 <header class="head">
   <span class="tag">#組織 AI-native co-work</span>
   <h1>我把公司的組織 Spec<br>變成島嶼</h1>
-  <p class="sub">5 個單位、3 個外部服務，用 10 份約定組成共識。</p>
+  <button class="play-cta" id="playCta" type="button"><i>▶</i>播放：看 AllWill 怎麼幫一份 Plan 開工<em>約 1 分鐘</em></button>
 </header>
-<div class="ctrl"><div class="seg"><button id="tourBtn" class="on" type="button">導覽</button><button id="exploreBtn" type="button">自己逛</button></div><button id="checkBtn" class="bot-btn" type="button">AllWill</button></div>
+<div class="ctrl"><div class="seg"><button id="tourBtn" type="button">▶ 播放</button><button id="exploreBtn" type="button">自己逛</button></div><button id="checkBtn" class="bot-btn" type="button">AllWill</button><button id="soundBtn" class="snd" type="button" aria-label="聲音開關">🔊</button></div>
 <section class="caption" id="caption" aria-live="polite"></section>
 <button class="cap-open" id="capOpen" type="button">顯示說明</button>
 
@@ -180,8 +198,12 @@ const DEALS = [
   { id: "hr-assistant", from: "hr", to: "assistant", what: "聘僱狀態", plain: "人資告訴助教：誰還在職",
     body: "人資提供既有助教的聘僱狀態，助教服務以在職者為可承接對象。" },
   { id: "course-assistant", from: "course", to: "assistant", what: "學習進度", plain: "課程平台讓助教看到：學員學到哪", check: "gap",
+    planQuote: "依學習進度找出需要關懷的學員，由助教分配教練追蹤下一份作業。",
+    contractQuote: "助教人工查看進度並挑選關懷對象；尚未定義自動篩選、分配及完成任務的資料交換。",
     body: "助教人工查看進度並挑選關懷對象；本約定尚未定義供助教服務自動篩選、分配及完成任務的資料交換。" },
   { id: "assistant-crm", from: "assistant", to: "crm", what: "關懷紀錄", plain: "助教把關懷紀錄寫進 CRM", check: "gap",
+    planQuote: "保存聯繫與任務完成狀態。",
+    contractQuote: "關懷紀錄由使用者在 CRM 人工填寫；尚未定義自動回寫關懷紀錄或任務狀態。",
     body: "關懷紀錄由使用者在 CRM 人工填寫；本約定尚未定義助教服務向 CRM 自動回寫關懷紀錄或任務狀態。" },
   { id: "assistant-finance", from: "assistant", to: "finance", what: "計酬依據", plain: "助教交給財務：計酬依據",
     body: "助教服務向財務提供既有計酬依據；完成關懷任務不新增報酬。" },
@@ -202,6 +224,95 @@ const DEALS = [
 const unitById = Object.fromEntries(UNITS.map((u) => [u.id, u]));
 const params = new URLSearchParams(location.search);
 if (params.has("rec")) document.body.classList.add("rec");
+
+// ── 聲音：Web Audio 現場合成的背景音樂與音效（不用外部音檔）──
+const sound = (() => {
+  let ctx = null, master = null, musicGain = null, timer = null, nextTime = 0, step = 0;
+  let muted = false;
+  try { muted = localStorage.getItem("org-island-muted") === "1"; } catch {}
+  const BPM = 100, EIGHTH = 60 / BPM / 2;
+  const N = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  // C – Am – F – G，每個和弦一小節（8 個八分音符）
+  const CHORDS = [[60, 64, 67], [57, 60, 64], [53, 57, 60], [55, 59, 62]];
+  const ARP = [0, 1, 2, 1, 3, 2, 1, 2]; // 3＝高八度的根音
+  function init() {
+    if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC();
+    const comp = ctx.createDynamicsCompressor();
+    master = ctx.createGain();
+    master.gain.value = muted ? 0 : 0.55;
+    master.connect(comp).connect(ctx.destination);
+    musicGain = ctx.createGain();
+    musicGain.gain.value = 0.55;
+    musicGain.connect(master);
+    nextTime = ctx.currentTime + 0.1;
+    timer = setInterval(schedule, 50);
+  }
+  function tone(freq, t, dur, { type = "sine", gain = 0.2, attack = 0.005, out = musicGain, detune = 0 } = {}) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq; o.detune.value = detune;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(out);
+    o.start(t); o.stop(t + dur + 0.05);
+    return o;
+  }
+  function pluck(freq, t, gain = 0.16, out = musicGain) {
+    // 拇指琴：基音＋短促的高泛音
+    tone(freq, t, 0.9, { gain, out });
+    tone(freq * 3, t, 0.18, { gain: gain * 0.25, out });
+    tone(freq, t, 0.6, { type: "triangle", gain: gain * 0.35, out, detune: 6 });
+  }
+  let noiseBuf = null;
+  function noise(t, dur, { gain = 0.05, freq = 6000, q = 1, type = "highpass", out = musicGain, sweepTo = null } = {}) {
+    if (!noiseBuf) {
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = noiseBuf; f.type = type; f.frequency.value = freq; f.Q.value = q;
+    if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t + dur);
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f).connect(g).connect(out);
+    src.start(t); src.stop(t + dur + 0.05);
+  }
+  function schedule() {
+    while (nextTime < ctx.currentTime + 0.25) {
+      const bar = Math.floor(step / 8) % 4, i = step % 8;
+      const chord = CHORDS[bar];
+      const n = ARP[i] === 3 ? chord[0] + 12 : chord[ARP[i]];
+      if (!(i === 7 && bar % 2 === 1)) pluck(N(n + 12), nextTime, i === 0 ? 0.15 : 0.1);
+      if (i === 0 || i === 4) tone(N(chord[0] - 12), nextTime, EIGHTH * 3.5, { gain: 0.16 });
+      if (i === 0) chord.forEach((m) => tone(N(m), nextTime, EIGHTH * 8, { type: "triangle", gain: 0.025, attack: 0.4 }));
+      if (i % 2 === 1) noise(nextTime, 0.06, { gain: 0.025 });
+      nextTime += EIGHTH; step++;
+    }
+  }
+  const now = () => ctx.currentTime + 0.01;
+  const fx = (fn) => { if (ctx && !muted) fn(now()); };
+  return {
+    start: init,
+    get muted() { return muted; },
+    toggle() {
+      init();
+      muted = !muted;
+      try { localStorage.setItem("org-island-muted", muted ? "1" : "0"); } catch {}
+      if (master) master.gain.setTargetAtTime(muted ? 0 : 0.55, ctx.currentTime, 0.05);
+      return muted;
+    },
+    whoosh: () => fx((t) => noise(t, 0.5, { gain: 0.12, type: "bandpass", freq: 600, q: 2, sweepTo: 3200, out: master })),
+    ok: () => fx((t) => { tone(N(88), t, 0.35, { gain: 0.09, out: master }); tone(N(95), t + 0.06, 0.3, { gain: 0.05, out: master }); }),
+    bad: () => fx((t) => { tone(N(57), t, 0.18, { type: "triangle", gain: 0.16, out: master }); tone(N(56), t + 0.16, 0.25, { type: "triangle", gain: 0.16, out: master }); }),
+    pop: () => fx((t) => { const o = tone(N(72), t, 0.18, { gain: 0.14, out: master }); o.frequency.exponentialRampToValueAtTime(N(84), t + 0.1); }),
+    answer: () => fx((t) => [72, 76, 79].forEach((m, k) => pluck(N(m), t + k * 0.07, 0.12, master))),
+    sparkle: () => fx((t) => [72, 76, 79, 84, 88].forEach((m, k) => pluck(N(m), t + k * 0.08, 0.1, master))),
+  };
+})();
 
 // 固定亂數，畫面每次一樣
 let seed = 20261024;
@@ -680,7 +791,7 @@ const mascots = {};
   wtagObj.position.set(-0.4, 2.2, 0);
   water.add(wtagObj);
   water.position.set(-0.95, 0.75, 0.2);
-  water.scale.setScalar(1.3);
+  water.scale.setScalar(1.0);
   g.add(water);
   mascots.water = water;
 
@@ -939,7 +1050,7 @@ UNITS.forEach((u) => {
 const OK = "#14b89c", OPEN = "#e8613a", GAP = "#e6b422";
 const robot = new THREE.Group();
 {
-  const body = shadowed(new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 0.4, 6, 14), mat("#f7f9fb", { roughness: 0.35 })));
+  const body = shadowed(new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 0.4, 6, 14), mat("#3fcfb6", { roughness: 0.35, emissive: "#14b89c", emissiveIntensity: 0.15 })));
   body.position.y = 0.9;
   const visor = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 12, -Math.PI / 2.4, Math.PI / 1.2, Math.PI / 3, Math.PI / 3),
     mat("#163b4a", { emissive: OK, emissiveIntensity: 0.9, roughness: 0.2 }));
@@ -963,7 +1074,7 @@ const robot = new THREE.Group();
   robot.userData.label = el;
   robot.userData.labelObj = lab;
 }
-robot.scale.setScalar(1.5);
+robot.scale.setScalar(2.1);
 robot.visible = false;
 scene.add(robot);
 function setBotColor(c) {
@@ -987,6 +1098,7 @@ const CHECK_COLOR = { ok: OK, open: OPEN, gap: GAP };
 function markChecked(b) {
   const st = b.deal.check || "ok";
   b.checked = st;
+  st === "ok" ? sound.ok() : sound.bad();
   b.railMat.emissive.set(CHECK_COLOR[st]);
   b.glowTo = 1;
   if (st !== "ok") { b.badge.textContent = CHECK_TEXT[st]; b.badge.style.background = CHECK_COLOR[st]; b.badge.classList.remove("off"); }
@@ -998,8 +1110,9 @@ function owners(d) { const who = (u) => (u.ext ? `管 ${u.name} 的人` : `${u.n
 
 // 巡檢：沿著每座橋走一趟，橋與橋之間飛過去
 const check = { on: false, i: 0, phase: "fly", t: 0, from: new THREE.Vector3(), done: null };
-function startCheck(onDone, fast = false, keepBot = false) {
+function startCheck(onDone, fast = false, keepBot = false, plan = false) {
   check.fast = fast;
+  check.plan = plan;
   check.keepBot = keepBot;
   clearChecks();
   highlight(null, null);
@@ -1012,6 +1125,19 @@ function startCheck(onDone, fast = false, keepBot = false) {
 function showCheckCaption() {
   const b = bridges[Math.min(check.i, bridges.length - 1)];
   const st = b.checked;
+  if (check.plan) {
+    const okN = bridges.filter((x) => x.checked === "ok").length;
+    const head = `<span class="chip"><i style="background:${OK}"></i>AllWill 檢查約定</span><span class="count">${Math.min(check.i + 1, bridges.length)} / ${bridges.length}</span>`;
+    if (st && st !== "ok" && b.deal.planQuote) {
+      setCaption(CHECK_COLOR[st], head, `${route(b.deal)}<b style="color:${CHECK_COLOR[st]}">　對不上</b>`,
+        `<div class="vs"><div><span>Plan 想要</span>${b.deal.planQuote}</div><div><span>約定原文</span>${b.deal.contractQuote}</div></div><div class="small">已沒發現問題 ${okN} 份</div>`, false);
+    } else if (st && st !== "ok") {
+      setCaption(CHECK_COLOR[st], head, `${route(b.deal)}<b style="color:${CHECK_COLOR[st]}">　${CHECK_TEXT[st]}</b>`, `${b.deal.body}<div class="small">已沒發現問題 ${okN} 份</div>`, false);
+    } else {
+      setCaption(OK, head, `沒發現問題 ${okN} 份`, "約定要定期檢查，改動時也要檢查。", false, true);
+    }
+    return;
+  }
   setCaption(OK, `<span class="chip"><i style="background:${OK}"></i>AllWill</span><span class="count">${Math.min(check.i + 1, bridges.length)} / ${bridges.length}</span>`,
     `${route(b.deal)}`, st ? (st !== "ok" ? `<b style="color:${CHECK_COLOR[st]}">${CHECK_TEXT[st]}</b>：${b.deal.body}` : `<b style="color:${OK}">沒發現問題</b>`) : "約定要定期檢查，改動時也要檢查。", false, true);
 }
@@ -1031,13 +1157,13 @@ function tickCheck(dt) {
   const b = bridges[check.i];
   const start = b.curve.getPointAt(0).clone().setY(b.curve.getPointAt(0).y + 0.1);
   if (check.phase === "fly") {
-    check.t += dt / (check.fast ? 0.22 : 0.4);
+    check.t += dt / (check.plan && !b.deal.check ? 0.18 : check.fast ? 0.22 : 0.4);
     const k = Math.min(check.t, 1);
     robot.position.lerpVectors(check.from, start, k);
     robot.position.y += Math.sin(k * Math.PI) * 3;
     if (check.t >= 1) { check.phase = "walk"; check.t = 0; }
   } else if (check.phase === "walk") {
-    check.t += dt / (b.deal.check ? (check.fast ? 0.7 : 1.1) : check.fast ? 0.22 : 0.6);
+    check.t += dt / (b.deal.check ? (check.fast ? 0.7 : 1.1) : check.fast || check.plan ? 0.22 : 0.6);
     const k = Math.min(check.t, 1);
     const p = b.curve.getPointAt(k);
     robot.position.copy(p).setY(p.y + 0.1);
@@ -1046,7 +1172,7 @@ function tickCheck(dt) {
     if (check.t >= 0.5 && b.checked === null) { markChecked(b); setBotColor(CHECK_COLOR[b.checked]); showCheckCaption(); }
     if (check.t >= 1) { check.phase = b.checked === "ok" ? "next" : "hold"; check.t = 0; }
   } else if (check.phase === "hold") {
-    check.t += dt / (check.fast ? 0.9 : 1.2);
+    check.t += dt / (check.plan ? 3.2 : check.fast ? 0.9 : 1.2);
     if (check.t >= 1) check.phase = "next";
   } else {
     setBotColor(OK);
@@ -1159,7 +1285,7 @@ function makeMate({ name, role, shirt, hair, glasses, tagColor }) {
   tag.style.background = tagColor;
   tag.textContent = `${name}・${role}`;
   const tagObj = new CSS2DObject(tag);
-  tagObj.position.set(0, 1.85, 0);
+  tagObj.position.set(0, 1.85 + ({ Richard: 0, Raymond: 0.32, ben: 0.16, ccza: 0.48 }[name] || 0), 0);
   g.add(tagObj);
   g.scale.setScalar(TEAM_SCALE);
   scene.add(g);
@@ -1240,13 +1366,13 @@ function tickRoam(dt) {
 // 題目取自 benchmark questions.ts；回答取自同一份 Plan（mainline-plan）的 To-Be
 const PLAN_DEALS = ["course-assistant", "assistant-crm"];
 const PLAN_QS = [
-  { who: "richard", q: "哪些學員需要關懷？", hint: "目前由助教人工查看學習進度。",
+  { who: "richard", deals: [], q: "哪些學員需要關懷？", hint: "目前由助教人工查看學習進度。",
     a: "課程未完成且七天無進度；還沒開始學習的，從取得課程資格起算。" },
-  { who: "ben", q: "哪些助教可承接、怎麼分配？", hint: "人資只提供在職名單，不新增課程資格。",
+  { who: "ben", deals: [], q: "哪些助教可承接、怎麼分配？", hint: "人資只提供在職名單，不新增課程資格。",
     a: "在職助教中，進行中任務最少者優先；平手照固定順序。" },
-  { who: "raymond", q: "什麼時候算完成任務？", hint: "會同時影響課程平台、助教和 CRM。",
+  { who: "raymond", deals: ["course-assistant"], q: "什麼時候算完成任務？", hint: "會同時影響課程平台、助教和 CRM。",
     a: "提交指定的下一份作業就完成，不等批改。" },
-  { who: "ccza", q: "聯繫紀錄怎麼處理？", hint: "CRM 保存關懷紀錄。",
+  { who: "ccza", deals: ["assistant-crm"], q: "聯繫紀錄怎麼處理？", hint: "CRM 保存關懷紀錄。",
     a: "保存聯繫時間與結果摘要；聯繫不等於任務完成。" },
 ];
 const scroll = new THREE.Group();
@@ -1265,7 +1391,7 @@ const scroll = new THREE.Group();
 const qcards = PLAN_QS.map((q, i) => {
   const el = document.createElement("div");
   el.className = "qcard off";
-  el.innerHTML = `<img src="" alt=""><b>?</b>`;
+  el.innerHTML = `<img src="" alt=""><span></span><b>?</b>`;
   const o = new CSS2DObject(el);
   scene.add(o);
   return { el, o, q, i };
@@ -1274,7 +1400,7 @@ const ho = { on: false, t: 0, stage: -1 };
 const handPos = (m) => m.g.position.clone().add(new THREE.Vector3(0, 2.75, 0));
 const headPos = (m) => m.g.position.clone().add(new THREE.Vector3(0, 3.6, 0));
 function startHandoff() {
-  ho.on = true; ho.t = 0; ho.stage = -1; ho.msgs = []; ho.checked = false; ho.checking = false; ho.backFrom = null;
+  ho.on = true; ho.t = 0; ho.stage = -1; ho.msgs = []; ho.checked = false; ho.checking = false; ho.backFrom = null; ho.whooshed = false;
   roamFrozen = true;
   check.on = false;
   clearChecks();
@@ -1282,7 +1408,7 @@ function startHandoff() {
   robot.position.copy(posOf(ALLWILL)).add(new THREE.Vector3(1.0, 1.2, 0.6));
   scroll.visible = true;
   team.richard.raised = true;
-  qcards.forEach((c) => { c.el.className = "qcard off"; c.el.querySelector("img").src = avatars[c.q.who]; c.el.querySelector("b").textContent = "?"; });
+  qcards.forEach((c) => { c.el.className = "qcard off"; c.el.querySelector("img").src = avatars[c.q.who]; c.el.querySelector("b").textContent = "?"; c.el.querySelector("span").textContent = WHO[c.q.who]; });
 }
 function endHandoff() {
   if (!ho.on) return;
@@ -1296,9 +1422,10 @@ function flyArc(a, b, k, h = 3) {
 }
 const ease = (k) => (k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k));
 function hoChat(header, extra = "") {
-  const shown = ho.msgs.slice(-3);
+  const shown = ho.msgs.slice(-2);
   setCaption(OK, `<span class="chip"><i style="background:#e08a3c"></i>Plan：提升學員完課率</span>${header}`,
     "", chatHTML(shown, ["richard", "ben", "raymond", "ccza"]) + extra, false);
+  caption.classList.add("chat-mode");
 }
 const say = (who, text) => ho.msgs.push([who, text]);
 const Q0 = 5, QS = Q0 + 3, QLEN = 3.6; // Q0：檢查完、回到 Richard 旁；QS：第一題
@@ -1309,11 +1436,13 @@ const HO = [
   { at: Q0, run: () => { highlight(PLAN_DEALS, ["course", "assistant", "crm"]);
       say("allwill", "檢查完了：這份 Plan 動到的 2 份約定，原文都寫著「尚未定義」。開工前，有 4 件事要先問對的人。"); hoChat(""); } },
   ...PLAN_QS.flatMap((q, i) => [
-    { at: QS + i * QLEN, run: () => { say("allwill", `<b>${q.q}</b><br><span class="hint">${q.hint}</span>`); hoChat(`<span class="count">第 ${i + 1} / 4 題</span>`); } },
-    { at: QS + i * QLEN + 1.9, run: () => { say(q.who, q.a); hoChat(`<span class="count">第 ${i + 1} / 4 題</span>`); } },
+    { at: QS + i * QLEN, run: () => { sound.pop(); say("allwill", `<b>${q.q}</b><br><span class="hint">${q.hint}</span>`); hoChat(`<span class="count">第 ${i + 1} / 4 題</span>`); } },
+    { at: QS + i * QLEN + 1.9, run: () => { sound.answer(); say(q.who, `<span class="rule">這份 Plan 的規則</span>${q.a}`); hoChat(`<span class="count">第 ${i + 1} / 4 題</span>`);
+        q.deals.forEach((id) => { const b = bridgeById[id]; b.badge.textContent = "有答案・待確認"; b.badge.style.background = OK; b.railMat.emissive.set(OK); b.glowTo = 1; }); } },
   ]),
   { at: QS + 4 * QLEN, run: () => { highlight(PLAN_DEALS, ["course", "assistant", "crm"]);
-      say("allwill", "4 件事都有人回答了。確認後更新 2 份約定，大家照同一份 Plan 開工。"); hoChat(""); } },
+      sound.sparkle();
+      say("allwill", "4 件事都有人回答了。Richard 確認後，我把答案寫回這 2 份約定，大家照同一份 Plan 開工。"); hoChat(""); } },
 ];
 const HO_END = QS + 4 * QLEN + 3.5;
 function tickHandoff(dt) {
@@ -1321,7 +1450,7 @@ function tickHandoff(dt) {
   if (ho.t >= Q0 && !ho.checked) {
     if (!ho.checking) {
       ho.checking = true;
-      startCheck(() => { ho.checked = true; ho.checking = false; ho.backFrom = robot.position.clone(); robot.visible = true; }, false, true);
+      startCheck(() => { ho.checked = true; ho.checking = false; ho.backFrom = robot.position.clone(); robot.visible = true; }, false, true, true);
       check.from.copy(robot.position);
     }
     scroll.position.copy(robot.position).add(new THREE.Vector3(0, 1.0, 0));
@@ -1329,6 +1458,7 @@ function tickHandoff(dt) {
   }
   ho.t += dt;
   const t = ho.t;
+  if (t >= 1.4 && !ho.whooshed) { ho.whooshed = true; sound.whoosh(); } // Richard 丟出 Plan
   for (let i = HO.length - 1; i >= 0; i--) if (t >= HO[i].at) { if (ho.stage < i) { for (let j = ho.stage + 1; j <= i; j++) HO[j].run(); ho.stage = i; } break; }
   const pad = posOf(ALLWILL).add(new THREE.Vector3(1.0, 1.2, 0.6));
   const R = team.richard, B = team.ben, C = team.ccza;
@@ -1338,7 +1468,13 @@ function tickHandoff(dt) {
   if (t < 1.4) robot.position.copy(flyArc(pad, hover, ease(t / 1.4), 6));
   else if (t < Q0) robot.position.copy(hover).add(new THREE.Vector3(0, Math.sin(t * 2) * 0.15, 0));
   else if (t < Q0 + 1.6) robot.position.copy(flyArc(ho.backFrom || hover, hover, ease((t - Q0) / 1.6), 3));
-  else if (t < QS + 4 * QLEN) robot.position.copy(hover).add(new THREE.Vector3(0, Math.sin(t * 2) * 0.15, 0));
+  else if (t < QS) robot.position.copy(hover).add(new THREE.Vector3(0, Math.sin(t * 2) * 0.15, 0));
+  else if (t < QS + 4 * QLEN) {
+    const i = Math.min(3, Math.floor((t - QS) / QLEN)), m = team[PLAN_QS[i].who];
+    const prev = i === 0 ? hover : handPos(team[PLAN_QS[i - 1].who]).add(new THREE.Vector3(2, 1.4, 0));
+    robot.position.copy(flyArc(prev, handPos(m).add(new THREE.Vector3(2, 1.4, 0)), ease((t - QS - i * QLEN) / 1.0), 2.5));
+    robot.position.y += Math.sin(t * 2) * 0.12;
+  }
   const rd = B.g.position.clone().lerp(C.g.position, 0.5);
   const scrollAtBot = robot.position.clone().add(new THREE.Vector3(0, 1.0, 0));
   // 卷軸：Richard 舉著 → 丟給 AllWill → AllWill 展開讀 → 最後交到 RD 中間
@@ -1347,7 +1483,7 @@ function tickHandoff(dt) {
   else if (t < QS + 4 * QLEN) { scroll.position.copy(scrollAtBot); scroll.userData.ribbon.material.emissiveIntensity = t < Q0 ? 0.6 + Math.sin(t * 10) * 0.4 : 0.2; }
   else {
     const k = ease((t - QS - 4 * QLEN) / 2.2);
-    robot.position.copy(flyArc(hover, rd.clone().add(new THREE.Vector3(1.5, 3.5, 0)), k, 2));
+    robot.position.copy(flyArc(handPos(team.ccza).add(new THREE.Vector3(2, 1.4, 0)), rd.clone().add(new THREE.Vector3(1.5, 3.5, 0)), k, 2));
     scroll.position.copy(flyArc(scrollAtBot, rd.clone().add(new THREE.Vector3(0, 2.9, 0)), k, 2));
     B.raised = C.raised = k >= 1;
     look = rd;
@@ -1359,9 +1495,9 @@ function tickHandoff(dt) {
     if (t < t0) { c.el.classList.add("off"); return; }
     c.el.classList.remove("off");
     const k = ease((t - t0) / 1.2);
-    c.o.position.copy(flyArc(scrollAtBot, headPos(m), k, 2));
+    c.o.position.copy(flyArc(scrollAtBot, headPos(m), ease((t - t0 - 0.8) / 0.8), 1.2));
     if (t >= t0 + 1.9) { c.el.classList.add("done"); c.el.querySelector("b").textContent = "✓"; }
-    if (t >= t0 && t < t0 + QLEN) look = m.g.position.clone().lerp(robot.position.clone().setY(0), 0.35);
+    if (t >= t0 && t < t0 + QLEN) look = m.g.position.clone().lerp(robot.position.clone().setY(0), 0.4);
   });
   for (const m of Object.values(team)) if (m.raised) m.arms[1].rotation.x = -2.6;
   if (t >= 2.4 && t < QS) { if (portrait()) placeCamera(new THREE.Vector3(0, 0, -6), fitDistance(20, 19), 38); else placeCamera(new THREE.Vector3(0, 0, -5), fitDistance(30, 18), 34); }
@@ -1393,10 +1529,10 @@ const avatars = {};
     avatars[name] = ar.domElement.toDataURL("image/png");
     as.remove(c);
   };
-  shoot("allwill", robot, 1.05 * 1.5, 4.6);
+  shoot("allwill", robot, 1.05 * 2.1, 6.4);
   for (const [k, m] of Object.entries(team)) shoot(k, m.g, 1.2 * TEAM_SCALE, 2.0);
   shoot("coomy", mascots.me, 1.28 * 1.6, 2.5);
-  shoot("water", mascots.water, 1.0 * 1.3, 5.2);
+  shoot("water", mascots.water, 1.0, 4.0);
   ar.dispose();
 }
 const WHO = {
@@ -1421,7 +1557,7 @@ const STEPS = [
   { kind: "handoff" },
   { kind: "closing", sec: 6 },
 ]
-let stepIndex = 0, stepTime = 0, touring = true, firstPass = true, current = null;
+let stepIndex = 0, stepTime = 0, touring = params.has("rec"), firstPass = true, current = null;
 const camGoal = { pos: new THREE.Vector3(), target: new THREE.Vector3() };
 const portrait = () => innerHeight > innerWidth;
 
@@ -1462,6 +1598,7 @@ function setCaption(bar, top, big, small, withCount = true, quiet = false) {
   const count = withCount && touring ? `<span class="count">${stepIndex + 1} / ${STEPS.length}</span>` : "";
   const html = `<div class="top">${top}${count}</div><div class="big">${big}</div>${small ? `<div class="small">${small}</div>` : ""}<div class="src">${SOURCE}</div>`;
   if (quiet && caption.querySelector(".swap")) { caption.querySelector(".swap").innerHTML = html; return; }
+  caption.classList.remove("chat-mode");
   caption.innerHTML = `<button class="cap-close" type="button" aria-label="收起說明">×</button><div class="swap">${html}</div>`;
 }
 
@@ -1488,7 +1625,8 @@ function applyStep() {
     overviewView();
     highlight(null, null);
     setCaption(OK, `<span class="chip">一張組織的 spec 地圖</span>`,
-      "每座島是一個單位，每座橋是一份約定", "小機器寵物是做事的 Agent，牠們搬的箱子，就是約定裡寫好要交出去的資料；人負責做決定。");
+      "改一個地方，好幾個部門跟著受影響；這些牽連平常看不見，改的人不知道要找誰。",
+      "這是一個組織的 spec 地圖：每座島是一個單位，每座橋是一份約定。小機器寵物是做事的 Agent；人負責做決定；外海的 AllWill 不屬於組織，只在改動前幫大家對約定。");
   } else if (s.kind === "ripple") {
     if (portrait()) placeCamera(new THREE.Vector3(0, 0, -6), fitDistance(20, 19), 38); else placeCamera(new THREE.Vector3(0, 0, -5), fitDistance(32, 19), 34);
     highlight(touchCourse.map((d) => d.id), [...new Set(touchCourse.flatMap((d) => [d.from, d.to]))], 0.22);
@@ -1513,33 +1651,64 @@ function applyStep() {
     overviewView();
     highlight(null, null);
     setCaption(OK, `<span class="chip">#組織 AI-native co-work</span>`,
-      "改動前，AllWill 先檢查約定能不能同時成立；有矛盾，找對的人釐清。",
-      `${CTA}<br><b>AllWill</b>：AI-Native Multiplayer Co-Planning and Knowledge Auto-Sync`);
+      "改動前，AllWill 先找出約定沒講清楚或對不上的地方，請對的人決定。",
+      `${CTA}<br><b>AllWill</b>：讓不同專業的人與 AI 共同規劃，讓 Plan、規格與知識持續同步。`);
   }
 }
-function nextStep() { stepTime = 0; stepIndex = (stepIndex + 1) % STEPS.length; if (stepIndex === 0) firstPass = false; applyStep(); }
+function nextStep() {
+  if (stepIndex + 1 >= STEPS.length && !params.has("rec")) { touring = false; syncButtons(); return; } // 播完停在結尾
+  stepTime = 0; stepIndex = (stepIndex + 1) % STEPS.length; if (stepIndex === 0) firstPass = false; applyStep();
+}
 
 // ── 自己逛：點島看功能、點橋看約定 ──
 const tourBtn = document.getElementById("tourBtn");
 const exploreBtn = document.getElementById("exploreBtn");
 const checkBtn = document.getElementById("checkBtn");
-function setMode(tour) {
-  touring = tour;
-  tourBtn.classList.toggle("on", tour);
-  exploreBtn.classList.toggle("on", !tour);
-  endHandoff();
-  if (tour) { check.on = false; robot.visible = false; stepIndex = 0; stepTime = 0; applyStep(); }
-  else if (!check.on) exploreHint();
+function syncButtons() {
+  document.body.classList.toggle("playing", touring);
+  tourBtn.textContent = touring || played ? "↻ 重播" : "▶ 播放";
+  tourBtn.classList.toggle("on", touring);
+  exploreBtn.classList.toggle("on", !touring && exploring);
 }
+let played = false, exploring = false;
+function startTour() {
+  if (!params.has("rec")) sound.start();
+  played = true; exploring = false;
+  touring = true;
+  endHandoff();
+  check.on = false; robot.visible = false; stepIndex = 0; stepTime = 0; firstPass = true;
+  document.body.classList.remove("cap-hidden");
+  // 從小人近景拉遠開場
+  const m = bridgeById["course-finance"].curve.getPointAt(0.45);
+  controls.target.copy(m);
+  camera.position.copy(m).add(new THREE.Vector3(2.5, 3.2, 6.5));
+  applyStep();
+  syncButtons();
+}
+function setMode(tour) {
+  if (tour) return startTour();
+  if (!params.has("rec")) sound.start();
+  touring = false; exploring = true;
+  endHandoff();
+  document.body.classList.remove("cap-hidden");
+  if (!check.on) exploreHint();
+  syncButtons();
+}
+document.getElementById("playCta").addEventListener("click", startTour);
+const soundBtn = document.getElementById("soundBtn");
+const syncSound = () => { soundBtn.textContent = sound.muted ? "🔇" : "🔊"; };
+syncSound();
+soundBtn.addEventListener("click", () => { sound.toggle(); syncSound(); });
 function exploreHint() {
   current = null;
   document.body.classList.remove("focus");
   highlight(null, null);
   setCaption(OK, `<span class="chip">自己逛</span>`, "點一座島看它有哪些功能，點一座橋看約定", `拖曳可以轉動視角，雙指或滾輪縮放。也可以按「AllWill」把約定檢查一輪。<br>${CTA}`, false);
 }
-tourBtn.addEventListener("click", () => setMode(true));
+tourBtn.addEventListener("click", startTour);
 exploreBtn.addEventListener("click", () => setMode(false));
 checkBtn.addEventListener("click", () => {
+  sound.start();
   if (touring) setMode(false);
   document.body.classList.add("focus");
   overviewView(); manualFocus = 3;
@@ -1629,12 +1798,19 @@ function resize() {
   labelRenderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
-  if (touring && STEPS[stepIndex].kind !== "check") applyStep();
+  if (touring && !["check", "handoff"].includes(STEPS[stepIndex].kind)) applyStep();
 }
 addEventListener("resize", resize);
 resize();
-// 開場：從課程平台與財務之間的小人近景拉遠到全貌
-{
+// 開場：錄影模式直接從近景拉遠開始播；一般模式停在全貌，等使用者按播放
+if (!params.has("rec")) {
+  overviewView();
+  camera.position.copy(camGoal.pos);
+  controls.target.copy(camGoal.target);
+  exploreHint();
+  document.body.classList.add("cap-hidden");
+  syncButtons();
+} else {
   const m = bridgeById["course-finance"].curve.getPointAt(0.45);
   controls.target.copy(m);
   camera.position.copy(m).add(new THREE.Vector3(2.5, 3.2, 6.5));
@@ -1698,7 +1874,7 @@ function tick(dt) {
     w.legs[3].rotation.x = Math.sin(step) * 0.5;
   }
   if (mascots.water) {
-    mascots.water.scale.set(1.3 * (1 + Math.sin(elapsed * 4.4) * 0.03), 1.3 * (1 - Math.sin(elapsed * 4.4) * 0.03), 1.3);
+    mascots.water.scale.set(1 + Math.sin(elapsed * 4.4) * 0.03, 1 - Math.sin(elapsed * 4.4) * 0.03, 1);
     mascots.wave.rotation.z = 2.5 + Math.sin(elapsed * 6) * 0.35;
   }
   for (const f of foams) { const k = 1 + Math.sin(elapsed * 1.2) * 0.025; f.scale.set(k, k, 1); f.material.opacity = 0.55 + Math.sin(elapsed * 1.2) * 0.15; }
