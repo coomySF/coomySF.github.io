@@ -229,7 +229,7 @@ function boot() {
     if (stroke) r.stroke({ color: stroke, width: 1 });
     return r;
   };
-  // 品牌母題：「Sf.」的句點 —— 青綠圓點 r 7
+  // 品牌母題：「Aw.」的句點 —— 青綠圓點 r 7
   const dot = (g, x, y, color = TEAL) => g.circle(14).center(x, y).fill(color);
   // 節點圓點 r 3.5：連線的接點
   const node = (g, x, y) => g.circle(7).center(x, y).fill(TEAL);
@@ -264,10 +264,10 @@ function boot() {
   // Divider Rule：連線與分隔用 line（白 7%），carve 只給凹陷的框
   const hair = (g, x1, y1, x2, y2, color = LINE, w = 1) => g.line(x1, y1, x2, y2).stroke({ color, width: w });
 
-  // 浮水印：「Sf.」（白襯線 S + 青綠斜體 f + 青綠句點），舞台右下，55%
+  // 浮水印：「Aw.」（白襯線 A + 青綠斜體 w + 青綠句點），舞台右下，55%
   const wm = draw.text((add) => {
-    add.tspan('S').fill(FG);
-    add.tspan('f').fill(TEAL).attr({ 'font-style': 'italic' });
+    add.tspan('A').fill(FG);
+    add.tspan('w').fill(TEAL).attr({ 'font-style': 'italic' });
     add.tspan('.').fill(TEAL);
   }).addClass('w').font({ size: 26, anchor: 'end' }).attr({ x: 1160, y: 572 }).opacity(0.55);
   wm.attr('id', 'at-wm');
