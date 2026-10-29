@@ -1,0 +1,2 @@
+{"colors": {"base": "#FCFBFF", "horn": "#F3D08E"}, "baseLow": "#D6CCF2", "gradY": [0.03, 0.5], "zScale": 2.0,
+ "rules": [{"k": "horn", "h": [0.06, 0.16], "s": [0.15, 1]}]}

@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>秘密基地回信</title>
+<style>
+  :root {
+    --bg: #fbf4ea;
+    --card: #ffffff;
+    --ink: #3b2a22;
+    --muted: #8a776b;
+    --line: rgba(59, 42, 34, 0.12);
+    --kid: #fff1dc;
+    --me: #f07a5f;
+    --me-ink: #ffffff;
+    --accent: #f07a5f;
+    --danger: #d64545;
+    --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --duration-quick: 150ms;
+    --duration-fast: 250ms;
+    --duration-slow: 400ms;
+    --toast-open: 350ms;
+    --toast-close: 250ms;
+    --toast-distance: 16px;
+    --toast-blur: 2px;
+    --toast-scale: 0.97;
+    --toast-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --shimmer-dur: 2000ms;
+    --shimmer-base: #a8968a;
+    --shimmer-highlight: #3b2a22;
+    --shimmer-band: 400%;
+    --shimmer-ease: linear;
+    --shake-distance: 6px;
+    --shake-overshoot: 4px;
+    --shake-dur-a: 80ms;
+    --shake-dur-b: 60ms;
+    --shake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --revert-hold: 3000ms;
+    --revert-dur: 280ms;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1f1915; --card: #2b231e; --ink: #f6ebe0; --muted: #b3a196; --line: rgba(246, 235, 224, 0.12);
+      --kid: #3a2e25; --shimmer-base: #8a776b; --shimmer-highlight: #f6ebe0;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "PingFang TC", "Noto Sans TC", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button, textarea, input { font: inherit; color: inherit; }
+  .shell { max-width: 640px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+  header { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 10px;
+    padding: max(14px, env(safe-area-inset-top)) 16px 12px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header .bear { font-size: 26px; }
+  header h1 { margin: 0; font-size: 18px; font-weight: 800; }
+  header p { margin: 0; font-size: 12px; color: var(--muted); }
+
+  .thread { flex: 1; padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 14px; }
+  .empty { margin: 40px auto; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.7; }
+  .msg { max-width: 86%; display: flex; flex-direction: column; gap: 6px; animation: msg-in var(--duration-slow) var(--ease-smooth-out) both; }
+  .msg.kid { align-self: flex-start; }
+  .msg.parent { align-self: flex-end; align-items: flex-end; }
+  .bubble { padding: 12px 14px; border-radius: 18px; line-height: 1.6; font-size: 16px; word-break: break-word; }
+  .kid .bubble { background: var(--kid); border-bottom-left-radius: 6px; }
+  .parent .bubble { background: var(--me); color: var(--me-ink); border-bottom-right-radius: 6px; }
+  .bubble audio { display: block; width: 240px; max-width: 100%; height: 36px; margin-top: 6px; }
+  .bubble .said { font-weight: 700; }
+  .bubble .unclear { color: var(--muted); font-size: 14px; }
+  .meta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+  .heard { color: #3f9a74; font-weight: 700; }
+  .msg.is-focus .bubble { box-shadow: 0 0 0 3px var(--accent); }
+  @keyframes msg-in { from { opacity: 0; transform: translateY(8px); filter: blur(2px); } to { opacity: 1; transform: none; filter: blur(0); } }
+
+  .composer { position: sticky; bottom: 0; padding: 10px 16px max(14px, env(safe-area-inset-bottom));
+    background: var(--bg); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .chip { flex: none; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 12px;
+    font-size: 13px; cursor: pointer; transition: transform var(--duration-quick) var(--ease-smooth-out); }
+  .chip:active { transform: scale(0.96); }
+  .row { display: flex; gap: 8px; align-items: flex-end; }
+  textarea { flex: 1; resize: none; min-height: 48px; max-height: 160px; padding: 12px 14px; border-radius: 16px;
+    border: 1.5px solid var(--line); background: var(--card); line-height: 1.5; outline: none; }
+  textarea:focus { border-color: var(--accent); }
+  .icon-btn { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+    background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line);
+    transition: transform var(--duration-quick) var(--ease-smooth-out), background-color var(--duration-fast) var(--ease-smooth-out); }
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn.primary { background: var(--accent); box-shadow: none; color: #fff; }
+  .icon-btn[disabled] { opacity: 0.4; pointer-events: none; }
+  .icon-btn.is-recording { background: var(--danger); color: #fff; box-shadow: none; animation: rec 1.2s ease-in-out infinite; }
+  @keyframes rec { 50% { box-shadow: 0 0 0 8px rgba(214, 69, 69, 0.18); } }
+  .rec-preview { display: none; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .rec-preview.is-shown { display: flex; }
+  .rec-preview audio { flex: 1; height: 36px; min-width: 0; }
+  .rec-timer { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--danger); font-weight: 700; display: none; }
+  .rec-timer.is-shown { display: inline; }
+  .hint-line { font-size: 12px; color: var(--muted); min-height: 18px; }
+
+  /* Shimmer：ElevenLabs 生成中 */
+  .t-shimmer {
+    position: relative;
+    display: inline-block;
+    color: var(--shimmer-base);
+  }
+  .t-shimmer::before {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(
+      90deg,
+      transparent          0%,
+      transparent         40%,
+      var(--shimmer-highlight) 50%,
+      transparent         60%,
+      transparent        100%
+    );
+    background-size: var(--shimmer-band) 100%;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: t-shimmer var(--shimmer-dur) var(--shimmer-ease) infinite;
+  }
+  @keyframes t-shimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position: 0% 0; }
+  }
+
+  /* Toast：送出成功 */
+  .toast-dock { position: fixed; left: 0; right: 0; bottom: 150px; display: grid; place-items: center; pointer-events: none; z-index: 5; }
+  .t-toast {
+    opacity: 0;
+    transform: translateY(var(--toast-distance)) scale(var(--toast-scale));
+    filter: blur(var(--toast-blur));
+    will-change: transform, opacity, filter;
+    transition:
+      opacity var(--toast-close) var(--toast-ease),
+      transform var(--toast-close) var(--toast-ease),
+      filter var(--toast-close) var(--toast-ease);
+  }
+  .t-toast.is-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+    transition:
+      opacity var(--toast-open) var(--toast-ease),
+      transform var(--toast-open) var(--toast-ease),
+      filter var(--toast-open) var(--toast-ease);
+  }
+  .t-toast { background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; font-weight: 700; }
+
+  /* 登入 */
+  .gate { flex: 1; display: grid; place-items: center; padding: 24px 16px; }
+  .gate form { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+  .gate h2 { margin: 0; font-size: 22px; }
+  .gate p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .gate input { padding: 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); outline: none; text-align: center; }
+  .gate input.is-error { border-color: var(--danger); }
+  .gate button { padding: 14px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font-weight: 800; cursor: pointer; }
+  .t-input {
+    transition: border-color 150ms ease-out;
+    will-change: transform;
+  }
+  .t-input.is-error {
+    transition: border-color var(--revert-dur, 280ms) ease-out;
+  }
+  .t-error-msg {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity    var(--revert-dur, 280ms) ease-out,
+      visibility 0s linear var(--revert-dur, 280ms);
+  }
+  .t-input-wrap.is-error .t-error-msg {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity    var(--revert-dur, 280ms) ease-out,
+      visibility 0s linear 0s;
+  }
+  .t-input.is-shaking {
+    animation: t-input-shake calc(
+        var(--shake-dur-a) * 2 + var(--shake-dur-b) * 2
+      ) linear;
+  }
+  @keyframes t-input-shake {
+    0%      { transform: translateX(0);                                 animation-timing-function: var(--shake-ease); }
+    28.57%  { transform: translateX(var(--shake-distance));             animation-timing-function: var(--shake-ease); }
+    57.14%  { transform: translateX(calc(var(--shake-distance) * -1)); animation-timing-function: var(--shake-ease); }
+    78.57%  { transform: translateX(var(--shake-overshoot));            animation-timing-function: var(--shake-ease); }
+    100%    { transform: translateX(0); }
+  }
+  .t-input-wrap { display: flex; flex-direction: column; gap: 8px; }
+  .t-error-msg { color: var(--danger); font-size: 13px; }
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-shimmer::before { animation: none !important; }
+    .t-toast { transition: none !important; }
+    .t-input { animation: none !important; transform: none !important; }
+    .msg, .icon-btn.is-recording { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <span class="bear" aria-hidden="true">🐰</span>
+    <div>
+      <h1>秘密基地</h1>
+      <p id="status">小信差嚕嚕會把你的話念給孩子聽</p>
+    </div>
+  </header>
+
+  <section class="gate" id="gate" hidden>
+    <form id="gate-form">
+      <h2>爸爸的鑰匙</h2>
+      <p>輸入設定時的家長密碼，這台手機之後就不用再輸入。</p>
+      <div class="t-input-wrap" id="gate-wrap">
+        <input class="t-input" id="gate-key" type="password" autocomplete="current-password" placeholder="家長密碼" required>
+        <span class="t-error-msg">密碼不對，再試一次</span>
+      </div>
+      <button type="submit">進入</button>
+    </form>
+  </section>
+
+  <main class="thread" id="thread" hidden></main>
+
+  <footer class="composer" id="composer" hidden>
+    <div class="chips" id="chips">
+      <button class="chip" type="button">我收到了，謝謝你跟我說 💛</button>
+      <button class="chip" type="button">你好勇敢，願意說出來</button>
+      <button class="chip" type="button">晚上睡前我們抱抱聊聊好不好？</button>
+      <button class="chip" type="button">不管生氣還是難過，我都愛你</button>
+    </div>
+    <div class="rec-preview" id="rec-preview">
+      <audio id="rec-audio" controls></audio>
+      <button class="icon-btn" id="rec-discard" type="button" aria-label="刪掉這段錄音">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+      </button>
+    </div>
+    <div class="row">
+      <button class="icon-btn" id="rec-btn" type="button" aria-label="錄自己的聲音">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+      </button>
+      <textarea id="text" rows="1" placeholder="打字，嚕嚕會用你的聲音念"></textarea>
+      <button class="icon-btn primary" id="send" type="button" aria-label="送出" disabled>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>
+      </button>
+    </div>
+    <div class="hint-line" id="hint-line"><span class="rec-timer" id="rec-timer">0:00</span></div>
+  </footer>
+</div>
+<div class="toast-dock"><div class="t-toast" id="toast" role="status"></div></div>
+
+<script>
+const ENDPOINT = "https://mzobbjuhoddruekmxzoe.supabase.co/functions/v1/secret-base";
+const KEY_STORE = "secret-base-parent-key-v1";
+const POLL_MS = 10000;
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+const $ = id => document.getElementById(id);
+const focusId = new URLSearchParams(location.hash.slice(1)).get("m");
+const demo = new URLSearchParams(location.search).has("demo");
+let parentKey = store.get(KEY_STORE);
+let messages = [];
+let recorder = null, recChunks = [], recBlob = null, recStartedAt = 0, recTick = 0;
+let sending = false;
+let pollTimer = 0;
+const rendered = new Map();
+
+const cs = getComputedStyle(document.documentElement);
+const ms = (name, fb) => { const v = parseFloat(cs.getPropertyValue(name)); return Number.isFinite(v) ? v : fb; };
+
+// ---------- 登入 ----------
+function showGate() {
+  $("gate").hidden = false;
+  $("thread").hidden = $("composer").hidden = true;
+  $("gate-key").focus();
+}
+function showError() {
+  const wrap = $("gate-wrap"), input = $("gate-key");
+  wrap.classList.add("is-error");
+  input.classList.add("is-error");
+  input.classList.remove("is-shaking");
+  void input.offsetWidth;
+  input.classList.add("is-shaking");
+  const shakeMs = ms("--shake-dur-a", 80) * 2 + ms("--shake-dur-b", 60) * 2;
+  setTimeout(() => input.classList.remove("is-shaking"), shakeMs + 20);
+  if (wrap._revertTimer) clearTimeout(wrap._revertTimer);
+  wrap._revertTimer = setTimeout(() => {
+    wrap._revertTimer = null;
+    wrap.classList.remove("is-error");
+    input.classList.remove("is-error");
+  }, shakeMs + ms("--revert-hold", 3000));
+}
+$("gate-key").addEventListener("input", () => {
+  const wrap = $("gate-wrap");
+  if (wrap._revertTimer) { clearTimeout(wrap._revertTimer); wrap._revertTimer = null; }
+  wrap.classList.remove("is-error");
+  $("gate-key").classList.remove("is-error");
+});
+$("gate-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  parentKey = $("gate-key").value.trim();
+  const ok = await load();
+  if (ok) { store.set(KEY_STORE, parentKey); enter(); }
+  else showError();
+});
+
+function enter() {
+  $("gate").hidden = true;
+  $("thread").hidden = $("composer").hidden = false;
+  render();
+  clearInterval(pollTimer);
+  pollTimer = setInterval(() => document.visibilityState === "visible" && load().then(ok => ok && render()), POLL_MS);
+}
+
+// ---------- 讀取 ----------
+async function load() {
+  if (demo) return true;
+  try {
+    const res = await fetch(`${ENDPOINT}/parent/thread`, { headers: { "x-base-key": parentKey } });
+    if (res.status === 401) return false;
+    if (!res.ok) throw new Error(`thread ${res.status}`);
+    messages = (await res.json()).messages;
+    $("status").textContent = "小信差嚕嚕會把你的話念給孩子聽";
+    return true;
+  } catch (error) {
+    console.warn(error);
+    $("status").textContent = "連不上，稍後自動重試";
+    return messages.length > 0;
+  }
+}
+
+const timeFmt = new Intl.DateTimeFormat("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+function render() {
+  const thread = $("thread");
+  if (!messages.length) {
+    thread.innerHTML = '<p class="empty">還沒有悄悄話。<br>孩子按住嚕嚕說話後，Discord 會通知你。</p>';
+    rendered.clear();
+    return;
+  }
+  thread.querySelector(".empty")?.remove();
+  let added = false;
+  for (const m of messages) {
+    const existing = rendered.get(m.id);
+    if (existing) { updateMeta(existing, m); continue; }
+    const el = document.createElement("article");
+    el.className = `msg ${m.sender}`;
+    el.dataset.id = m.id;
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    if (m.sender === "kid") {
+      const said = document.createElement("div");
+      said.className = m.body ? "said" : "unclear";
+      said.textContent = m.body ? `「${m.body}」` : (demo ? "（示範模式不轉文字，聽聽錄音）" : "（沒轉出文字，聽聽錄音）");
+      bubble.append(said);
+    } else if (m.body) {
+      bubble.append(document.createTextNode(m.body));
+    } else {
+      bubble.append(document.createTextNode("🎙 你的錄音"));
+    }
+    if (m.audio_url) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.preload = "none";
+      audio.src = m.audio_url;
+      bubble.append(audio);
+    }
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    el.append(bubble, meta);
+    updateMeta(el, m);
+    thread.append(el);
+    rendered.set(m.id, el);
+    added = true;
+  }
+  const focusEl = focusId && rendered.get(focusId);
+  if (focusEl && !focusEl.dataset.focused) {
+    focusEl.dataset.focused = "1";
+    focusEl.classList.add("is-focus");
+    focusEl.scrollIntoView({ block: "center" });
+  } else if (added) {
+    scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  }
+}
+function updateMeta(el, m) {
+  const meta = el.querySelector(".meta");
+  const parts = [timeFmt.format(new Date(m.created_at))];
+  if (m.sender === "parent") {
+    parts.push(m.audio_kind === "tts" ? "嚕嚕用你的聲音念" : "你的錄音");
+    meta.innerHTML = "";
+    meta.append(parts.join(" · "));
+    const heard = document.createElement("span");
+    heard.className = m.heard_at ? "heard" : "";
+    heard.textContent = m.heard_at ? "孩子聽到了 ✓" : "還沒聽";
+    meta.append(heard);
+  } else {
+    meta.textContent = parts.join(" · ");
+  }
+}
+
+// ---------- 撰寫 ----------
+const text = $("text");
+function refreshSend() {
+  $("send").disabled = sending || !(text.value.trim() || recBlob);
+}
+text.addEventListener("input", () => {
+  text.style.height = "auto";
+  text.style.height = Math.min(text.scrollHeight, 160) + "px";
+  refreshSend();
+});
+$("chips").addEventListener("click", event => {
+  const chip = event.target.closest(".chip");
+  if (!chip) return;
+  text.value = chip.textContent;
+  text.dispatchEvent(new Event("input"));
+  text.focus();
+});
+
+$("rec-btn").addEventListener("click", async () => {
+  if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+    recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
+    recChunks = [];
+    recorder.ondataavailable = e => e.data.size && recChunks.push(e.data);
+    recorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      clearInterval(recTick);
+      $("rec-btn").classList.remove("is-recording");
+      $("rec-timer").classList.remove("is-shown");
+      recBlob = new Blob(recChunks, { type: (recorder.mimeType || "audio/webm").split(";")[0] });
+      $("rec-audio").src = URL.createObjectURL(recBlob);
+      $("rec-preview").classList.add("is-shown");
+      refreshSend();
+    };
+    recorder.start(250);
+    recStartedAt = Date.now();
+    $("rec-btn").classList.add("is-recording");
+    $("rec-timer").classList.add("is-shown");
+    recTick = setInterval(() => {
+      const s = Math.floor((Date.now() - recStartedAt) / 1000);
+      $("rec-timer").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+      if (s >= 120) recorder.stop();
+    }, 250);
+  } catch (error) {
+    toast("沒有麥克風權限");
+  }
+});
+$("rec-discard").addEventListener("click", () => {
+  recBlob = null;
+  $("rec-audio").removeAttribute("src");
+  $("rec-preview").classList.remove("is-shown");
+  refreshSend();
+});
+
+$("send").addEventListener("click", async () => {
+  if (sending) return;
+  const body = text.value.trim();
+  if (!body && !recBlob) return;
+  sending = true;
+  refreshSend();
+  const hint = $("hint-line");
+  const label = recBlob ? "送出中…" : "嚕嚕正在學你的聲音…";
+  hint.innerHTML = `<span class="t-shimmer" data-text="${label}">${label}</span>`;
+  if (demo) {
+    const id = `parent-${Date.now()}`;
+    await new Promise(r => setTimeout(r, recBlob ? 300 : 900));
+    messages.push({ id, sender: "parent", body: body || null, audio_kind: recBlob ? "recording" : "tts",
+      audio_url: recBlob ? URL.createObjectURL(recBlob) : null, heard_at: null, created_at: new Date().toISOString() });
+    demoChannel.postMessage({ type: "parent", id, text: body, blob: recBlob });
+    text.value = "";
+    text.style.height = "";
+    $("rec-discard").click();
+    toast(baseOpen ? "送出了，嚕嚕正把信送去基地 ✉️" : "送出了（但孩子頁沒開，打開 /secret-base/?demo 才收得到）");
+    render();
+    sending = false;
+    hint.innerHTML = '<span class="rec-timer" id="rec-timer">0:00</span>';
+    refreshSend();
+    return;
+  }
+  const form = new FormData();
+  if (body) form.append("text", body);
+  if (recBlob) form.append("audio", recBlob, `parent.${recBlob.type.includes("mp4") ? "m4a" : "webm"}`);
+  const lastKid = [...messages].reverse().find(m => m.sender === "kid");
+  if (focusId || lastKid) form.append("reply_to", focusId || lastKid.id);
+  try {
+    const res = await fetch(`${ENDPOINT}/parent/reply`, { method: "POST", headers: { "x-base-key": parentKey }, body: form });
+    if (!res.ok) throw new Error(`reply ${res.status}`);
+    text.value = "";
+    text.style.height = "";
+    $("rec-discard").click();
+    toast("送出了，嚕嚕正把信送去基地 ✉️");
+    await load();
+    render();
+  } catch (error) {
+    console.warn(error);
+    toast("沒送出去，再試一次");
+  } finally {
+    sending = false;
+    hint.innerHTML = '<span class="rec-timer" id="rec-timer">0:00</span>';
+    refreshSend();
+  }
+});
+
+let toastTimer = 0;
+function toast(message) {
+  const el = $("toast");
+  el.textContent = message;
+  el.classList.add("is-open");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("is-open"), 2600);
+}
+
+// ---------- 示範模式：跟同一台電腦的 /secret-base/?demo 互通 ----------
+const demoChannel = demo && window.BroadcastChannel ? new BroadcastChannel("secret-base-demo") : null;
+let baseOpen = false;
+demoChannel?.addEventListener("message", ({ data }) => {
+  if (data.type === "base-here") { baseOpen = true; $("status").textContent = "示範模式 · 已連上孩子頁"; }
+  if (data.type === "kid") {
+    baseOpen = true;
+    messages.push({ id: data.id, sender: "kid", body: null, audio_url: URL.createObjectURL(data.blob), created_at: data.at });
+    render();
+    toast("🐰 孩子在秘密基地說話了");
+  }
+  if (data.type === "heard") {
+    const m = messages.find(x => x.id === data.id);
+    if (m) { m.heard_at = new Date().toISOString(); render(); }
+  }
+});
+
+// ---------- 啟動 ----------
+(async () => {
+  if (demo) {
+    $("status").textContent = "示範模式 · 等孩子頁打開…";
+    demoChannel?.postMessage({ type: "hello" });
+    enter();
+    return;
+  }
+  if (!parentKey) { showGate(); return; }
+  if (await load()) enter();
+  else { store.del(KEY_STORE); showGate(); }
+})();
+</script>
+</body>
+</html>

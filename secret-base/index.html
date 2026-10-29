@@ -1,0 +1,1637 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#efd9f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>秘密基地</title>
+<style>
+  :root {
+    --ink: #3b2a22;
+    --cream: #fff6ea;
+    --coral: #ff86ad;
+    --coral-deep: #e0628e;
+    --honey: #f2b867;
+    --duration-stagger: 40ms;
+    --duration-quick: 150ms;
+    --duration-fast: 250ms;
+    --duration-very-slow: 500ms;
+    --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+    --icon-swap-dur: 250ms;
+    --icon-swap-blur: 2px;
+    --icon-swap-start-scale: 0.25;
+    --icon-swap-ease: ease-in-out;
+    --badge-slide-dur: 260ms;
+    --badge-pop-dur: 500ms;
+    --badge-pop-close-dur: 180ms;
+    --badge-fade-dur: 400ms;
+    --badge-fade-close-dur: 180ms;
+    --badge-blur: 2px;
+    --badge-offset-x: -8.2px;
+    --badge-offset-y: 12.4px;
+    --badge-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --badge-pop-ease: cubic-bezier(0.34, 1.36, 0.64, 1);
+    --badge-close-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; color: var(--ink);
+    background: radial-gradient(ellipse at 50% 30%, #fbefff 0%, #efd9f5 55%, #dcc1ea 100%);
+    font-family: "PingFang TC", "Noto Sans TC", system-ui, sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: none; overscroll-behavior: none; }
+  #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* 大按鈕：按住說話；有信時換成信封 */
+  .talk { position: fixed; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); width: 124px; height: 124px;
+    margin-left: -62px; border: 0; border-radius: 50%; padding: 0; cursor: pointer;
+    background: radial-gradient(circle at 35% 30%, #ffb3cb 0%, var(--coral) 55%, var(--coral-deep) 100%);
+    box-shadow: 0 10px 0 #c24f78, 0 18px 30px rgba(120, 60, 30, 0.35);
+    transition: transform var(--duration-quick) var(--ease-smooth-out), box-shadow var(--duration-quick) var(--ease-smooth-out), opacity var(--duration-fast) var(--ease-smooth-out);
+    touch-action: none; }
+  .talk::before { content: ""; position: absolute; inset: -14px; border-radius: 50%;
+    border: 6px solid rgba(255, 255, 255, 0.85); transform: scale(var(--level, 0.9)); opacity: 0;
+    transition: opacity var(--duration-fast) var(--ease-smooth-out); }
+  .talk.is-holding { transform: translateY(8px) scale(0.96); box-shadow: 0 2px 0 #c24f78, 0 8px 16px rgba(120, 60, 30, 0.3); }
+  .talk.is-holding::before { opacity: 1; }
+  .talk[data-mode="letter"] { background: radial-gradient(circle at 35% 30%, #ffe08a 0%, var(--honey) 55%, #d9933c 100%);
+    box-shadow: 0 10px 0 #b8782c, 0 18px 30px rgba(120, 60, 30, 0.35); animation: talk-call 1.6s var(--ease-smooth-out) infinite; }
+  .talk[disabled] { opacity: 0.45; pointer-events: none; animation: none; }
+  @keyframes talk-call { 0%, 70%, 100% { transform: scale(1); } 80% { transform: scale(1.08) rotate(-4deg); } 90% { transform: scale(1.04) rotate(4deg); } }
+
+  .t-icon-swap { position: relative; display: inline-grid; width: 100%; height: 100%; place-items: center; }
+  .t-icon-swap .t-icon {
+    grid-area: 1 / 1;
+    transition:
+      opacity   var(--icon-swap-dur) var(--icon-swap-ease),
+      filter    var(--icon-swap-dur) var(--icon-swap-ease),
+      transform var(--icon-swap-dur) var(--icon-swap-ease);
+    will-change: opacity, filter, transform;
+  }
+  .t-icon-swap[data-state="a"] .t-icon[data-icon="a"],
+  .t-icon-swap[data-state="b"] .t-icon[data-icon="b"] {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+  .t-icon-swap[data-state="a"] .t-icon[data-icon="b"],
+  .t-icon-swap[data-state="b"] .t-icon[data-icon="a"] {
+    opacity: 0;
+    filter: blur(var(--icon-swap-blur));
+    transform: scale(var(--icon-swap-start-scale));
+  }
+
+  @keyframes t-badge-slide-in {
+    from { transform: translate(var(--badge-offset-x), var(--badge-offset-y)); }
+    to   { transform: translate(0, 0); }
+  }
+  .t-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    pointer-events: none;
+    will-change: transform;
+  }
+  .t-badge[data-open="true"] {
+    animation: t-badge-slide-in var(--badge-slide-dur) var(--badge-slide-ease);
+  }
+  .t-badge-dot {
+    display: block;
+    transform-origin: center;
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0);
+    transition:
+      transform var(--badge-pop-dur)  var(--badge-pop-ease),
+      opacity   var(--badge-fade-dur) var(--badge-pop-ease),
+      filter    var(--badge-pop-dur)  var(--badge-pop-ease);
+    will-change: transform, opacity, filter;
+  }
+  .t-badge[data-open="false"] .t-badge-dot {
+    transform: scale(0);
+    opacity: 0;
+    filter: blur(var(--badge-blur));
+    transition:
+      transform var(--badge-pop-close-dur)  var(--badge-close-ease),
+      opacity   var(--badge-fade-close-dur) var(--badge-close-ease),
+      filter    var(--badge-pop-close-dur)  var(--badge-close-ease);
+  }
+  .t-badge-dot { min-width: 40px; height: 40px; padding: 0 10px; border-radius: 20px; background: var(--coral);
+    color: #fff; font: 900 24px/40px system-ui, sans-serif; text-align: center; box-shadow: 0 0 0 4px var(--cream); }
+
+  /* 不識字也看得懂的提示：一隻手在按按鈕 */
+  .hint { position: fixed; left: 50%; bottom: calc(max(28px, env(safe-area-inset-bottom)) + 70px); width: 72px; height: 72px;
+    margin-left: 20px; pointer-events: none; opacity: 0; transition: opacity var(--duration-very-slow) var(--ease-smooth-out); }
+  .hint.is-shown { opacity: 1; }
+  .hint svg { width: 100%; height: 100%; animation: hint-press 1.8s var(--ease-smooth-out) infinite; transform-origin: 30% 10%; }
+  @keyframes hint-press { 0%, 100% { transform: translate(0, 0); } 40%, 70% { transform: translate(-10px, 12px) scale(0.94); } }
+
+  /* 衣櫥：點衣架打開，點色塊換衣服 */
+  .wardrobe { position: fixed; right: 16px; top: max(16px, env(safe-area-inset-top)); width: 68px; height: 68px; border: 0; border-radius: 50%;
+    background: var(--cream); box-shadow: 0 6px 0 #d9c3e8, 0 10px 20px rgba(90, 60, 120, 0.2); display: grid; place-items: center; cursor: pointer;
+    transition: transform var(--duration-quick) var(--ease-smooth-out), opacity var(--duration-fast) var(--ease-smooth-out); z-index: 4; }
+  .wardrobe:active { transform: translateY(4px) scale(0.96); }
+  .wardrobe[disabled] { opacity: 0.45; pointer-events: none; }
+  .closet { position: fixed; right: 16px; top: calc(max(16px, env(safe-area-inset-top)) + 84px); display: flex; flex-direction: column; gap: 12px; z-index: 4; pointer-events: none; }
+  .closet[data-open="true"] { pointer-events: auto; }
+  .swatch { width: 68px; height: 68px; border-radius: 50%; border: 5px solid #fff; cursor: pointer; font-size: 30px; line-height: 1;
+    display: grid; place-items: center; box-shadow: 0 6px 14px rgba(90, 60, 120, 0.25);
+    opacity: 0; transform: translateY(-12px) scale(0.6);
+    transition: opacity var(--duration-quick) var(--ease-smooth-out), transform var(--duration-quick) var(--ease-smooth-out); }
+  .closet[data-open="true"] .swatch { opacity: 1; transform: none;
+    transition: opacity var(--duration-fast) var(--ease-smooth-out) calc(var(--i) * var(--duration-stagger)),
+                transform var(--duration-very-slow) var(--ease-bounce) calc(var(--i) * var(--duration-stagger)); }
+  .swatch.gap { margin-top: 10px; }
+  .swatch.is-current { box-shadow: 0 0 0 5px var(--coral), 0 6px 14px rgba(90, 60, 120, 0.25); }
+
+  /* 大門：第一次點擊解鎖聲音和麥克風 */
+  .door-wrap { position: fixed; inset: 0; display: grid; place-items: center; perspective: 1200px;
+    background: radial-gradient(ellipse at 50% 40%, #5a3b2c 0%, #2c1d17 100%);
+    transition: opacity var(--duration-very-slow) var(--ease-smooth-out) 450ms; z-index: 10; }
+  .door-wrap.is-open { opacity: 0; pointer-events: none; }
+  .door { width: min(62vw, 300px); aspect-ratio: 3 / 4.4; border: 0; padding: 0; cursor: pointer; position: relative;
+    border-radius: 999px 999px 18px 18px; transform-origin: 0% 50%;
+    background: repeating-linear-gradient(90deg, #c98a52 0 22%, #b97a45 22% 25%);
+    box-shadow: inset 0 0 0 10px #8f5a33, 0 30px 60px rgba(0,0,0,0.45), 0 0 120px rgba(255, 200, 120, 0.25);
+    transition: transform 900ms var(--ease-smooth-out); animation: door-breathe 2.6s ease-in-out infinite; }
+  .door-wrap.is-open .door { transform: rotateY(-100deg); animation: none; }
+  .door::after { content: ""; position: absolute; right: 16%; top: 54%; width: 13%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffe7a3, #e2a93d); box-shadow: 0 0 0 0 rgba(255, 220, 140, 0.7);
+    animation: knob 1.6s ease-out infinite; }
+  .door .star { position: absolute; left: 50%; top: 20%; width: 26%; transform: translateX(-50%); }
+  @keyframes door-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+  @keyframes knob { 0% { box-shadow: 0 0 0 0 rgba(255, 220, 140, 0.7); } 100% { box-shadow: 0 0 0 26px rgba(255, 220, 140, 0); } }
+
+  /* 給大人看的小字（孩子不需要讀） */
+  .grown-up { position: fixed; left: 14px; top: max(12px, env(safe-area-inset-top)); font-size: 12px; font-weight: 700;
+    color: rgba(59, 42, 34, 0.55); background: rgba(255, 246, 234, 0.6); padding: 4px 10px; border-radius: 999px; z-index: 5; }
+  .grown-up[hidden] { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .t-icon-swap .t-icon { transition: none !important; }
+    .t-badge, .t-badge-dot { animation: none !important; transition: none !important; }
+    .talk, .talk::before, .door, .door::after, .hint svg, .swatch, .wardrobe { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+
+<button class="talk" id="talk" type="button" aria-label="按住跟娃娃說話" data-mode="talk">
+  <span class="t-icon-swap" data-state="a" aria-hidden="true">
+    <svg class="t-icon" data-icon="a" width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="2.5" width="6" height="12" rx="3" fill="#fff"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/>
+    </svg>
+    <svg class="t-icon" data-icon="b" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#7a4a1c" stroke-width="1.8" stroke-linejoin="round">
+      <rect x="2.5" y="5.5" width="19" height="13" rx="2" fill="#fff8ec"/><path d="M3 6.5l9 6.5 9-6.5"/>
+      <path d="M12 16.6c-1.6-1.1-2.6-1.9-2.6-3 0-.8.6-1.3 1.3-1.3.5 0 1 .3 1.3.8.3-.5.8-.8 1.3-.8.7 0 1.3.5 1.3 1.3 0 1.1-1 1.9-2.6 3z" fill="#f07a5f" stroke="none"/>
+    </svg>
+  </span>
+  <span class="t-badge" data-open="false"><span class="t-badge-dot" id="badge-count">1</span></span>
+</button>
+
+<div class="hint" id="hint" aria-hidden="true">
+  <svg viewBox="0 0 64 64"><path d="M22 6c3 0 5 2 5 5v17l3-1c3-1 6 0 7 3l1 1c3-1 6 0 7 3 3-1 6 1 6 4v10c0 8-6 14-14 14h-4c-5 0-9-2-12-6L10 41c-2-2-2-5 0-7s5-2 7 0l0 0V11c0-3 2-5 5-5z" fill="#fff6ea" stroke="#3b2a22" stroke-width="3" stroke-linejoin="round"/></svg>
+</div>
+
+<div class="grown-up" id="grown-up" hidden>示範模式</div>
+
+<button class="wardrobe" id="wardrobe" type="button" aria-label="幫嚕嚕換衣服" disabled>
+  <svg width="40" height="40" viewBox="0 0 48 48" fill="none" stroke="#7d68c9" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 13a4 4 0 1 1 6 3.5c-1.3.8-2 1.6-2 3V22"/><path d="M24 22L6 33c-1.6 1-.9 3.5 1 3.5h34c1.9 0 2.6-2.5 1-3.5z" fill="#efe6ff"/>
+  </svg>
+</button>
+<div class="closet" id="closet" data-open="false"></div>
+
+<div class="door-wrap" id="door-wrap">
+  <button class="door" id="door" type="button" aria-label="打開秘密基地">
+    <svg class="star" viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7z" fill="#ffd66b" stroke="#8f5a33" stroke-width="1.2" stroke-linejoin="round"/></svg>
+  </button>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const ENDPOINT = "https://mzobbjuhoddruekmxzoe.supabase.co/functions/v1/secret-base";
+const KEY_STORE = "secret-base-key-v1";
+const MIN_RECORD_MS = 700;
+const MAX_RECORD_MS = 60000;
+const POLL_MS = 8000;
+
+// ---------- 配對：爸爸第一次用 #key=... 開這頁，之後記在這台平板 ----------
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+};
+const hashKey = new URLSearchParams(location.hash.slice(1)).get("key");
+if (hashKey) { store.set(KEY_STORE, hashKey); history.replaceState(null, "", location.pathname); }
+const baseKey = hashKey || store.get(KEY_STORE);
+const demo = !baseKey || new URLSearchParams(location.search).has("demo");
+document.getElementById("grown-up").hidden = !demo;
+
+// ---------- 場景 ----------
+const canvas = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 50);
+const lookTarget = new THREE.Vector3(0, 0.9, 0);
+
+const toon = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...extra });
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xf1e6f6, 1.3));
+const sun = new THREE.DirectionalLight(0xfff2e4, 1.5);
+sun.position.set(-2.2, 4.5, 3.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = sun.shadow.camera.bottom = -2.5;
+sun.shadow.camera.right = sun.shadow.camera.top = 2.5;
+sun.shadow.radius = 6;
+sun.shadow.bias = -0.0005;
+const fill = new THREE.DirectionalLight(0xe8dcff, 0.45);
+fill.position.set(2.5, 2, 2.5);
+scene.add(fill);
+scene.add(sun);
+const glow = new THREE.PointLight(0xffc27a, 0.0, 4, 1.6);
+glow.position.set(0, 0.5, 1.2);
+scene.add(glow);
+
+function canvasTexture(w, h, draw, repeat) {
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  draw(c.getContext("2d"), w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(...repeat); }
+  return tex;
+}
+
+// 帳篷布牆
+const wallTex = canvasTexture(256, 64, (g, w, h) => {
+  g.fillStyle = "#fbf1ff"; g.fillRect(0, 0, w, h);
+  g.fillStyle = "#f7d9ea"; g.fillRect(0, 0, w / 2, h);
+}, [14, 1]);
+const wall = new THREE.Mesh(
+  new THREE.CylinderGeometry(3.3, 3.6, 6.4, 48, 1, true, Math.PI * 0.5, Math.PI),
+  new THREE.MeshBasicMaterial({ map: wallTex, side: THREE.BackSide, toneMapped: false })
+);
+wall.position.set(0, 3.0, 0.6);
+scene.add(wall);
+
+// 地毯
+const rugTex = canvasTexture(512, 512, (g, w) => {
+  const rings = ["#c9b6ec", "#fff4fa", "#ffc3d8", "#fff4fa", "#bfe6d8", "#fff4fa", "#ffe08f"];
+  rings.forEach((color, i) => {
+    g.fillStyle = color; g.beginPath(); g.arc(w / 2, w / 2, w / 2 - i * 34, 0, Math.PI * 2); g.fill();
+  });
+});
+const rug = new THREE.Mesh(new THREE.CircleGeometry(2.2, 64), new THREE.MeshStandardMaterial({ map: rugTex, roughness: 1 }));
+rug.receiveShadow = true;
+rug.rotation.x = -Math.PI / 2;
+rug.position.y = 0.002;
+scene.add(rug);
+const floor = new THREE.Mesh(new THREE.CircleGeometry(4, 48), new THREE.MeshStandardMaterial({ color: 0xd9c3e8, roughness: 1 }));
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+// 接觸陰影
+const shadowTex = canvasTexture(128, 128, (g, w) => {
+  const grad = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+  grad.addColorStop(0, "rgba(80,45,110,0.4)"); grad.addColorStop(1, "rgba(80,45,110,0)");
+  g.fillStyle = grad; g.fillRect(0, 0, w, w);
+});
+const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.9), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.y = 0.006;
+scene.add(shadow);
+
+// 串燈
+const lightCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(-3.0, 3.0, -0.4), new THREE.Vector3(-1.6, 2.35, -2.2),
+  new THREE.Vector3(0, 2.55, -2.75), new THREE.Vector3(1.6, 2.35, -2.2), new THREE.Vector3(3.0, 3.0, -0.4)
+]);
+scene.add(new THREE.Mesh(new THREE.TubeGeometry(lightCurve, 80, 0.012, 6), new THREE.MeshBasicMaterial({ color: 0x6b4a3a })));
+const bulbColors = [0xffd66b, 0xff9d84, 0x9fd8c0, 0xffe7b0, 0xf6a6c8];
+const bulbs = [];
+for (let i = 1; i < 22; i++) {
+  const p = lightCurve.getPoint(i / 22);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), new THREE.MeshBasicMaterial({ color: bulbColors[i % bulbColors.length] }));
+  bulb.position.copy(p).add(new THREE.Vector3(0, -0.07, 0));
+  bulb.userData = { base: new THREE.Color(bulbColors[i % bulbColors.length]), phase: Math.random() * 6.28 };
+  scene.add(bulb);
+  bulbs.push(bulb);
+}
+
+// 牆上的紙星星
+const starShape = new THREE.Shape();
+for (let i = 0; i < 10; i++) {
+  const r = i % 2 ? 0.07 : 0.16, a = Math.PI / 2 + i * Math.PI / 5;
+  i ? starShape.lineTo(Math.cos(a) * r, Math.sin(a) * r) : starShape.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+}
+const starGeo = new THREE.ShapeGeometry(starShape);
+[[-1.9, 1.6, -2.4, 0.3], [2.1, 1.85, -2.2, -0.2], [-1.0, 2.05, -2.9, 0.1], [1.2, 1.25, -2.8, 0.5], [-2.6, 1.05, -1.6, 0.9]].forEach(([x, y, z, r]) => {
+  const star = new THREE.Mesh(starGeo, new THREE.MeshBasicMaterial({ color: 0xffd66b }));
+  star.position.set(x, y, z); star.rotation.z = r; star.lookAt(0, y, 2); star.rotateZ(r);
+  scene.add(star);
+});
+
+// 抱枕
+[[-1.55, -0.9, 0xffd0e1], [1.6, -0.75, 0xbfe6d8], [1.15, -1.55, 0xffe08f]].forEach(([x, z, color]) => {
+  const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 18), toon(color));
+  pillow.scale.set(1.1, 0.55, 0.9);
+  pillow.position.set(x, 0.22, z);
+  pillow.rotation.y = x;
+  scene.add(pillow);
+});
+
+// ---------- 三位小信差：嚕嚕（麻糬小熊）、綿綿（雲朵小羊）、啾啾（幸福小郵鳥） ----------
+// 依 secret-base/design/ 的設計稿與 3D 規格建模。設計稿單位：全高 1.0，這裡整體放大 S 倍。
+// 每隻角色都是一整顆沒有接縫的身體，五官用 raycast 精準貼在表面上；
+// 「小惡魔連帽裝」是另一個獨立網格，套在頭上即可，三隻共用同一套做法。
+const S = 1.7;
+const doll = new THREE.Group();
+scene.add(doll);
+const body = new THREE.Group();
+doll.add(body);
+
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+// 絨布材質：模仿設計稿的噴槍質感。亮面暖、暗面是同色系加深（不是灰），左上一塊柔光，加一點毛絨顆粒。
+const SOFT_VS = `
+varying vec3 vN; varying vec3 vC; varying vec3 vObj; varying vec3 vObjN; varying vec2 vUv;
+void main() {
+  vObjN = normal;
+  vUv = uv;
+  #ifdef USE_COLOR
+  vC = color.rgb;
+  #else
+  vC = vec3(1.0);
+  #endif
+  vN = normalize(normalMatrix * normal);
+  vObj = position;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+const SOFT_FS = `
+uniform vec3 uBase, uShade, uHi, uRimC;
+uniform float uHiAmt, uRim, uGrain, uUsePaint;
+uniform sampler2D uPaint;
+varying vec3 vN; varying vec3 vC; varying vec3 vObj; varying vec3 vObjN; varying vec2 vUv;
+float hash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+void main() {
+  vec3 N = normalize(vN);
+  if (!gl_FrontFacing) N = -N;
+  vec3 L = normalize(vec3(-0.5, 0.75, 0.6));
+  float wrap = smoothstep(0.0, 1.0, clamp((dot(N, L) + 0.6) / 1.6, 0.0, 1.0));
+  vec3 albedo = vC;
+  // 生成模型的正面：依烘好的 UV（逐行對齊輪廓的正面投影）取平塗色塊圖，邊緣比頂點色清楚；背面退回頂點色
+  if (uUsePaint > 0.5) {
+    vec4 t = texture2D(uPaint, vUv);
+    float front = smoothstep(-0.3, 0.05, normalize(vObjN).z) * step(0.5, t.a);
+    albedo = mix(vC, t.rgb, front);
+  }
+  vec3 col = mix(uShade * albedo, uBase * albedo, wrap);
+  float hi = pow(max(dot(N, normalize(L + vec3(0.0, 0.0, 1.0))), 0.0), 14.0);
+  col = mix(col, uHi, hi * uHiAmt);
+  float fr = pow(1.0 - max(N.z, 0.0), 3.0);
+  col = mix(col, uRimC * albedo, fr * uRim);
+  col += (hash(floor(vObj * 900.0)) - 0.5) * uGrain;
+  gl_FragColor = vec4(col, 1.0);
+  #include <colorspace_fragment>
+}`;
+function plush(color, o = {}) {
+  const base = new THREE.Color(color);
+  let shade = o.shade != null ? new THREE.Color(o.shade) : null;
+  if (!shade) {
+    const hsl = {}; base.getHSL(hsl, THREE.SRGBColorSpace);
+    shade = new THREE.Color().setHSL(hsl.h, Math.min(1, hsl.s + 0.12), Math.max(0, hsl.l - 0.17), THREE.SRGBColorSpace);
+  }
+  return new THREE.ShaderMaterial({
+    vertexShader: SOFT_VS, fragmentShader: SOFT_FS, vertexColors: !!o.vertexColors, side: o.side ?? THREE.FrontSide,
+    uniforms: {
+      uBase: { value: base }, uShade: { value: shade },
+      uHi: { value: new THREE.Color(o.hi ?? 0xffffff) }, uHiAmt: { value: o.hiAmt ?? 0.55 },
+      uRimC: { value: new THREE.Color(o.rim ?? color) }, uRim: { value: o.rimAmt ?? 0.0 },
+      uGrain: { value: o.grain ?? 0.025 },
+      uPaint: { value: o.paint ?? null }, uUsePaint: { value: o.paint ? 1 : 0 }
+    }
+  });
+}
+const basic = color => new THREE.MeshBasicMaterial({ color });
+const add = (parent, mesh) => { parent.add(mesh); mesh.castShadow = true; return mesh; };
+
+// 角色共用的動態接口（換角色時整組替換）
+let head, eyes, ears, armL, armR, feet, hitMeshes = [], setMouth = () => {}, rig = null;
+const HOLD_POS = new THREE.Vector3();
+
+// 在身體表面 (x, y) 正面找落點與法線
+const _ray = new THREE.Raycaster();
+function surfaceHit(mesh, x, y, from = new THREE.Vector3(x, y, 5), dir = new THREE.Vector3(0, 0, -1)) {
+  mesh.updateWorldMatrix(true, false);
+  _ray.set(from, dir.clone().normalize());
+  const hit = _ray.intersectObject(mesh, false)[0];
+  if (!hit) return null;
+  const normal = hit.face.normal.clone().transformDirection(mesh.matrixWorld);
+  return { point: hit.point, normal };
+}
+// 把物件貼到 surface 上（parent 的座標系），朝外
+function stick(obj, parent, mesh, x, y, lift = 0) {
+  const hit = surfaceHit(mesh, x, y);
+  if (!hit) return obj;
+  parent.add(obj);
+  parent.updateWorldMatrix(true, false);
+  const world = hit.point.clone().addScaledVector(hit.normal, lift);
+  obj.position.copy(parent.worldToLocal(world.clone()));
+  obj.updateWorldMatrix(true, false);
+  obj.lookAt(world.clone().add(hit.normal));
+  return obj;
+}
+
+// 眼睛：深色外圈 → 虹膜下半部透出角色色 → 瞳孔，加兩顆反光（照設計稿）
+function makeEyes(parent, mesh, xs, y, color, iris = "#7a4a30") {
+  const tex = canvasTexture(128, 128, (g, w) => {
+    const dark = "#" + new THREE.Color(color).getHexString(THREE.SRGBColorSpace);
+    g.fillStyle = dark; g.fillRect(0, 0, w, w);
+    const grad = g.createRadialGradient(w / 2, w * 0.72, 2, w / 2, w * 0.62, w * 0.42);
+    grad.addColorStop(0, iris); grad.addColorStop(0.55, iris); grad.addColorStop(1, dark);
+    g.fillStyle = grad; g.beginPath(); g.arc(w / 2, w / 2, w * 0.4, 0, Math.PI * 2); g.fill();
+    g.fillStyle = dark; g.beginPath(); g.arc(w / 2, w * 0.5, w * 0.17, 0, Math.PI * 2); g.fill();
+  });
+  const eyeMat = new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.06 });
+  const white = basic(0xffffff);
+  return xs.map(x => {
+    const eye = stick(new THREE.Group(), parent, mesh, x, y, -0.004);
+    const inner = new THREE.Group();
+    const geo = new THREE.SphereGeometry(0.064, 32, 24);
+    const gp = geo.attributes.position, uv = geo.attributes.uv;
+    for (let i = 0; i < gp.count; i++) uv.setXY(i, gp.getX(i) / 0.128 + 0.5, gp.getY(i) / 0.128 + 0.5);
+    const ball = new THREE.Mesh(geo, eyeMat);
+    ball.scale.set(1, 1.2, 0.45);
+    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.023, 12, 10), white);
+    shine.position.set(0.02, 0.032, 0.026);
+    shine.scale.z = 0.4;
+    const shine2 = new THREE.Mesh(new THREE.SphereGeometry(0.01, 10, 8), white);
+    shine2.position.set(-0.022, -0.03, 0.026);
+    inner.add(ball, shine, shine2);
+    const smile = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.011, 8, 24, Math.PI), basic(color));
+    smile.position.set(0, -0.01, 0.02);
+    smile.visible = false;
+    eye.add(inner, smile);
+    eye.userData = { inner, smile };
+    return eye;
+  });
+}
+function makeBlush(parent, mesh, xs, y, color) {
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.6, depthWrite: false });
+  const tex = canvasTexture(64, 64, (g, w) => {
+    const grad = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    grad.addColorStop(0, "rgba(255,255,255,1)"); grad.addColorStop(0.35, "rgba(255,255,255,0.7)"); grad.addColorStop(0.7, "rgba(255,255,255,0.2)"); grad.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = grad; g.fillRect(0, 0, w, w);
+  });
+  mat.alphaMap = tex;
+  xs.forEach(x => {
+    const b = new THREE.Mesh(new THREE.CircleGeometry(0.08, 28), mat);
+    b.scale.set(1.3, 0.8, 1);
+    stick(b, parent, mesh, x, y, 0.004);
+  });
+}
+// ∪ 微笑 + 說話時張開的嘴
+function makeSmileMouth(parent, mesh, y, color) {
+  const closed = stick(new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.0065, 8, 20, Math.PI), basic(color)), parent, mesh, 0, y, 0.003);
+  closed.rotateZ(Math.PI);
+  const open = stick(new THREE.Mesh(new THREE.SphereGeometry(0.03, 20, 14), basic(0x8a3a4a)), parent, mesh, 0, y - 0.008, -0.004);
+  open.visible = false;
+  return k => {
+    const talking = k > 0.22;
+    closed.visible = !talking;
+    open.visible = talking;
+    open.scale.set(1.15 - k * 0.2, 0.35 + k * 0.85, 0.45);
+  };
+}
+// 四肢：樞紐在上方，休息時 pose 的 ±0.42 會被 holder 抵銷，所以 rest 位置就是設計稿位置
+function makeLimb(parent, pos, length, side, mesh) {
+  const pivot = new THREE.Group();
+  pivot.position.copy(pos).add(new THREE.Vector3(0, length, 0));
+  const holder = new THREE.Group();
+  holder.rotation.z = -side * 0.42;
+  mesh.position.y = -length;
+  holder.add(mesh);
+  pivot.add(holder);
+  parent.add(pivot);
+  return pivot;
+}
+// 會彎的錐形（帽耳的小惡魔角、羽毛）
+function bentCone(height, radius, bend, segs = 20) {
+  const pts = [];
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16;
+    pts.push(new THREE.Vector2(radius * Math.pow(1 - t, 0.85) * (0.6 + 0.4 * Math.sin(Math.PI * Math.min(1, t * 2 + 0.5))) + 0.0005, t * height));
+  }
+  const geo = new THREE.LatheGeometry(pts, segs);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) { const h = p.getY(i) / height; p.setX(i, p.getX(i) + bend * h * h); }
+  geo.computeVertexNormals();
+  return geo;
+}
+function heartShape(s = 1) {
+  const h = new THREE.Shape();
+  h.moveTo(0, -0.5 * s);
+  h.bezierCurveTo(-0.15 * s, -0.32 * s, -0.55 * s, -0.1 * s, -0.5 * s, 0.18 * s);
+  h.bezierCurveTo(-0.46 * s, 0.45 * s, -0.12 * s, 0.5 * s, 0, 0.26 * s);
+  h.bezierCurveTo(0.12 * s, 0.5 * s, 0.46 * s, 0.45 * s, 0.5 * s, 0.18 * s);
+  h.bezierCurveTo(0.55 * s, -0.1 * s, 0.15 * s, -0.32 * s, 0, -0.5 * s);
+  return h;
+}
+const extrude = (shape, depth = 0.012) => new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelSize: 0.006, bevelThickness: 0.006, bevelSegments: 3, curveSegments: 16 });
+
+// ---------- 小惡魔連帽裝（三隻共用的做法） ----------
+// opts: center y, radii (rx, ry, rz)，臉洞 (fw, fh, fy：單位球座標)，capEnd 帽子下緣 (theta)
+function makeHood(o) {
+  const g = new THREE.Group();
+  const geo = new THREE.SphereGeometry(1, 96, 64, 0, Math.PI * 2, 0, o.capEnd).toNonIndexed();
+  const p = geo.attributes.position;
+  const keep = [];
+  for (let i = 0; i < p.count; i += 3) {
+    let cx = 0, cy = 0, cz = 0;
+    for (let k = 0; k < 3; k++) { cx += p.getX(i + k) / 3; cy += p.getY(i + k) / 3; cz += p.getZ(i + k) / 3; }
+    const inFace = cz > 0 && ((cx / o.fw) ** 2 + ((cy - o.fy) / o.fh) ** 2 < 1 || (cy < o.fy && Math.abs(cx) < o.fw));
+    if (!inFace) for (let k = 0; k < 3; k++) keep.push(p.getX(i + k), p.getY(i + k), p.getZ(i + k));
+  }
+  const hoodGeo = new THREE.BufferGeometry();
+  hoodGeo.setAttribute("position", new THREE.Float32BufferAttribute(keep, 3));
+  // 單位球的法線就是位置本身：給平滑法線，避免非索引網格算出一格一格的平面光
+  hoodGeo.setAttribute("normal", new THREE.Float32BufferAttribute(keep.map((v, i) => {
+    const b = i - (i % 3); return v / Math.hypot(keep[b], keep[b + 1], keep[b + 2]);
+  }), 3));
+  const black = plush(0x2e2534, { shade: 0x1a141f, hi: 0x9a8aa6, hiAmt: 0.6, side: THREE.DoubleSide, grain: 0.015 });
+  const shell = new THREE.Mesh(hoodGeo, black);
+  shell.scale.set(o.rx, o.ry, o.rz);
+  shell.position.y = o.cy;
+  shell.castShadow = true;
+  g.add(shell);
+  // 臉洞的粉紅滾邊、帽子下緣的收邊：沿著帽面走的管子
+  const onShell = (x, y) => new THREE.Vector3(x * o.rx, o.cy + y * o.ry, Math.sqrt(Math.max(0, 1 - x * x - y * y)) * o.rz);
+  const bottomY = Math.cos(o.capEnd);
+  const facePts = [];
+  for (let i = 0; i <= 10; i++) facePts.push(onShell(-o.fw * 0.985, bottomY + (o.fy - bottomY) * (i / 10)));
+  for (let i = 1; i < 60; i++) {
+    const a = Math.PI - (i / 60) * Math.PI;
+    facePts.push(onShell(Math.cos(a) * o.fw * 0.985, o.fy + Math.sin(a) * o.fh * 0.985));
+  }
+  for (let i = 0; i <= 10; i++) facePts.push(onShell(o.fw * 0.985, o.fy - (o.fy - bottomY) * (i / 10)));
+  const pink = plush(0xff9fc8, { shade: 0xf06aa6, hiAmt: 0.7, grain: 0 });
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(facePts), 160, 0.026, 12, false), pink));
+  const a0 = Math.asin(Math.min(1, o.fw / Math.sin(o.capEnd)));
+  const rimPts = [];
+  for (let i = 0; i <= 96; i++) {
+    const a = a0 + (i / 96) * (Math.PI * 2 - 2 * a0);
+    rimPts.push(new THREE.Vector3(Math.sin(o.capEnd) * Math.sin(a) * o.rx, o.cy + bottomY * o.ry, Math.sin(o.capEnd) * Math.cos(a) * o.rz));
+  }
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rimPts), 160, 0.012, 8, false), black));
+  // 小惡魔角帽耳（右耳微微下垂，比較調皮）
+  [-1, 1].forEach(side => {
+    const ear = new THREE.Group();
+    const droop = side > 0;
+    const hornGeo = bentCone(0.5, 0.15, droop ? 0.3 : 0.2);
+    const horn = new THREE.Mesh(hornGeo, black);
+    horn.scale.set(side, 1, 0.42);
+    horn.castShadow = true;
+    const inner = new THREE.Mesh(bentCone(0.3, 0.09, droop ? 0.14 : 0.1, 16), plush(0xffa6cc, { shade: 0xf27fb0, grain: 0 }));
+    inner.scale.set(side, 1, 0.2);
+    inner.position.set(side * 0.005, 0.04, 0.05);
+    ear.add(horn, inner);
+    ear.position.copy(onShell(side * 0.5, 0.66)).add(new THREE.Vector3(0, -0.05, -0.04));
+    ear.rotation.z = -side * (droop ? 0.5 : 0.38);
+    g.add(ear);
+  });
+  // 蝙蝠翅膀愛心徽章
+  const badge = new THREE.Group();
+  const heart = new THREE.Mesh(extrude(heartShape(0.11)), pink);
+  badge.add(heart);
+  const wing = new THREE.Shape();
+  wing.moveTo(0, 0.02); wing.quadraticCurveTo(0.06, 0.06, 0.13, 0.05);
+  wing.quadraticCurveTo(0.11, 0.02, 0.12, -0.01); wing.quadraticCurveTo(0.09, 0, 0.085, -0.03);
+  wing.quadraticCurveTo(0.06, -0.01, 0.05, -0.035); wing.quadraticCurveTo(0.03, -0.01, 0, -0.01);
+  [-1, 1].forEach(side => {
+    const w = new THREE.Mesh(extrude(wing, 0.008), pink);
+    w.scale.x = side;
+    w.position.set(side * 0.04, 0.005, 0);
+    badge.add(w);
+  });
+  const badgePos = onShell(0, o.fy + o.fh + 0.12);
+  badge.position.copy(badgePos);
+  badge.lookAt(badgePos.clone().add(new THREE.Vector3(0, (badgePos.y - o.cy) / (o.ry * o.ry), badgePos.z / (o.rz * o.rz)).normalize()));
+  g.add(badge);
+  // 愛心尾巴（會左右擺）
+  const tail = new THREE.Group();
+  tail.position.set(0, o.tailY, -o.tailZ);
+  const tailCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.12, -0.04, -0.08), new THREE.Vector3(0.24, 0.06, -0.12), new THREE.Vector3(0.28, 0.24, -0.1)
+  ]);
+  tail.add(new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 40, 0.022, 10), black));
+  const tip = new THREE.Mesh(extrude(heartShape(0.12)), pink);
+  tip.position.set(0.28, 0.3, -0.1);
+  tip.rotation.z = -0.3;
+  tail.add(tip);
+  g.add(tail);
+  g.userData.tail = tail;
+  g.visible = false;
+  return g;
+}
+
+// ---------- 生成模型（Hunyuan3D 圖轉 3D）----------
+// 身體由設計稿的無五官正面圖生成，已在設計稿座標系裡（1 單位 = 700px，地面 y=0），頂點色是平塗色塊。
+// 五官、手、尾巴仍用程式貼上，所以眨眼、對嘴、揮手都保留。
+const gltfLoader = new GLTFLoader();
+const MODEL_VER = "8"; // 換模型檔時加一，避免瀏覽器拿到快取的舊模型
+const MODELS = {};
+async function loadModel(key) {
+  if (!MODELS[key]) MODELS[key] = gltfLoader.loadAsync(`models/${key}.glb?v=${MODEL_VER}`).then(g => {
+    let geo = null;
+    g.scene.traverse(o => { if (o.isMesh && !geo) geo = o.geometry; });
+    geo.computeVertexNormals();
+    return geo;
+  });
+  return MODELS[key];
+}
+function glbVariant(parent, geo, o) {
+  const group = new THREE.Group();
+  parent.add(group);
+  const mesh = new THREE.Mesh(geo, plush(0xffffff, { vertexColors: true, shade: o.shade, hiAmt: 0.55, grain: 0.03, paint: o.paint }));
+  mesh.castShadow = true;
+  mesh.userData.shared = true; // 生成模型的幾何會重複使用，換角色時不要釋放
+  group.add(mesh);
+  const F = o.face;
+  const eyes = makeEyes(group, mesh, [-F.dx, F.dx], F.eyeY, F.eye, F.iris);
+  makeBlush(group, mesh, [-F.blushDX, F.blushDX], F.blushY, F.blush);
+  const setMouth = F.beakY != null ? makeBeak(group, mesh, F.beakY) : makeSmileMouth(group, mesh, F.mouthY, F.mouth);
+  return { group, mesh, eyes, setMouth, top: (geo.computeBoundingBox(), geo.boundingBox.max.y) };
+}
+// 啾啾的小嘴：上下兩片圓錐，說話時下嘴喙打開
+function makeBeak(parent, mesh, y) {
+  const beak = stick(new THREE.Group(), parent, mesh, 0, y, 0);
+  const upper = new THREE.Group();
+  const upperCone = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.075, 24), plush(0xffb27e, { shade: 0xf07c4c, hiAmt: 0.8, grain: 0 }));
+  upperCone.rotation.x = Math.PI / 2 + 0.55;
+  upper.add(upperCone);
+  upper.scale.set(1.3, 1, 0.8);
+  upper.position.z = 0.012;
+  const lowerPivot = new THREE.Group();
+  lowerPivot.position.set(0, -0.018, 0);
+  const lower = new THREE.Mesh(new THREE.ConeGeometry(0.034, 0.045, 20), plush(0xf08a5c, { shade: 0xd8643a, grain: 0 }));
+  lower.rotation.x = Math.PI / 2 + 0.9;
+  lower.scale.set(1.3, 1, 1);
+  lower.position.set(0, -0.004, 0.008);
+  lowerPivot.add(lower);
+  beak.add(upper, lowerPivot);
+  return k => { lowerPivot.rotation.x = Math.min(0.7, k * 0.8); upper.position.y = k * 0.006; };
+}
+// 愛心尾巴沿用連帽裝的程式尾巴
+function devilTail(group, y, z) {
+  const tail = makeHood({ cy: 0.5, rx: 0.6, ry: 0.5, rz: 0.5, capEnd: Math.PI * 0.6, fw: 0.5, fh: 0.4, fy: 0, tailY: y, tailZ: z }).userData.tail;
+  group.add(tail);
+  group.userData.tail = tail;
+}
+// 小手：設計稿 rest 位置，z 貼著身體表面
+function sidePaws(root, mesh, x, y, r, mat, hits) {
+  return [-1, 1].map(side => {
+    const paw = new THREE.Mesh(new THREE.SphereGeometry(r, 24, 18), mat);
+    paw.scale.set(1, 0.95, 0.85);
+    paw.castShadow = true;
+    hits.push(paw);
+    const hit = surfaceHit(mesh, side * x, y);
+    return makeLimb(root, new THREE.Vector3(side * x, y, (hit ? hit.point.z : 0.3) + 0.02), 0.16, side, paw);
+  });
+}
+const noFeet = root => [-1, 1].map(() => { const g = new THREE.Group(); root.add(g); return g; });
+
+// 每隻角色兩顆模型（平常版／連帽裝）＋正面色塊圖，選到才載入（一隻約 3MB）
+const PAINTED = { "bear": false, "bear-hood": true, "sheep": true, "sheep-hood": true, "bird": true, "bird-hood": true };
+const ASSETS = {};
+function loadFriend(id) {
+  if (!ASSETS[id]) {
+    const keys = [id, `${id}-hood`];
+    ASSETS[id] = Promise.all(keys.map(k => Promise.all([loadModel(k), PAINTED[k] ? loadPaint(k) : null])))
+      .then(([[geo, paint], [hoodGeo, hoodPaint]]) => ({ geo, paint, hoodGeo, hoodPaint }));
+  }
+  return ASSETS[id];
+}
+const loaded = {};
+const texLoader = new THREE.TextureLoader();
+const loadPaint = key => texLoader.loadAsync(`models/${key}-paint.png?v=${MODEL_VER}`).then(t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; });
+
+// ---------- 1 嚕嚕：麻糬小熊 ----------
+function buildBear() {
+  const A = loaded.bear, root = new THREE.Group();
+  // 臉的位置照設計稿：眼睛 y=186、間距 40、嘴 207、腮紅 66/206（SVG 單位 → 設計座標）
+  const face = { dx: 0.195, eyeY: 0.473, mouthY: 0.372, blushDX: 0.322, blushY: 0.376, eye: 0x2a1610, iris: "#9a5a34", blush: 0xff8f9e, mouth: 0x6a3e35 };
+  const plain = glbVariant(root, A.geo, { shade: 0xf2c6ad, face });
+  const hood = glbVariant(root, A.hoodGeo, { shade: 0xf2c6ad, face: { ...face, blushDX: 0.27, blushY: 0.37 }, paint: A.hoodPaint });
+  hood.group.visible = false;
+  devilTail(hood.group, 0.3, 0.42);
+  const hits = [];
+  const arms = sidePaws(root, plain.mesh, 0.44, 0.3, 0.075, plush(0xffe9d4, { shade: 0xf0bf98, hiAmt: 0.7 }), hits);
+  return { id: "bear", root, eyes: plain.eyes, ears: [], arms, feet: noFeet(root), hits, setMouth: plain.setMouth,
+    hood: hood.group, hideWithHood: [plain.group], variants: { plain, hood }, hold: new THREE.Vector3(0, 0.26, 0.52) };
+}
+
+// ---------- 2 綿綿：雲朵小羊 ----------
+function buildSheep() {
+  const A = loaded.sheep, root = new THREE.Group();
+  // 設計稿：眼睛 y=190、間距 38、嘴 210、腮紅 64/209；小蹄 rest 48/252, 228
+  const face = { dx: 0.185, eyeY: 0.454, mouthY: 0.356, blushDX: 0.312, blushY: 0.361, eye: 0x241a3a, iris: "#7a62c0", blush: 0xff9cb8, mouth: 0x5b4366 };
+  const plain = glbVariant(root, A.geo, { shade: 0xd6d0ef, face, paint: A.paint });
+  const hood = glbVariant(root, A.hoodGeo, { shade: 0xd6d0ef, face: { ...face, blushDX: 0.27 }, paint: A.hoodPaint });
+  hood.group.visible = false;
+  devilTail(hood.group, 0.3, 0.42);
+  const hits = [];
+  const arms = sidePaws(root, plain.mesh, 0.47, 0.27, 0.066, plush(0xb6a9e6, { shade: 0x8676c4, hi: 0xeee8ff, hiAmt: 0.6, grain: 0.01 }), hits);
+  return { id: "sheep", root, eyes: plain.eyes, ears: [], arms, feet: noFeet(root), hits, setMouth: plain.setMouth,
+    hood: hood.group, hideWithHood: [plain.group], variants: { plain, hood }, hold: new THREE.Vector3(0, 0.27, 0.5) };
+}
+
+// ---------- 3 啾啾：幸福小郵鳥 ----------
+function buildBird() {
+  const A = loaded.bird, root = new THREE.Group();
+  // 設計稿：眼睛 y=186、間距 44、腮紅 70/206、嘴喙 202；翅膀從 (50,176) 垂到 (28,246)
+  const face = { dx: 0.215, eyeY: 0.473, beakY: 0.392, blushDX: 0.341, blushY: 0.376, eye: 0x14203a, iris: "#3d78c4", blush: 0xff97a8 };
+  const plain = glbVariant(root, A.geo, { shade: 0xbccbe6, face, paint: A.paint });
+  const hood = glbVariant(root, A.hoodGeo, { shade: 0xbccbe6, face: { ...face, blushDX: 0.3 }, paint: A.hoodPaint });
+  hood.group.visible = false;
+  devilTail(hood.group, 0.28, 0.4);
+  // 呆毛 ×3（會跟著說話晃），兩個版本各一組：連帽裝時從帽頂冒出來
+  const tuftMat = plush(0xa6d8fa, { shade: 0x6eb2e6, hiAmt: 0.75, grain: 0 });
+  const makeTufts = v => [[-1, 0.16, -0.42], [0, 0.2, 0], [1, 0.16, 0.42]].map(([side, len, rot]) => {
+    const pivot = new THREE.Group();
+    const crown = surfaceHit(v.mesh, 0, 0, new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0)); // 頭頂（不算帽耳）
+    pivot.position.set(0, (crown ? crown.point.y : v.top) - 0.04, 0.0);
+    const pts = [];
+    for (let i = 0; i <= 14; i++) { const t = i / 14; pts.push(new THREE.Vector2(Math.pow(Math.sin(Math.PI * t), 0.8) * 0.045 * (1 - 0.3 * t) + 0.0005, t * len)); }
+    const f = new THREE.Mesh(new THREE.LatheGeometry(pts, 18), tuftMat);
+    f.scale.z = 0.6;
+    f.castShadow = true;
+    pivot.add(f);
+    pivot.rotation.z = -rot;
+    pivot.userData = { side: side || 1, a: 0, v: 0, baseZ: -rot, amp: 0.6 };
+    v.group.add(pivot);
+    return pivot;
+  });
+  plain.ears = makeTufts(plain);
+  hood.ears = makeTufts(hood);
+  // 翅膀：水滴形，上細下圓，掛在身體兩側、下緣微微往外（會拍）
+  const wingMat = plush(0xa2d4f7, { shade: 0x6aaee2, hiAmt: 0.7, grain: 0.015 });
+  const hits = [];
+  const arms = [-1, 1].map(side => {
+    const pts = [];
+    for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(Math.pow(Math.sin(Math.PI * t), 0.7) * 0.11 * (1 - 0.55 * t) + 0.0005, t * 0.34)); }
+    const w = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), wingMat);
+    w.scale.z = 0.4;
+    w.position.y = -0.34;
+    w.castShadow = true;
+    hits.push(w);
+    const holder = new THREE.Group();
+    holder.rotation.z = side * 0.33;
+    holder.add(w);
+    const hit = surfaceHit(plain.mesh, side * 0.47, 0.42);
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.49, 0.53, hit ? hit.point.z - 0.06 : 0.2);
+    const comp = new THREE.Group();
+    comp.rotation.z = -side * 0.42;
+    comp.add(holder);
+    pivot.add(comp);
+    root.add(pivot);
+    return pivot;
+  });
+  return { id: "bird", root, eyes: plain.eyes, ears: plain.ears, arms, feet: noFeet(root), hits, setMouth: plain.setMouth,
+    hood: hood.group, hideWithHood: [plain.group], variants: { plain, hood }, hold: new THREE.Vector3(0, 0.33, 0.55) };
+}
+
+const CHARACTERS = [
+  { id: "bear", build: buildBear, swatch: "#fbe6cf", icon: "🐻", label: "嚕嚕" },
+  { id: "sheep", build: buildSheep, swatch: "#ece8fb", icon: "🐑", label: "綿綿" },
+  { id: "bird", build: buildBird, swatch: "#b5dcf6", icon: "🐦", label: "啾啾" }
+];
+CHARACTERS.forEach(c => { c.load = async () => { loaded[c.id] = await loadFriend(c.id); }; });
+const CHAR_STORE = "secret-base-friend-v1", HOOD_STORE = "secret-base-hood-v1";
+let friend = CHARACTERS.find(c => c.id === store.get(CHAR_STORE)) || null;
+let wearingHood = store.get(HOOD_STORE) === "1";
+
+function useCharacter(def) {
+  if (rig) {
+    head.remove(rig.root);
+    rig.root.traverse(o => { if (o.isMesh && !o.userData.shared) { o.geometry.dispose(); } });
+  }
+  rig = def.build();
+  rig.root.scale.setScalar(S);
+  if (!head) { head = new THREE.Group(); head.position.y = 0.02; body.add(head); }
+  head.add(rig.root);
+  rig.root.add(rig.hood);
+  eyes = rig.eyes;
+  ears = rig.ears;
+  [armL, armR] = rig.arms;
+  feet = rig.feet;
+  feet.forEach(f => { f.userData.baseY = f.position.y; });
+  hitMeshes = rig.hits;
+  setMouth = rig.setMouth;
+  HOLD_POS.copy(rig.hold).multiplyScalar(S);
+  applyHood(wearingHood);
+}
+function applyHood(on) {
+  wearingHood = on;
+  rig.hood.visible = on;
+  rig.hideWithHood.forEach(o => { o.visible = !on; });
+  // 生成模型的角色：平常版和連帽裝是兩顆不同的身體，各自帶一組五官
+  if (rig.variants) {
+    const v = rig.variants[on ? "hood" : "plain"];
+    eyes = v.eyes;
+    setMouth = v.setMouth;
+    if (v.ears) ears = v.ears;
+    hitMeshes = [v.mesh, ...rig.hits];
+  }
+}
+await (friend || CHARACTERS[2]).load();
+useCharacter(friend || CHARACTERS[2]);
+
+// ---------- 信封 ----------
+function makeEnvelope() {
+  const g = new THREE.Group();
+  const inner = new THREE.Group();
+  inner.scale.setScalar(0.72);
+  g.add(inner);
+  add(inner, new THREE.Mesh(new RoundedBoxGeometry(0.52, 0.36, 0.035, 2, 0.015), toon(0xfff8ec)), false);
+  const flapShape = new THREE.Shape();
+  flapShape.moveTo(-0.25, 0); flapShape.lineTo(0.25, 0); flapShape.lineTo(0, -0.2); flapShape.closePath();
+  const flapPivot = new THREE.Group();
+  flapPivot.position.set(0, 0.175, 0.02);
+  const flap = new THREE.Mesh(new THREE.ShapeGeometry(flapShape), toon(0xf6e2c6, { side: THREE.DoubleSide }));
+  flapPivot.add(flap);
+  inner.add(flapPivot);
+  const seal = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), new THREE.MeshBasicMaterial({ color: 0xf07a5f }));
+  seal.position.set(0, -0.0, 0.03);
+  flapPivot.add(seal);
+  seal.position.set(0, -0.17, 0.004);
+  g.userData.flap = flapPivot;
+  g.visible = false;
+  return g;
+}
+const envelope = makeEnvelope();
+scene.add(envelope);
+
+// ---------- 粒子（愛心、星星、問號） ----------
+const spriteTex = (draw) => canvasTexture(128, 128, (g, w) => { g.translate(w / 2, w / 2); draw(g); });
+const tex = {
+  heart: spriteTex(g => { g.fillStyle = "#f07a5f"; g.beginPath(); g.moveTo(0, 40); g.bezierCurveTo(-70, -10, -30, -60, 0, -25); g.bezierCurveTo(30, -60, 70, -10, 0, 40); g.fill(); }),
+  sparkle: spriteTex(g => { g.fillStyle = "#ffd66b"; g.beginPath(); for (let i = 0; i < 8; i++) { const r = i % 2 ? 14 : 54, a = i * Math.PI / 4; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.fill(); }),
+  note: spriteTex(g => { g.fillStyle = "#8f7cc8"; g.beginPath(); g.ellipse(-12, 30, 26, 20, -0.4, 0, 7); g.fill(); g.fillRect(8, -50, 10, 82); g.beginPath(); g.moveTo(8, -50); g.quadraticCurveTo(50, -40, 44, -6); g.quadraticCurveTo(36, -24, 18, -26); g.fill(); }),
+  question: spriteTex(g => { g.fillStyle = "#fff6ea"; g.beginPath(); g.arc(0, 0, 58, 0, 7); g.fill(); g.fillStyle = "#3b2a22"; g.font = "900 84px system-ui"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("?", 0, 4); })
+};
+const particles = [];
+function burst(kind, origin, count, { spread = 0.6, rise = 1.2, life = 1.4, size = 0.22 } = {}) {
+  for (let i = 0; i < count; i++) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex[kind], transparent: true, depthWrite: false }));
+    s.position.copy(origin);
+    s.scale.setScalar(0.01);
+    s.userData = {
+      v: new THREE.Vector3((Math.random() - 0.5) * spread, rise * (0.6 + Math.random() * 0.6), (Math.random() - 0.2) * spread * 0.5),
+      age: -i * 0.06, life, size: size * (0.7 + Math.random() * 0.6)
+    };
+    scene.add(s);
+    particles.push(s);
+  }
+}
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const s = particles[i], d = s.userData;
+    d.age += dt;
+    if (d.age < 0) continue;
+    const k = d.age / d.life;
+    s.position.addScaledVector(d.v, dt);
+    d.v.multiplyScalar(0.985);
+    s.scale.setScalar(d.size * Math.min(1, k * 6));
+    s.material.opacity = 1 - Math.max(0, (k - 0.6) / 0.4);
+    if (k >= 1) { scene.remove(s); s.material.dispose(); particles.splice(i, 1); }
+  }
+}
+const questionMark = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex.question, transparent: true, depthWrite: false }));
+questionMark.position.set(0.75, 2.15, 0.3);
+questionMark.scale.setScalar(0);
+scene.add(questionMark);
+
+// ---------- 姿勢：每個狀態給目標值，每幀平滑靠近 ----------
+const REST = { lean: 0, hop: 0, squash: 1, headYaw: 0, headPitch: 0, headTilt: 0, armLx: 0, armLz: -0.42, armRx: 0, armRz: 0.42, ear: 1, eye: 1, mouth: 0.12, q: 0 };
+const pose = { ...REST };
+let target = { ...REST };
+const setPose = (over = {}) => { target = { ...REST, ...over }; };
+const POSES = {
+  idle: {},
+  listening: { lean: 0.16, headTilt: 0.18, headPitch: 0.06, armRx: -0.2, armRz: 2.5, ear: 1.2, eye: 1.15, mouth: 0.05 },
+  holding: { armLx: -1.15, armLz: 0.6, armRx: -1.15, armRz: -0.6, headPitch: 0.12, mouth: 0.2 },
+  lookUp: { headPitch: -0.45, armLz: -0.9, armRz: 0.9, eye: 1.2, mouth: 0.4 },
+  confused: { headTilt: -0.32, armRz: 1.9, armRx: -0.4, q: 1, mouth: 0.08 }
+};
+const damp = (a, b, k, dt) => a + (b - a) * (1 - Math.exp(-k * dt));
+
+const tweens = [];
+const ease = { out: t => 1 - Math.pow(1 - t, 3), inOut: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, outBack: t => 1 + 2.4 * Math.pow(t - 1, 3) + 1.4 * Math.pow(t - 1, 2) };
+function tween(dur, fn, e = ease.inOut) {
+  return new Promise(resolve => tweens.push({ t: 0, dur, fn, e, resolve }));
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const jumpState = { y: 0, squash: 1 };
+let jumping = false;
+async function jump(height = 0.15) {
+  if (jumping) return;
+  jumping = true;
+  await tween(0.1, k => { jumpState.squash = 1 - 0.14 * k; }, ease.out);
+  await tween(0.24, k => { jumpState.y = height * Math.sin(k * Math.PI / 2); jumpState.squash = 0.86 + 0.24 * Math.min(1, k * 2); }, ease.out);
+  await tween(0.2, k => { jumpState.y = height * Math.cos(k * Math.PI / 2); jumpState.squash = 1.1 - 0.1 * k; }, t => t * t);
+  await tween(0.08, k => { jumpState.squash = 1 - 0.1 * k; }, ease.out);
+  await tween(0.22, k => { jumpState.squash = 0.9 + 0.1 * k; }, ease.outBack);
+  jumpState.y = 0; jumpState.squash = 1;
+  jumping = false;
+}
+
+// ---------- 聲音（合成，不用載檔） ----------
+let audioCtx = null;
+function tone(freq, at, dur, { type = "sine", gain = 0.18, slide = 0 } = {}) {
+  if (!audioCtx) return;
+  const t0 = audioCtx.currentTime + at;
+  const osc = audioCtx.createOscillator(), amp = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  if (slide) osc.frequency.exponentialRampToValueAtTime(freq * slide, t0 + dur);
+  amp.gain.setValueAtTime(0, t0);
+  amp.gain.linearRampToValueAtTime(gain, t0 + 0.012);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.connect(amp).connect(audioCtx.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.05);
+}
+const sfx = {
+  start: () => { tone(660, 0, 0.12, { slide: 1.3 }); tone(880, 0.08, 0.14, { slide: 1.2 }); },
+  stop: () => { tone(880, 0, 0.12, { slide: 0.8 }); },
+  sent: () => [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, i * 0.09, 0.7, { type: "triangle", gain: 0.12 })),
+  arrive: () => { tone(1319, 0, 0.9, { type: "triangle", gain: 0.16 }); tone(1047, 0.32, 1.1, { type: "triangle", gain: 0.16 }); },
+  boop: () => { tone(330, 0, 0.18, { type: "square", gain: 0.05, slide: 0.7 }); tone(392, 0.2, 0.22, { type: "square", gain: 0.05, slide: 1.25 }); },
+  giggle: () => [0, 1, 2, 3].forEach(i => tone(900 + i * 120, i * 0.07, 0.08, { type: "triangle", gain: 0.1, slide: 1.4 })),
+  pop: () => tone(520, 0, 0.1, { slide: 2.2, gain: 0.14 }),
+  babble: (n = 4, base = 700, gap = 0.11) => {
+    for (let i = 0; i < n; i++) {
+      const f = base * (0.85 + Math.random() * 0.5);
+      tone(f, i * gap, gap * 0.9, { type: "triangle", gain: 0.11, slide: Math.random() > 0.5 ? 1.25 : 0.82 });
+    }
+  },
+  purr: () => [0, 1, 2, 3, 4, 5].forEach(i => tone(220 + (i % 2) * 30, i * 0.09, 0.1, { type: "sine", gain: 0.07 }))
+};
+
+// ---------- 狀態 ----------
+let state = "door";
+let micStream = null, micAnalyser = null, micData = null;
+let recorder = null, chunks = [], recordStart = 0, recordTimer = 0;
+let speakAnalyser = null, speakData = null, fakeSpeaking = false;
+const letters = [];
+const heardIds = new Set();
+let lastLetter = null;
+const outbox = [];
+let everSent = store.get("secret-base-sent") === "1";
+let idleSince = performance.now();
+let lastVoiceAt = 0, lastNoteAt = 0, heardVoice = false;
+
+const talkBtn = document.getElementById("talk");
+const iconSwap = talkBtn.querySelector(".t-icon-swap");
+const badge = talkBtn.querySelector(".t-badge");
+const badgeCount = document.getElementById("badge-count");
+const hint = document.getElementById("hint");
+const wardrobeBtn = document.getElementById("wardrobe");
+const closet = document.getElementById("closet");
+// 衣櫥：上面三格選朋友，下面兩格選衣服（平常 / 小惡魔連帽裝）
+const CLOSET_ITEMS = [
+  ...CHARACTERS.map(c => ({ kind: "friend", value: c, swatch: c.swatch, icon: c.icon, label: `換成${c.label}` })),
+  { kind: "hood", value: false, swatch: "#fff6ea", icon: "✨", label: "平常的樣子" },
+  { kind: "hood", value: true, swatch: "#2b2230", icon: "😈", label: "小惡魔連帽裝" }
+];
+CLOSET_ITEMS.forEach((item, i) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "swatch" + (i === CHARACTERS.length ? " gap" : "");
+  b.style.background = item.swatch;
+  b.style.setProperty("--i", i);
+  b.textContent = item.icon;
+  b.setAttribute("aria-label", item.label);
+  b.addEventListener("click", () => transform(item));
+  closet.append(b);
+});
+function markCloset() {
+  [...closet.children].forEach((b, i) => {
+    const item = CLOSET_ITEMS[i];
+    b.classList.toggle("is-current", item.kind === "friend" ? item.value.id === rig.id : item.value === wearingHood);
+  });
+}
+markCloset();
+wardrobeBtn.addEventListener("click", () => {
+  if (state !== "idle") return;
+  const open = closet.dataset.open !== "true";
+  closet.dataset.open = String(open);
+  sfx.pop();
+  if (open) { setPose({ headTilt: 0.15, eye: 1.15, mouth: 0.4 }); setTimeout(() => state === "idle" && setPose(), 700); }
+});
+
+// 變身：跳起來轉一圈，轉到一半換成新朋友 / 新衣服
+async function transform(item) {
+  closet.dataset.open = "false";
+  if (state !== "idle") return;
+  const same = item.kind === "friend" ? item.value.id === rig.id : item.value === wearingHood;
+  if (same) { sfx.babble(2, 900); return; }
+  setState("busy");
+  sfx.pop();
+  jump(0.2);
+  if (item.kind === "friend") await item.value.load(); // 第一次選到這隻才下載模型（先跳一下回應孩子）
+  let swapped = false;
+  await tween(0.7, k => {
+    doll.rotation.y = k * Math.PI * 2;
+    if (!swapped && k > 0.5) {
+      swapped = true;
+      if (item.kind === "friend") {
+        friend = item.value;
+        store.set(CHAR_STORE, friend.id);
+        useCharacter(friend);
+      } else {
+        applyHood(item.value);
+        store.set(HOOD_STORE, item.value ? "1" : "0");
+      }
+      markCloset();
+      sfx.sent();
+      burst("sparkle", new THREE.Vector3(0, 1.0, 0.5), 12, { spread: 1.6, rise: 0.6, size: 0.2 });
+    }
+  }, ease.inOut);
+  doll.rotation.y = 0;
+  setPose({ eye: 0.12, mouth: 0.5, armLz: -1.4, armRz: 1.4 });
+  sfx.babble(4, 950, 0.09);
+  burst("heart", new THREE.Vector3(0, 1.9, 0.5), 4, { spread: 0.8, rise: 0.7 });
+  await wait(900);
+  setPose();
+  setState("idle");
+}
+
+function refreshButton() {
+  const hasLetter = letters.length > 0;
+  talkBtn.dataset.mode = hasLetter ? "letter" : "talk";
+  iconSwap.dataset.state = hasLetter ? "b" : "a";
+  talkBtn.setAttribute("aria-label", hasLetter ? "打開爸爸的信" : "按住跟娃娃說話");
+  badge.dataset.open = letters.length > 1 ? "true" : "false";
+  if (letters.length > 1) badgeCount.textContent = String(letters.length);
+  talkBtn.disabled = !(state === "idle" || state === "listening" || state === "waiting");
+  wardrobeBtn.disabled = state !== "idle";
+  if (state !== "idle") closet.dataset.open = "false";
+}
+function setState(next) {
+  state = next;
+  if (next === "idle") {
+    idleSince = performance.now();
+    if (letters.length && !envelope.visible) setTimeout(() => state === "idle" && letterArrives(), 600);
+  }
+  refreshButton();
+}
+
+// ---------- 開門 ----------
+document.getElementById("door").addEventListener("click", async () => {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioCtx.resume();
+  sfx.sent();
+  document.getElementById("door-wrap").classList.add("is-open");
+  try { await navigator.wakeLock?.request("screen"); } catch {}
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    const src = audioCtx.createMediaStreamSource(micStream);
+    micAnalyser = audioCtx.createAnalyser();
+    micAnalyser.fftSize = 512;
+    micData = new Uint8Array(micAnalyser.fftSize);
+    src.connect(micAnalyser);
+  } catch (error) { console.warn("mic unavailable", error); }
+  await wait(600);
+  setState("idle");
+  sfx.babble(5, 820);
+  wave();
+  if (!friend) setTimeout(() => { if (state === "idle") { closet.dataset.open = "true"; sfx.pop(); } }, 1400);
+  poll();
+});
+
+// ---------- 按住說話 ----------
+// 兩種都行：按住說、放開送；或點一下開始、再點一下（或安靜 2 秒）就送
+let holdingPointer = null, holdStartedAt = 0, tapMode = false;
+talkBtn.addEventListener("pointerdown", event => {
+  event.preventDefault();
+  if (talkBtn.dataset.mode === "letter") { openLetter(); return; }
+  if (state === "listening" && tapMode) { stopListening(); return; }
+  if (state !== "idle") return;
+  holdingPointer = event.pointerId;
+  holdStartedAt = performance.now();
+  tapMode = false;
+  talkBtn.setPointerCapture(event.pointerId);
+  startListening();
+});
+const endHold = event => {
+  if (holdingPointer !== event.pointerId) return;
+  holdingPointer = null;
+  if (state !== "listening") return;
+  if (performance.now() - holdStartedAt < 350) { tapMode = true; return; }
+  stopListening();
+};
+talkBtn.addEventListener("pointerup", endHold);
+talkBtn.addEventListener("pointercancel", endHold);
+talkBtn.addEventListener("contextmenu", e => e.preventDefault());
+
+function pickMime() {
+  if (!window.MediaRecorder) return null;
+  return ["audio/webm;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"].find(type => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function startListening() {
+  if (!micStream) { confused(); return; }
+  setState("listening");
+  talkBtn.classList.add("is-holding");
+  hint.classList.remove("is-shown");
+  setPose(POSES.listening);
+  sfx.start();
+  chunks = [];
+  const mimeType = pickMime();
+  recorder = new MediaRecorder(micStream, mimeType ? { mimeType } : undefined);
+  recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  recorder.start(250);
+  recordStart = performance.now();
+  clearTimeout(recordTimer);
+  recordTimer = setTimeout(() => { if (state === "listening") { holdingPointer = null; stopListening(); } }, MAX_RECORD_MS);
+}
+
+function stopListening() {
+  if (state !== "listening") return;
+  clearTimeout(recordTimer);
+  talkBtn.classList.remove("is-holding");
+  talkBtn.style.setProperty("--level", 0.9);
+  const elapsed = performance.now() - recordStart;
+  const rec = recorder;
+  const spoke = heardVoice;
+  sfx.stop();
+  rec.onstop = () => {
+    if (elapsed < MIN_RECORD_MS || !chunks.length || (tapMode && !spoke)) { confused(); return; }
+    const blob = new Blob(chunks, { type: (rec.mimeType || "audio/webm").split(";")[0] });
+    sendLetter(blob);
+  };
+  rec.stop();
+}
+
+async function confused() {
+  setState("busy");
+  setPose(POSES.confused);
+  sfx.boop();
+  setTimeout(() => sfx.babble(2, 560, 0.16), 350);
+  await wait(1500);
+  setPose();
+  setState("idle");
+}
+
+// 說完：娃娃把話裝進信封，往上丟出去
+async function sendLetter(blob) {
+  setState("busy");
+  setPose(POSES.holding);
+  envelope.visible = true;
+  envelope.userData.flap.rotation.x = -2.6;
+  envelope.position.copy(HOLD_POS);
+  envelope.rotation.set(0, 0, 0);
+  envelope.scale.setScalar(0.01);
+  sfx.pop();
+  await tween(0.35, k => envelope.scale.setScalar(Math.max(0.01, k)), ease.outBack);
+  await tween(0.3, k => { envelope.userData.flap.rotation.x = -2.6 * (1 - k); });
+  await wait(150);
+  setPose({ ...POSES.lookUp, armLz: -2.6, armRz: 2.6, armLx: -0.3, armRx: -0.3 });
+  jump(0.22);
+  sfx.sent();
+  const from = envelope.position.clone();
+  await tween(1.0, k => {
+    envelope.position.set(from.x + Math.sin(k * 6) * 0.15 * k, from.y + k * 2.6, from.z - k * 0.6);
+    envelope.rotation.z = k * 1.4;
+    envelope.scale.setScalar(1 - k * 0.7);
+  }, ease.out);
+  envelope.visible = false;
+  burst("sparkle", envelope.position, 8, { spread: 1.2, rise: 0.4, size: 0.18 });
+  setPose({ mouth: 0.45, eye: 1.1 });
+  everSent = true;
+  store.set("secret-base-sent", "1");
+  outbox.push(blob);
+  flushOutbox();
+  if (demo) {
+    const id = `kid-${Date.now()}`;
+    demoChannel?.postMessage({ type: "kid", id, blob, at: new Date().toISOString() });
+    if (!replyPageOpen) setTimeout(demoReply, 4500);
+  }
+  await wait(900);
+  setPose();
+  setState("idle");
+}
+
+async function flushOutbox() {
+  if (demo) { outbox.length = 0; return; }
+  while (outbox.length) {
+    const blob = outbox[0];
+    const form = new FormData();
+    const ext = blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm";
+    form.append("audio", blob, `kid.${ext}`);
+    form.append("friend", rig.id); // 通知裡寫孩子是跟哪位朋友說的
+    try {
+      const res = await fetch(`${ENDPOINT}/kid/message`, { method: "POST", headers: { "x-base-key": baseKey }, body: form });
+      if (!res.ok && res.status >= 500) throw new Error(`send ${res.status}`);
+      outbox.shift();
+    } catch (error) {
+      console.warn("send failed, retry later", error);
+      setTimeout(flushOutbox, 15000);
+      return;
+    }
+  }
+}
+
+// ---------- 收信 ----------
+async function poll() {
+  if (!demo && document.visibilityState === "visible") {
+    try {
+      const res = await fetch(`${ENDPOINT}/kid/inbox`, { headers: { "x-base-key": baseKey } });
+      if (res.ok) {
+        const { letters: incoming } = await res.json();
+        incoming.forEach(letter => {
+          if (!heardIds.has(letter.id) && !letters.some(l => l.id === letter.id)) receive(letter);
+        });
+      }
+    } catch (error) { console.warn("poll failed", error); }
+  }
+  setTimeout(poll, POLL_MS);
+}
+
+function receive(letter) {
+  letters.push(letter);
+  refreshButton();
+  if (state === "idle") letterArrives();
+}
+
+// 信從天上飄下來，娃娃抬頭接住，抱在胸前等孩子點
+async function letterArrives() {
+  if (envelope.visible) return;
+  setState("busy");
+  sfx.arrive();
+  setPose(POSES.lookUp);
+  setTimeout(() => sfx.babble(2, 1100, 0.09), 500);
+  envelope.visible = true;
+  envelope.userData.flap.rotation.x = 0;
+  envelope.scale.setScalar(1);
+  await tween(1.8, k => {
+    envelope.position.set(Math.sin(k * 7) * 0.35 * (1 - k), 3.4 - k * (3.4 - HOLD_POS.y), HOLD_POS.z * k);
+    envelope.rotation.set(0, 0, Math.sin(k * 7) * 0.4 * (1 - k));
+  }, ease.out);
+  setPose(POSES.holding);
+  sfx.pop();
+  burst("sparkle", HOLD_POS, 6, { spread: 0.9, rise: 0.5, size: 0.16 });
+  glow.intensity = 0.4;
+  setState("waiting");
+}
+
+async function openLetter() {
+  if (!letters.length) return;
+  if (state === "idle") { await letterArrives(); }
+  if (state !== "waiting") return;
+  const letter = letters.shift();
+  setState("speaking");
+  glow.intensity = 0;
+  await tween(0.45, k => { envelope.userData.flap.rotation.x = -2.6 * k; }, ease.out);
+  burst("heart", HOLD_POS.clone().add(new THREE.Vector3(0, 0.2, 0)), 3, { spread: 0.5, rise: 0.6 });
+  setPose({ ...POSES.holding, headPitch: 0.05, armLx: -1.0, armRx: -1.0 });
+  try {
+    if (letter.demoText) await speakDemo(letter.demoText);
+    else if (letter.audioBlob) await playAudio(URL.createObjectURL(letter.audioBlob));
+    else await playAudio(letter.audio_url);
+  } catch (error) { console.warn("play failed", error); }
+  heardIds.add(letter.id);
+  lastLetter = letter;
+  if (demo && !letter.replay) demoChannel?.postMessage({ type: "heard", id: letter.id });
+  if (!demo) fetch(`${ENDPOINT}/kid/heard`, { method: "POST", headers: { "x-base-key": baseKey, "content-type": "application/json" }, body: JSON.stringify({ id: letter.id }) }).catch(() => {});
+  await hugLetter();
+}
+
+// 聽完：抱一下，信收進包包
+async function hugLetter() {
+  setPose({ armLx: -0.9, armLz: 0.9, armRx: -0.9, armRz: -0.9, headTilt: 0.15, eye: 0.15, mouth: 0.35, squash: 0.96 });
+  burst("heart", new THREE.Vector3(0, 1.8, 0.5), 6, { spread: 1, rise: 0.8 });
+  sfx.giggle();
+  const from = envelope.position.clone();
+  const to = new THREE.Vector3(0, 0.55, 0.3); // 收進肚子裡
+  await tween(0.7, k => {
+    envelope.position.lerpVectors(from, to, k);
+    envelope.scale.setScalar(1 - k * 0.8);
+    envelope.rotation.z = -k * 0.8;
+  }, ease.inOut);
+  envelope.visible = false;
+  sfx.pop();
+  await wait(700);
+  setPose();
+  setState("idle");
+}
+
+async function playAudio(url) {
+  const res = await fetch(url);
+  const blobUrl = URL.createObjectURL(await res.blob());
+  const audio = new Audio(blobUrl);
+  const src = audioCtx.createMediaElementSource(audio);
+  speakAnalyser = audioCtx.createAnalyser();
+  speakAnalyser.fftSize = 512;
+  speakData = new Uint8Array(speakAnalyser.fftSize);
+  src.connect(speakAnalyser).connect(audioCtx.destination);
+  await new Promise((resolve, reject) => {
+    audio.onended = resolve;
+    audio.onerror = reject;
+    audio.play().catch(reject);
+  });
+  speakAnalyser = null;
+  URL.revokeObjectURL(blobUrl);
+}
+
+function speakDemo(text) {
+  return new Promise(resolve => {
+    if (!window.speechSynthesis) { setTimeout(resolve, 2000); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "zh-TW";
+    u.rate = 0.95;
+    u.pitch = 1.1;
+    fakeSpeaking = true;
+    const done = () => { fakeSpeaking = false; resolve(); };
+    u.onend = done; u.onerror = done;
+    speechSynthesis.speak(u);
+    setTimeout(() => { if (fakeSpeaking) { speechSynthesis.cancel(); done(); } }, 15000);
+  });
+}
+
+const DEMO_REPLIES = [
+  "我收到你的悄悄話了！謝謝你跟我說，我好喜歡聽你講話。",
+  "哇，原來是這樣啊。你好勇敢喔，願意說出來。晚上我們一起抱抱好不好？",
+  "我聽到了喔。不管開心還是生氣，我都在這裡陪你。"
+];
+let demoIndex = 0;
+// 示範模式：同一台電腦另開 reply/?demo，兩頁用 BroadcastChannel 互通，不用後端就能測完整來回
+const demoChannel = demo && window.BroadcastChannel ? new BroadcastChannel("secret-base-demo") : null;
+let replyPageOpen = false;
+demoChannel?.addEventListener("message", ({ data }) => {
+  if (data.type === "hello") { replyPageOpen = true; demoChannel.postMessage({ type: "base-here" }); }
+  if (data.type === "parent") {
+    replyPageOpen = true;
+    receive(data.blob ? { id: data.id, audioBlob: data.blob } : { id: data.id, demoText: data.text });
+  }
+});
+demoChannel?.postMessage({ type: "base-here" });
+
+function demoReply() {
+  receive({ id: `demo-${Date.now()}`, demoText: DEMO_REPLIES[demoIndex++ % DEMO_REPLIES.length] });
+}
+
+// ---------- 點娃娃 ----------
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2(0, 0);
+const lookPointer = new THREE.Vector2(0, 0);
+let press = null;
+function hitAt(e) {
+  pointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const envelopeHits = envelope.visible ? raycaster.intersectObject(envelope, true) : [];
+  return envelopeHits.length ? envelopeHits : raycaster.intersectObjects(hitMeshes, false);
+}
+let lastPointerAt = -1e9;
+canvas.addEventListener("pointermove", e => {
+  lastPointerAt = performance.now();
+  lookPointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  if (!press) return;
+  press.travel += Math.hypot(e.clientX - press.x, e.clientY - press.y);
+  press.x = e.clientX; press.y = e.clientY;
+  if (!press.petting && press.travel > 50 && state === "idle") { press.petting = true; startPet(); }
+  if (press.petting && Math.random() < 0.08) burst("heart", new THREE.Vector3((Math.random() - 0.5) * 0.8, 1.9, 0.5), 1, { spread: 0.4, rise: 0.5, size: 0.16 });
+});
+canvas.addEventListener("pointerdown", e => {
+  lookPointer.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  const hits = hitAt(e);
+  if (!hits.length) return;
+  if (state === "waiting") { openLetter(); return; }
+  if (state !== "idle") return;
+  press = { x: e.clientX, y: e.clientY, travel: 0, petting: false };
+  canvas.setPointerCapture(e.pointerId);
+});
+const endPress = () => {
+  if (!press) return;
+  const wasPetting = press.petting;
+  press = null;
+  if (wasPetting) endPet();
+  else if (state === "idle") tickle();
+};
+canvas.addEventListener("pointerup", endPress);
+canvas.addEventListener("pointercancel", endPress);
+
+let purrTimer = 0;
+function startPet() {
+  setState("petting");
+  setPose({ eye: 0.12, mouth: 0.3, headTilt: 0.22, ear: 0.7, squash: 0.97, armLz: -0.2, armRz: 0.2 });
+  sfx.purr();
+  purrTimer = setInterval(sfx.purr, 700);
+}
+async function endPet() {
+  clearInterval(purrTimer);
+  sfx.babble(3, 900);
+  setPose({ eye: 1.15, mouth: 0.45, ear: 1.15 });
+  jump(0.1);
+  await wait(500);
+  setPose();
+  setState("idle");
+}
+
+async function tickle() {
+  setState("busy");
+  sfx.giggle();
+  sfx.babble(3, 1000, 0.08);
+  setPose({ eye: 0.12, mouth: 0.5, headTilt: 0.2, armLz: -1.2, armRz: 1.2 });
+  jump(0.14);
+  burst("heart", new THREE.Vector3(0, 1.9, 0.5), 3, { spread: 0.6, rise: 0.6 });
+  await tween(0.8, k => { body.rotation.y = Math.sin(k * Math.PI * 4) * 0.18 * (1 - k); });
+  setPose();
+  setState("idle");
+}
+
+async function wave() {
+  setPose({ armRz: 2.7, mouth: 0.4, headTilt: -0.1 });
+  const waving = target;
+  await tween(1.2, k => { waving.armRz = 2.5 + Math.sin(k * Math.PI * 6) * 0.35; });
+  if (target === waving) setPose();
+}
+
+// ---------- 迴圈 ----------
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  const half = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = Math.max(4.0, 3.3 / camera.aspect) / (2 * half);
+  camera.position.set(0, lookTarget.y + 0.45, dist);
+  camera.lookAt(lookTarget);
+  camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+resize();
+
+let blinkAt = 2, blinkT = -1, earTwitchAt = 4;
+let lookAroundAt = 3, prevTilt = 0, prevYaw = 0, prevHop = 0;
+const lookAround = new THREE.Vector2(), smoothLook = new THREE.Vector2();
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  for (let i = tweens.length - 1; i >= 0; i--) {
+    const tw = tweens[i];
+    tw.t = Math.min(1, tw.t + dt / tw.dur);
+    tw.fn(tw.e(tw.t));
+    if (tw.t >= 1) { tweens.splice(i, 1); tw.resolve(); }
+  }
+
+  // 麥克風音量 → 按鈕外圈 + 娃娃點頭
+  let micLevel = 0;
+  if (state !== "listening") heardVoice = false;
+  if (state === "listening" && micAnalyser) {
+    micAnalyser.getByteTimeDomainData(micData);
+    let sum = 0;
+    for (const v of micData) sum += (v - 128) ** 2;
+    micLevel = Math.min(1, Math.sqrt(sum / micData.length) / 28);
+    talkBtn.style.setProperty("--level", (0.95 + micLevel * 0.35).toFixed(3));
+    const now = performance.now();
+    if (micLevel > 0.12) { lastVoiceAt = now; heardVoice = true; }
+    if (micLevel > 0.18 && now - lastNoteAt > 260) {
+      lastNoteAt = now;
+      burst("note", new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.2, 1.2), 1, { spread: 0.5, rise: 1.4, life: 1.2, size: 0.2 });
+    }
+    if (tapMode) {
+      if (heardVoice && now - lastVoiceAt > 2000) stopListening();
+      else if (!heardVoice && now - recordStart > 8000) stopListening();
+    }
+  }
+  // 說話音量 → 嘴巴
+  let speakLevel = 0;
+  if (speakAnalyser) {
+    speakAnalyser.getByteTimeDomainData(speakData);
+    let sum = 0;
+    for (const v of speakData) sum += (v - 128) ** 2;
+    speakLevel = Math.min(1, Math.sqrt(sum / speakData.length) / 22);
+  } else if (fakeSpeaking) {
+    speakLevel = Math.max(0, Math.sin(t * 17) * 0.5 + Math.sin(t * 7.3) * 0.4 + 0.2);
+  }
+
+  for (const key in pose) {
+    if (key === "hop") continue;
+    pose[key] = damp(pose[key], target[key], key === "mouth" ? 18 : 7, dt);
+  }
+
+  const breathe = Math.sin(t * 2.1);
+  const hopY = jumpState.y;
+  doll.position.y = hopY;
+  // 重心左右換腳、呼吸、跳躍的壓扁拉長
+  const sway = state === "idle" ? Math.sin(t * 0.8) * 0.035 : 0;
+  body.rotation.set(pose.lean + (state === "listening" ? micLevel * 0.06 : 0), 0, sway);
+  const sq = pose.squash * jumpState.squash;
+  body.scale.set(1 / Math.sqrt(sq) - breathe * 0.006, sq + breathe * 0.01, 1 / Math.sqrt(sq));
+
+  // 發呆時會自己東張西望
+  if (state === "idle" && t > lookAroundAt) {
+    lookAround.set((Math.random() - 0.5) * 0.9, (Math.random() - 0.3) * 0.3);
+    if (Math.random() < 0.35) lookAround.set(0, 0);
+    lookAroundAt = t + 2.5 + Math.random() * 3.5;
+  }
+  const pointerFresh = performance.now() - lastPointerAt < 2500;
+  const lookX = state === "idle" ? (pointerFresh ? lookPointer.x * 0.5 : lookAround.x) : 0;
+  const lookY = state === "idle" ? (pointerFresh ? lookPointer.y * 0.25 : lookAround.y) : 0;
+  smoothLook.x = damp(smoothLook.x, lookX, 4, dt);
+  smoothLook.y = damp(smoothLook.y, lookY, 4, dt);
+  head.rotation.set(
+    pose.headPitch - smoothLook.y * 0.5 + Math.sin(t * 1.3) * 0.025 + (state === "listening" ? Math.sin(t * 9) * micLevel * 0.08 : 0) + speakLevel * 0.05,
+    pose.headYaw + smoothLook.x * 0.7 + Math.sin(t * 0.7) * 0.04,
+    pose.headTilt - sway * 0.8 + Math.sin(t * 0.9) * 0.03 + speakLevel * Math.sin(t * 5) * 0.06
+  );
+  // 手臂跟著身體慢半拍
+  armL.rotation.set(pose.armLx, 0, pose.armLz + Math.sin(t * 2.1 + 1) * 0.04 - sway * 1.5 + hopY * 2.2);
+  armR.rotation.set(pose.armRx, 0, pose.armRz - Math.sin(t * 2.1) * 0.04 - sway * 1.5 - hopY * 2.2);
+  // 偶爾踮一下腳
+  const tap = state === "idle" ? Math.max(0, Math.sin(t * 1.7)) ** 12 : 0;
+  feet[1].position.y = feet[1].userData.baseY + tap * 0.03;
+  if (rig.hood.visible) rig.hood.userData.tail.rotation.y = Math.sin(t * 2.2) * 0.35 + hopY;
+
+  // 眨眼
+  if (t > blinkAt && blinkT < 0) { blinkT = 0; blinkAt = t + (Math.random() < 0.25 ? 0.22 : 2.5 + Math.random() * 3); }
+  let blink = 1;
+  if (blinkT >= 0) { blinkT += dt; blink = Math.abs(1 - blinkT / 0.08); if (blinkT > 0.16) { blinkT = -1; blink = 1; } }
+  const happyEyes = pose.eye < 0.6;
+  eyes.forEach(eye => {
+    eye.userData.smile.visible = happyEyes;
+    eye.userData.inner.visible = !happyEyes;
+    // 眼珠跟著手指 / 視線微微移動
+    eye.userData.inner.position.set(smoothLook.x * 0.012, smoothLook.y * 0.01, 0);
+    const open = Math.max(0.9, pose.eye);
+    eye.scale.set(happyEyes ? 1 : open, happyEyes ? 1 : Math.max(0.08, open * blink), 1);
+  });
+
+  // 耳朵
+  let twitch = 0;
+  if (t > earTwitchAt) { twitch = Math.sin((t - earTwitchAt) * 30) * 0.25; if (t - earTwitchAt > 0.3) earTwitchAt = t + 4 + Math.random() * 5; }
+  const tiltVel = (head.rotation.z - prevTilt) / Math.max(dt, 1e-3);
+  const yawVel = (head.rotation.y - prevYaw) / Math.max(dt, 1e-3);
+  const yVel = (hopY - prevHop) / Math.max(dt, 1e-3);
+  prevTilt = head.rotation.z; prevYaw = head.rotation.y; prevHop = hopY;
+  ears.forEach((ear, i) => {
+    const d = ear.userData, side = d.side;
+    const rest = -(pose.ear - 1) * 1.2 - (state === "listening" ? micLevel * 0.25 : 0)
+      + Math.sin(t * 2.1 + i) * 0.04 + (state === "petting" ? Math.sin(t * 9 + i * 2) * 0.15 : 0) + speakLevel * Math.sin(t * 14 + i) * 0.25;
+    const force = 70 * (rest - d.a) - 7 * d.v + yVel * 9 + side * tiltVel * 2.2;
+    d.v += force * dt;
+    d.a += d.v * dt;
+    ear.rotation.z = d.baseZ - side * d.a * d.amp;
+    ear.rotation.x = (i ? twitch : 0) * 0.5 - yawVel * side * 0.03;
+  });
+  setMouth(Math.max(pose.mouth, speakLevel));
+
+  questionMark.scale.setScalar(pose.q * 0.42);
+  questionMark.position.y = 2.15 + Math.sin(t * 3) * 0.04;
+
+  if (envelope.visible && (state === "waiting")) {
+    envelope.position.y = HOLD_POS.y + Math.sin(t * 2.4) * 0.02;
+    envelope.rotation.z = Math.sin(t * 1.6) * 0.04;
+  }
+  glow.intensity = state === "waiting" ? 0.3 + Math.sin(t * 3) * 0.15 : damp(glow.intensity, 0, 4, dt);
+
+  bulbs.forEach(b => {
+    const k = 0.75 + Math.sin(t * 1.8 + b.userData.phase) * 0.25;
+    b.material.color.copy(b.userData.base).multiplyScalar(k);
+  });
+
+  updateParticles(dt);
+
+  // 很久沒說話 → 手指提示
+  hint.classList.toggle("is-shown", state === "idle" && !everSent && !letters.length && performance.now() - idleSince > 5000);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+refreshButton();
+requestAnimationFrame(frame);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && audioCtx) audioCtx.resume();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>秘密基地角色設定</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf6f0;
+    --paper: #ffffff;
+    --ink: #3b2c28;
+    --muted: #8a7670;
+    --line: #efe4da;
+    --pink: #ff6fae;
+    --c1: #f4b98a;
+    --c2: #a99ad8;
+    --c3: #6fb1e3;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Noto Sans TC", system-ui, sans-serif; line-height: 1.65;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px 80px; }
+  header.top { padding: 48px 0 20px; }
+  .eyebrow { font: 600 13px/1 "Fredoka", sans-serif; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 900; margin: 10px 0 8px; letter-spacing: .02em; }
+  .lede { max-width: 720px; color: #5d4b45; margin: 0; }
+  .howto {
+    margin-top: 20px; display: inline-flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px 8px 8px; font-weight: 500;
+  }
+  .howto b { font-family: "Fredoka", sans-serif; }
+  .chip { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; font: 700 15px/1 "Fredoka", sans-serif; }
+  .chip.n1 { background: var(--c1); } .chip.n2 { background: var(--c2); } .chip.n3 { background: var(--c3); }
+
+  /* lineup */
+  .lineup { margin: 28px 0 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 28px; padding: 22px 18px 14px; }
+  .lineup h2 { font-size: 17px; margin: 0 0 4px; }
+  .lineup p { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+  .lu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .lu-cell { text-align: center; }
+  .lu-cell .pair { display: grid; grid-template-columns: 1fr 1fr; align-items: end; }
+  .lu-cell svg { width: 100%; height: auto; display: block; }
+  .sil svg { filter: brightness(0) opacity(.82); }
+  .lu-cell .cap { font-weight: 700; margin-top: 4px; display: flex; gap: 8px; align-items: center; justify-content: center; }
+
+  /* concept */
+  section.concept { margin-top: 56px; scroll-margin-top: 16px; }
+  .c-head { display: flex; gap: 18px; align-items: center; margin-bottom: 18px; }
+  .bignum {
+    flex: none; width: 76px; height: 76px; border-radius: 26px; display: grid; place-items: center;
+    color: #fff; font: 700 46px/1 "Fredoka", sans-serif; box-shadow: 0 8px 20px -10px rgba(60,30,20,.5);
+  }
+  .c-head h2 { margin: 0; font-size: clamp(24px, 4vw, 34px); font-weight: 900; line-height: 1.2; }
+  .c-head h2 small { font-size: .5em; font-weight: 500; color: var(--muted); margin-left: 8px; letter-spacing: .04em; }
+  .c-head .tag { margin: 4px 0 0; color: #5d4b45; }
+
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 26px; padding: 14px 14px 12px; position: relative; overflow: hidden;
+  }
+  .card .stage { border-radius: 18px; }
+  .card svg { width: 100%; height: auto; display: block; }
+  .card .lbl { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 8px 4px 0; }
+  .card .lbl b { font-size: 15px; }
+  .card .lbl span { font-size: 12.5px; color: var(--muted); }
+  .exprs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+  .exprs .card { padding: 10px 10px 10px; }
+
+  .info { display: grid; grid-template-columns: 1.05fr 1fr; gap: 14px; margin-top: 14px; }
+  .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: 18px 20px; }
+  .panel h3 { margin: 0 0 10px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .panel h3::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent, var(--pink)); }
+  dl.facts { margin: 0; display: grid; grid-template-columns: 6.5em 1fr; gap: 8px 12px; font-size: 14.5px; }
+  dl.facts dt { color: var(--muted); font-weight: 500; }
+  dl.facts dd { margin: 0; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+  .sw { display: flex; align-items: center; gap: 6px; font: 500 12px/1.2 "Fredoka", sans-serif; color: #6b5852; }
+  .sw i { width: 22px; height: 22px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); display: block; }
+  .sw em { font-style: normal; display: block; font-family: "Noto Sans TC"; font-size: 11px; color: var(--muted); }
+
+  table.parts { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  table.parts th, table.parts td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.parts th { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+  table.parts td:first-child { font-weight: 700; white-space: nowrap; }
+  table.parts code, .panel code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: #f7f0ea; padding: 1px 5px; border-radius: 6px; }
+  .info > *, .hero > *, .exprs > * { min-width: 0; }
+  table.parts td:last-child, table.parts th:last-child { white-space: nowrap; }
+  @media (max-width: 760px) { table.parts { min-width: 560px; } }
+  .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .notes { margin: 10px 0 0; padding-left: 18px; font-size: 13.5px; color: #5d4b45; }
+  .notes li { margin: 3px 0; }
+
+  .outfit-note { margin-top: 56px; }
+  .rec { margin-top: 56px; background: #fff; border: 2px solid #ffd1e5; border-radius: 28px; padding: 22px 22px; }
+  .rec h2 { margin: 0 0 8px; font-size: 22px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; text-align: center; }
+
+  @media (max-width: 760px) {
+    .hero, .info { grid-template-columns: 1fr; }
+    .exprs { gap: 8px; }
+    .exprs .card { padding: 6px 6px 8px; border-radius: 18px; }
+    .exprs .card .lbl { flex-direction: column; gap: 0; padding-top: 4px; }
+    .exprs .card .lbl b { font-size: 13px; }
+    .exprs .card .lbl span { font-size: 11px; }
+    .bignum { width: 60px; height: 60px; font-size: 36px; border-radius: 20px; }
+    dl.facts { grid-template-columns: 5.5em 1fr; font-size: 14px; }
+    .lu-grid { gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Secret Base · Character Sheet v1</div>
+    <h1>秘密基地・小信差角色提案</h1>
+    <p class="lede">給還不會識字的小朋友一位會「帶話」的布偶朋友：孩子對它說悄悄話，它把聲音送到爸媽那裡，再把回信帶回來唸給孩子聽。以下是三個完全不同方向的原創角色，每個都能換上原創的「小惡魔連帽裝」。</p>
+    <div class="howto"><span class="chip n1">1</span><span class="chip n2">2</span><span class="chip n3">3</span> 喜歡哪一個，直接回覆<b>數字</b>就好。</div>
+  </header>
+
+  <div class="lineup">
+    <h2>剪影測試</h2>
+    <p>只看黑影也要認得出是誰。左：剪影，右：本尊。</p>
+    <div class="lu-grid" id="lineup"></div>
+  </div>
+
+  <div id="concepts"></div>
+
+  <section class="outfit-note panel" style="--accent: var(--pink)">
+    <h3>小惡魔連帽裝的原創規則</h3>
+    <ul class="notes">
+      <li><b>帽耳是往外翹的小惡魔角</b>，不是往兩側垂下的長耳；右耳故意微微下垂一點，讓它有「調皮」的表情。</li>
+      <li><b>主圖案是粉紅色「蝙蝠翅膀愛心」</b>，不使用骷髏或任何既有角色的徽章。</li>
+      <li>臉部開口用<b>粉紅色滾邊</b>收邊、角色自己的臉就是臉，不另做白色臉罩。</li>
+      <li>背後一條<b>愛心尾巴</b>，3D 時可以左右擺動當待機動作。</li>
+      <li>同一件衣服三個角色都能穿：帽子是獨立網格，套在頭上即可。</li>
+    </ul>
+  </section>
+
+  <section class="rec">
+    <h2>設計師推薦</h2>
+    <div id="rec"></div>
+  </section>
+
+  <footer>秘密基地 · 角色設計提案 · 僅供內部審閱</footer>
+</div>
+
+<script>
+/* ============================================================
+   Plush renderer: every figure is generated from one concept
+   description so all views stay on-model.
+   ============================================================ */
+let UID = 0;
+const f = n => +n.toFixed(2);
+
+function cloudPath(cx, cy, rx, ry, n, ex, bumpK) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+    const c = Math.cos(a), s = Math.sin(a);
+    const e = s > 0 ? ex + 1.1 : ex; // flatter bottom
+    const x = cx + rx * Math.sign(c) * Math.pow(Math.abs(c), 2 / e);
+    const y = cy + ry * Math.sign(s) * Math.pow(Math.abs(s), 2 / e) * (s > 0 ? 1 : 1);
+    pts.push([x, y]);
+  }
+  let d = `M${f(pts[0][0])},${f(pts[0][1])}`;
+  for (let i = 0; i < n; i++) {
+    const p = pts[i], q = pts[(i + 1) % n];
+    const ch = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    const lower = (p[1] > cy + ry * 0.55 && q[1] > cy + ry * 0.55);
+    const r = ch * (lower ? 0.95 : bumpK);
+    d += ` A${f(r)},${f(r)} 0 0 1 ${f(q[0])},${f(q[1])}`;
+  }
+  cloudPath.last = pts;
+  return d + 'Z';
+}
+
+const CONCEPTS = [
+  {
+    key: 'mochi', num: 1, name: '嚕嚕', en: 'Lulu', species: '麻糬小熊',
+    tagline: '慢吞吞、軟綿綿的麻糬小熊，把你的悄悄話收進肚子裡，抱抱著送到爸媽身邊。',
+    accent: '#f4b98a',
+    path: 'M150,80 C222,80 266,150 265,214 C264,258 230,274 150,274 C70,274 36,258 35,214 C34,150 78,80 150,80 Z',
+    center: [150, 180],
+    pal: { hi: '#FFFBF4', base: '#FBE6CF', mid: '#F4CFAE', sh: '#D9A27C', rim: '#FFF3E2', ao: '#B9805C',
+           inner: '#F9AFB0', blush: '#FF8E9B', eye: '#2B1D22', eyeRef: '#C77B5C', mouth: '#6A3E35', shadow: '#7A5442' },
+    face: { y: 186, dx: 40, rx: 12.5, ry: 15.5, mouthY: 207, blushDX: 66, blushY: 206, mouth: 'smile' },
+    hood: { s: 1.075, face: [150, 197, 86, 63], clip: [150, 116, 164, 116], emblemY: 108 },
+    paws: { env: [[121, 236], [179, 236]], rest: [[50, 222], [250, 222]], r: 15 },
+    signature: '底部像麻糬一樣微微「攤開」的寬底身形＋頂上兩顆小圓耳；剪影就是一顆有耳朵的麻糬。',
+    palette: [['#FBE6CF', '麻糬奶油'], ['#F4CFAE', '烤痕杏色'], ['#F9AFB0', '耳內粉'], ['#FF8E9B', '腮紅'], ['#2B1D22', '眼睛']],
+    ratio: '頭身一體（頭區 : 身區 ≈ 6 : 4），全高 1.0、最寬 1.17（矮胖）',
+    eyes: '眼睛中心在全高 54% 處（偏低），兩眼間距 = 身寬 35%，眼高 = 全高 8%',
+    why: [
+      '「軟軟的、可以捏」是 3～6 歲最直覺的喜歡：形狀本身就像一顆可以抱的麻糬。',
+      '小圓耳＋低眼位＝嬰兒臉比例，看起來比孩子更小、更需要保護，孩子會想照顧它。',
+      '奶油色在夜燈下很溫暖，睡前陪伴不會刺眼。'
+    ],
+    parts: [
+      ['身體', '<code>LatheGeometry</code> 剖面（r,y）：(0,0) (0.44,0) (0.55,0.04) (0.585,0.16) (0.575,0.32) (0.53,0.50) (0.43,0.70) (0.28,0.88) (0.12,0.98) (0,1.0)，<code>scale.z = 0.86</code>', '#FBE6CF', '主體'],
+      ['耳朵 ×2', '<code>SphereGeometry r=0.125</code>，<code>scale(1,1,0.62)</code>，位置 (±0.31, 0.86, 0)，向外轉 18°，40% 埋進身體', '#FBE6CF／內 #F9AFB0', '合併進身體'],
+      ['耳內', '扁球 r=0.068，貼耳朵正面 z+0.045', '#F9AFB0', '合併'],
+      ['手 ×2', '球 r=0.075，(±0.20, 0.20, 0.44)，一半埋進肚子', '#FBE6CF', '合併'],
+      ['腳 ×2', '球 r=0.12，<code>scale(1,0.45,1.1)</code>，(±0.19, 0.03, 0.22)', '#F4CFAE', '合併'],
+      ['眼睛 ×2', '球 r=0.064，<code>scale(1,1.24,0.45)</code>，(±0.17, 0.46, 表面)，<code>MeshPhysical clearcoat=1</code>；高光兩顆發光小球 r=0.024 / 0.011', '#2B1D22', '獨立'],
+      ['嘴', '<code>TubeGeometry</code> 沿 ∪ 弧，管徑 0.008，寬 0.05', '#6A3E35', '獨立'],
+      ['腮紅', '畫在身體的 <code>CanvasTexture</code>（柔邊圓），不要另外貼片', '#FF8E9B', '貼圖'],
+      ['尾巴', '背面小球 r=0.07 (0, 0.18, -0.47)', '#FBE6CF', '合併']
+    ],
+    hoodSpec: '帽子＝身體剖面在 y≥0.42 的部分放大 1.075 倍的殼（厚 0.03），臉洞用橢球 (寬 0.75、高 0.55) 以 three-bvh-csg 挖掉；穿上時把「耳朵」<code>visible=false</code>，小圓耳收進帽耳裡。'
+  },
+  {
+    key: 'cloud', num: 2, name: '綿綿', en: 'Mianmian', species: '雲朵小羊',
+    tagline: '愛做白日夢的雲朵小羊，輕飄飄地把你的聲音帶上天空，飄到爸媽那裡。',
+    accent: '#a99ad8',
+    path: cloudPath(150, 180, 121, 95, 18, 2.5, 0.62),
+    pts: cloudPath.last,
+    hoodPath: 'M150,80 C230,80 272,140 272,194 C272,250 230,276 150,276 C70,276 28,250 28,194 C28,140 70,80 150,80Z',
+    center: [150, 180],
+    pal: { hi: '#FFFFFF', base: '#F6F4FD', mid: '#E4E2F6', sh: '#B9B3DE', rim: '#FFFFFF', ao: '#8F86C2',
+           inner: '#F7C9DB', blush: '#FF9CB8', eye: '#2A2036', eyeRef: '#8A7FD0', mouth: '#5B4366', shadow: '#5E5486',
+           horn: '#F6DDB0', hornSh: '#D9A96A', hoof: '#8E80B8' },
+    face: { y: 190, dx: 38, rx: 12, ry: 15, mouthY: 210, blushDX: 64, blushY: 209, mouth: 'smile' },
+    hood: { s: 1.035, face: [150, 199, 86, 60], clip: [150, 118, 166, 114], emblemY: 112 },
+    paws: { env: [[123, 238], [177, 238]], rest: [[48, 228], [252, 228]], r: 12, hoof: true },
+    signature: '一圈雲朵波浪邊＋兩側捲捲的小羊角；剪影是一朵長了角的雲。',
+    palette: [['#F6F4FD', '雲朵白'], ['#B9B3DE', '薰衣草影'], ['#F6DDB0', '羊角奶茶'], ['#8E80B8', '小蹄'], ['#FF9CB8', '腮紅']],
+    ratio: '頭身一體（雲朵本身就是頭＋身），全高 1.0、最寬 1.27（橫向雲朵）',
+    eyes: '眼睛中心在全高 56% 處，兩眼間距 = 身寬 31%，眼高 = 全高 8%',
+    why: [
+      '雲朵和綿羊都是孩子繪本裡最早認得的東西，一眼就懂「軟軟的、飄飄的」。',
+      '波浪邊讓手指想去一顆一顆點，3D 版可以做「點一下雲朵會彈一下」的互動。',
+      '本身就有小角，穿上小惡魔裝時像「原本就是小惡魔」，變裝最自然。'
+    ],
+    parts: [
+      ['身體', '中心大球 r=0.5 <code>scale(1.27,1,0.9)</code>，外圍 18 顆小球 r≈0.12 沿超橢圓 (指數 2.5) 排一圈、70% 埋入；用 <code>mergeGeometries</code> 後跑一次 Laplacian smooth 讓接縫消失', '#F6F4FD', '主體（合併成一個網格）'],
+      ['羊角 ×2', '<code>TubeGeometry</code> 沿阿基米德螺線（1.4 圈），管徑由 0.06 收到 0.025，位置 (±0.62, 0.70, 0.05)', '#F6DDB0', '獨立（可隱藏）'],
+      ['小蹄 ×2', '<code>CapsuleGeometry r=0.07 len=0.04</code>，(±0.17, 0.02, 0.18)，只露出下半', '#8E80B8', '獨立'],
+      ['眼睛 ×2', '同嚕嚕規格，位置 (±0.16, 0.44, 表面)', '#2A2036', '獨立'],
+      ['嘴', 'Tube ∪ 弧，管徑 0.008', '#5B4366', '獨立'],
+      ['腮紅', '身體貼圖柔邊圓', '#FF9CB8', '貼圖'],
+      ['材質', '<code>MeshPhysicalMaterial</code> roughness 0.95、sheen 1、sheenColor #E4E2F6；加一張低強度 noise normalMap 做羊毛顆粒', '—', '—']
+    ],
+    hoodSpec: '帽子＝平滑的饅頭形外殼（不跟著雲朵波浪，放大 1.035），讓肩膀兩側露出一點點羊毛（帽子是布，不是羊毛）；羊角 <code>visible=false</code> 收進帽耳。小蹄留在外面。'
+  },
+  {
+    key: 'bird', num: 3, name: '啾啾', en: 'Jiujiu', species: '幸福小郵鳥',
+    tagline: '精神滿滿的小郵差鳥，叼著信飛來飛去，一回來就急著把爸媽的話唸給你聽。',
+    accent: '#6fb1e3',
+    path: 'M150,84 C220,84 263,132 263,190 C263,247 214,276 150,276 C86,276 37,247 37,190 C37,132 80,84 150,84 Z',
+    center: [150, 182],
+    pal: { hi: '#EEF8FF', base: '#B5DCF6', mid: '#93C7EE', sh: '#5F9BD0', rim: '#E6F6FF', ao: '#3F78B0',
+           inner: '#F9C2CF', blush: '#FF97A8', eye: '#1E2433', eyeRef: '#4E86C4', mouth: '#5A3A3A', shadow: '#3F5E80',
+           belly: '#FFF8EE', beak: '#FFAD7A', beakSh: '#F07F55', tuft: '#8CC8F2', tuftSh: '#5C9DD6', wing: '#9ACDF2', feet: '#FFA37A' },
+    face: { y: 186, dx: 44, rx: 13, ry: 16, mouthY: 206, blushDX: 70, blushY: 206, mouth: 'beak' },
+    hood: { s: 1.065, face: [150, 196, 88, 61], clip: [150, 118, 166, 116], emblemY: 112 },
+    paws: null,
+    signature: '圓滾滾的雪球身體＋頭頂三根翹起的呆毛羽毛；剪影是一顆頭上冒出小火苗的圓球。',
+    palette: [['#B5DCF6', '晴空藍'], ['#FFF8EE', '肚肚奶白'], ['#8CC8F2', '呆毛'], ['#FFAD7A', '小嘴珊瑚'], ['#FF97A8', '腮紅']],
+    ratio: '頭身一體（圓球），全高 1.0、最寬 1.17；呆毛另加 0.2 高',
+    eyes: '眼睛中心在全高 53% 處，兩眼間距 = 身寬 39%（分得開更呆萌），眼高 = 全高 8.5%',
+    why: [
+      '「小鳥叼信來」是孩子一聽就懂的故事：它真的會飛去找爸媽，角色和功能完全對上。',
+      '頭頂呆毛會隨說話晃動，是 3D 版最好用的「它在聽我說話」訊號。',
+      '藍色的「幸福青鳥」意象溫柔不幼稚，男孩女孩都容易接受。'
+    ],
+    parts: [
+      ['身體', '<code>SphereGeometry r=0.5</code>，<code>scale(1.17,1,1.0)</code>，底部 y<0.15 壓平 20%', '#B5DCF6（肚子用頂點色漸層到 #FFF8EE）', '主體'],
+      ['肚肚', '不做獨立網格：用頂點色／貼圖從前下方往外柔和漸層', '#FFF8EE', '漸層'],
+      ['呆毛 ×3', 'Lathe 水滴剖面（長 0.16/0.2/0.16，最寬 0.045），根部 (0, 0.97, 0.02)，分別轉 −24°/0°/+24°，根部埋入 0.03', '#8CC8F2', '獨立（可擺動）'],
+      ['翅膀 ×2', '扁水滴（Lathe 剖面後 <code>scale.z=0.35</code>），長 0.3，根部 (±0.52, 0.48, 0.05)，向外下 25°', '#9ACDF2', '獨立（拍動）'],
+      ['嘴', '圓角四角錐 <code>ConeGeometry r=0.04 h=0.05 radialSegments=4</code>＋bevel，尖端朝下，(0, 0.42, 表面)', '#FFAD7A', '獨立'],
+      ['腳 ×2', '每隻 3 顆膠囊 r=0.02，(±0.1, 0, 0.3)', '#FFA37A', '獨立'],
+      ['眼睛 ×2', '同嚕嚕規格，(±0.19, 0.45, 表面)，間距較寬', '#1E2433', '獨立'],
+      ['信封道具', '<code>RoundedBoxGeometry 0.24×0.16×0.02</code>，叼在嘴下', '#FFFDF6', '獨立'],
+      ['腮紅', '身體貼圖柔邊圓', '#FF97A8', '貼圖']
+    ],
+    hoodSpec: '帽子＝身體上半部放大 1.065 的殼；在頭頂中央開一個小洞讓<b>呆毛從帽子中間穿出來</b>（這是啾啾版小惡魔裝的招牌）。翅膀在帽子外。'
+  }
+];
+
+/* ---------- shared pieces ---------- */
+function defs(p, C, outfit) {
+  const P = C.pal;
+  return `<defs>
+    <radialGradient id="${p}g" cx="0.4" cy="0.3" r="0.82">
+      <stop offset="0" stop-color="${P.hi}"/>
+      <stop offset="0.38" stop-color="${P.base}"/>
+      <stop offset="0.78" stop-color="${P.mid}"/>
+      <stop offset="1" stop-color="${P.sh}"/>
+    </radialGradient>
+    <radialGradient id="${p}ao" cx="0.46" cy="0.4" r="0.68">
+      <stop offset="0.62" stop-color="${P.ao}" stop-opacity="0"/>
+      <stop offset="1" stop-color="${P.ao}" stop-opacity="0.38"/>
+    </radialGradient>
+    <linearGradient id="${p}bot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.7" stop-color="${P.ao}" stop-opacity="0"/>
+      <stop offset="1" stop-color="${P.ao}" stop-opacity="0.32"/>
+    </linearGradient>
+    <linearGradient id="${p}rimg" x1="0.15" y1="0.2" x2="0.95" y2="0.75">
+      <stop offset="0.55" stop-color="#000"/>
+      <stop offset="1" stop-color="#fff"/>
+    </linearGradient>
+    <mask id="${p}rimm" maskUnits="userSpaceOnUse" x="0" y="0" width="300" height="300">
+      <rect width="300" height="300" fill="url(#${p}rimg)"/>
+    </mask>
+    <radialGradient id="${p}eye" cx="0.5" cy="0.78" r="0.75">
+      <stop offset="0" stop-color="${P.eyeRef}"/>
+      <stop offset="0.45" stop-color="${P.eye}"/>
+      <stop offset="1" stop-color="${P.eye}"/>
+    </radialGradient>
+    <radialGradient id="${p}blush" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="${P.blush}" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="${P.blush}" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="${p}inner" cx="0.45" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#FFD6D3"/>
+      <stop offset="1" stop-color="${P.inner}"/>
+    </radialGradient>
+    <radialGradient id="${p}hood" cx="0.38" cy="0.22" r="0.85">
+      <stop offset="0" stop-color="#5A4F66"/>
+      <stop offset="0.35" stop-color="#352D3E"/>
+      <stop offset="1" stop-color="#16111C"/>
+    </radialGradient>
+    <linearGradient id="${p}hear" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4E4459"/>
+      <stop offset="1" stop-color="#1A1520"/>
+    </linearGradient>
+    <linearGradient id="${p}pink" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#FFB6D6"/>
+      <stop offset="1" stop-color="#F0609F"/>
+    </linearGradient>
+    <linearGradient id="${p}env" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F6EADB"/>
+    </linearGradient>
+    ${C.key === 'cloud' ? `
+    <radialGradient id="${p}horn" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#FFF4DC"/><stop offset="0.5" stop-color="${P.horn}"/><stop offset="1" stop-color="${P.hornSh}"/>
+    </radialGradient>
+    <radialGradient id="${p}hoof" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#B8ACDD"/><stop offset="1" stop-color="${P.hoof}"/>
+    </radialGradient>` : ''}
+    ${C.key === 'bird' ? `
+    <radialGradient id="${p}tuft" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#D4ECFF"/><stop offset="0.55" stop-color="${P.tuft}"/><stop offset="1" stop-color="${P.tuftSh}"/>
+    </radialGradient>
+    <radialGradient id="${p}wing" cx="0.4" cy="0.25" r="0.9">
+      <stop offset="0" stop-color="#D2ECFF"/><stop offset="0.6" stop-color="${P.wing}"/><stop offset="1" stop-color="${P.sh}"/>
+    </radialGradient>
+    <linearGradient id="${p}beak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD0A8"/><stop offset="0.5" stop-color="${P.beak}"/><stop offset="1" stop-color="${P.beakSh}"/>
+    </linearGradient>
+    <radialGradient id="${p}belly" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="${P.belly}" stop-opacity="1"/>
+      <stop offset="0.55" stop-color="${P.belly}" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="${P.belly}" stop-opacity="0"/>
+    </radialGradient>` : ''}
+    <clipPath id="${p}clip"><path d="${C.path}"/></clipPath>
+    <filter id="${p}b1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2"/></filter>
+    <filter id="${p}b3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="${p}b6" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="${p}felt" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="${C.key === 'cloud' ? 0.55 : 0.9}" numOctaves="3" seed="${C.num * 7}"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.25  0 0 0 0 0.18  0 0 0 0 0.2  1.6 0 0 0 -0.72"/>
+    </filter>
+    <filter id="${p}fuzz" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="${C.num * 3}"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 1.8 0 0 -0.95"/>
+    </filter>
+  </defs>`;
+}
+
+function shadow(p, C) {
+  const P = C.pal;
+  return `<ellipse cx="150" cy="276" rx="112" ry="13" fill="${P.shadow}" opacity="0.2" filter="url(#${p}b6)"/>
+          <ellipse cx="150" cy="275" rx="80" ry="7" fill="${P.shadow}" opacity="0.22" filter="url(#${p}b3)"/>`;
+}
+
+/* volume, felt, rim light for any closed path (clip given) */
+function plushShade(p, d, clipId, P, opts = {}) {
+  return `<g clip-path="url(#${clipId})">
+    <path d="${d}" fill="url(#${p}ao)"/>
+    <path d="${d}" fill="url(#${p}bot)"/>
+    <rect width="300" height="300" filter="url(#${p}felt)" opacity="${opts.felt ?? 0.16}"/>
+    <rect width="300" height="300" filter="url(#${p}fuzz)" opacity="${opts.fuzz ?? 0.12}"/>
+    <g mask="url(#${p}rimm)"><path d="${d}" fill="none" stroke="${P.rim}" stroke-width="12" opacity="0.9" filter="url(#${p}b3)"/></g>
+    ${opts.spec !== false ? `<ellipse cx="${opts.sx ?? 112}" cy="${opts.sy ?? 124}" rx="44" ry="24" transform="rotate(-28 ${opts.sx ?? 112} ${opts.sy ?? 124})" fill="#fff" opacity="${opts.so ?? 0.55}" filter="url(#${p}b6)"/>` : ''}
+  </g>`;
+}
+
+/* ---------- face ---------- */
+function eye(p, x, y, rx, ry, look = [0, 0]) {
+  const [lx, ly] = look;
+  return `<g>
+    <ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#${p}eye)"/>
+    <ellipse cx="${f(x - rx * 0.3 + lx)}" cy="${f(y - ry * 0.36 + ly)}" rx="${f(rx * 0.42)}" ry="${f(rx * 0.46)}" fill="#fff"/>
+    <circle cx="${f(x + rx * 0.36 + lx * 0.5)}" cy="${f(y + ry * 0.34 + ly * 0.5)}" r="${f(rx * 0.17)}" fill="#fff" opacity="0.92"/>
+  </g>`;
+}
+function blush(p, C, k = 1, lines = false) {
+  const F = C.face;
+  const b = (x) => `<ellipse cx="${x}" cy="${F.blushY}" rx="${f(17 * k)}" ry="${f(10 * k)}" fill="url(#${p}blush)"/>` +
+    (lines ? [-6, 0, 6].map(o => `<path d="M${x + o + 2},${F.blushY - 3} l-3,6" stroke="${C.pal.blush}" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>`).join('') : '');
+  return b(150 - F.blushDX) + b(150 + F.blushDX);
+}
+function beak(p, C, open = false) {
+  const y = C.face.mouthY - 4;
+  if (open) {
+    return `<path d="M141,${y - 2} Q150,${y - 7} 159,${y - 2} Q153,${y + 3} 150,${y + 3} Q147,${y + 3} 141,${y - 2}Z" fill="url(#${p}beak)"/>
+      <path d="M143,${y + 4} Q150,${y + 2} 157,${y + 4} Q153,${y + 14} 150,${y + 14} Q147,${y + 14} 143,${y + 4}Z" fill="${C.pal.beakSh}"/>
+      <ellipse cx="150" cy="${y + 8}" rx="3.5" ry="3" fill="#FF7E95"/>`;
+  }
+  return `<path d="M140.5,${y} Q150,${y - 7} 159.5,${y} Q154,${y + 11} 150,${y + 12} Q146,${y + 11} 140.5,${y}Z" fill="url(#${p}beak)"/>
+    <ellipse cx="147" cy="${y - 1}" rx="3.2" ry="1.6" fill="#fff" opacity="0.7"/>`;
+}
+
+function face(p, C, expr) {
+  const F = C.face, P = C.pal;
+  const L = 150 - F.dx, R = 150 + F.dx;
+  let s = '';
+  const mouthSmile = (w = 6, y = F.mouthY) =>
+    `<path d="M${150 - w},${y} Q150,${y + w * 1.05} ${150 + w},${y}" fill="none" stroke="${P.mouth}" stroke-width="2.6" stroke-linecap="round"/>`;
+  if (expr === 'default') {
+    s += blush(p, C);
+    s += eye(p, L, F.y, F.rx, F.ry) + eye(p, R, F.y, F.rx, F.ry);
+    s += F.mouth === 'beak' ? beak(p, C) : mouthSmile();
+  } else if (expr === 'happy') {
+    s += blush(p, C, 1.15);
+    const arc = (x) => `<path d="M${x - 11},${F.y + 4} Q${x},${F.y - 12} ${x + 11},${F.y + 4}" fill="none" stroke="${P.eye}" stroke-width="4.2" stroke-linecap="round"/>`;
+    s += arc(L) + arc(R);
+    if (F.mouth === 'beak') s += beak(p, C, true);
+    else s += `<path d="M141,${F.mouthY - 2} Q150,${F.mouthY - 1} 159,${F.mouthY - 2} Q158,${F.mouthY + 11} 150,${F.mouthY + 11} Q142,${F.mouthY + 11} 141,${F.mouthY - 2}Z" fill="#7A3E44"/>
+               <path d="M144.5,${F.mouthY + 6} Q150,${F.mouthY + 2} 155.5,${F.mouthY + 6} Q153,${F.mouthY + 10.5} 150,${F.mouthY + 10.5} Q147,${F.mouthY + 10.5} 144.5,${F.mouthY + 6}Z" fill="#FF8E9E"/>`;
+  } else if (expr === 'listen') {
+    s += blush(p, C, 0.9);
+    s += eye(p, L, F.y - 1, F.rx * 1.1, F.ry * 1.1, [2, -1]) + eye(p, R, F.y - 1, F.rx * 1.1, F.ry * 1.1, [2, -1]);
+    if (F.mouth === 'beak') s += beak(p, C);
+    else s += `<ellipse cx="150" cy="${F.mouthY + 2}" rx="3.6" ry="4.2" fill="#7A3E44"/>`;
+  } else if (expr === 'sleepy') {
+    s += blush(p, C, 1.25, true);
+    const shut = (x) => `<path d="M${x - 11},${F.y} Q${x},${F.y + 9} ${x + 11},${F.y}" fill="none" stroke="${P.eye}" stroke-width="3.6" stroke-linecap="round"/>`;
+    s += shut(L) + shut(R);
+    if (F.mouth === 'beak') s += beak(p, C);
+    else s += `<path d="M145,${F.mouthY + 1} q2.5,-3 5,0 q2.5,3 5,0" fill="none" stroke="${P.mouth}" stroke-width="2.4" stroke-linecap="round"/>`;
+  }
+  return s;
+}
+
+/* ---------- props & extras ---------- */
+function envelope(p, cx, cy, w, h, rot) {
+  return `<g transform="translate(${cx} ${cy}) rotate(${rot})">
+    <rect x="${-w / 2}" y="${-h / 2 + 3}" width="${w}" height="${h}" rx="6" fill="#000" opacity="0.12" filter="url(#${p}b3)"/>
+    <rect x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="6" fill="url(#${p}env)"/>
+    <path d="M${-w / 2 + 4},${-h / 2 + 4} Q0,${h * 0.18} ${w / 2 - 4},${-h / 2 + 4}" fill="none" stroke="#E6C9A8" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M0,${h * 0.14} c-2.6,-3.2 -7.6,-1.4 -6.4,2.6 c0.9,2.8 4.2,4.8 6.4,6.6 c2.2,-1.8 5.5,-3.8 6.4,-6.6 c1.2,-4 -3.8,-5.8 -6.4,-2.6z" transform="translate(0 ${-h * 0.12}) scale(1.05)" fill="url(#${p}pink)"/>
+  </g>`;
+}
+function paws(p, C, list) {
+  const P = C.pal, r = C.paws.r;
+  return list.map(([x, y]) => C.paws.hoof
+    ? `<g><ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.9}" fill="url(#${p}hoof)"/><ellipse cx="${x - 3}" cy="${y - 4}" rx="${r * 0.4}" ry="${r * 0.25}" fill="#fff" opacity="0.35"/></g>`
+    : `<g><circle cx="${x}" cy="${y + 2}" r="${r}" fill="${P.ao}" opacity="0.18" filter="url(#${p}b3)"/>
+         <circle cx="${x}" cy="${y}" r="${r}" fill="url(#${p}g)"/>
+         <ellipse cx="${x - 4}" cy="${y - 5}" rx="${r * 0.45}" ry="${r * 0.3}" fill="#fff" opacity="0.5" filter="url(#${p}b1)"/></g>`).join('');
+}
+function sparkles(color) {
+  const st = (x, y, s) => `<path d="M${x},${y - s} Q${x + s * 0.18},${y - s * 0.18} ${x + s},${y} Q${x + s * 0.18},${y + s * 0.18} ${x},${y + s} Q${x - s * 0.18},${y + s * 0.18} ${x - s},${y} Q${x - s * 0.18},${y - s * 0.18} ${x},${y - s}Z" fill="${color}"/>`;
+  return st(40, 92, 10) + st(262, 78, 8) + st(270, 128, 5) + st(26, 140, 5);
+}
+function waves(color) {
+  return `<g fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" opacity="0.75">
+    <path d="M254,96 q10,14 0,28"/><path d="M266,86 q16,24 0,48" opacity="0.6"/><path d="M278,76 q22,34 0,68" opacity="0.35"/></g>`;
+}
+function zzz(color) {
+  return `<g font-family="Fredoka, sans-serif" font-weight="700" fill="${color}">
+    <text x="232" y="98" font-size="26">Z</text><text x="258" y="74" font-size="18" opacity="0.75">z</text><text x="274" y="56" font-size="13" opacity="0.5">z</text></g>`;
+}
+
+/* ---------- species bits ---------- */
+function bearEars(p, C) {
+  const P = C.pal;
+  const ear = (x, y, flip) => `<g>
+    <circle cx="${x}" cy="${y}" r="26" fill="url(#${p}g)"/>
+    <circle cx="${x}" cy="${y}" r="26" fill="url(#${p}ao)"/>
+    <ellipse cx="${x + flip * 3}" cy="${y + 2}" rx="13" ry="12.5" fill="url(#${p}inner)"/>
+    <ellipse cx="${x - 7}" cy="${y - 9}" rx="9" ry="5" fill="#fff" opacity="0.55" filter="url(#${p}b1)"/></g>`;
+  return ear(88, 106, 1) + ear(212, 106, -1);
+}
+function bearFeet(p, C) {
+  const P = C.pal;
+  return [112, 188].map(x => `<g>
+    <ellipse cx="${x}" cy="${271}" rx="27" ry="12" fill="url(#${p}g)"/>
+    <ellipse cx="${x}" cy="${271}" rx="27" ry="12" fill="${P.ao}" opacity="0.12"/>
+    <ellipse cx="${x - 5}" cy="${266}" rx="12" ry="3.5" fill="#fff" opacity="0.5" filter="url(#${p}b1)"/></g>`).join('');
+}
+function horns(p, C) {
+  const P = C.pal;
+  const d = 'M10,-16 C-8,-24 -27,-12 -26,6 C-25,20 -10,24 -4,15 C1,8 -4,0 -10,3';
+  const horn = (x, y, m) => `<g transform="translate(${x} ${y}) scale(${m} 1)">
+    <path d="${d}" fill="none" stroke="${P.ao}" stroke-width="15" stroke-linecap="round" opacity="0.25" filter="url(#${p}b3)" transform="translate(1 3)"/>
+    <path d="${d}" fill="none" stroke="url(#${p}horn)" stroke-width="14" stroke-linecap="round"/>
+    <path d="${d}" fill="none" stroke="${P.hornSh}" stroke-width="14" stroke-linecap="butt" stroke-dasharray="1.6 5" opacity="0.35"/>
+    <path d="M4,-19 C-10,-22 -22,-14 -24,-2" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.65" filter="url(#${p}b1)"/></g>`;
+  return horn(46, 146, 1) + horn(254, 146, -1);
+}
+function hooves(p, C) {
+  return [120, 180].map(x => `<g><ellipse cx="${x}" cy="273" rx="16" ry="9" fill="url(#${p}hoof)"/>
+     <ellipse cx="${x - 4}" cy="269" rx="6" ry="2.4" fill="#fff" opacity="0.35"/></g>`).join('');
+}
+function woolPuffs(p, C) {
+  const pts = C.pts, n = pts.length, [cx, cy] = C.center;
+  let hi = '', lo = '';
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    const ch = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const vx = cx - mx, vy = cy - my, vl = Math.hypot(vx, vy);
+    const k = 6; // pull inward
+    const x = mx + vx / vl * k - 3, y = my + vy / vl * k - 4;
+    if (my < cy + 70) hi += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(ch * 0.36)}" ry="${f(ch * 0.26)}" fill="#fff" opacity="${my < cy ? 0.75 : 0.45}" filter="url(#${p}b3)"/>`;
+    // valley shadow between puffs
+    const vx2 = cx - a[0], vy2 = cy - a[1], vl2 = Math.hypot(vx2, vy2);
+    lo += `<ellipse cx="${f(a[0] + vx2 / vl2 * 9)}" cy="${f(a[1] + vy2 / vl2 * 9)}" rx="5" ry="9" transform="rotate(${f(Math.atan2(vy2, vx2) * 180 / Math.PI + 90)} ${f(a[0] + vx2 / vl2 * 9)} ${f(a[1] + vy2 / vl2 * 9)})" fill="${C.pal.sh}" opacity="0.35" filter="url(#${p}b3)"/>`;
+  }
+  return lo + hi;
+}
+function tuft(p, C, y0 = 92) {
+  const fea = (rot, len, w) => `<g transform="translate(150 ${y0}) rotate(${rot})">
+    <path d="M0,4 C${-w},-${len * 0.35} ${-w * 0.6},-${len * 0.85} 0,-${len} C${w * 0.6},-${len * 0.85} ${w},-${len * 0.35} 0,4Z" fill="url(#${p}tuft)"/>
+    <path d="M${-w * 0.25},-${len * 0.3} Q${-w * 0.35},-${len * 0.7} 0,-${len * 0.9}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.55"/></g>`;
+  return fea(-30, 30, 9) + fea(28, 30, 9) + fea(-2, 40, 11);
+}
+function wings(p, C) {
+  const w = (m) => `<g transform="translate(150 0) scale(${m} 1) translate(-150 0)">
+    <path d="M50,176 C30,190 20,222 28,246 C34,250 44,242 52,230 C62,214 66,194 60,178 C57,172 54,172 50,176Z" fill="url(#${p}wing)"/>
+    <path d="M44,196 C38,210 36,224 38,236" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity="0.28" filter="url(#${p}b1)"/></g>`;
+  return w(1) + w(-1);
+}
+function birdFeet(p, C) {
+  const P = C.pal;
+  return [130, 170].map(x => `<g fill="${P.feet}">
+    <ellipse cx="${x - 7}" cy="276" rx="4" ry="6" transform="rotate(20 ${x - 7} 276)"/>
+    <ellipse cx="${x}" cy="277" rx="4" ry="6.5"/>
+    <ellipse cx="${x + 7}" cy="276" rx="4" ry="6" transform="rotate(-20 ${x + 7} 276)"/></g>`).join('');
+}
+
+/* ---------- little-devil hood outfit ---------- */
+function devilTail(p) {
+  return `<g>
+    <path d="M226,250 C262,258 286,238 278,206" fill="none" stroke="#1E1825" stroke-width="7.5" stroke-linecap="round"/>
+    <path d="M226,250 C262,258 286,238 278,206" fill="none" stroke="#5B5068" stroke-width="2" stroke-linecap="round" opacity="0.6" transform="translate(-1.5 -2)"/>
+    <g transform="translate(277 196) rotate(-12)">
+      <path d="M0,8 C-4,3 -14,-2 -12,-9 C-10,-15 -3,-14 0,-9 C3,-14 10,-15 12,-9 C14,-2 4,3 0,8Z" fill="url(#${p}pink)"/>
+      <ellipse cx="-6" cy="-8" rx="3" ry="2" fill="#fff" opacity="0.7"/></g>
+  </g>`;
+}
+function hoodEars(p) {
+  const ear = `<path d="M90,126 C74,108 62,90 56,70 C53,60 47,52 37,49 C34,48 34,44 38,43 C50,40 62,44 70,52 C88,68 112,82 134,102 Z" fill="url(#${p}hear)"/>
+     <path d="M96,116 C84,102 74,88 67,68 C82,78 104,90 122,104 Z" fill="url(#${p}pink)" opacity="0.95"/>
+     <path d="M44,46 C54,48 60,56 62,64" fill="none" stroke="#8C7C9C" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`;
+  return `<g>${ear}</g>
+          <g transform="translate(300 0) scale(-1 1) rotate(-10 110 112)">${ear}</g>`;
+}
+function emblem(p, y) {
+  const wing = `<path d="M-11,-2 C-18,-10 -28,-10 -33,-4 C-29,-4 -27,-1 -27,2 C-23,0 -20,2 -20,5 C-17,3 -13,4 -12,7 Z" fill="url(#${p}pink)"/>`;
+  return `<g transform="translate(150 ${y})">
+    ${wing}<g transform="scale(-1 1)">${wing}</g>
+    <path d="M0,12 C-6,7 -14,2 -13,-5 C-12,-11 -4,-12 0,-6 C4,-12 12,-11 13,-5 C14,2 6,7 0,12Z" fill="url(#${p}pink)"/>
+    <ellipse cx="-6" cy="-5" rx="3.6" ry="2.4" transform="rotate(-25 -6 -5)" fill="#fff" opacity="0.8"/>
+  </g>`;
+}
+function hood(p, C) {
+  const H = C.hood, [cx, cy] = C.center;
+  const [fx, fy, frx, fry] = H.face, [kx, ky, krx, kry] = H.clip;
+  const tr = `translate(${cx} ${cy}) scale(${H.s}) translate(${-cx} ${-cy})`;
+  const HP = C.hoodPath || C.path;
+  return `<defs>
+      <mask id="${p}hm" maskUnits="userSpaceOnUse" x="-20" y="-20" width="340" height="340">
+        <rect x="-20" y="-20" width="340" height="340" fill="#fff"/>
+        <ellipse cx="${fx}" cy="${fy}" rx="${frx}" ry="${fry}" fill="#000"/>
+      </mask>
+      <clipPath id="${p}hc"><ellipse cx="${kx}" cy="${ky}" rx="${krx}" ry="${kry}"/></clipPath>
+      <clipPath id="${p}hs"><path d="${HP}" transform="${tr}"/></clipPath>
+    </defs>
+    <!-- shadow the hood casts onto the body -->
+    <g clip-path="url(#${p}clip)" opacity="0.35">
+      <g mask="url(#${p}hm)"><g clip-path="url(#${p}hc)" transform="translate(0 5)">
+        <path d="${HP}" transform="${tr}" fill="${C.pal.ao}" filter="url(#${p}b3)"/></g></g>
+    </g>
+    <g mask="url(#${p}hm)"><g clip-path="url(#${p}hc)">
+      <path d="${HP}" transform="${tr}" fill="url(#${p}hood)"/>
+      <g clip-path="url(#${p}hs)">
+        <rect width="300" height="300" filter="url(#${p}fuzz)" opacity="0.08"/>
+        <g mask="url(#${p}rimm)"><path d="${HP}" transform="${tr}" fill="none" stroke="#B9A8D8" stroke-width="10" opacity="0.7" filter="url(#${p}b3)"/></g>
+        <ellipse cx="108" cy="108" rx="40" ry="18" transform="rotate(-30 108 108)" fill="#fff" opacity="0.16" filter="url(#${p}b6)"/>
+      </g>
+    </g></g>
+    <!-- pink piping around the face opening -->
+    <g clip-path="url(#${p}hc)"><g clip-path="url(#${p}hs)">
+      <ellipse cx="${fx}" cy="${fy}" rx="${frx + 3}" ry="${fry + 3}" fill="none" stroke="url(#${p}pink)" stroke-width="7"/>
+      <ellipse cx="${fx}" cy="${fy - 1.5}" rx="${frx + 3}" ry="${fry + 3}" fill="none" stroke="#FFD3E6" stroke-width="1.8" opacity="0.8"/>
+    </g></g>
+    ${emblem(p, H.emblemY)}`;
+}
+
+/* ---------- compose a figure ---------- */
+function figure(C, { expr = 'default', outfit = false, prop = false, bg = true } = {}) {
+  const p = 'u' + (++UID) + '_';
+  const P = C.pal;
+  const tilt = expr === 'listen' ? `rotate(-7 150 268)` : '';
+  let s = defs(p, C, outfit);
+  if (bg) s += `<rect width="300" height="300" fill="${C.bgTint}"/>`;
+  s += shadow(p, C);
+  if (outfit) s += devilTail(p);
+  // feet stay planted even when the body tilts
+  if (C.key === 'cloud') s += hooves(p, C);
+  if (C.key === 'bird') s += birdFeet(p, C);
+  s += `<g transform="${tilt}">`;
+  if (outfit) s += hoodEars(p);
+  if (C.key === 'mochi' && !outfit) s += bearEars(p, C);
+  if (C.key === 'bird' && !outfit) s += tuft(p, C, 92);
+  // body
+  s += `<path d="${C.path}" fill="url(#${p}g)"/>`;
+  if (C.key === 'bird') s += `<g clip-path="url(#${p}clip)"><ellipse cx="150" cy="238" rx="92" ry="62" fill="url(#${p}belly)"/></g>`;
+  s += plushShade(p, C.path, p + 'clip', P, C.key === 'cloud' ? { felt: 0.1, fuzz: 0.18, so: 0.3 } : {});
+  if (C.key === 'cloud') s += `<g clip-path="url(#${p}clip)">${woolPuffs(p, C)}</g>`;
+  if (C.key === 'cloud' && !outfit) s += horns(p, C);
+  s += `</g>`;
+  if (C.key === 'mochi') s += bearFeet(p, C);
+  s += `<g transform="${tilt}">`;
+  s += face(p, C, expr);
+  if (outfit) s += hood(p, C);
+  if (C.key === 'bird') {
+    s += wings(p, C);
+    if (outfit) s += tuft(p, C, 82);
+    if (prop) s += envelope(p, 150, 222, 50, 33, -6) + beak(p, C);
+  } else {
+    if (prop) s += envelope(p, 150, 238, 62, 42, -5) + paws(p, C, C.paws.env);
+    else s += paws(p, C, C.paws.rest);
+  }
+  s += `</g>`;
+  if (expr === 'happy') s += sparkles(C.accent);
+  if (expr === 'listen') s += waves(C.accent);
+  if (expr === 'sleepy') s += zzz(C.accent);
+  return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" role="img">${s}</svg>`;
+}
+
+/* ---------- page ---------- */
+const tints = { mochi: '#FFF7EE', cloud: '#F5F3FF', bird: '#EFF7FF' };
+CONCEPTS.forEach(C => C.bgTint = tints[C.key]);
+
+document.getElementById('lineup').innerHTML = CONCEPTS.map(C => `
+  <div class="lu-cell">
+    <div class="pair"><div class="sil">${figure(C, { bg: false })}</div><div>${figure(C, { bg: false })}</div></div>
+    <div class="cap"><span class="chip n${C.num}">${C.num}</span>${C.name}</div>
+  </div>`).join('');
+
+document.getElementById('concepts').innerHTML = CONCEPTS.map(C => `
+<section class="concept" id="c${C.num}" style="--accent:${C.accent}">
+  <div class="c-head">
+    <div class="bignum" style="background:${C.accent}">${C.num}</div>
+    <div><h2>${C.name}<small>${C.en}・${C.species}</small></h2><p class="tag">${C.tagline}</p></div>
+  </div>
+  <div class="hero">
+    <div class="card" id="c${C.num}-a"><div class="stage">${figure(C, { prop: true })}</div><div class="lbl"><b>(a) 本尊</b><span>帶著要送的信</span></div></div>
+    <div class="card" id="c${C.num}-b"><div class="stage">${figure(C, { outfit: true })}</div><div class="lbl"><b>(b) 小惡魔連帽裝</b><span>帽子・帽耳・徽章・尾巴</span></div></div>
+  </div>
+  <div class="exprs" id="c${C.num}-c">
+    <div class="card"><div class="stage">${figure(C, { expr: 'happy' })}</div><div class="lbl"><b>開心</b><span>收到回信時</span></div></div>
+    <div class="card"><div class="stage">${figure(C, { expr: 'listen' })}</div><div class="lbl"><b>專心聽</b><span>孩子說話時</span></div></div>
+    <div class="card"><div class="stage">${figure(C, { expr: 'sleepy', outfit: false })}</div><div class="lbl"><b>害羞想睡</b><span>待機／晚安</span></div></div>
+  </div>
+  <div class="info">
+    <div class="panel">
+      <h3>角色設定</h3>
+      <dl class="facts">
+        <dt>個性</dt><dd>${C.tagline}</dd>
+        <dt>剪影特徵</dt><dd>${C.signature}</dd>
+        <dt>比例</dt><dd>${C.ratio}</dd>
+        <dt>眼睛位置</dt><dd>${C.eyes}</dd>
+        <dt>配色</dt><dd><div class="swatches">${C.palette.map(([h, n]) => `<div class="sw"><i style="background:${h}"></i><span>${h}<em>${n}</em></span></div>`).join('')}</div></dd>
+        <dt>孩子為什麼愛</dt><dd><ul class="notes" style="margin:0;padding-left:16px">${C.why.map(w => `<li>${w}</li>`).join('')}</ul></dd>
+      </dl>
+    </div>
+    <div class="panel">
+      <h3>3D 轉換規格（Three.js）</h3>
+      <p style="margin:0 0 8px;font-size:13px;color:var(--muted)">單位：角色全高 = 1.0，原點在腳底中心，正面朝 +z。</p>
+      <div class="tablewrap"><table class="parts">
+        <tr><th>部件</th><th>做法與尺寸</th><th>顏色</th><th>獨立／合併</th></tr>
+        ${C.parts.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td><code>${r[2]}</code></td><td>${r[3]}</td></tr>`).join('')}
+      </table></div>
+      <ul class="notes">
+        <li><b>穿搭疊法：</b>${C.hoodSpec}</li>
+        <li><b>帽耳：</b>彎曲的錐形（ConeGeometry 沿貝茲曲線彎 35°），長 0.36、根部半徑 0.1，正面嵌一片粉紅內耳（同形縮 70%、前移 0.01）；右耳多往下轉 13°。</li>
+        <li><b>徽章：</b>蝙蝠愛心 <code>ExtrudeGeometry</code> 厚 0.02、bevel 0.008，貼帽子額頭。<b>尾巴：</b><code>TubeGeometry</code> 管徑 0.025，尾端愛心同徽章做法。</li>
+        <li><b>帽子材質：</b>#2A2330 絨布感 <code>sheen=1, sheenColor=#B9A8D8</code>；臉洞滾邊用 <code>TorusGeometry</code> 壓扁成橢圓，#FF6FAE。</li>
+      </ul>
+    </div>
+  </div>
+</section>`).join('');
+
+document.getElementById('rec').innerHTML = `
+  <p style="margin:0 0 8px"><b>我推薦 <span class="chip n3" style="vertical-align:middle">3</span> 啾啾。</b>「小鳥叼信飛去找爸媽、再飛回來唸給你聽」——角色本身就是產品功能的故事，孩子不需要任何解釋就懂它在做什麼；頭頂呆毛穿過帽子中央也讓它的小惡魔裝最有辨識度，3D 版的呆毛擺動、翅膀拍動也是最便宜又最有生命感的待機動畫。</p>
+  <p style="margin:0;color:#5d4b45">如果更想要「抱抱、安心」的感覺，<span class="chip n1" style="vertical-align:middle;width:22px;height:22px;font-size:12px">1</span> 嚕嚕是最安全的選擇，零件最少、3D 最好做；<span class="chip n2" style="vertical-align:middle;width:22px;height:22px;font-size:12px">2</span> 綿綿最夢幻，但雲朵邊在 3D 要多花功夫處理接縫。</p>`;
+</script>
+</body>
+</html>

@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.battle-top-score]
 verify_jwt = false
+
+[functions.secret-base]
+verify_jwt = false
