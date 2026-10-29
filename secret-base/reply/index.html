@@ -58,6 +58,19 @@
   header h1 { margin: 0; font-size: 18px; font-weight: 800; }
   header p { margin: 0; font-size: 12px; color: var(--muted); }
 
+  /* 孩子分頁：虎妞／屁孩，各自一條對話線；有新的悄悄話會亮小紅點 */
+  .kid-tabs { display: flex; gap: 8px; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .kid-tab { position: relative; flex: 1; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 9px 12px;
+    font-weight: 800; font-size: 15px; cursor: pointer; transition: background-color var(--duration-fast) var(--ease-smooth-out), color var(--duration-fast) var(--ease-smooth-out); }
+  .kid-tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .kid-tab .dot { position: absolute; top: 6px; right: 12px; width: 9px; height: 9px; border-radius: 50%; background: var(--danger);
+    transform: scale(0); transition: transform var(--duration-slow) cubic-bezier(0.34, 1.36, 0.64, 1); }
+  .kid-tab.has-new .dot { transform: scale(1); }
+  .both { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+  .both input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+  .both:has(input:checked) { color: var(--ink); font-weight: 700; }
+  .to-line { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--muted); }
+
   .thread { flex: 1; padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 14px; }
   .empty { margin: 40px auto; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.7; }
   .msg { max-width: 86%; display: flex; flex-direction: column; gap: 6px; animation: msg-in var(--duration-slow) var(--ease-smooth-out) both; }
@@ -213,7 +226,7 @@
     <span class="bear" aria-hidden="true">🐰</span>
     <div>
       <h1>秘密基地</h1>
-      <p id="status">小信差嚕嚕會把你的話念給孩子聽</p>
+      <p id="status">小信差會把你的話念給孩子聽</p>
     </div>
   </header>
 
@@ -229,6 +242,7 @@
     </form>
   </section>
 
+  <nav class="kid-tabs" id="kid-tabs" role="tablist" hidden></nav>
   <main class="thread" id="thread" hidden></main>
 
   <footer class="composer" id="composer" hidden>
@@ -244,11 +258,15 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
       </button>
     </div>
+    <div class="to-line">
+      <span id="to-label">回給虎妞</span>
+      <label class="both"><input type="checkbox" id="both"> 兩個都聽</label>
+    </div>
     <div class="row">
       <button class="icon-btn" id="rec-btn" type="button" aria-label="錄自己的聲音">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
       </button>
-      <textarea id="text" rows="1" placeholder="打字，嚕嚕會用你的聲音念"></textarea>
+      <textarea id="text" rows="1" placeholder="打字，會用你的聲音念給孩子聽"></textarea>
       <button class="icon-btn primary" id="send" type="button" aria-label="送出" disabled>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>
       </button>
@@ -272,6 +290,11 @@ const focusId = new URLSearchParams(location.hash.slice(1)).get("m");
 const demo = new URLSearchParams(location.search).has("demo");
 let parentKey = store.get(KEY_STORE);
 let messages = [];
+let kids = demo ? [{ id: "huniu", name: "虎妞" }, { id: "pihai", name: "屁孩" }] : [];
+let activeKid = null;
+const SEEN_STORE = "secret-base-parent-seen-v1"; // 每個孩子最後看過的悄悄話時間，用來亮小紅點
+const seen = (() => { try { return JSON.parse(store.get(SEEN_STORE) || "{}"); } catch { return {}; } })();
+const kidName = id => (kids.find(k => k.id === id) || {}).name || "孩子";
 let recorder = null, recChunks = [], recBlob = null, recStartedAt = 0, recTick = 0;
 let sending = false;
 let pollTimer = 0;
@@ -283,7 +306,7 @@ const ms = (name, fb) => { const v = parseFloat(cs.getPropertyValue(name)); retu
 // ---------- 登入 ----------
 function showGate() {
   $("gate").hidden = false;
-  $("thread").hidden = $("composer").hidden = true;
+  $("thread").hidden = $("composer").hidden = $("kid-tabs").hidden = true;
   $("gate-key").focus();
 }
 function showError() {
@@ -319,6 +342,7 @@ $("gate-form").addEventListener("submit", async event => {
 function enter() {
   $("gate").hidden = true;
   $("thread").hidden = $("composer").hidden = false;
+  pickKid();
   render();
   clearInterval(pollTimer);
   pollTimer = setInterval(() => document.visibilityState === "visible" && load().then(ok => ok && render()), POLL_MS);
@@ -331,8 +355,10 @@ async function load() {
     const res = await fetch(`${ENDPOINT}/parent/thread`, { headers: { "x-base-key": parentKey } });
     if (res.status === 401) return false;
     if (!res.ok) throw new Error(`thread ${res.status}`);
-    messages = (await res.json()).messages;
-    $("status").textContent = "小信差嚕嚕會把你的話念給孩子聽";
+    const data = await res.json();
+    messages = data.messages;
+    kids = data.kids || [];
+    $("status").textContent = "小信差會把你的話念給孩子聽";
     return true;
   } catch (error) {
     console.warn(error);
@@ -342,16 +368,69 @@ async function load() {
 }
 
 const timeFmt = new Intl.DateTimeFormat("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+// ---------- 孩子分頁 ----------
+// 先開 Discord 連結指到的那則；不然開最近有說話的孩子
+function pickKid() {
+  if (activeKid && kids.some(k => k.id === activeKid)) return;
+  const focused = focusId && messages.find(m => m.id === focusId);
+  const lastKid = [...messages].reverse().find(m => m.sender === "kid" && m.kid);
+  activeKid = focused?.kid || lastKid?.kid || kids[0]?.id || null;
+}
+function renderTabs() {
+  const nav = $("kid-tabs");
+  nav.hidden = kids.length < 2;
+  if (nav.hidden) return;
+  if (nav.children.length !== kids.length) {
+    nav.innerHTML = "";
+    kids.forEach(k => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "kid-tab";
+      b.setAttribute("role", "tab");
+      b.dataset.kid = k.id;
+      b.innerHTML = `<span></span><i class="dot" aria-hidden="true"></i>`;
+      b.firstChild.textContent = k.name;
+      b.addEventListener("click", () => switchKid(k.id));
+      nav.append(b);
+    });
+  }
+  [...nav.children].forEach(b => {
+    const id = b.dataset.kid;
+    b.setAttribute("aria-selected", String(id === activeKid));
+    const latest = [...messages].reverse().find(m => m.sender === "kid" && m.kid === id);
+    b.classList.toggle("has-new", id !== activeKid && !!latest && latest.created_at > (seen[id] || ""));
+  });
+}
+function switchKid(id) {
+  if (id === activeKid) return;
+  activeKid = id;
+  $("thread").innerHTML = "";
+  rendered.clear();
+  render();
+  scrollTo({ top: document.body.scrollHeight });
+}
+function markSeen() {
+  const latest = [...messages].reverse().find(m => m.sender === "kid" && m.kid === activeKid);
+  if (latest && latest.created_at > (seen[activeKid] || "")) { seen[activeKid] = latest.created_at; store.set(SEEN_STORE, JSON.stringify(seen)); }
+}
+
 function render() {
+  pickKid();
+  renderTabs();
+  const name = kidName(activeKid);
+  $("to-label").textContent = $("both").checked ? "回給兩個人" : `回給${name}`;
+  text.placeholder = `打字，會用你的聲音念給${$("both").checked ? "兩個人" : name}聽`;
   const thread = $("thread");
-  if (!messages.length) {
-    thread.innerHTML = '<p class="empty">還沒有悄悄話。<br>孩子按住嚕嚕說話後，Discord 會通知你。</p>';
+  const list = kids.length > 1 ? messages.filter(m => m.kid === activeKid) : messages;
+  if (!list.length) {
+    thread.innerHTML = `<p class="empty">還沒有${name}的悄悄話。<br>${name}在秘密基地說話後，Discord 會通知你。</p>`;
     rendered.clear();
     return;
   }
   thread.querySelector(".empty")?.remove();
+  markSeen();
   let added = false;
-  for (const m of messages) {
+  for (const m of list) {
     const existing = rendered.get(m.id);
     if (existing) { updateMeta(existing, m); continue; }
     const el = document.createElement("article");
@@ -397,12 +476,12 @@ function updateMeta(el, m) {
   const meta = el.querySelector(".meta");
   const parts = [timeFmt.format(new Date(m.created_at))];
   if (m.sender === "parent") {
-    parts.push(m.audio_kind === "tts" ? "嚕嚕用你的聲音念" : "你的錄音");
+    parts.push(m.audio_kind === "tts" ? "用你的聲音念" : "你的錄音");
     meta.innerHTML = "";
     meta.append(parts.join(" · "));
     const heard = document.createElement("span");
     heard.className = m.heard_at ? "heard" : "";
-    heard.textContent = m.heard_at ? "孩子聽到了 ✓" : "還沒聽";
+    heard.textContent = m.heard_at ? `${kidName(m.kid)}聽到了 ✓` : "還沒聽";
     meta.append(heard);
   } else {
     meta.textContent = parts.join(" · ");
@@ -419,6 +498,7 @@ text.addEventListener("input", () => {
   text.style.height = Math.min(text.scrollHeight, 160) + "px";
   refreshSend();
 });
+$("both").addEventListener("change", render);
 $("chips").addEventListener("click", event => {
   const chip = event.target.closest(".chip");
   if (!chip) return;
@@ -472,18 +552,20 @@ $("send").addEventListener("click", async () => {
   sending = true;
   refreshSend();
   const hint = $("hint-line");
-  const label = recBlob ? "送出中…" : "嚕嚕正在學你的聲音…";
+  const label = recBlob ? "送出中…" : "正在用你的聲音念…";
   hint.innerHTML = `<span class="t-shimmer" data-text="${label}">${label}</span>`;
   if (demo) {
     const id = `parent-${Date.now()}`;
     await new Promise(r => setTimeout(r, recBlob ? 300 : 900));
-    messages.push({ id, sender: "parent", body: body || null, audio_kind: recBlob ? "recording" : "tts",
-      audio_url: recBlob ? URL.createObjectURL(recBlob) : null, heard_at: null, created_at: new Date().toISOString() });
+    const targets = $("both").checked ? kids.map(k => k.id) : [activeKid];
+    targets.forEach((kid, i) => messages.push({ id: i ? `${id}-${kid}` : id, sender: "parent", kid, body: body || null, audio_kind: recBlob ? "recording" : "tts",
+      audio_url: recBlob ? URL.createObjectURL(recBlob) : null, heard_at: null, created_at: new Date().toISOString() }));
     demoChannel.postMessage({ type: "parent", id, text: body, blob: recBlob });
     text.value = "";
     text.style.height = "";
     $("rec-discard").click();
-    toast(baseOpen ? "送出了，嚕嚕正把信送去基地 ✉️" : "送出了（但孩子頁沒開，打開 /secret-base/?demo 才收得到）");
+    toast(baseOpen ? "送出了，小信差正把信送去基地 ✉️" : "送出了（但孩子頁沒開，打開 /secret-base/?demo 才收得到）");
+    $("both").checked = false;
     render();
     sending = false;
     hint.innerHTML = '<span class="rec-timer" id="rec-timer">0:00</span>';
@@ -493,15 +575,17 @@ $("send").addEventListener("click", async () => {
   const form = new FormData();
   if (body) form.append("text", body);
   if (recBlob) form.append("audio", recBlob, `parent.${recBlob.type.includes("mp4") ? "m4a" : "webm"}`);
-  const lastKid = [...messages].reverse().find(m => m.sender === "kid");
-  if (focusId || lastKid) form.append("reply_to", focusId || lastKid.id);
+  form.append("to", $("both").checked ? "both" : activeKid);
+  const lastKid = [...messages].reverse().find(m => m.sender === "kid" && m.kid === activeKid);
+  if (lastKid) form.append("reply_to", lastKid.id);
   try {
     const res = await fetch(`${ENDPOINT}/parent/reply`, { method: "POST", headers: { "x-base-key": parentKey }, body: form });
     if (!res.ok) throw new Error(`reply ${res.status}`);
     text.value = "";
     text.style.height = "";
     $("rec-discard").click();
-    toast("送出了，嚕嚕正把信送去基地 ✉️");
+    toast($("both").checked ? "送出了，兩個人都會收到 ✉️" : `送出了，小信差正把信送去給${kidName(activeKid)} ✉️`);
+    $("both").checked = false;
     await load();
     render();
   } catch (error) {
@@ -530,9 +614,9 @@ demoChannel?.addEventListener("message", ({ data }) => {
   if (data.type === "base-here") { baseOpen = true; $("status").textContent = "示範模式 · 已連上孩子頁"; }
   if (data.type === "kid") {
     baseOpen = true;
-    messages.push({ id: data.id, sender: "kid", body: null, audio_url: URL.createObjectURL(data.blob), created_at: data.at });
+    messages.push({ id: data.id, sender: "kid", kid: "huniu", body: null, audio_url: URL.createObjectURL(data.blob), created_at: data.at });
     render();
-    toast("🐰 孩子在秘密基地說話了");
+    toast("🐰 虎妞在秘密基地說話了（示範模式的孩子頁算虎妞）");
   }
   if (data.type === "heard") {
     const m = messages.find(x => x.id === data.id);
