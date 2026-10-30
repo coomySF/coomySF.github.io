@@ -1,4 +1,4 @@
-// 留下來的光——3D 群島短片（specs/006-about-film）
+// 留下來的光——3D 群島短片（specs/006-light-film）
 // 角色與造型沿用 AllWill 官網（specformula.github.io/allwill）：Coomy、水球、船員、Agent 寵物、AllWill 號。
 // 每一段劇情是一座島；畫面全由捲動進度 P 決定（可 seek），環境動態（海浪、眨眼、燭火）另用時間 t。
 import * as THREE from 'three';
