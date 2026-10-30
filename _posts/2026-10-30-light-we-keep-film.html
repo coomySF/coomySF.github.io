@@ -1,0 +1,143 @@
+---
+layout: film
+title: 留下來的光
+description: 十個里程碑，一部 3D 短片：寫介面、帶人與 AI 的團隊，後來和水球一起，把一艘船開出了港。它也是這個部落格新的開始——2027 年 3 月，我們要去矽谷創業。
+date: 2026-10-30 12:00:00 +0800
+tags: [我們的日子, 動畫實驗室, AllWill]
+seo:
+  type: BlogPosting
+---
+<style>
+  /* AllWill 群島語域：低多邊形 3D 島、紙質劇情卡、青綠 accent（specs/006-about-film） */
+  html.ab-film {
+    --ab-bg: #0c1628; --ab-ink: #f4f1ea; --ab-ink2: #c8cfda; --ab-muted: #8c97a8;
+    --ab-line: rgba(220, 230, 245, .13); --ab-teal: #3fe0cc; --ab-gold: #ffd36b;
+    --ab-paper: rgba(255, 252, 246, .93); --ab-card-ink: #222a36; --ab-card-muted: #66707e;
+    --ab-ease: cubic-bezier(.22, 1, .36, 1);
+  }
+  html.ab-film body { background: var(--ab-bg); color: var(--ab-ink); }
+  html.ab-film .paper-noise { opacity: .04; mix-blend-mode: screen; }
+  html.ab-film .site-header, html.ab-film .site-footer { border-color: var(--ab-line); }
+  html.ab-film .site-header a { color: var(--ab-ink); }
+  html.ab-film .site-footer { color: var(--ab-muted); }
+
+  html.ab-film .film-post-head h1 { color: var(--ab-ink); font-family: "Noto Serif TC", serif; text-shadow: 0 0 40px rgba(63, 224, 204, .18); }
+  html.ab-film .film-post-deck { color: var(--ab-ink2); }
+  html.ab-film .film-post-meta, html.ab-film .film-post-back { color: var(--ab-muted); }
+  html.ab-film .film-post-meta span { white-space: nowrap; }
+  html.ab-film .film-post-end a { color: var(--ab-ink); border-color: var(--ab-line); }
+  html.ab-film .film-post-end a:hover { border-color: var(--ab-teal); background: rgba(63, 224, 204, .08); }
+  .ab-controls { display: flex; justify-content: center; margin: 8px 0 54px; }
+  .ab-play {
+    cursor: pointer; border: 0; background: var(--ab-teal); color: #0c1628; border-radius: 999px; padding: 14px 30px;
+    font: 800 14px "Noto Sans TC", system-ui, sans-serif; letter-spacing: .12em; box-shadow: 0 8px 30px rgba(63, 224, 204, .3);
+    transition: transform .2s var(--ab-ease), box-shadow .2s ease;
+  }
+  .ab-play:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(63, 224, 204, .42); }
+  .ab-play:active { transform: scale(.97); }
+
+  /* 片長 = 停留總和 25.6 viewport + 1 個進場 viewport */
+  #ab-film { position: relative; margin: 0 calc(50% - 50vw); width: 100vw; height: 2660vh; }
+  .ab-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #0b1a33; }
+  #ab-canvas, #ab-labels { position: absolute; inset: 0; }
+  #ab-canvas canvas { display: block; width: 100%; height: 100%; }
+  #ab-labels { pointer-events: none; overflow: hidden; }
+  .ab-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 58%, rgba(8, 14, 26, .38) 100%); }
+
+  /* 3D 場景裡的名牌與對話泡泡（跟 AllWill 官網同一套） */
+  .ab-tag { font: 800 12px "Noto Sans TC", system-ui, sans-serif; color: #fff; background: #1c2430; padding: 3px 10px; border-radius: 999px; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.18); opacity: 0; transition: opacity .35s var(--ab-ease); }
+  .ab-tag.isl { background: rgba(255, 252, 246, .92); color: #222a36; display: inline-flex; gap: 6px; align-items: center; }
+  .ab-tag.isl i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .ab-say { position: relative; max-width: 210px; width: max-content; white-space: normal; font: 800 13px/1.45 "Noto Sans TC", system-ui, sans-serif; background: #fff; color: #222a36; padding: 7px 12px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,.18); opacity: 0; transform: translateY(6px) scale(.85); transition: opacity .3s var(--ab-ease), transform .35s cubic-bezier(.34, 1.36, .64, 1); }
+  .ab-say::after { content: ""; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-top-color: #fff; border-bottom: 0; }
+  .ab-say.big { font-size: 15px; max-width: 260px; padding: 9px 14px; }
+  .ab-say.dark { background: #1c2430; color: var(--ab-gold); }
+  .ab-say.dark::after { border-top-color: #1c2430; }
+  .ab-say.mark { font-size: 20px; padding: 3px 11px; }
+  .ab-heart { font-size: 26px; color: #ff4f86; text-shadow: 0 2px 10px rgba(255, 79, 134, .5); opacity: 0; transition: opacity .4s var(--ab-ease); }
+  .on { opacity: 1 !important; transform: none !important; }
+
+  /* 左上片名與右上進度 */
+  .ab-corner { position: absolute; left: 18px; top: max(16px, env(safe-area-inset-top)); pointer-events: none; }
+  .ab-corner small { display: inline-block; font: 800 11px "Noto Sans TC", system-ui, sans-serif; letter-spacing: .1em; color: var(--ab-teal); background: rgba(12, 22, 40, .55); padding: 3px 9px; border-radius: 999px; }
+  .ab-corner b { display: block; margin-top: 6px; font: 900 clamp(18px, 2.4vw, 26px)/1.2 "Noto Serif TC", serif; color: #fff; text-shadow: 0 2px 16px rgba(0,0,0,.45); }
+  .ab-dots { position: absolute; right: 18px; top: max(20px, env(safe-area-inset-top)); display: flex; gap: 5px; pointer-events: none; }
+  .ab-dots i { width: 18px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.22); transition: background .4s ease; }
+  .ab-dots i.done { background: rgba(63, 224, 204, .55); }
+  .ab-dots i.now { background: var(--ab-teal); }
+
+  /* 劇情卡：AllWill 官網的紙卡 */
+  .ab-card {
+    position: absolute; left: 14px; right: 14px; bottom: max(16px, env(safe-area-inset-bottom)); margin: 0 auto; max-width: 560px;
+    background: var(--ab-paper); color: var(--ab-card-ink); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px; padding: 14px 18px 14px 22px; box-shadow: 0 14px 36px rgba(0, 0, 0, .28); overflow: hidden;
+    opacity: 0; transform: translateY(14px); transition: opacity .45s var(--ab-ease), transform .5s var(--ab-ease); pointer-events: none;
+  }
+  .ab-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--bar, #1f8f87); }
+  .ab-card .top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .ab-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px; border-radius: 999px; background: #fff; border: 1px solid rgba(34, 42, 54, .1); font: 800 12px "Noto Sans TC", system-ui, sans-serif; }
+  .ab-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .ab-card .count { margin-left: auto; font: 700 12px var(--mono); color: var(--ab-card-muted); }
+  .ab-card .big { margin-top: 8px; font: 900 clamp(19px, 2.2vw, 24px)/1.4 "Noto Serif TC", serif; }
+  .ab-card .small { margin-top: 4px; font: 500 14px/1.7 "Noto Sans TC", system-ui, sans-serif; color: var(--ab-card-muted); }
+  .ab-card.swap .big, .ab-card.swap .small { animation: ab-rise .5s var(--ab-ease); }
+  @keyframes ab-rise { from { opacity: 0; transform: translateY(8px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+
+  /* 靜態版：reduced-motion 時九段直接堆疊、內容一個不少 */
+  .ab-static-list { display: none; list-style: none; margin: 0 auto; padding: 0 24px; max-width: 760px; }
+  html.ab-static .ab-static-list { display: block; }
+  html.ab-static #ab-film { height: auto; margin: 0; width: auto; }
+  html.ab-static .ab-stage, html.ab-static .ab-controls { display: none; }
+  .ab-beat-static { padding: 40px 0; border-bottom: 1px solid var(--ab-line); }
+  .ab-beat-static .ab-snum { font: 500 11px var(--mono); letter-spacing: .3em; color: var(--ab-teal); margin: 0 0 12px; }
+  .ab-beat-static .ab-skey { font: 900 clamp(26px, 4vw, 40px)/1.3 "Noto Serif TC", serif; color: var(--ab-ink); margin: 0 0 12px; }
+  .ab-beat-static .ab-scap { font-family: var(--serif); font-size: 17px; line-height: 1.95; color: var(--ab-ink2); margin: 0; }
+
+  @media (max-width: 640px) {
+    .ab-card { padding: 12px 14px 12px 18px; }
+    .ab-card .small { font-size: 13px; }
+    .ab-dots i { width: 10px; }
+    .ab-say { font-size: 12px; max-width: 160px; }
+    .ab-say.big { font-size: 13px; max-width: 190px; }
+    .ab-tag { font-size: 11px; }
+  }
+</style>
+<script>
+  document.documentElement.classList.add('ab-film');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('ab-static');
+</script>
+
+<div class="ab-controls">
+  <button class="ab-play" type="button">▶ 播放（約 2 分半）</button>
+</div>
+
+<div id="ab-film">
+  <div class="ab-stage" aria-hidden="true">
+    <div id="ab-canvas"></div>
+    <div class="ab-vignette"></div>
+    <div id="ab-labels"></div>
+    <div class="ab-corner"><small>COOMY · 十個里程碑</small><b>留下來的光</b></div>
+    <div class="ab-dots"></div>
+    <div class="ab-card">
+      <div class="top"><span class="ab-chip"><i></i><span class="chip-t"></span></span><span class="count"></span></div>
+      <div class="big"></div>
+      <div class="small"></div>
+    </div>
+  </div>
+
+  <ol class="ab-static-list">
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 01 · 深夜</p><h2 class="ab-skey">深夜，一個問題</h2><p class="ab-scap">那些年，每個專案都從一張白紙開始：做完、交出去，下一次又從頭摸索。我一直在問——下一次，能不能不用從頭開始？</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 02 · FRONTEND TECH LEAD</p><h2 class="ab-skey">介面，是人與系統相遇處</h2><p class="ab-scap">我在外商當 Frontend Tech Lead。後面的系統再複雜，人看得到的只有畫面；複雜系統要在介面上，才真正被人理解。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 03 · AUTOMATION TEAM</p><h2 class="ab-skey">人和 AI，同一支隊伍</h2><p class="ab-scap">後來我帶 Automation Team。人決定方向，Agent 接手跑——人和 AI 並肩，一個產品，一兩天就跑起來。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 04 · 離開</p><h2 class="ab-skey">還沒來得及</h2><p class="ab-scap">我剛開始懂怎麼讓它可以重複，還沒真正導入團隊，就離開了。那本做到一半的方法，留在了桌上。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 05 · 領導</p><h2 class="ab-skey">我說一步，你做一步</h2><p class="ab-scap">以前我習慣把每一步都指好。後來我才懂，好的領導不是替人判斷，是讓更多人能自己判斷——把燈交出去。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 06 · 水球 × COOMY</p><h2 class="ab-skey">兩個人，一艘火箭</h2><p class="ab-scap">水球一顆一顆冒出點子，我照著藍圖，把火箭一件一件敲出來。兩個人，就這樣把第一艘火箭送上了天。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 07 · 每一年</p><h2 class="ab-skey">每一年，都一起過</h2><p class="ab-scap">燈暗了，蛋糕推進來。再忙，這一刻都要留著。未來每一年，我們都一起過。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 08 · ALLWILL</p><h2 class="ab-skey">船上，有了更多人</h2><p class="ab-scap">後來它不再是誰的火箭了。船上有了 Richard、Raymond、ben、ccza，還有一起出航的 Agent——是我們一起打造的 AllWill。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 09 · 回望</p><h2 class="ab-skey">把做過的事留下來</h2><p class="ab-scap">回頭看，走過的每一座島都還亮著。做過的事留下來，下一次就不用從頭開始。</p></li>
+    <li class="ab-beat-static"><p class="ab-snum">里程碑 10 · 開張</p><h2 class="ab-skey">下一站，矽谷</h2><p class="ab-scap">2027 年 3 月，我們要去矽谷創業。這一篇是開張——接下來，這個部落格會記錄我們在矽谷的每一天。</p></li>
+  </ol>
+</div>
+
+
+<script type="module" src="{{ '/assets/js/light-film.js' | relative_url }}?v=20261030-1"></script>
