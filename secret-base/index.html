@@ -161,6 +161,26 @@
     animation: knob 1.6s ease-out infinite; }
   .door .star { position: absolute; left: 50%; top: 20%; width: 26%; transform: translateX(-50%); }
   @keyframes door-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+  .door-wrap[data-locked="true"] .door { animation: none; filter: saturate(0.6) brightness(0.8); }
+  .door-wrap[data-locked="true"] .door::after { animation: none; }
+
+  /* 鑰匙：這台平板還沒記住鑰匙時，大門底下出現一格，輸入對了就記住、門才能開 */
+  .key-gate { position: absolute; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(86vw, 360px); display: flex; flex-direction: column; gap: 10px; align-items: stretch; text-align: center; }
+  .key-gate[hidden] { display: none; }
+  .key-gate label { color: var(--cream); font-size: 17px; font-weight: 800; letter-spacing: 0.04em; text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  .key-gate .row { display: flex; gap: 8px; }
+  .key-gate input { flex: 1; min-width: 0; padding: 14px 16px; border-radius: 16px; border: 3px solid #ffd66b; background: var(--cream);
+    color: var(--ink); font-size: 20px; font-weight: 700; text-align: center; letter-spacing: 0.08em; outline: none;
+    font-family: inherit; -webkit-user-select: text; user-select: text; }
+  .key-gate input:focus { border-color: #ffe7a3; box-shadow: 0 0 0 5px rgba(255, 214, 107, 0.3); }
+  .key-gate button { padding: 0 20px; border: 0; border-radius: 16px; background: var(--coral); color: #fff; font-size: 18px; font-weight: 800;
+    box-shadow: 0 5px 0 #c24f78; cursor: pointer; font-family: inherit; }
+  .key-gate button:active { transform: translateY(3px); box-shadow: 0 2px 0 #c24f78; }
+  .key-gate button[disabled] { opacity: 0.6; pointer-events: none; }
+  .key-gate .msg { min-height: 1.4em; color: #ffb3cb; font-size: 14px; font-weight: 700; }
+  .key-gate.is-error input { border-color: #ff86ad; animation: key-shake 320ms var(--ease-smooth-out); }
+  @keyframes key-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
   @keyframes knob { 0% { box-shadow: 0 0 0 0 rgba(255, 220, 140, 0.7); } 100% { box-shadow: 0 0 0 26px rgba(255, 220, 140, 0); } }
 
   /* 給大人看的小字（孩子不需要讀） */
@@ -208,6 +228,14 @@
   <button class="door" id="door" type="button" aria-label="打開秘密基地">
     <svg class="star" viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7z" fill="#ffd66b" stroke="#8f5a33" stroke-width="1.2" stroke-linejoin="round"/></svg>
   </button>
+  <form class="key-gate" id="key-gate" hidden autocomplete="off">
+    <label for="key-input">輸入你的鑰匙 🔑</label>
+    <div class="row">
+      <input id="key-input" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="鑰匙" required>
+      <button type="submit" id="key-submit">開門</button>
+    </div>
+    <div class="msg" id="key-msg" aria-live="polite"></div>
+  </form>
 </div>
 
 <script type="importmap">
@@ -227,16 +255,60 @@ const MIN_RECORD_MS = 700;
 const MAX_RECORD_MS = 60000;
 const POLL_MS = 8000;
 
-// ---------- 配對：爸爸第一次用 #key=... 開這頁，之後記在這台平板 ----------
+// ---------- 配對：鑰匙可以從網址 #key=... 帶進來，或孩子在門口自己輸入；記在這台平板，之後不用再輸 ----------
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} }
 };
 const hashKey = new URLSearchParams(location.hash.slice(1)).get("key");
 if (hashKey) { store.set(KEY_STORE, hashKey); history.replaceState(null, "", location.pathname); }
-const baseKey = hashKey || store.get(KEY_STORE);
-const demo = !baseKey || new URLSearchParams(location.search).has("demo");
+let baseKey = hashKey || store.get(KEY_STORE);
+const demoParam = new URLSearchParams(location.search).has("demo");
+let demo = !baseKey || demoParam;
 document.getElementById("grown-up").hidden = !demo;
+
+// 沒鑰匙又不是 ?demo：門先鎖著，底下出現鑰匙欄；輸入對了（後端認得）才記住並解鎖
+const keyGate = document.getElementById("key-gate");
+const keyInput = document.getElementById("key-input");
+const keyMsg = document.getElementById("key-msg");
+const doorWrap = document.getElementById("door-wrap");
+let doorLocked = !baseKey && !demoParam;
+if (doorLocked) {
+  keyGate.hidden = false;
+  doorWrap.dataset.locked = "true";
+  document.getElementById("grown-up").hidden = true;
+}
+keyInput.addEventListener("input", () => { keyGate.classList.remove("is-error"); keyMsg.textContent = ""; });
+keyGate.addEventListener("submit", async event => {
+  event.preventDefault();
+  const key = keyInput.value.trim();
+  if (!key) return;
+  const submit = document.getElementById("key-submit");
+  submit.disabled = true;
+  keyMsg.textContent = "找鑰匙孔中…";
+  let ok = false, failed = false;
+  try {
+    const res = await fetch(`${ENDPOINT}/kid/inbox`, { headers: { "x-base-key": key } });
+    ok = res.ok;
+    failed = !res.ok && res.status !== 401 && res.status !== 403;
+  } catch { failed = true; }
+  submit.disabled = false;
+  if (ok) {
+    store.set(KEY_STORE, key);
+    baseKey = key;
+    demo = false;
+    doorLocked = false;
+    keyGate.hidden = true;
+    delete doorWrap.dataset.locked;
+    return;
+  }
+  keyGate.classList.remove("is-error");
+  void keyInput.offsetWidth;
+  keyGate.classList.add("is-error");
+  keyMsg.textContent = failed ? "連不上秘密基地，等一下再試" : "這把鑰匙打不開，再看一次";
+  keyInput.focus();
+  keyInput.select();
+});
 
 // ---------- 場景 ----------
 const canvas = document.getElementById("stage");
@@ -1104,6 +1176,7 @@ function setState(next) {
 
 // ---------- 開門 ----------
 document.getElementById("door").addEventListener("click", async () => {
+  if (doorLocked) { keyInput.focus(); return; }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   audioCtx.resume();
   sfx.sent();
@@ -1382,7 +1455,7 @@ const DEMO_REPLIES = [
 ];
 let demoIndex = 0;
 // 示範模式：同一台電腦另開 reply/?demo，兩頁用 BroadcastChannel 互通，不用後端就能測完整來回
-const demoChannel = demo && window.BroadcastChannel ? new BroadcastChannel("secret-base-demo") : null;
+const demoChannel = demoParam && window.BroadcastChannel ? new BroadcastChannel("secret-base-demo") : null;
 let replyPageOpen = false;
 demoChannel?.addEventListener("message", ({ data }) => {
   if (data.type === "hello") { replyPageOpen = true; demoChannel.postMessage({ type: "base-here" }); }
