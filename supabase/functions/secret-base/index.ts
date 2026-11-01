@@ -70,6 +70,7 @@ Deno.serve(async request => {
   try {
     if (kid && request.method === 'POST' && route === '/kid/message') return await kidMessage(request, kid, supabase, cors);
     if (kid && request.method === 'GET' && route === '/kid/inbox') return await kidInbox(kid, supabase, cors);
+    if (kid && request.method === 'GET' && route === '/kid/letters') return await kidLetters(kid, supabase, cors);
     if (kid && request.method === 'POST' && route === '/kid/heard') return await kidHeard(request, kid, supabase, cors);
     if (role === 'parent' && request.method === 'GET' && route === '/parent/thread') return await parentThread(supabase, cors);
     if (role === 'parent' && request.method === 'POST' && route === '/parent/reply') return await parentReply(request, supabase, cors);
@@ -137,6 +138,21 @@ async function kidInbox(kid: Kid, supabase: Db, cors: Cors) {
     .not('audio_path', 'is', null)
     .order('created_at', { ascending: true })
     .limit(10);
+  if (error) throw error;
+  return json({ letters: await withAudioUrls(supabase, data) }, 200, cors);
+}
+
+// 孩子聽過的信（最近的在前），讓孩子可以在信箱再聽一次
+async function kidLetters(kid: Kid, supabase: Db, cors: Cors) {
+  const { data, error } = await supabase
+    .from('secret_base_messages')
+    .select('id, audio_path, created_at, heard_at')
+    .eq('sender', 'parent')
+    .eq('kid', kid.id)
+    .not('heard_at', 'is', null)
+    .not('audio_path', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(20);
   if (error) throw error;
   return json({ letters: await withAudioUrls(supabase, data) }, 200, cors);
 }

@@ -145,6 +145,28 @@
   .swatch.gap { margin-top: 10px; }
   .swatch.is-current { box-shadow: 0 0 0 5px var(--coral), 0 6px 14px rgba(90, 60, 120, 0.25); }
 
+  /* 信箱：左下角，點開是聽過的信，點一封娃娃就再唸一次 */
+  .mailbox { position: fixed; left: 16px; bottom: max(28px, env(safe-area-inset-bottom)); width: 68px; height: 68px; border: 0; border-radius: 50%;
+    background: var(--cream); box-shadow: 0 6px 0 #d9c3e8, 0 10px 20px rgba(90, 60, 120, 0.2); display: grid; place-items: center; cursor: pointer;
+    font-size: 32px; line-height: 1; padding: 0;
+    transition: transform var(--duration-quick) var(--ease-smooth-out), opacity var(--duration-fast) var(--ease-smooth-out); z-index: 4; }
+  .mailbox:active { transform: translateY(4px) scale(0.96); }
+  .mailbox[disabled] { opacity: 0.45; pointer-events: none; }
+  .memories { position: fixed; left: 16px; bottom: calc(max(28px, env(safe-area-inset-bottom)) + 84px); display: flex; flex-direction: column-reverse; gap: 22px;
+    z-index: 4; pointer-events: none; }
+  .memories[data-open="true"] { pointer-events: auto; }
+  .memory { position: relative; width: 68px; height: 68px; border-radius: 50%; border: 5px solid #fff; cursor: pointer; font-size: 28px; line-height: 1; padding: 0;
+    background: #fff1d6; display: grid; place-items: center; box-shadow: 0 6px 14px rgba(90, 60, 120, 0.25); font-family: inherit;
+    opacity: 0; transform: translateY(12px) scale(0.6);
+    transition: opacity var(--duration-quick) var(--ease-smooth-out), transform var(--duration-quick) var(--ease-smooth-out); }
+  .memory small { position: absolute; left: 50%; bottom: -17px; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 800;
+    color: var(--ink); background: rgba(255, 246, 234, 0.92); padding: 1px 8px; border-radius: 999px; }
+  .memory.is-empty { background: #ece8fb; cursor: default; }
+  .memory:active:not(.is-empty) { transform: scale(0.94); }
+  .memories[data-open="true"] .memory { opacity: 1; transform: none;
+    transition: opacity var(--duration-fast) var(--ease-smooth-out) calc(var(--i) * var(--duration-stagger)),
+                transform var(--duration-very-slow) var(--ease-bounce) calc(var(--i) * var(--duration-stagger)); }
+
   /* 大門：第一次點擊解鎖聲音和麥克風 */
   .door-wrap { position: fixed; inset: 0; display: grid; place-items: center; perspective: 1200px;
     background: radial-gradient(ellipse at 50% 40%, #5a3b2c 0%, #2c1d17 100%);
@@ -191,7 +213,7 @@
   @media (prefers-reduced-motion: reduce) {
     .t-icon-swap .t-icon { transition: none !important; }
     .t-badge, .t-badge-dot { animation: none !important; transition: none !important; }
-    .talk, .talk::before, .door, .door::after, .hint svg, .swatch, .wardrobe { animation: none !important; transition: none !important; }
+    .talk, .talk::before, .door, .door::after, .hint svg, .swatch, .wardrobe, .mailbox, .memory { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
@@ -223,6 +245,9 @@
   </svg>
 </button>
 <div class="closet" id="closet" data-open="false"></div>
+
+<button class="mailbox" id="mailbox" type="button" aria-label="再聽一次爸爸媽媽的信" disabled>📮</button>
+<div class="memories" id="memories" data-open="false"></div>
 
 <div class="door-wrap" id="door-wrap">
   <button class="door" id="door" type="button" aria-label="打開秘密基地">
@@ -1113,6 +1138,7 @@ wardrobeBtn.addEventListener("click", () => {
   if (state !== "idle") return;
   const open = closet.dataset.open !== "true";
   closet.dataset.open = String(open);
+  if (open) memoriesEl.dataset.open = "false";
   sfx.pop();
   if (open) { setPose({ headTilt: 0.15, eye: 1.15, mouth: 0.4 }); setTimeout(() => state === "idle" && setPose(), 700); }
 });
@@ -1154,6 +1180,85 @@ async function transform(item) {
   setState("idle");
 }
 
+// 信箱：聽過的信都留著，點開可以再聽一次（線上從後端拿，示範模式只留這一次的）
+const mailboxBtn = document.getElementById("mailbox");
+const memoriesEl = document.getElementById("memories");
+const memories = [];
+const MEMORY_LIMIT = 6;
+const letterTime = letter => new Date(letter.created_at || letter.at || 0).getTime() || 0;
+function rememberLetter(letter) {
+  const i = memories.findIndex(m => m.id === letter.id);
+  const entry = { ...(i >= 0 ? memories[i] : {}), ...letter, created_at: letter.created_at || letter.at || new Date().toISOString(), replay: true };
+  if (i >= 0) memories[i] = entry; else memories.push(entry);
+  memories.sort((a, b) => letterTime(b) - letterTime(a));
+}
+function dayLabel(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const that = new Date(d); that.setHours(0, 0, 0, 0);
+  const days = Math.round((today - that) / 86400000);
+  return days <= 0 ? "今天" : days === 1 ? "昨天" : days === 2 ? "前天" : `${days} 天前`;
+}
+function renderMemories() {
+  memoriesEl.replaceChildren();
+  const list = memories.slice(0, MEMORY_LIMIT);
+  if (!list.length) {
+    const empty = document.createElement("div");
+    empty.className = "memory is-empty";
+    empty.style.setProperty("--i", 0);
+    empty.textContent = "🕊️";
+    const small = document.createElement("small");
+    small.textContent = "還沒有信";
+    empty.append(small);
+    memoriesEl.append(empty);
+    return;
+  }
+  list.forEach((m, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "memory";
+    b.style.setProperty("--i", i);
+    b.textContent = "💌";
+    const label = dayLabel(m.created_at);
+    b.setAttribute("aria-label", `再聽一次${label}的信`);
+    const small = document.createElement("small");
+    small.textContent = label;
+    b.append(small);
+    b.addEventListener("click", () => replayMemory(m));
+    memoriesEl.append(b);
+  });
+}
+async function loadMemories() {
+  if (demo) return;
+  try {
+    const res = await fetch(`${ENDPOINT}/kid/letters`, { headers: { "x-base-key": baseKey } });
+    if (!res.ok) return;
+    const { letters: past } = await res.json();
+    past.forEach(rememberLetter);
+  } catch (error) { console.warn("letters failed", error); }
+}
+mailboxBtn.addEventListener("click", async () => {
+  if (state !== "idle") return;
+  const open = memoriesEl.dataset.open !== "true";
+  memoriesEl.dataset.open = String(open);
+  sfx.pop();
+  if (!open) return;
+  closet.dataset.open = "false";
+  renderMemories();
+  setPose({ headTilt: -0.15, eye: 1.15, mouth: 0.4 });
+  setTimeout(() => state === "idle" && setPose(), 700);
+  await loadMemories();
+  if (memoriesEl.dataset.open === "true") renderMemories();
+});
+function replayMemory(memory) {
+  memoriesEl.dataset.open = "false";
+  if (state !== "idle") return;
+  letters.unshift({ ...memory, replay: true });
+  refreshButton();
+  openLetter();
+}
+
 function refreshButton() {
   const hasLetter = letters.length > 0;
   talkBtn.dataset.mode = hasLetter ? "letter" : "talk";
@@ -1163,7 +1268,8 @@ function refreshButton() {
   if (letters.length > 1) badgeCount.textContent = String(letters.length);
   talkBtn.disabled = !(state === "idle" || state === "listening" || state === "waiting");
   wardrobeBtn.disabled = state !== "idle";
-  if (state !== "idle") closet.dataset.open = "false";
+  mailboxBtn.disabled = state !== "idle";
+  if (state !== "idle") { closet.dataset.open = "false"; memoriesEl.dataset.open = "false"; }
 }
 function setState(next) {
   state = next;
@@ -1391,8 +1497,9 @@ async function openLetter() {
   } catch (error) { console.warn("play failed", error); }
   heardIds.add(letter.id);
   lastLetter = letter;
+  rememberLetter(letter);
   if (demo && !letter.replay) demoChannel?.postMessage({ type: "heard", id: letter.id });
-  if (!demo) fetch(`${ENDPOINT}/kid/heard`, { method: "POST", headers: { "x-base-key": baseKey, "content-type": "application/json" }, body: JSON.stringify({ id: letter.id }) }).catch(() => {});
+  if (!demo && !letter.replay) fetch(`${ENDPOINT}/kid/heard`, { method: "POST", headers: { "x-base-key": baseKey, "content-type": "application/json" }, body: JSON.stringify({ id: letter.id }) }).catch(() => {});
   await hugLetter();
 }
 
