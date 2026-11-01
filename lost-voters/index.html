@@ -392,6 +392,27 @@
   .fever.ready > span { width: 80px; height: 80px; background: #e0452a; font-size: 12.5px; }
   .fever.on > span { background: #e0452a; }
   body.tray-on .fever { opacity: 0; pointer-events: none; }
+  #actBtn, #feverBtn, #busBtn, #hint, #decide { display: none !important; }
+  .mycards { position: absolute; left: max(10px, env(safe-area-inset-left)); bottom: calc(max(10px, env(safe-area-inset-bottom)) + 94px); display: flex; flex-wrap: wrap; gap: 3px; max-width: min(70vw, 360px); pointer-events: auto; cursor: pointer; }
+  .mycards:empty { display: none; }
+  .mycards i { position: relative; font-style: normal; font-size: 15px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: rgba(255,252,246,0.94); box-shadow: inset 0 -3px 0 var(--kc, #e0452a), 0 2px 6px rgba(0,0,0,0.18); }
+  .mycards i.ctrl { --kc: #2f8fd6; } .mycards i b { position: absolute; right: -3px; bottom: -4px; font-size: 9.5px; font-weight: 900; color: #fff; background: #2a2340; border-radius: 999px; padding: 0 3px; line-height: 13px; }
+  .mycards em { font-style: normal; font-size: 11.5px; font-weight: 900; color: #fff; background: #d66e14; border-radius: 999px; padding: 4px 9px; align-self: center; }
+  .tc.k-dmg { box-shadow: inset 0 5px 0 #e0452a, inset 0 -4px 0 var(--rc, #c9c2b4); } .tc.k-ctrl { box-shadow: inset 0 5px 0 #2f8fd6, inset 0 -4px 0 var(--rc, #c9c2b4); }
+  .tc em.k { font-size: 11px; font-weight: 900; border-radius: 999px; padding: 1px 8px; } .tc em.k.dmg { color: #fff; background: #e0452a; } .tc em.k.ctrl { color: #fff; background: #2f8fd6; }
+
+  .hc .role.dmg { background: #fde4dd; color: #b3261e; box-shadow: none; } .hc .role.ctrl { background: #dcebfb; color: #1f56b0; box-shadow: none; }
+  .branch .bc button em { font-size: 11px; }
+  .intro { position: fixed; inset: 0; z-index: 15; pointer-events: none; opacity: 0; transition: opacity .3s; }
+  .intro.on { opacity: 1; pointer-events: auto; }
+  .intro::before, .intro::after { content: ""; position: absolute; left: 0; right: 0; height: 11vh; background: #10131c; }
+  .intro::before { top: 0; } .intro::after { bottom: 0; }
+  .intro p { position: absolute; left: 50%; bottom: calc(11vh + 22px); transform: translateX(-50%); width: min(90vw, 560px); margin: 0; text-align: center; color: #fff; font-size: clamp(18px, 5vw, 26px); font-weight: 900; line-height: 1.5; text-shadow: 0 2px 10px rgba(0,0,0,0.7); background: rgba(16,19,28,0.55); padding: 10px 16px; border-radius: 14px; }
+  .intro p.big { font-size: clamp(20px, 5.6vw, 30px); background: rgba(224,69,42,0.88); }
+  .intro p em { display: block; font-style: normal; font-size: 0.62em; font-weight: 700; opacity: 0.9; margin-top: 4px; }
+  .intro button { position: absolute; right: max(12px, env(safe-area-inset-right)); top: calc(11vh + 10px); border: 0; font: inherit; font-size: 14px; font-weight: 900; padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,0.92); color: #2a2340; cursor: pointer; }
+  body.intro-on .hud, body.intro-on .tray, body.intro-on .tut, body.intro-on .finger { opacity: 0 !important; pointer-events: none; }
+  #replayIntro { display: block; margin: 4px auto 0; } /* 簡化：沒有任何要玩家按的大招 */
   body.hush-sweep .r3sweep, body.hush-title .title-card-fx, body.hush-title .r3sweep, body.hush-banner .banner, body.hush-notif .notif { opacity: 0 !important; transition: opacity .12s; }
   body.guiding .etag, body.guiding .banner, body.guiding .notif, body.guiding .chain-c, body.guiding .tip, body.guiding .title-card-fx { opacity: 0 !important; transition: opacity .15s; }
   body.tray-on .tut { bottom: calc(max(10px, env(safe-area-inset-bottom)) + 300px) !important; } @media (min-width: 760px) { body.tray-on .tut { bottom: calc(max(10px, env(safe-area-inset-bottom)) + 322px) !important; } }
@@ -423,6 +444,9 @@
   .tc.rec { --rc: var(--c); background: linear-gradient(180deg, #fff7e0, #fffaf2); }
   .tc .syn { font-size: 10px; font-weight: 900; color: #b3261e; }
   @media (min-width: 760px) { .tc { min-height: 150px; padding: 10px 10px 9px; } .tc b { font-size: 15px; } .tc p { font-size: 12.5px; } .tc p.s { font-size: 16px; } .tc .ic { font-size: 32px; } }
+  /* 簡化：大字＝效果（深色大字）、小字＝梗名 */
+  .tc b { font-size: 16px; color: var(--ink); line-height: 1.25; } .tc p.s { font-size: 11.5px; font-weight: 700; color: var(--muted); background: none; padding: 0; margin: 1px 0 3px; }
+  @media (min-width: 760px) { .tc b { font-size: 18px; } .tc p.s { font-size: 12.5px; } }
   .branch { position: fixed; z-index: 9; left: 50%; bottom: calc(max(10px, env(safe-area-inset-bottom)) + 96px); transform: translate(-50%, 20px); width: min(96vw, 560px); padding: 8px; border-radius: 18px; background: rgba(42,35,64,0.95); color: #fff; opacity: 0; pointer-events: none; transition: opacity .2s, transform .3s var(--ease); }
   .branch.open { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
   .branch > b { display: block; text-align: center; font-size: 14px; padding: 2px 0 6px; }
@@ -543,6 +567,7 @@
   <div class="hint" id="hint">點一條路，催票推回去</div>
   <div class="tut" id="tut"></div>
   <div class="chain-c" id="chainC"></div>
+  <div class="mycards" id="myCards" role="button" aria-label="我的卡片與組合"></div>
   <div class="rsc" id="hRes"><span class="rv">🙋 志工 <b id="rVol">0</b></span><span class="rh"><i id="rHeat"></i><em>🃏 熱度</em></span><button class="tray-badge" id="trayBadge" type="button" hidden></button></div>
   <button class="fever" id="feverBtn" type="button" aria-label="投票日倒數"><span><i>⏳</i>民氣</span></button>
   <button class="act bus" id="busBtn" type="button" hidden aria-label="返鄉投票專車"><span><i>🚌</i><b>返鄉專車</b></span></button>
@@ -569,6 +594,7 @@
       <button class="btn big" id="quickBtn" type="button">馬上開救<small>30 秒上手</small></button>
       <div class="quick-team" id="quickTeam"></div>
       <button class="btn ghost" id="selfBtn" type="button">自己挑 3 位隊友</button>
+      <button class="back-link" id="replayIntro" type="button" hidden>▶ 重看開場</button>
     </div>
     <div id="pickBox" hidden>
       <div class="pick-head"><b id="pickTitle">挑 3 位：你挺的、你想看他出糗的，都行</b><span id="pickInfo">左右滑・跨陣營越多加成越大</span></div>
@@ -587,6 +613,7 @@
 <div class="screen" id="dexScreen"><div class="panel" id="dexPanel"></div></div>
 <div class="screen" id="calScreen"><div class="panel" id="calPanel"></div></div>
 <div class="finger" id="finger">👆</div>
+<div class="intro" id="intro" aria-live="polite"><p id="introCap"></p><button type="button" id="introSkip">略過 ›</button></div>
 <div class="rotate"><div><b style="display:block;font-size:44px">📱</b>把手機轉成直式來玩</div></div>
 
 <script type="module">
@@ -1996,7 +2023,7 @@ function shotTex(key, c, glyph) {
   if (glyph) { x.textAlign = "center"; x.textBaseline = "middle"; x.font = `900 44px "Noto Sans TC", sans-serif`; x.lineWidth = 6; x.strokeStyle = c; x.fillStyle = "#fff"; x.strokeText(glyph, 48, 52); x.fillText(glyph, 48, 52); }
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return (SHOT_TEX[key] = t);
 }
-const SHOT_STYLE = { han: ["#2f6fd6", "♪"], lu: ["#4c8fdc", "✊"], lai: ["#3fbf6c", "👕"], tsai: ["#2fae68", "★"], lin: ["#1f8a4a", "！"], huang: ["#1aa9a9", "◆"], mid: ["#d6423a", "筊"], air: ["#ff5c8a", "♥"], ground: ["#f08a24", "✔"], tower: ["#5aa0ee", "🚩"], fish: ["#f2b632", "🐟"], hou: ["#f2b632", ""] };
+const SHOT_STYLE = { han: ["#2f6fd6", "♪"], lu: ["#4c8fdc", "✊"], lai: ["#3fbf6c", "👕"], tsai: ["#2fae68", "★"], lin: ["#1f8a4a", "！"], huang: ["#1aa9a9", "◆"], mid: ["#d6423a", "筊"], air: ["#ff5c8a", "♥"], ground: ["#f08a24", "✔"], tower: ["#5aa0ee", "🚩"], fish: ["#f2b632", "📦"], hou: ["#f2b632", ""] };
 const TX = { cyc: {}, cog: {} };
 ["chip", "dome", "milk"].forEach((k) => (TX.cyc[k] = iconTex(IC[k], true)));
 ["bear", "ballot", "brain"].forEach((k) => (TX.cog[k] = iconTex(IC[k], false)));
@@ -2008,9 +2035,9 @@ const WHITE = (() => { const c = document.createElement("canvas"); c.width = c.h
 const ET = {
   swarm: { name: "懶人包", hp: 3, sp: 2.5, dmg: 2, y: 1.15, tip: "懶人包：小而多，一次一群" },
   mini: { name: "長輩圖", hp: 2.2, sp: 2.3, dmg: 1, y: 0.95 },
-  troll: { name: "問A答B 怪", hp: 13, sp: 1.6, dmg: 4, y: 1.7, tip: "問A答B：打它，傷害會跑去別條路" },
-  cycle: { name: "循環經濟怪", hp: 18, sp: 1.45, dmg: 5, y: 1.9, tip: "循環經濟：輝達→巨蛋→牛奶輪換，同款子彈克制" },
-  cog: { name: "認知作戰怪", hp: 18, sp: 1.45, dmg: 5, y: 1.9, tip: "認知作戰：黑熊→大罷免→認知戰輪換，同款招式克制" },
+  troll: { name: "答非所問怪", hp: 13, sp: 1.6, dmg: 4, y: 1.7, tip: "答非所問怪：打它，傷害會跑去別條路" },
+  cycle: { name: "口號怪", hp: 18, sp: 1.45, dmg: 5, y: 1.9, tip: "口號怪：一直換口號，打就對了" },
+  cog: { name: "口號怪", hp: 18, sp: 1.45, dmg: 5, y: 1.9, tip: "口號怪：一直換口號，打就對了" },
   board: { name: "修圖看板怪", hp: 24, sp: 1.3, dmg: 5, y: 2.3, tip: "修圖看板：血條是假的，打幾下才露出真血量" },
   line: { name: "長輩圖 LINE 群", hp: 14, sp: 1.5, dmg: 4, y: 1.9, tip: "長輩圖 LINE 群：打倒會分裂成三張早安圖" },
   poll: { name: "民調怪", hp: 16, sp: 1.25, dmg: 4, y: 2.1, tip: "民調怪：附近的怪跟風變快；投票前 10 天封關" },
@@ -2113,8 +2140,8 @@ function spawnEnemy(type, L, u = 0, side = null) {
   const d = ET[type], boss = !!d.boss;
   Object.assign(e, { alive: true, dying: 0, lane: L, u, side: side ?? (rand() - 0.5) * 1.5, stun: 0, slowT: 0, confuse: 0, factT: 0, shield: 0, revealed: false, hits: 0, vuln: 0, shielded: false, flash: 0, ph: rand() * 6, formI: 0, formT: 3, honkT: 2.5 + rand(), callT: 7, askT: 4, pos: V3() });
   e.gen++;
-  e.hp = e.maxHp = d.hp * (boss ? 1.15 * DIFF.boss * (type === "final" ? DIFF.final : 1) : (1 + 0.12 * G.wave) * (1 + DIFF.ramp * G.wave) * 1.7 * DIFF.hp) * (NEUTRAL ? DIFF.neutral : 1);
-  if ((type === "swarm" || type === "mini") && lv("lazyfix")) e.hp = e.maxHp = e.maxHp * (1 - [0, 0.2, 0.35][lv("lazyfix")]);
+  e.hp = e.maxHp = d.hp * (boss ? 1.15 * DIFF.boss * (type === "final" ? DIFF.final : 1) : (1 + 0.12 * G.wave) * (1 + DIFF.ramp * G.wave) * (1 + DIFF.late * Math.max(0, G.wave - 5)) * 1.7 * DIFF.hp) // 第 6 波後加壓：沒湊組合會吃力 * (NEUTRAL ? DIFF.neutral : 1);
+  if ((type === "swarm" || type === "mini") && lv("lazyfix")) e.hp = e.maxHp = e.maxHp * (1 - [0, 0.2, 0.35, 0.5][lv("lazyfix")]) * Math.max(0.2, 1 - 0.25 * CL("oneshot"));
   if (type === "poll" && lv("seal")) e.hp = e.maxHp = e.maxHp * 0.5;
   e.bridgeT = 0; e.markT = 0; e.dn = 0; e.dnc = false; e.dnT = 0;
   e.speed = d.sp * (0.92 + rand() * 0.16) * PACE.enemy;
@@ -2156,23 +2183,23 @@ const CAMP_C = { blue: "#1f56b0", green: "#1d8a4c", white: "#1aa9a9", neu: "#8a6
 const CAMP_L = { blue: "#dbe8fb", green: "#dcf3e5", white: "#d8f4f4", neu: "#f3e7d3" };
 const CAMP_N = { blue: "藍", green: "綠", white: "白", neu: "中立" };
 const HS = {
-  chiang: { dmg: 2.9, rate: 1.55, range: 12, skill: "循環經濟", short: "輝達→巨蛋→牛奶輪著打", info: "子彈每 3 發輪換 輝達→巨蛋→牛奶，打循環經濟怪 ×2.5。被動「問A答B」：被暈時不暈，反手把一發打到隔壁路。" },
-  han: { dmg: 2.8, rate: 1.2, range: 11, cd: 16, skill: "造勢", short: "開講震退附近的怪＋全隊攻速 +40%", info: "造勢：開講時震退附近的怪，全隊攻速 +40%、回心轉意的選民加倍 6 秒。弱點：演講停不下來，放完自己暫停攻擊 2 秒。" },
-  lu: { dmg: 2.7, rate: 1.5, range: 11, skill: "全黨打一人", short: "敵人越多，傷害越高", info: "全黨打一人：場上敵人越多，她每一拳越痛（最多 ×3）；每第 3 拳打出一小圈範圍傷害。" },
-  hou: { dmg: 2.8, rate: 1.2, range: 12, skill: "雙北合作", short: "光束；跟蔣萬安同隊加速", info: "光束直擊。雙北合作：和蔣萬安同隊時，兩人攻速 +35%。" },
-  shen: { dmg: 1.5, rate: 0.9, range: 12, cd: 24, skill: "洋流", short: "穿透浪越推越大", info: "洋流：穿透浪越推越大；三招輪轉 黑熊、大罷免、認知作戰，打認知作戰怪 ×2.5。大招召喚黑熊衝一整條路。" },
-  lai: { dmg: 1.7, rate: 1.2, range: 11, cd: 26, skill: "換新衫", short: "全隊傷害 +10%＋首投族援軍", info: "換新衫：全隊傷害 +10%。返鄉投票：叫一批首投族援軍衝上最吵的那條路。" },
-  tsai: { dmg: 1.7, rate: 1.2, range: 11, cd: 34, skill: "YBSG", short: "爆擊＋芋頭壽司補人", info: "YBSG：25% 爆擊 ×2.6。芋頭壽司：補回 2 位還想去投的選民。" },
-  lin: { dmg: 4.15, rate: 1.15, range: 12, skill: "火力全開", short: "火力最高，偶爾口誤", info: "普攻火力最高。弱點「口誤」：10% 子彈掉頭、跳出「投給蔣萬安」，還幫敵人加一層小護盾。" },
-  huang: { dmg: 2.2, rate: 1.2, range: 11, cd: 13, skill: "神秘嘉賓", short: "空降最危險的路", info: "神秘嘉賓：每 13 秒空降到最危險的那條路，落地衝擊＋暈眩。" },
-  mid: { dmg: 1.8, rate: 1.2, range: 11, skill: "擲筊", short: "擲筊・剋終極反派", info: "擲筊：每波擲一次，聖筊全隊 +25%、笑筊沒事、陰筊發呆一波。打「投了也沒用」傷害 ×4，也不會被變灰。" },
-  air: { dmg: 1.2, rate: 1.5, range: 40, skill: "網路聲量", short: "射程全場，愛心範圍", info: "網路聲量：射程全場、愛心範圍傷害。弱點：打認知作戰怪會被帶風向（反而幫它補血）。" },
-  ground: { dmg: 2.0, rate: 2.2, range: 8, cd: 18, skill: "宣傳車", short: "近戰快打＋宣傳車", info: "掃街：近戰、出手最快。宣傳車：沿最吵的路開過去，整條路暈眩。" },
+  chiang: { dmg: 2.9, rate: 1.55, range: 12, skill: "三種子彈輪流打", short: "加傷、範圍、減速三種子彈輪流射", info: "每 3 發換一種子彈：加傷彈、範圍彈、減速彈。被吵暈時不會暈，還會反手打隔壁路。（梗：循環經濟）" },
+  han: { dmg: 2.8, rate: 1.2, range: 11, cd: 16, skill: "開講：全隊加速", short: "震退附近的怪，全隊攻速 +40%", info: "技能：開講時震退附近的怪，全隊攻速 +40% 持續 6 秒。缺點：講完要休息 2 秒。（梗：造勢）" },
+  lu: { dmg: 2.7, rate: 1.5, range: 11, skill: "怪越多越痛", short: "場上怪越多，每一拳越痛", info: "場上怪越多，每一拳越痛（最多 ×3）；每第 3 拳打出一小圈範圍傷害。" },
+  hou: { dmg: 2.8, rate: 1.2, range: 12, skill: "直線光束", short: "光束直擊；跟蔣萬安同隊更快", info: "光束直接打中目標。和蔣萬安同隊時兩人攻速 +35%。（梗：雙北合作）" },
+  shen: { dmg: 1.5, rate: 0.9, range: 12, cd: 24, skill: "穿透浪＋黑熊衝鋒", short: "浪穿過一整排怪，越推越大", info: "浪會穿過一排怪、越推越大；技能：放一隻黑熊沿整條路衝過去。" },
+  lai: { dmg: 1.7, rate: 1.2, range: 11, cd: 26, skill: "全隊加傷＋援軍", short: "全隊傷害 +10%，定時派援軍", info: "全隊傷害 +10%；技能：派一批第一次投票的年輕人衝最擠的路。（梗：返鄉投票）" },
+  tsai: { dmg: 1.7, rate: 1.2, range: 11, cd: 34, skill: "爆擊＋補人", short: "常爆擊，定時補回選民", info: "25% 機率爆擊 ×2.6；技能：補回 2 位想放棄的選民。" },
+  lin: { dmg: 4.15, rate: 1.15, range: 12, skill: "火力最高", short: "單發最痛，偶爾失誤", info: "普通攻擊最痛。缺點：10% 會失誤，子彈飛歪，還幫怪加一點護盾。（梗：火力全開）" },
+  huang: { dmg: 2.2, rate: 1.2, range: 11, cd: 13, skill: "空降衝擊", short: "跳到最危險的路，落地震暈", info: "每 13 秒空降到最危險的那條路，落地衝擊＋暈眩。（梗：神秘嘉賓）" },
+  mid: { dmg: 1.8, rate: 1.2, range: 11, skill: "每波加成＋剋魔王", short: "每波擲筊，可能全隊 +25%", info: "每波擲一次筊：聖筊全隊 +25%、笑筊沒事、陰筊這波發呆。打最後的魔王傷害 ×4。（梗：擲筊）" },
+  air: { dmg: 1.2, rate: 1.5, range: 40, skill: "全場射程", short: "射程全場，愛心炸一小圈", info: "射程全場，愛心落地炸一小圈。（梗：網路聲量）" },
+  ground: { dmg: 2.0, rate: 2.2, range: 8, cd: 18, skill: "近戰快打＋宣傳車", short: "出手最快；宣傳車撞暈整條路", info: "近戰、出手最快；技能：宣傳車沿最擠的路開過去，整條路暈眩。" },
 };
 // R3：選角頁的定位徽章＋一行弱點（藍綠對等，都是遊戲內機制，不是本人評價）
-const HERO_ROLE = { chiang: ["輸出", "子彈要輪三種，打錯屬性只剩六成"], shen: ["範圍", "出手慢，浪要推一段才變大"], han: ["輔助", "講到停不下來，放完技能發呆 2 秒"], lai: ["輔助", "援軍只衝最吵的那一條路"],
-  lu: ["輸出", "怪少的時候拳頭很輕"], tsai: ["補人", "爆擊看運氣，沒爆就普通"], hou: ["輸出", "光束一次只打一隻"], lin: ["輸出", "會喊錯名字，子彈掉頭"],
-  huang: ["控場", "常常不在原本的崗位"], mid: ["輔助", "擲到陰筊會發呆一波"], air: ["範圍", "打認知作戰怪會被帶風向"], ground: ["控場", "射程短，要站到橋頭"] };
+const HERO_ROLE = { chiang: ["傷害", "子彈威力平均，沒有特別爆發"], shen: ["傷害", "出手慢，浪要推一段才變大"], han: ["控場", "講完技能要休息 2 秒"], lai: ["控場", "援軍只衝最擠的那一條路"],
+  lu: ["傷害", "怪少的時候拳頭很輕"], tsai: ["傷害", "爆擊看運氣，沒爆就普通"], hou: ["傷害", "光束一次只打一隻"], lin: ["傷害", "偶爾失誤，子彈飛歪"],
+  huang: ["控場", "常常不在原本的位置"], mid: ["傷害", "擲到陰筊會發呆一波"], air: ["傷害", "單發傷害很低"], ground: ["控場", "射程短，要站到橋頭"] };
 const ORDER = NEUTRAL ? ["mid", "air", "ground"] : ["chiang", "shen", "han", "lai", "lu", "tsai", "hou", "lin", "huang", "mid", "air", "ground"];
 const HERO_S = MOBILE ? 2.25 : 1.45; // 視覺比例：桌機約 55px、手機 ≥40 CSS px（原 2.25）
 const HERO_S_LOGIC = 2.25; // 子彈飛行時間用的出手高度（維持原平衡）
@@ -2211,7 +2238,7 @@ const muzzle = (h) => h.pos.clone().add(V3(0, 2.4 * HERO_S, 0));
 const muzzleLogic = (h) => h.pos.clone().add(V3(0, 2.4 * HERO_S_LOGIC, 0));
 const alive = () => ENEMIES.filter((e) => e.alive);
 function rateMult(h) {
-  let m = (1 + 0.15 * lv("b")) * PACE.rate;
+  let m = (1 + 0.12 * lv("b")) * PACE.rate * (1 + 0.2 * CL("nostun"));
   if (G.buff.rally > 0) m *= 1.4;
   if (G.buff.sanzi > 0) m *= 1.5;
   if (G.buff.tea > 0) m *= 1.3;
@@ -2228,7 +2255,7 @@ function dmgMult(h) {
   if (G.buff.shirt > 0) m *= 1.2;
   if (G.holy) m *= 1 + 0.25 * Math.max(1, G.holyN || 1);
   if (G.buff.lst > 0) m *= 1.5;
-  if (tagOn("fire")) m *= 1.15;
+  if (tagOn("dmg")) m *= 1.15;
   if (lv("onevote")) m *= 1 + Math.min(0.8, G.voted * 0.002);
   return m;
 }
@@ -2280,7 +2307,7 @@ function tickShots(dt) {
   }
 }
 function aoe(at0, r, dmg, h, o = {}) {
-  const k = micK(); r *= k; dmg *= k;
+  const k = micK(); r *= k; dmg *= k * (1 + 0.8 * CL("boomslow"));
   shockwave(at0, o.c || "#ffd36b", r, 0.4); burst(at0, o.c || "#ffd36b", 10, 5);
   for (const e of ENEMIES) if (e.alive && e.pos.distanceTo(at0) <= r) { damage(e, dmg * (ET[e.type].boss ? 0.6 : 1), h, { ...o, noEvo: true }); if (o.stun) e.stun = Math.max(e.stun, ET[e.type].boss ? o.stun * 0.3 : o.stun); if (o.slow && e.alive) e.slowT = Math.max(e.slowT || 0, o.slow); }
 }
@@ -2330,18 +2357,18 @@ function tickRunners(dt) {
   for (const r of RUNNERS) {
     if (r.delay > 0) { r.delay -= dt; r.mesh.visible = false; continue; }
     r.mesh.visible = true;
-    if (r.park && !r.parked && r.u <= 0.55) { r.parked = true; r.parkT = 4; floatText(r.mesh.position.clone().setY(3), "車隊遊行：路障！", "gold"); fx.onSkill(r.h, "park"); }
+    if (r.park && !r.parked && r.u <= 0.55) { r.parked = true; r.parkT = 4; floatText(r.mesh.position.clone().setY(3), "宣傳車擋路！", "gold"); fx.onSkill(r.h, "park"); }
     if (r.parkT > 0) { r.parkT -= dt; for (const e of ENEMIES) if (e.alive && e.lane === r.L && Math.abs(e.u - r.u) < 0.06 && !ET[e.type].boss) e.stun = Math.max(e.stun, 0.2); } else r.u += (r.dir * r.speed * dt) / r.L.len;
     const p = laneAt(r.L, r.u), t = laneTan(r.L, r.u); r.mesh.position.set(p.x - t.z * r.side, bridgeY(r.L, r.u) + 0.03 + Math.abs(Math.sin(elapsed * 14)) * 0.15, p.z + t.x * r.side); r.mesh.rotation.y = Math.atan2(-t.x, -t.z);
     for (const e of ENEMIES) {
       if (!e.alive || e.lane !== r.L || r.hit.has(e) || Math.abs(e.u - r.u) > 0.045) continue;
       r.hit.add(e); const boss = ET[e.type].boss;
-      damage(e, r.dmg * (boss ? 0.5 : 1) * orgK(), r.h, { raw: !r.h, c: "#ffd36b" });
+      damage(e, r.dmg * (boss ? 0.5 : 1) * orgK(), r.h, { raw: !r.h, c: "#ffd36b" }); if (CC.allybomb && r.kind === "ally" && once("ab" + (e.gen % 7), 0.2)) aoe(e.pos.clone(), 2.2, 8 * CL("allybomb"), r.h, { c: "#ffb03a" });
       if (e.alive) { if (r.stun) e.stun = Math.max(e.stun, boss ? r.stun * 0.3 : r.stun); if (r.knock && !boss) e.u = Math.max(0, e.u - r.knock); }
       burst(e.pos.clone().add(V3(0, 1, 0)), "#ffd36b", 6, 4);
     }
     if (r.u <= 0) { r.done = true; burst(r.mesh.position, "#ffffff", 8, 3); scene.remove(r.mesh);
-      if (r.boom) { stunAll(1.2, 0.4); shockwave(V3(0, 0, 0), "#3fbf6c", 22, 0.7); G.shake = Math.max(G.shake, 0.45); sound.thump(); if (once("boom", 20)) banner("返鄉大會師！", "全場暈眩 1.2 秒", false, 1.4); fx.onSkill(r.h, "rally2"); } }
+      if (r.boom) { stunAll(1.2, 0.4); shockwave(V3(0, 0, 0), "#3fbf6c", 22, 0.7); G.shake = Math.max(G.shake, 0.45); sound.thump(); if (once("boom", 20)) banner("衝到底全場暈！", "全場暈眩 1.2 秒", false, 1.4); fx.onSkill(r.h, "rally2"); } }
   }
   for (let i = RUNNERS.length - 1; i >= 0; i--) if (RUNNERS[i].done) RUNNERS.splice(i, 1);
 }
@@ -2360,9 +2387,9 @@ function placeTower() {
 }
 function tickTowers(dt) {
   for (const T of TOWERS) {
-    T.atkT -= dt * (1 + 0.15 * lv("b")) * PACE.rate; if (T.atkT > 0) continue;
+    T.atkT -= dt * (1 + 0.12 * lv("b")) * PACE.rate; if (T.atkT > 0) continue;
     let best = null, bu = -1; for (const e of ENEMIES) if (e.alive && e.pos.distanceTo(T.pos) < 8.5 && e.u > bu) { bu = e.u; best = e; }
-    if (best) { const dm = 1.7 * (1 + campBonus()) * orgK() * (G.evo.hou ? 2 : 1), from = T.pos.clone().add(V3(0, 3.2, 0));
+    if (best) { const dm = 1.7 * (1 + campBonus()) * orgK() * (G.evo.hou ? 2 : 1) * (1 + 1.0 * CL("turret")), from = T.pos.clone().add(V3(0, 3.2, 0));
       if (G.evo.lin) { const ts = alive().filter((q) => q.pos.distanceTo(T.pos) < 8.5).sort((a, b) => b.u - a.u).slice(0, 3); for (const q of ts) shot(null, q, dm, { from, tex: shotTex("tower", ...SHOT_STYLE.tower), c: "#1f8a4a" }); }
       else { shot(null, best, dm, { from, tex: shotTex("tower", ...SHOT_STYLE.tower), c: "#5aa0ee" }); if (G.evo.hou) beam(from, best.pos.clone().add(V3(0, 1.1, 0)), "#f2b632", 0.8, 0.15); }
       T.atkT = 0.7; } else T.atkT = 0.2;
@@ -2376,18 +2403,19 @@ function damage(e, amt, h, o = {}) {
   let d = amt, crit = false;
   if (h && !o.raw) {
     d *= dmgMult(h);
-    const cc = 0.1 * lv("mark") + (h.key === "tsai" ? (h.lv >= 2 ? 0.35 : 0.25) : 0) + (G.buff.frame > 0 ? 0.3 : 0);
-    if (o.forceCrit || (cc && rand() < cc)) { d *= h.key === "tsai" ? 2.6 : 2.5; crit = true; }
+    const cc = 0.08 * lv("mark") + (h.key === "tsai" ? (h.lv >= 2 ? 0.35 : 0.25) : 0) + (G.buff.frame > 0 ? 0.3 : 0);
+    const sc0 = CC.stuncrit && e.stun > 0; if (sc0) d *= 1 + 0.6 * CL("stuncrit");
+    if (o.forceCrit || sc0 || (cc && rand() < cc)) { d *= h.key === "tsai" ? 2.6 : 2.5; crit = true; }
     if (h.key === "air" && isBr(h, "B") && (e.type === "swarm" || e.type === "mini")) d *= 3;
   }
-  if (e.type === "cycle" || e.type === "cog") {
+  if (false) { // 簡化：口號怪不再分屬性克制（藍綠兩種口號怪同時拿掉）
     if (o.form && o.form === e.form) { d *= 2.5; if (once("ctr" + e.gen, 1.2)) floatText(e.pos.clone().add(V3(0, 3, 0)), `${FORM_NAME[o.form]} 克制！`, "blue"); }
     else d *= 0.6;
   }
   if (e.type === "board" && !e.revealed) { d *= 0.4; if (++e.hits >= 5) reveal(e, "被打到原形畢露"); }
   if (e.type === "troll" && h && h.key !== "chiang" && !(e.factT > 0) && !o.noRedirect) {
     const t = otherLaneTarget(e);
-    if (t) { const r = d * 0.6; d *= 0.4; beam(e.pos.clone().add(V3(0, 1.4, 0)), t.pos.clone().add(V3(0, 1.4, 0)), "#9a6be0", 0.8, 0.3); if (once("qa", 2.2)) floatText(e.pos.clone().add(V3(0, 2.6, 0)), "問A答B", ""); damage(t, r, h, { raw: true, noRedirect: true }); }
+    if (t) { const r = d * 0.6; d *= 0.4; beam(e.pos.clone().add(V3(0, 1.4, 0)), t.pos.clone().add(V3(0, 1.4, 0)), "#9a6be0", 0.8, 0.3); if (once("qa", 2.2)) floatText(e.pos.clone().add(V3(0, 2.6, 0)), "答非所問", ""); damage(t, r, h, { raw: true, noRedirect: true }); }
   }
   if (e.type === "final" && h?.key === "mid") d *= isBr(h, "B") ? 6 : 4;
   if (ET[e.type].boss && h && teamBr("mid", "B")) d *= 1.3;
@@ -2402,7 +2430,7 @@ function damage(e, amt, h, o = {}) {
   if ((crit || ET[e.type].boss) && once("hstop", 0.35)) G.hitStop = crit ? 0.06 : 0.04;
   if (once("hitsfx", 0.12)) sound.hit();
   G.dmgTotal += d;
-  if (crit && once("crit", 1.1)) floatText(e.pos.clone().add(V3(0, 2.8, 0)), h.key === "tsai" ? "YBSG！" : "爆擊！", "gold");
+  if (crit && once("crit", 1.1)) floatText(e.pos.clone().add(V3(0, 2.8, 0)), "爆擊！", "gold");
   e.dn = (e.dn || 0) + d; if (crit) e.dnc = true; if (!(e.dnT > 0)) e.dnT = 0.35;
   fx.onHit(e, d, crit, h);
   if (crit && h && h.key === "tsai" && !o.noEvo) {
@@ -2424,7 +2452,7 @@ function kill(e, h) {
     if (G.buff.rally > 0 && teamBr("han", "A")) G.buff.rally = Math.min(G.buff.rally + 0.3, 12);
     if (G.buff.shirt > 0 && teamBr("lai", "A")) G.buff.shirt = Math.min(G.buff.shirt + 0.3, 12);
     if (h && h.key === "ground" && isBr(h, "B") && h.kills % 10 === 0) { heal(1); floatText(h.pos.clone().add(V3(0, 4.6, 0)), "拜票 +1 位", "good"); }
-    if (lv("chain") && !boss && rand() < [0, 0.15, 0.25][lv("chain")]) { const q = ENEMIES.filter((x) => x.alive && x.type === e.type).sort((a, b) => a.pos.distanceTo(e.pos) - b.pos.distanceTo(e.pos))[0]; if (q) { beam(e.pos.clone().add(V3(0, 1, 0)), q.pos.clone().add(V3(0, 1, 0)), "#06c755", 0.7, 0.3); later(0.15, () => damage(q, 8 * (1 + campBonus()), null, { raw: true })); } }
+    if (lv("chain") && !boss && rand() < [0, 0.15, 0.25, 0.35][lv("chain")] * (1 + 0.7 * CL("pushchain"))) { const q = ENEMIES.filter((x) => x.alive && x.type === e.type).sort((a, b) => a.pos.distanceTo(e.pos) - b.pos.distanceTo(e.pos))[0]; if (q) { beam(e.pos.clone().add(V3(0, 1, 0)), q.pos.clone().add(V3(0, 1, 0)), "#06c755", 0.7, 0.3); later(0.15, () => damage(q, 8 * (1 + campBonus()), null, { raw: true })); } }
     if (lv("flash") && G.kills % 50 === 0) later(0.1, flashAll);
     if (e.dn > 0) showDnum(e);
     fx.onKill(e, h); }
@@ -2451,9 +2479,9 @@ function leak(e) {
   if (G.will <= 0) lose();
 }
 function stunHero(h, sec, label, srcLane = null) {
-  if (!h || G.ended) return;
+  if (!h || G.ended || CC.nostun) return;
   if (h.key === "chiang") { // 被動「問A答B」：不暈，反手打隔壁路
-    floatText(h.pos.clone().add(V3(0, 4.6, 0)), "問A答B", "blue");
+    floatText(h.pos.clone().add(V3(0, 4.6, 0)), "反手一擊", "blue");
     let t = null, bu = -1; for (const e of ENEMIES) if (e.alive && e.lane !== srcLane && e.u > bu) { bu = e.u; t = e; }
     if (t) shot(h, t, heroDmg(h) * 2, { tex: TX.cyc.chip, size: 1.3, c: "#4f86d8" });
     return;
@@ -2490,7 +2518,7 @@ function heroAttack(h, e) {
       h.n++;
       if (evo || (L2 && h.n % 4 === 0)) { // 三合一彈：同時有輝達（加傷）、巨蛋（範圍）、牛奶（緩速）
         playAtk(h); shot(h, e, base * 1.35, { tex: TX.cyc.dome, form: e.form, size: 1.7, aoe: 2.4, slow: 1.6, c: "#4f86d8", chainN: A ? 4 : 0 });
-        if (once("tri" + h.slot, 8)) floatText(h.pos.clone().add(V3(0, 4.6, 0)), evo ? "無限循環" : "三合一！", "blue"); break;
+        if (once("tri" + h.slot, 8)) floatText(h.pos.clone().add(V3(0, 4.6, 0)), evo ? "每發三合一" : "三合一！", "blue"); break;
       }
       const f = FORMS_C[Math.floor((h.n - 1) / 3) % 3]; if (h.n % 3 === 1) playAtk(h);
       shot(h, e, base * (f === "chip" ? 1.35 : 1), { tex: TX.cyc[f], form: f, size: 1.2, c: "#4f86d8", ...(f === "dome" ? { aoe: 3.0, c: "#cfd8e3" } : {}), ...(f === "milk" ? { slow: 1.6 } : {}), ...(f === "chip" && A ? { chainN: 4 } : {}) });
@@ -2499,14 +2527,14 @@ function heroAttack(h, e) {
     case "shen": {
       const f = FORMS_S[Math.floor(h.n / 3) % 3]; h.n++;
       const big = evo || (L2 && h.n % 4 === 0);
-      if (h.n % 3 === 1 || big) { playAtk(h); if (once("shf", 6)) heroSay(h, big ? (evo ? "無限洋流" : "三合一大浪") : FORM_NAME[f]); }
+      if (h.n % 3 === 1 || big) { playAtk(h); if (once("shf", 6)) heroSay(h, big ? "三合一大浪" : "穿透浪"); }
       launchWave(h, e, base * (big ? 1.35 : 1), big ? "all" : f); break;
     }
     case "lu": {
       const n = alive().length, m = Math.min(L2 ? 4 : 3, 1 + 0.12 * n); h.n++; if (h.n % 4 === 0) playAtk(h);
       const t = Bb ? e : e; const dm = base * m * (Bb ? 1.6 : 1);
       shot(h, t, dm, { tex: shotTex("lu", ...SHOT_STYLE.lu), size: 1 + (m - 1) * 0.25, c: "#4c8fdc", ...(evo ? { aoe: 2.2 } : h.n % 3 === 0 ? { aoe: 2.2 } : {}), ...(L2 && h.n % 4 === 0 ? { knock: 0.02 } : {}), ...(A ? { splash: 2 } : {}) });
-      if (m >= 2 && once("lu", 9)) floatText(h.pos.clone().add(V3(0, 4.8, 0)), Bb ? "全黨打魔王！" : A ? "全黨開打！" : "全黨打一人！", "blue"); break;
+      if (m >= 2 && once("lu", 9)) floatText(h.pos.clone().add(V3(0, 4.8, 0)), Bb ? "專打大隻！" : A ? "拳拳濺射！" : "越多越痛！", "blue"); break;
     }
     case "hou": {
       const a = muzzle(h), b = e.pos.clone().add(V3(0, 1.1, 0));
@@ -2514,7 +2542,7 @@ function heroAttack(h, e) {
       R3FX.houBeam(h, a, b, mult); damage(e, base * mult, h, { c: "#f2b632" });
       if (L2) for (const q of ENEMIES) if (q.alive && q !== e && q.lane === e.lane && Math.abs(q.u - e.u) < 0.35) damage(q, base * 0.5, h, {}); // 貫穿整條路
       if (A) { const ls = LANES.filter((L) => L !== e.lane).sort((x, y) => (frontOf(y)?.u ?? -1) - (frontOf(x)?.u ?? -1)).slice(0, hasHero("chiang") ? 2 : 1); for (const L of ls) { const q = frontOf(L); if (q) { R3FX.houBeam(h, a, q.pos.clone().add(V3(0, 1.1, 0)), 1); damage(q, base, h, {}); } } }
-      if (mult >= 3 && once("ramp" + h.slot, 6)) floatText(h.pos.clone().add(V3(0, 4.8, 0)), "盯到底！", "gold");
+      if (mult >= 3 && once("ramp" + h.slot, 6)) floatText(h.pos.clone().add(V3(0, 4.8, 0)), "越打越痛！", "gold");
       break;
     }
     case "lin": {
@@ -2524,13 +2552,13 @@ function heroAttack(h, e) {
         if (Bb) { // 口誤也算數：掉頭追最硬的那隻，×3、無視護盾
           let tgt = e; for (const q of ENEMIES) if (q.alive && q.hp > tgt.hp && q.pos.distanceTo(h.pos) < rangeOf(h) + 4) tgt = q;
           shot(h, tgt, base * 3, { tex: shotTex("lin", ...SHOT_STYLE.lin), size: 1.9, arc: 3.2, spin: true, c: "#1f8a4a" }); playAtk(h);
-          if (once("slipB", 3)) floatText(h.pos.clone().add(V3(0, 5, 0)), "口誤也算數！", "good"); G.slips++; dexSee("slip"); break;
+          if (once("slipB", 3)) floatText(h.pos.clone().add(V3(0, 5, 0)), "追蹤彈！", "good"); G.slips++; dexSee("slip"); break;
         }
         const back = h.pos.clone().add(h.pos.clone().sub(e.pos).setY(0).normalize().multiplyScalar(6)).setY(1);
         shot(h, e, 0, { tex: shotTex("lin", ...SHOT_STYLE.lin), miss: true, toPos: back, dur: 0.7, size: 1.9, arc: 3.2, spin: true });
         if (L2) { const q = alive().filter((q) => q.pos.distanceTo(h.pos) < 6)[0]; if (q) damage(q, base, h, {}); } else e.shield = Math.min(6, e.shield + 3);
-        playAtk(h); heroSay(h, "投給蔣萬安", 1.4); G.slips++; dexSee("slip");
-        if (once("slip", 1.5)) floatText(h.pos.clone().add(V3(0, 5, 0)), "口誤！子彈掉頭", "bad");
+        playAtk(h); heroSay(h, "（喊錯名字）", 1.4); G.slips++; dexSee("slip");
+        if (once("slip", 1.5)) floatText(h.pos.clone().add(V3(0, 5, 0)), "失誤！子彈飛歪", "bad");
       } else if (A && h.n % 5 === 0) { // 火力連發：三連射
         const ts = alive().filter((q) => q.pos.distanceTo(h.pos) <= rangeOf(h)).sort((a, b) => b.u - a.u).slice(0, 3); playAtk(h);
         (ts.length ? ts : [e]).forEach((q, i) => shot(h, q, base, { tex: shotTex("lin", ...SHOT_STYLE.lin), size: 1.3, c: "#1f8a4a", dur: 0.2 + i * 0.06 }));
@@ -2541,7 +2569,7 @@ function heroAttack(h, e) {
     case "air": {
       const r = (L2 ? 2.7 : 1.8) * micK();
       shot(h, e, base, { tex: shotTex("air", ...SHOT_STYLE.air), sky: true, dur: 0.45, c: "#ff5c8a", onHit: (q) => {
-        if (q.type === "cog" && !L2) { q.hp = Math.min(q.maxHp, q.hp + base); if (once("air", 3)) floatText(q.pos.clone().add(V3(0, 2.6, 0)), "被帶風向（補血）", "bad"); return; }
+        if (false) { /* 簡化：拿掉「打口號怪會補血」 */ q.hp = Math.min(q.maxHp, q.hp + base); if (once("air", 3)) floatText(q.pos.clone().add(V3(0, 2.6, 0)), "被帶風向（補血）", "bad"); return; }
         damage(q, base, h); for (const o of ENEMIES) if (o.alive && o !== q && (L2 || o.type !== "cog") && o.pos.distanceTo(q.pos) < r) damage(o, base * 0.5, h);
       } }); break;
     }
@@ -2557,22 +2585,22 @@ function castSkill(h) {
     case "han": if (!alive().length) return false; G.buff.rally = L2 ? 8 : 6; h.mute = G.evo.han ? 0 : 2; heal(1); playAtk(h); heroSay(h, "造勢！", 1); dexSee("rally");
       if (!G.evo.han) ["還有一點…", "再講一句…", "最後一句！"].forEach((t, i) => later(0.9 * (i + 1), () => heroSay(h, t, 1))); /* v2：講不停（看得見的弱點） */
       { const R0 = rangeOf(h) + 3; for (const e of ENEMIES) if (e.alive && e.pos.distanceTo(h.pos) < R0) { damage(e, 5, h, {}); if (e.alive && !ET[e.type].boss) e.u = Math.max(0, e.u - 0.03); } shockwave(h.pos, "#ffd36b", R0, 0.6); } // 開講聲浪
-      banner("造勢！全場鼓舞", "附近的怪被震退，全隊攻速 +40%", false, 2); burst(h.pos.clone().add(V3(0, 4, 0)), "#ffd36b", 16, 6); sound.sparkle(); break;
+      banner("全隊加速！", "附近的怪被震退，全隊攻速 +40%", false, 2); burst(h.pos.clone().add(V3(0, 4, 0)), "#ffd36b", 16, 6); sound.sparkle(); break;
     case "shen": { const ls = isBr(h, "A") ? busiestLanes(3) : [busiestLane()].filter(Boolean); if (!ls.length) return false; dexSee("bear");
-      ls.forEach((L, i) => runner("bear", L, { speed: 10, dmg: 10 * dmgMult(h), knock: 0.05, stun: 0.8, h, delay: i * 0.25 })); playAtk(h); heroSay(h, ls.length > 1 ? "黑熊連隊" : "召喚黑熊");
-      if (once("bearT", 30)) banner(ls.length > 1 ? "黑熊連隊出動！" : "黑熊出動！", ls.length > 1 ? "三條路一起衝" : `沿著${ls[0].name}一路衝`, false, 1.6); sound.roar(); break; }
+      ls.forEach((L, i) => runner("bear", L, { speed: 10, dmg: 10 * dmgMult(h), knock: 0.05, stun: 0.8, h, delay: i * 0.25 })); playAtk(h); heroSay(h, ls.length > 1 ? "三路黑熊" : "放黑熊");
+      if (once("bearT", 30)) banner(ls.length > 1 ? "三路黑熊！" : "黑熊衝鋒！", ls.length > 1 ? "三條路一起衝" : `沿著${ls[0].name}一路衝`, false, 1.6); sound.roar(); break; }
     case "lai": { const L = busiestLane(); if (!L) return false; const n = L2 ? 6 : 4; const boom = isBr(h, "B");
       for (let i = 0; i < n; i++) runner("ally", L, { speed: 8, dmg: 3.4 * dmgMult(h), knock: 0.02, stun: L2 ? 0.4 : 0, h, delay: i * 0.3, side: (i - (n - 1) / 2) * 0.5, boom: boom && i === n - 1 });
       if (isBr(h, "A")) G.buff.shirt = Math.max(G.buff.shirt, 6);
       playAtk(h); heroSay(h, "返鄉投票"); banner("返鄉投票！", "首投族援軍衝上" + L.name, false, 1.8); break; }
-    case "tsai": if (G.will >= 100) return false; heal(L2 ? 3 : 2); playAtk(h); heroSay(h, "芋頭壽司"); floatText(h.pos.clone().add(V3(0, 5, 0)), `+${L2 ? 3 : 2} 位選民`, "good"); break;
+    case "tsai": if (G.will >= 100) return false; heal(L2 ? 3 : 2); playAtk(h); heroSay(h, "補人！"); floatText(h.pos.clone().add(V3(0, 5, 0)), `+${L2 ? 3 : 2} 位選民`, "good"); break;
     case "huang": {
       const L = busiestLane(); if (!L) return false;
       huangDrop(h, L); if (isBr(h, "A")) later(1.3, () => { const L2b = busiestLanes(2).find((x) => x !== L); if (L2b && G.on) huangDrop(h, L2b); });
       heroSay(h, "神秘嘉賓", 1.4); break;
     }
     case "ground": { const ls = G.evo.ground ? LANES.slice() : L2 ? busiestLanes(2) : [busiestLane()].filter(Boolean); if (!ls.length) return false;
-      ls.forEach((L, i) => runner("truck", L, { speed: 9, dmg: 4 * dmgMult(h), stun: 2, h, delay: i * 0.3, park: isBr(h, "A") })); heroSay(h, ls.length > 2 ? "萬人掃街" : "宣傳車來了"); sound.honk(); break; }
+      ls.forEach((L, i) => runner("truck", L, { speed: 9, dmg: 4 * dmgMult(h), stun: 2, h, delay: i * 0.3, park: isBr(h, "A") })); heroSay(h, ls.length > 2 ? "四路齊發" : "宣傳車來了"); sound.honk(); break; }
     default: return false;
   }
   fx.onSkill(h, h.key); snapReq(2, `大招：${h.hs.skill}`, h.pos); // 行銷：分享圖用的戰場截圖
@@ -2593,7 +2621,7 @@ function tickHero(h, dt) {
   if (R.orb) R.orb.rotation.y = t * 0.6 * (h.slot % 2 ? -1 : 1);
   R.spin && R.spin(t);
   if (h.swing < 0.45) { h.swing += dt; const s = h.swing, k = s < 0.1 ? -s / 0.1 * 0.4 : s < 0.2 ? -0.4 + (s - 0.1) / 0.1 * 1.4 : Math.max(0, 1 - (s - 0.2) * 4); R.armR.rotation.x = R.armR.userData.base[0] - k * 1.0; }
-  if (h.atkA >= 0) { h.atkA += dt; R.atk && R.atk(h.atkA, dt); if (h.landAt != null && h.atkA >= h.landAt) { h.landAt = null; aoe(h.pos.clone(), 4.2 * (h.lv >= 2 ? 1.5 : 1), 8, h, { stun: 1.2, c: "#28c8c8" }); if (isBr(h, "B") && h.dropLane) { for (const q of ENEMIES) if (q.alive && q.lane === h.dropLane) q.slowT = Math.max(q.slowT || 0, 5); floatText(h.pos.clone().add(V3(0, 5.8, 0)), "壓軸嘉賓：整條路變慢", "blue"); } fx.onSkill(h, "land"); G.shake = Math.max(G.shake, 0.35); floatText(h.pos.clone().add(V3(0, 4.8, 0)), "神秘嘉賓登場", "good"); sound.thump(); } if (h.atkA > 1.45) { h.atkA = -1; R.atk && R.atk(-1, 0); } }
+  if (h.atkA >= 0) { h.atkA += dt; R.atk && R.atk(h.atkA, dt); if (h.landAt != null && h.atkA >= h.landAt) { h.landAt = null; aoe(h.pos.clone(), 4.2 * (h.lv >= 2 ? 1.5 : 1), 8, h, { stun: 1.2, c: "#28c8c8" }); if (isBr(h, "B") && h.dropLane) { for (const q of ENEMIES) if (q.alive && q.lane === h.dropLane) q.slowT = Math.max(q.slowT || 0, 5); floatText(h.pos.clone().add(V3(0, 5.8, 0)), "整條路變慢！", "blue"); } fx.onSkill(h, "land"); G.shake = Math.max(G.shake, 0.35); floatText(h.pos.clone().add(V3(0, 4.8, 0)), "神秘嘉賓登場", "good"); sound.thump(); } if (h.atkA > 1.45) { h.atkA = -1; R.atk && R.atk(-1, 0); } }
   if (h.bubT > 0) { h.bubT -= dt; if (h.bubT <= 0) h.bub.classList.add("off"); }
   if (!G.on) { const d = angD(camYaw(h.pos), h.holder.rotation.y); h.holder.rotation.y += d * Math.min(1, dt * 4); }
   if (!G.on || G.paused) return;
@@ -2615,13 +2643,13 @@ function tickHero(h, dt) {
 }
 
 // ── 跨陣營組合技（R3：冷卻一律 24 秒；新增 同台造勢／同框／火力光束，皆藍綠同隊才成立）──
-const COMBOS = [
-  { id: "debate", name: "交叉詰問", need: ["chiang", "shen"], cd: 24, sub: "蔣萬安 × 沈伯洋：全場交叉詰問，全體暈眩", tc: "rgba(60,70,150,0.94)" },
-  { id: "stage", name: "同台造勢", need: ["han", "lai"], cd: 24, sub: "韓國瑜 × 賴清德：同台造勢，全隊攻速 +40%、補 2 位選民", tc: "rgba(60,70,150,0.94)" },
-  { id: "frame", name: "同框", need: ["lu", "tsai"], cd: 24, sub: "盧秀燕 × 蔡英文：全場 8 點傷害，6 秒內全隊爆擊率 +30%", tc: "rgba(60,70,150,0.94)" },
-  { id: "beam2", name: "火力光束", need: ["hou", "lin"], cd: 24, sub: "侯友宜 × 林俊憲：兩道光束掃過最前面 10 隻怪", tc: "rgba(60,70,150,0.94)" },
-  { id: "sanzi", name: "三子合體", need: ["han", "lu", "hou"], cd: 24, sub: "韓國瑜 × 盧秀燕 × 侯友宜：全場重擊、把怪推回去＋全隊攻速 +50%", tc: "rgba(31,86,176,0.94)" },
-  { id: "lst", name: "賴蕭蔡", need: ["lai", "tsai"], need2: ["shen", "lin"], cd: 24, sub: "賴清德 × 蔡英文 ＋綠營隊友：補 2 位選民＋全隊傷害 +50%", tc: "rgba(29,138,76,0.94)" },
+const COMBOS = [ // 簡化：名稱先講效果；藍綠同隊才成立
+  { id: "debate", name: "全場暈眩", need: ["chiang", "shen"], cd: 24, sub: "蔣萬安 × 沈伯洋 同隊：全場的怪一起暈", tc: "rgba(60,70,150,0.94)" },
+  { id: "stage", name: "全隊加速＋補人", need: ["han", "lai"], cd: 24, sub: "韓國瑜 × 賴清德 同隊：全隊攻速 +40%、補 2 位選民", tc: "rgba(60,70,150,0.94)" },
+  { id: "frame", name: "全場傷害＋爆擊", need: ["lu", "tsai"], cd: 24, sub: "盧秀燕 × 蔡英文 同隊：全場受傷，6 秒內更常爆擊", tc: "rgba(60,70,150,0.94)" },
+  { id: "beam2", name: "雙光束掃射", need: ["hou", "lin"], cd: 24, sub: "侯友宜 × 林俊憲 同隊：兩道光束掃過最前面 10 隻", tc: "rgba(60,70,150,0.94)" },
+  { id: "sanzi", name: "全場重擊推回", need: ["han", "lu", "hou"], cd: 24, sub: "藍營三人同隊：全場重擊、把怪推回＋全隊攻速 +50%", tc: "rgba(31,86,176,0.94)" },
+  { id: "lst", name: "全隊加傷＋補人", need: ["lai", "tsai"], need2: ["shen", "lin"], cd: 24, sub: "綠營三人同隊：補 2 位選民＋全隊傷害 +50%", tc: "rgba(29,138,76,0.94)" },
 ];
 const comboOn = (c, keys) => c.need.every((k) => keys.includes(k)) && (!c.need2 || c.need2.some((k) => keys.includes(k)));
 function tickCombos(dt) {
@@ -2668,61 +2696,54 @@ function fireCombo(c) {
 
 // ── R3 卡池：30 張（普通 16／稀有 10／傳說 4），標籤套組，進化合成 ──
 // rar: c 普通／r 稀有／l 傳說；tag: fire 輸出、voice 聲量、ctrl 控場、aid 補給、org 組織、check 查核、eco 經濟；unlock＝公民等級；nn＝投票日中立版不出
-const CARDS = {
-  b: { s: "全隊打更快", name: "我給ㄅ級分", ic: "💯", rar: "c", type: "被動", tag: "fire", max: 3, d: ["全隊攻速 +15%", "全隊攻速 +30%", "全隊攻速 +45%"] },
-  mark: { s: "更常爆擊", name: "重點標記", ic: "🎯", rar: "c", type: "被動", tag: "fire", max: 3, d: ["全隊爆擊率 +10%（爆擊 ×2.5）", "全隊爆擊率 +20%", "全隊爆擊率 +30%"] },
-  fish: { s: "自動丟魚炸怪", name: "酸菜一魚", ic: "🐟", rar: "c", type: "主動", tag: "voice", max: 3, nn: true, d: ["每 8 秒朝怪最多的地方丟一條魚，範圍傷害 6", "範圍傷害 9", "範圍傷害 13"] },
-  dumpling: { s: "馬上 +10 選民", name: "8 包煎餃拼到底", ic: "🥟", rar: "c", type: "經濟", tag: "aid", max: 3, nn: true, d: ["立刻補 10 位選民＋煎餃雨，之後每波 +3", "每波 +6", "每波 +9"] },
-  patrol: { s: "路邊蓋一座塔", name: "留言區海巡", ic: "🛟", rar: "c", type: "場地物", tag: "org", max: 3, d: ["在最吵的路旁放一座海巡塔", "再放一座", "再放一座"] },
-  fact: { s: "怪受傷更重", name: "事實查核", ic: "✅", rar: "c", type: "被動", tag: "check", max: 3, d: ["每 6 秒查核全場：看板露出真血量、問A答B 失效，受傷 +30%", "受傷 +50%", "受傷 +70%"] },
-  tea: { s: "周圍打更快", name: "茶水站", ic: "🍵", rar: "c", type: "場地物", tag: "aid", max: 2, d: ["在主力英雄旁擺茶水站：6 格內攻速 +20%、被暈時間減半", "攻速 +35%"] },
-  notice: { s: "每波多拿志工", name: "投票通知單", ic: "📨", rar: "c", type: "經濟", tag: "eco", max: 2, d: ["每波結束 +10 志工", "每波結束 +20 志工"] },
-  morning: { s: "熱度加倍", name: "早安圖反轉", ic: "🌄", rar: "c", type: "經濟", tag: "eco", max: 1, d: ["打倒懶人包、長輩圖的熱度 ×2"] },
-  lazyfix: { s: "懶人包變弱", name: "懶人包更正版", ic: "📝", rar: "c", type: "被動", tag: "check", max: 2, d: ["懶人包、長輩圖血量 −20%", "血量 −35%"] },
-  canvass: { s: "漏怪少扣分", name: "掃街拜票", ic: "🚶", rar: "c", type: "被動", tag: "aid", max: 2, d: ["漏怪時 30% 機率不扣意願", "50% 機率"] },
-  bento: { s: "定時多選民", name: "志工便當", ic: "🍱", rar: "c", type: "經濟", tag: "aid", max: 3, d: ["每 30 秒 +1 位選民", "每 30 秒 +2", "每 30 秒 +3"] },
-  flyer: { s: "橋上放減速", name: "文宣疊疊樂", ic: "📚", rar: "c", type: "場地物", tag: "ctrl", max: 3, d: ["在最吵的橋放一疊文宣：踩到緩速 40%", "再放一疊", "再放一疊"] },
-  mic: { s: "範圍招變大", name: "麥克風加大聲", ic: "🎤", rar: "c", type: "被動", tag: "voice", max: 2, d: ["範圍傷害與範圍 +25%", "+50%"] },
-  second: { s: "技能冷卻變短", name: "第二聲", ic: "📣", rar: "c", type: "被動", tag: "fire", max: 3, d: ["技能與催票冷卻 −10%", "−20%", "−30%"] },
-  booth: { s: "救人時間變長", name: "投開票所志工", ic: "🙋", rar: "c", type: "被動", tag: "aid", max: 1, d: ["灰選民可救時間 7.5→11 秒，救回再 +2"] },
-  forum: { s: "催票推兩條路", name: "政見發表會", ic: "🗣️", rar: "r", type: "主動", tag: "ctrl", max: 1, unlock: 3, d: ["全民催票同時推兩條路"] },
-  talk3: { s: "橋上的怪更痛", name: "政論節目第 3 小時", ic: "📺", rar: "r", type: "被動", tag: "check", max: 1, unlock: 3, d: ["敵人在橋上每待 1 秒受傷 +5%（最多 +50%）"] },
-  bus: { s: "專車撞飛大招", name: "返鄉投票專車", ic: "🚌", rar: "r", type: "主動", tag: "org", max: 1, d: ["大招：一台專車開過四條路，沿路撞飛（按右下角使用）"] },
-  seal: { s: "民調怪變弱", name: "民調封關", ic: "🔒", rar: "r", type: "被動", tag: "check", max: 1, d: ["民調怪不再讓附近的怪跟風加速，血量 −50%"] },
-  first: { s: "定時派援軍", name: "首投族報到", ic: "🧑‍🎓", rar: "r", type: "場地物", tag: "org", max: 2, d: ["每 20 秒派 3 位首投族衝最吵的路", "每 14 秒"] },
-  chain: { s: "擊殺會連鎖", name: "LINE 群轉傳", ic: "💬", rar: "r", type: "被動", tag: "voice", max: 2, d: ["打倒時 15% 機率連鎖打同類的怪", "25% 機率"] },
-  cross: { s: "跨陣營更強", name: "跨黨派便當會", ic: "🤝", rar: "r", type: "被動", tag: "org", max: 1, d: ["每多 1 個陣營，跨陣營加成再 +5%"] },
-  subsidy: { s: "存志工有利息", name: "選舉補助款", ic: "💰", rar: "r", type: "經濟", tag: "eco", max: 1, unlock: 13, d: ["每波結束：每存 10 志工多給 2（最多 +20）"] },
-  reroll: { s: "多 2 次重抽", name: "再擲一次", ic: "🎲", rar: "r", type: "經濟", tag: "eco", max: 2, d: ["重抽 +2", "重抽 +2"] },
-  trend: { s: "更快出卡", name: "熱搜第一", ic: "🔥", rar: "r", type: "經濟", tag: "eco", max: 2, d: ["熱度 +30%", "熱度 +60%"] },
-  countdown: { s: "爆發更常更久", name: "投票日倒數", ic: "⏳", rar: "l", type: "被動", tag: "fire", max: 1, unlock: 16, d: ["民氣累積 +50%，爆發時刻 +3 秒"] },
-  unity: { s: "組合技更常放", name: "全民團結", ic: "🫱", rar: "l", type: "被動", tag: "org", max: 1, unlock: 10, d: ["組合技冷卻 −40%，每波可放 2 次"] },
-  onevote: { s: "票越多越強", name: "一票一票", ic: "🗳️", rar: "l", type: "被動", tag: "fire", max: 1, unlock: 10, d: ["每 1 位選民投票，全隊傷害 +0.2%（最多 +80%）"] },
-  flash: { s: "定時落閃電", name: "開票速報", ic: "⚡", rar: "l", type: "主動", tag: "voice", max: 1, unlock: 12, d: ["每打倒 50 隻，全場落一次開票閃電"] },
+const CARDS = { // s＝大字效果、name＝小字梗名；tag 只有 dmg（⚔️ 傷害）、ctrl（🧊 控場）
+  b: { s: "全隊打更快", name: "手搖飲加持", ic: "🧋", rar: "c", tag: "dmg", max: 5, d: ["全隊攻速 +12%", "全隊攻速 +24%", "全隊攻速 +36%", "全隊攻速 +48%", "全隊攻速 +60%"] },
+  mark: { s: "更常爆擊", name: "重點標記", ic: "🎯", rar: "c", tag: "dmg", max: 5, d: ["全隊爆擊率 +8%（爆擊 ×2.5）", "爆擊率 +16%", "爆擊率 +24%", "爆擊率 +32%", "爆擊率 +40%"] },
+  fish: { s: "定時範圍爆炸", name: "空投傳單", ic: "📦", rar: "c", tag: "dmg", max: 5, d: ["每 8 秒朝最擠的地方空投，範圍傷害 6", "範圍傷害 9", "範圍傷害 13", "範圍傷害 17", "範圍傷害 22、每 6 秒一次"] },
+  patrol: { s: "路邊蓋砲塔", name: "留言區海巡", ic: "🛟", rar: "c", tag: "dmg", max: 4, d: ["在最擠的路旁蓋一座自動砲塔", "再蓋一座", "再蓋一座", "再蓋一座"] },
+  mic: { s: "範圍更大更痛", name: "麥克風加大聲", ic: "🎤", rar: "c", tag: "dmg", max: 3, d: ["範圍攻擊的範圍與傷害 +25%", "+50%", "+75%"] },
+  second: { s: "技能冷卻更快", name: "加開場次", ic: "📣", rar: "c", tag: "dmg", max: 3, d: ["英雄技能冷卻 −10%", "−20%", "−30%"] },
+  lazyfix: { s: "小怪血變少", name: "懶人包更正版", ic: "📝", rar: "c", tag: "dmg", max: 3, d: ["懶人包、長輩圖血量 −20%", "血量 −35%", "血量 −50%"] },
+  tea: { s: "英雄不怕暈", name: "茶水站", ic: "🍵", rar: "c", tag: "ctrl", max: 2, d: ["主力英雄旁擺茶水站：附近英雄被暈時間減半、攻速 +20%", "攻速 +35%"] },
+  flyer: { s: "橋上路障減速", name: "文宣疊疊樂", ic: "📚", rar: "c", tag: "ctrl", max: 4, d: ["在最擠的橋放一疊文宣：踩到的怪變慢 40%", "再放一疊", "再放一疊", "再放一疊"] },
+  slow: { s: "全場怪變慢", name: "下班車潮", ic: "🚗", rar: "c", tag: "ctrl", max: 5, d: ["所有怪移動 −6%", "−11%", "−16%", "−20%", "−24%"] },
+  canvass: { s: "漏網的怪擋一半", name: "掃街拜票", ic: "🚶", rar: "c", tag: "ctrl", max: 2, d: ["怪走到投票所時 30% 會被擋下", "50% 會被擋下"] },
+  fact: { s: "全場受傷更重", name: "事實查核", ic: "✅", rar: "r", tag: "dmg", max: 3, d: ["每 6 秒查核全場：怪受傷 +30%，修圖看板露出真血量", "受傷 +50%", "受傷 +70%"] },
+  chain: { s: "擊殺連鎖", name: "LINE 群轉傳", ic: "💬", rar: "r", tag: "dmg", max: 3, d: ["打倒時 15% 機率連鎖打同一種怪", "25% 機率", "35% 機率"] },
+  first: { s: "定時派援軍", name: "首投族報到", ic: "🧑‍🎓", rar: "r", tag: "ctrl", max: 3, d: ["每 20 秒派 3 位年輕人衝最擠的路，把怪撞退", "每 14 秒", "每 10 秒"] },
+  forum: { s: "定時全場推回", name: "政見發表會", ic: "🗣️", rar: "r", tag: "ctrl", max: 3, unlock: 3, d: ["每 15 秒把四條路的怪都推回一段、暈 1.5 秒", "每 12 秒", "每 9 秒"] },
+  seal: { s: "加速怪失效", name: "民調封關", ic: "🔒", rar: "r", tag: "ctrl", max: 1, d: ["民調怪不再讓旁邊的怪變快，血量 −50%"] },
+  stun: { s: "定時全場暈", name: "插播廣告", ic: "📺", rar: "r", tag: "ctrl", max: 3, d: ["每 15 秒全場小怪暈 1 秒", "每 10 秒", "每 7 秒"] },
+  onevote: { s: "越多人投票越強", name: "一票一票", ic: "🗳️", rar: "l", tag: "dmg", max: 1, unlock: 10, d: ["每 1 位選民投票，全隊傷害 +0.2%（最多 +80%）"] },
+  flash: { s: "全場落閃電", name: "開票速報", ic: "⚡", rar: "l", tag: "dmg", max: 1, unlock: 12, d: ["每打倒 50 隻，全場落一次閃電"] },
+  freeze: { s: "全場定格", name: "投票所開門", ic: "🔔", rar: "l", tag: "ctrl", max: 1, unlock: 13, d: ["每 20 秒全場（含魔王）暈 2 秒"] },
 };
-const TAGS = { fire: ["🔥", "輸出", "全隊傷害 +15%"], voice: ["📢", "聲量", "範圍再 +20%"], ctrl: ["🧊", "控場", "敵人全體慢 10%"], aid: ["🍱", "補給", "灰選民多 2 秒可救、每波 +2 位"], org: ["🤝", "組織", "援軍、塔、專車傷害 +30%"], check: ["🔍", "查核", "被查核的怪再受傷 +20%"], eco: ["💰", "經濟", "志工 +20%"] };
+// 卡片組合：兩張卡都拿到就成組（一張控場＋一張傷害），效果一句話
+const CARD_COMBOS = [
+  { id: "boomslow", name: "減速轟炸", need: ["slow", "fish"], d: "範圍傷害變大：×1.4 起，兩張卡越高越強" },
+  { id: "pushchain", name: "推回連鎖", need: ["forum", "chain"], d: "推回時多打一下、擊殺更常連鎖，越高越強" },
+  { id: "stuncrit", name: "暈了就爆擊", need: ["stun", "mark"], d: "被暈住的怪每一下都爆擊，越高爆得越痛" },
+  { id: "turret", name: "路障砲台", need: ["flyer", "patrol"], d: "砲塔傷害大增，踩到路障的怪受傷 +30%" },
+  { id: "nostun", name: "補給不斷電", need: ["tea", "b"], d: "英雄完全不會被暈，全隊攻速再提高" },
+  { id: "oneshot", name: "小怪一碰就倒", need: ["slow", "lazyfix"], d: "懶人包、長輩圖血量再大減" },
+  { id: "allybomb", name: "援軍爆破", need: ["first", "mic"], d: "援軍撞到怪時炸開一圈，越高越大" },
+];
+const CC = {}; // 已成組的組合（id → true）
+const CL = (id) => (CC[id] ? Math.min(...CARD_COMBOS.find((c) => c.id === id).need.map((k) => lv(k))) : 0); // 組合等級＝兩張卡較低的那張
+function checkCardCombos() {
+  for (const c of CARD_COMBOS) { if (CC[c.id] || !c.need.every((k) => lv(k) >= 1)) continue; CC[c.id] = true; G.ccN++;
+    showTitle("卡片組合成立", c.name, c.d, "rgba(214,110,20,0.94)"); sound.sparkle(); dexSee("cc:" + c.id); fx.onEvolve?.("cc:" + c.id, null); }
+  syncMyCards();
+}
+const comboOf = (id) => CARD_COMBOS.filter((c) => c.need.includes(id));
+const TAGS = { dmg: ["⚔️", "傷害", "全隊傷害 +15%"], ctrl: ["🧊", "控場", "敵人全體慢 10%"] };
 const RAR_N = { c: "普通", r: "稀有", l: "傳說" };
 // 進化合成：英雄 Lv3（任一分支）＋兩張卡 → 進化技（藍綠對手要的卡完全相同）
-const EVO = {
-  chiang: { name: "循環經濟・無限循環", hero: "chiang", need: { b: 1, fact: 1 }, d: "每一發都是三合一彈（範圍＋緩速＋加傷）" },
-  shen: { name: "洋流・無限洋流", hero: "shen", need: { b: 1, fact: 1 }, d: "每一道都是三合一大浪（推回＋罷免＋混亂）" },
-  han: { name: "造勢晚會・不散場", hero: "han", need: { tea: 1, second: 1 }, d: "全隊攻速永久 +20%，不再講到停不下來" },
-  lai: { name: "返鄉投票・全台返鄉", hero: "lai", need: { tea: 1, second: 1 }, d: "每 8 秒自動派 3 位援軍巡邏最吵的路" },
-  lu: { name: "全黨打一人・全場版", hero: "lu", need: { mic: 1, mark: 1 }, d: "每一拳都變成範圍傷害" },
-  tsai: { name: "YBSG・全場爆擊", hero: "tsai", need: { mic: 1, mark: 1 }, d: "爆擊時炸開一圈範圍傷害" },
-  hou: { name: "雙北光網", hero: "hou", need: { patrol: 1, fact: 1 }, d: "送一座海巡塔，所有海巡塔傷害 ×2" },
-  lin: { name: "火力網", hero: "lin", need: { patrol: 1, fact: 1 }, d: "送一座海巡塔，所有海巡塔三連發" },
-  mid: { name: "聖筊連發", hero: "mid", need: { reroll: 1, bento: 1 }, d: "每一波都是聖筊，不再發呆" },
-  huang: { name: "嘉賓連環空降", hero: "huang", need: { second: 1, flyer: 1 }, d: "空降冷卻減半" },
-  air: { name: "全網洗版", hero: "air", need: { chain: 1, mic: 1 }, d: "每 5 秒全場愛心雨" },
-  ground: { name: "萬人掃街", hero: "ground", need: { flyer: 1, canvass: 1 }, d: "宣傳車四條路一起開" },
-  feast: { name: "辦桌", hero: null, need: { dumpling: 1, fish: 1 }, nn: true, d: "每 15 秒從天降下一整桌：煎餃雨＋一條魚" },
-  factc: { name: "查核中心", hero: null, need: { fact: 2, lazyfix: 1 }, d: "全場永久標記：每 2 秒查核一次" },
-};
+const EVO = {}; // 簡化：拿掉「進化合成」，只留卡片組合一套
 const lv = (id) => G.cards[id] || 0;
 const tagN = (t) => Object.keys(G.cards).filter((k) => CARDS[k]?.tag === t && G.cards[k] > 0).length;
 const tagOn = (t) => tagN(t) >= 3;
-const micK = () => 1 + 0.25 * lv("mic") + (tagOn("voice") ? 0.2 : 0);
+const micK = () => 1 + 0.25 * lv("mic");
 const cardOK = (id) => { const c = CARDS[id]; return c && !(NEUTRAL && c.nn) && (c.unlock || 0) <= META.lvl && lv(id) < c.max && !(id === "bus" && G.wave < 2); };
 function evoReady(k) {
   const v = EVO[k]; if (!v || G.evo[k] || (NEUTRAL && v.nn)) return false;
@@ -2762,28 +2783,28 @@ function rollOffer(n = 3, minR = null) {
 // 隊上英雄（或中立進化）還缺的卡：出現機率 ×6
 function evoWant(id) { for (const [k, v] of Object.entries(EVO)) { if (G.evo[k] || (NEUTRAL && v.nn) || !(id in v.need) || lv(id) >= v.need[id]) continue; if (!v.hero || hasHero(v.hero)) return true; } return false; }
 function cardRar(id) { return id.startsWith("evo:") ? "evo" : id.startsWith("rec:") ? "rec" : CARDS[id]?.rar || "c"; }
-function synNote(id) { // 卡與英雄、卡與卡的協同提示
-  const hits = [];
-  for (const [k, v] of Object.entries(EVO)) { if (G.evo[k] || !(id in v.need) || (v.hero && !hasHero(v.hero)) || (NEUTRAL && v.nn)) continue; hits.push(v.hero ? DEF[v.hero].name : v.name); }
-  const c = CARDS[id]; if (c && tagN(c.tag) === 2 && !lv(id)) hits.unshift(`湊滿${TAGS[c.tag][1]}套組`);
-  return hits.length ? `協同：${hits.slice(0, 2).join("、")}` : "";
+function synNote(id) { // 卡片組合提示
+  const done = comboOf(id).find((c) => !CC[c.id] && c.need.every((k) => k === id || lv(k) >= 1));
+  if (done) return `再拿這張 → 成組：${done.name}`;
+  const half = comboOf(id).find((c) => !CC[c.id] && !lv(id)); if (half) { const o = CARDS[half.need.find((k) => k !== id)]; return `可組：配「${o.s}」`; }
+  return "";
 }
 function cardHTML(id, cls = "tc") {
   if (id.startsWith("rec:")) { const k = id.slice(4), d = DEF[k]; return `<button class="${cls} rec" type="button" data-id="${id}" title="${HS[k].short}" style="--c:${CAMP_C[d.camp]}"><i class="rar" style="background:${CAMP_C[d.camp]}">招募・${CAMP_N[d.camp]}</i><span class="ic"><img src="${AV[k]}" alt=""></span><b>${d.name}</b><p class="s">新隊友加入</p><em>${HS[k].skill}</em></button>`; }
   if (id.startsWith("evo:")) { const v = EVO[id.slice(4)]; return `<button class="${cls} evo" type="button" data-id="${id}" title="${v.d}"><i class="rar">進化合成</i><span class="ic">${v.hero ? `<img src="${AV[v.hero]}" alt="">` : "✨"}</span><b>${v.name}</b><p class="s">技能大進化</p><em>傳說・可合成</em></button>`; }
   const c = CARDS[id], l = lv(id), syn = synNote(id);
-  return `<button class="${cls} ${c.rar}" type="button" data-id="${id}" title="${c.d[Math.min(l, c.d.length - 1)]}"><i class="rar">${RAR_N[c.rar]}</i><span class="ic">${c.ic}</span><b>${c.name}</b><p class="s">${c.s}</p><em>${l ? `已有・升 Lv${l + 1}` : TAGS[c.tag][1]}</em>${syn ? `<span class="syn">${syn.replace("協同：", "配 ")}</span>` : ""}</button>`;
+  return `<button class="${cls} ${c.rar} k-${c.tag}" type="button" data-id="${id}" title="${c.d[Math.min(l, c.d.length - 1)]}"><i class="rar">${RAR_N[c.rar]}</i><span class="ic">${c.ic}</span><b>${c.s}</b><p class="s">${c.name}</p><em class="k ${c.tag}">${TAGS[c.tag][0]} ${TAGS[c.tag][1]}${l ? `・升 Lv${l + 1}` : ""}</em>${syn ? `<span class="syn">${syn.replace("協同：", "配 ")}</span>` : ""}</button>`;
 }
-// 推薦：進化 > 招募（隊伍未滿 4）> 有協同 > 傳說 > 已有的卡升級 > 稀有 > 輸出／補給
+// 👍 推薦：能成組的卡 > 招募（隊伍未滿 4）> 可湊組合的卡 > 傳說 > 已有的卡升級 > 稀有
 function cardScore(id) {
   if (id.startsWith("evo:")) return 100; if (id.startsWith("rec:")) return team.length < 4 ? 80 : 25;
-  const c = CARDS[id]; let v = 0; if (synNote(id)) v += 60; if (c.rar === "l") v += 50; else if (c.rar === "r") v += 20; if (lv(id)) v += 30; if (c.tag === "fire" || c.tag === "aid") v += 8; return v;
+  const c = CARDS[id], sn = synNote(id); let v = 0; if (sn.startsWith("再拿")) v += 150; else if (sn) v += 35 + (comboOf(id).some((cc) => cc.need.some((k) => k !== id && lv(k) < (CARDS[k]?.max || 1))) ? 5 : 0); if (c.rar === "l") v += 50; else if (c.rar === "r") v += 20; if (lv(id)) v += 30; if (comboOf(id).some((cc) => CC[cc.id] && lv(id) <= CL(cc.id))) v += 70; if (c.tag === "dmg") v += 8; return v;
 }
 function bestCard(ids) { let b = null, bv = -1; for (const id of ids) { const v = cardScore(id); if (v > bv) { bv = v; b = id; } } return b; }
 function syncTrayBadge() { const n = G.pending; trayBadge.hidden = !(n > 0 && !G.trayOpen && G.on); trayBadge.textContent = `🃏 有 ${n} 張卡可挑`; }
 function openTray() {
   if (!G.on || G.ended || G.paused || G.pending <= 0) return;
-  if (G.guide && G.guide.k !== "tray") { syncTrayBadge(); return; } // 一次只一個指示
+  if (G.intro || (G.guide && G.guide.k !== "tray")) { syncTrayBadge(); return; } // 一次只一個指示；劇情中不開卡盤
   if (!G.trayOpts) { G.trayOpts = rollOffer(3); G.offers++; }
   if (!G.trayOpts.length) { G.pending = 0; G.trayOpts = null; syncTrayBadge(); return; }
   const best = bestCard(G.trayOpts); trayC.innerHTML = G.trayOpts.map((id) => cardHTML(id, id === best ? "tc best" : "tc")).join(""); trayC.querySelector(".tc.best")?.insertAdjacentHTML("beforeend", `<i class="pick">👍 推薦</i>`);
@@ -2800,7 +2821,7 @@ trayBadge.addEventListener("click", () => { openTray(); });
 function doReroll() { if (!G.trayOpen || G.rerolls <= 0) return; G.rerolls--; G.rerollsUsed++; G.trayOpts = rollOffer(3); openTray(); sound.pop(); }
 function takeCard(id) {
   G.picks++; G.pending = Math.max(0, G.pending - 1); G.trayOpts = null; G.pickTimes.push(+G.t.toFixed(1));
-  applyCard(id); tutDone("tray");
+  applyCard(id); checkCardCombos(); tutDone("tray");
   if (G.pending > 0) openTray(); else closeTray();
 }
 function applyCard(id) {
@@ -2835,7 +2856,7 @@ function recruit(k) {
 // 開票寶箱：魔王倒下＝全暫停拉霸，1–3 張稀有以上直接收下
 function openChest() {
   if (G.ended) return;
-  const n = 1 + (rand() < 0.55 ? 1 : 0) + (rand() < 0.25 ? 1 : 0) + (META.lvl >= 18 && rand() < 0.3 ? 1 : 0);
+  const n = 1 + (rand() < 0.55 ? 1 : 0) + (rand() < 0.25 ? 1 : 0) + ((META.lvl >= 18 || META.lvl >= 8) && rand() < 0.3 ? 1 : 0);
   const ids = []; for (let i = 0; i < Math.min(3, n); i++) { const evos = Object.keys(EVO).filter((k) => evoReady(k) && !ids.includes("evo:" + k)); const id = evos.length ? "evo:" + evos[0] : pickOfRar(rollRar("r"), ids); if (id && !ids.includes(id)) ids.push(id); }
   if (!ids.length) return;
   G.paused = true; G.picking = true; G.chests++; G.chestIds = ids; closeTray(); dexSee("chest");
@@ -2849,7 +2870,7 @@ function openChest() {
 function closeChest() {
   if (!G.picking) return;
   G.picking = false; picker.classList.remove("open"); document.body.classList.remove("picking");
-  for (const id of G.chestIds || []) { if (id.startsWith("evo:") ? !G.evo[id.slice(4)] : cardOK(id)) applyCard(id); G.picks++; }
+  for (const id of G.chestIds || []) { if (id.startsWith("evo:") ? !G.evo[id.slice(4)] : cardOK(id)) applyCard(id); G.picks++; } checkCardCombos();
   G.chestIds = null; G.paused = false; if (G.pending > 0 && !G.trayOpen) openTray();
 }
 function tickPicker(dt) {
@@ -2857,7 +2878,7 @@ function tickPicker(dt) {
   
 }
 // 熱度 → 卡盤（第 15、35、60、90 秒左右，之後約每 30 秒）
-const HEAT_NEED = [8, 14, 20, 26, 32, 38, 44, 50, 56, 62, 68, 74, 80];
+const HEAT_NEED = [4, 9, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24].map((x, i) => (i ? x * +(params.get("hn") || 1.3) : x)); // 簡化：約每 12–15 秒一張卡
 const heatNeed = () => HEAT_NEED[Math.min(G.offerN, HEAT_NEED.length - 1)];
 function addHeat(n) {
   if (!G.on || G.ended) return;
@@ -2868,10 +2889,13 @@ function addVol(n) { G.volF = (G.volF || 0) + n * (tagOn("eco") ? 1.2 : 1); cons
 function addMorale(n) { if (G.fever > 0 || G.feverReady) return; G.morale = Math.min(100, G.morale + n * (lv("countdown") ? 1.5 : 1)); if (G.morale >= 100) { G.feverReady = true; G.feverAt = G.t; fx.onFeverReady?.(); sound.ok(); } }
 // 卡片效果（每幀）
 function tickCards(dt) {
+  if (lv("stun")) { G.stunT = (G.stunT ?? 15) - dt; if (G.stunT <= 0) { G.stunT = [0, 15, 10, 7][lv("stun")]; let n = 0; for (const e of ENEMIES) if (e.alive && !ET[e.type].boss) { e.stun = Math.max(e.stun, 1); n++; } if (n) { shockwave(V3(0, 0, 0), "#5aa0ee", 20, 0.6); if (once("stunC", 25)) floatText(V3(0, 4.5, 0), "插播廣告：全場暈！", "blue"); } } }
+  if (lv("freeze")) { G.frzT = (G.frzT ?? 20) - dt; if (G.frzT <= 0) { G.frzT = 20; stunAll(2, 2); shockwave(V3(0, 0, 0), "#bfe6ff", 24, 0.8); G.shake = Math.max(G.shake, 0.3); floatText(V3(0, 4.5, 0), "全場定格！", "blue"); } }
+  if (lv("forum")) { G.forumT = (G.forumT ?? 8) - dt; if (G.forumT <= 0 && alive().length) { G.forumT = [0, 15, 12, 9][lv("forum")]; let n = 0; for (const L of LANES) n += pushLane(L); if (n && once("forumC", 25)) banner("全場推回！", "政見發表會：四條路一起推回", false, 1.2); } }
   if (lv("fish")) { G.fishT -= dt; if (G.fishT <= 0) {
-    G.fishT = 8; let best = null, bn = 0;
+    G.fishT = lv("fish") >= 5 ? 6 : 8; let best = null, bn = 0;
     for (const e of ENEMIES) { if (!e.alive) continue; let n = 0; for (const q of ENEMIES) if (q.alive && q.pos.distanceTo(e.pos) < 3.2) n++; if (n > bn) { bn = n; best = e; } }
-    if (best) { dexSee("fish"); const dmg = [0, 6, 9, 13][lv("fish")] * (1 + campBonus()); shot(null, best, dmg, { sky: true, tex: shotTex("fish", ...SHOT_STYLE.fish), size: 2.2, dur: 0.6, aoe: 3.4, c: "#f2b632" }); if (once("fish", 20)) floatText(best.pos.clone().add(V3(0, 4, 0)), "酸菜一魚！", "gold"); }
+    if (best) { dexSee("fish"); const dmg = [0, 6, 9, 13, 17, 22][lv("fish")] * (1 + campBonus()); shot(null, best, dmg, { sky: true, tex: shotTex("fish", ...SHOT_STYLE.fish), size: 2.2, dur: 0.6, aoe: 3.4, c: "#f2b632" }); if (once("fish", 20)) floatText(best.pos.clone().add(V3(0, 4, 0)), "空投！", "gold"); }
   } }
   if (lv("fact")) { G.factT -= dt; if (G.factT <= 0) {
     G.factT = G.evo.factc ? 2 : 6; shockwave(V3(0, 0, 0), "#1d8a4c", 30, 1.2);
@@ -2879,7 +2903,7 @@ function tickCards(dt) {
     if (once("fact", 30)) floatText(V3(0, 4.5, 0), "事實查核 ✔", "good"); dexSee("fact");
   } }
   if (lv("bento")) { G.bentoT -= dt; if (G.bentoT <= 0) { G.bentoT = 30; heal(lv("bento")); if (once("bento", 60)) floatText(V3(0, 4.5, 0), `志工便當 +${lv("bento")} 位`, "good"); } }
-  if (lv("first")) { G.firstT -= dt; if (G.firstT <= 0) { G.firstT = lv("first") >= 2 ? 14 : 20; const L = busiestLane(); if (L) for (let i = 0; i < 3; i++) runner("ally", L, { speed: 8, dmg: 4 * (1 + campBonus()) * orgK(), knock: 0.02, delay: i * 0.3, side: (i - 1) * 0.6 }); } }
+  if (lv("first")) { G.firstT -= dt; if (G.firstT <= 0) { G.firstT = [0, 20, 14, 10][lv("first")]; const L = busiestLane(); if (L) for (let i = 0; i < 3; i++) runner("ally", L, { speed: 8, dmg: 4 * (1 + campBonus()) * orgK(), knock: 0.02, delay: i * 0.3, side: (i - 1) * 0.6 }); } }
   if (G.evo.lai) { G.laiT = (G.laiT ?? 8) - dt; if (G.laiT <= 0) { G.laiT = 8; const h = team.find((x) => x.key === "lai"), L = busiestLane(); if (h && L) for (let i = 0; i < 3; i++) runner("ally", L, { speed: 8, dmg: 5 * dmgMult(h), knock: 0.02, h, delay: i * 0.3, side: (i - 1) * 0.6 }); } }
   if (G.evo.feast) { G.feastT = (G.feastT ?? 6) - dt; if (G.feastT <= 0) { G.feastT = 15; dumplingRain(null, 6); later(0.6, fishDrop); } }
   if (lv("talk3")) for (const e of ENEMIES) if (e.alive && onBridge(e.lane, e.u)) e.bridgeT = (e.bridgeT || 0) + dt;
@@ -2900,21 +2924,21 @@ function densest() { let best = null, bn = 0; for (const e of ENEMIES) { if (!e.
 function stunAll(sec, bossSec) { for (const e of ENEMIES) if (e.alive) e.stun = Math.max(e.stun, ET[e.type].boss ? bossSec : sec); }
 function gavel() {
   const h = team.find((x) => x.key === "han"); stunAll(1.2, 0.4); shockwave(V3(0, 0, 0), "#ffd36b", 22, 0.7); G.shake = Math.max(G.shake, 0.45); sound.thump();
-  if (h) heroSay(h, "院長敲槌", 1.2); if (once("gavel", 20)) banner("院長敲槌！", "全場暈眩 1.2 秒", false, 1.4); fx.onSkill(h, "gavel");
+  if (h) heroSay(h, "講完了！", 1.2); if (once("gavel", 20)) banner("講完全場暈！", "全場暈眩 1.2 秒", false, 1.4); fx.onSkill(h, "gavel");
 }
 function blackTide(h) {
   for (const e of ENEMIES) if (e.alive) { if (!ET[e.type].boss) e.u = Math.max(0, e.u - 0.04); e.markT = 3; damage(e, heroDmg(h), h, {}); }
-  shockwave(V3(0, 0, 0), "#1fb6c9", 22, 0.9); G.shake = Math.max(G.shake, 0.3); heroSay(h, "黑潮", 1); if (once("tide", 20)) banner("黑潮全場！", "全場推回，3 秒內受傷 +30%", false, 1.4); fx.onSkill(h, "tide");
+  shockwave(V3(0, 0, 0), "#1fb6c9", 22, 0.9); G.shake = Math.max(G.shake, 0.3); heroSay(h, "推回浪", 1); if (once("tide", 20)) banner("全場推回浪！", "全場推回，3 秒內受傷 +30%", false, 1.4); fx.onSkill(h, "tide");
 }
 function heartRain(h) {
   const ts = shuffled(alive()).slice(0, 8); ts.forEach((e, i) => later(i * 0.08, () => { if (e.alive) shot(null, e, heroDmg(h) * dmgMult(h) * 1.5, { sky: true, tex: shotTex("air", ...SHOT_STYLE.air), size: 1.6, dur: 0.45, aoe: 1.6, c: "#ff5c8a" }); }));
-  if (once("rain", 20)) floatText(V3(0, 5, 0), G.evo.air ? "全網洗版！" : "洗版！", "gold"); fx.onSkill(h, "rain");
+  if (once("rain", 20)) floatText(V3(0, 5, 0), G.evo.air ? "愛心雨加倍！" : "愛心雨！", "gold"); fx.onSkill(h, "rain");
 }
 // 場地效果：巨蛋罩、壽司、文宣（用既有衝擊環＋小精靈，不加常駐 draw）
 const FIELDS = [];
 function addField(kind, pos, r, life, h) {
   const F = { kind, pos, r, life, h, t: 0, pulse: 0 }; FIELDS.push(F);
-  if (kind === "dome") { shockwave(pos, "#cfd8e3", r, 0.6); if (once("domeB", 20)) banner("巨蛋全場壓制！", "罩內緩速、受傷 +30%", false, 1.4); fx.onSkill(h, "dome"); }
+  if (kind === "dome") { shockwave(pos, "#cfd8e3", r, 0.6); if (once("domeB", 20)) banner("範圍減速罩！", "罩內緩速、受傷 +30%", false, 1.4); fx.onSkill(h, "dome"); }
   if (kind === "sushi") { F.sp = fieldSprite("壽", "#2fae68"); F.sp.position.copy(pos).setY(pos.y + 0.9); }
   if (kind === "flyer") { F.sp = fieldSprite("文宣", "#8a6a3c"); F.sp.position.copy(pos).setY(pos.y + 0.9); }
   return F;
@@ -2925,7 +2949,7 @@ function tickFields(dt) {
     const F = FIELDS[i]; F.t += dt; F.pulse -= dt;
     if (F.kind === "dome") { if (F.pulse <= 0) { F.pulse = 0.9; shockwave(F.pos, "#cfd8e3", F.r, 0.8); } for (const e of ENEMIES) if (e.alive && e.pos.distanceTo(F.pos) < F.r) { e.slowT = Math.max(e.slowT || 0, 0.3); e.markT = Math.max(e.markT || 0, 0.3); } }
     if (F.kind === "sushi") for (const e of ENEMIES) if (e.alive && e.pos.distanceTo(F.pos) < 1.6) { e.stun = Math.max(e.stun, ET[e.type].boss ? 0.5 : 1.5); heal(1); burst(F.pos.clone().setY(1), "#2fae68", 8, 3); F.life = 0; break; }
-    if (F.kind === "flyer") for (const e of ENEMIES) if (e.alive && e.lane === F.L && Math.abs(e.u - F.u) < 0.06) e.slowT = Math.max(e.slowT || 0, 0.3);
+    if (F.kind === "flyer") for (const e of ENEMIES) if (e.alive && e.lane === F.L && Math.abs(e.u - F.u) < 0.06 && (!CC.turret || (e.markT = Math.max(e.markT || 0, 0.3)))) e.slowT = Math.max(e.slowT || 0, 0.3);
     if (F.t >= F.life) { if (F.sp) { scene.remove(F.sp); F.sp.material.dispose(); } FIELDS.splice(i, 1); }
   }
 }
@@ -2956,7 +2980,7 @@ function disarmAct() { G.armed = 0; actBtn.classList.remove("armed"); document.g
 function pushLane(L) {
   let n = 0;
   for (let u = 0.15; u <= 1; u += 0.12) { const p = laneAt(L, u); shockwave(p, "#e0452a", 2.4, 0.5); burst(p.clone().setY(1), "#ffd36b", 4, 3); }
-  for (const e of ENEMIES) if (e.alive && e.lane === L) { n++; const boss = ET[e.type].boss; damage(e, boss ? 16 : 8, null, { raw: true }); if (e.alive) { e.stun = Math.max(e.stun, boss ? 0.8 : 1.5); if (!boss) e.u = Math.max(0, e.u - 0.08); } }
+  for (const e of ENEMIES) if (e.alive && e.lane === L) { n++; const boss = ET[e.type].boss; damage(e, (boss ? 16 : 8) * (1 + 1.5 * CL("pushchain")), null, { raw: true }); if (e.alive) { e.stun = Math.max(e.stun, boss ? 0.8 : 1.5); if (!boss) e.u = Math.max(0, e.u - 0.08); } }
   return n;
 }
 // R3：一步完成——冷卻好時直接點橋就放（按鈕只顯示冷卻；按了也能走舊的兩步）
@@ -3033,7 +3057,7 @@ function tickDebate(dt) {
     else { D.next -= dt; if (D.next <= 0 && D.quiet <= 0) openDecide(); }
   }
 }
-function openDecide() {
+function openDecide() { G.debate.next = 9; return; /* 簡化：不用玩家按「打斷」，兩座講台輪流質詢 */
   const D = G.debate; D.open = 6;
   decideEl.querySelectorAll("button").forEach((b, i) => (b.innerHTML = `打斷${i ? "反方" : "正方"}<em></em>`));
   decideEl.classList.add("on");
@@ -3072,13 +3096,9 @@ const W_CNT = { swarm: +(params.get("wc") || 1.2), mini: 1.2 }; // 怪變快也�
 for (const w of W) { if (w.final) continue; const last = Math.max(...w.sp.map(([t, n, l, g, a]) => a + (n - 1) * g)); w.dur = Math.round(Math.max(last + 6, last + (w.dur - last) * PACE.gap)); }
 const PICK_WAVES = [2, 5, 8, 9]; // v2：一局只選 4 次卡（其餘靠戰場掉落）
 const FINAL_T = W.slice(0, -1).reduce((a, w) => a + w.dur, 0);
-const NEWS = {
-  n8: ["📰", "新聞旁白", "高雄有候選人抽到 8 號忘詞，喊出「8 包煎餃拼到底」"],
-  slip: ["📰", "新聞旁白", "有立委站台兩度口誤，喊成對手名字"],
-  ads: ["🧵", "Threads", "Threads 舉辦「競選廣告與本人不符」大賽"],
-  city: ["🧵", "Threads", "有人把北市政績濃縮成：輝達、巨蛋、牛奶"],
-  back: ["🧵", "Threads", "對手陣營回嗆：黑熊、大罷免、認知作戰"],
-  kang: ["📺", "節目片段", "蔡康永說：投給你想要的生活，你就贏了（大意）"],
+const NEWS = { // 梗審查：只留一句話看得懂的；候選人個人梗（煎餃、口誤、北市政績與回嗆）藍綠一起拿掉
+  ads: ["🧵", "Threads", "網友比賽找「競選看板和本人差最多」的照片"],
+  kang: ["📺", "節目片段", "主持人說：投給你想要的生活，你就贏了"],
 };
 const GEN = {
   lazy: ["💬", "LINE 群組", "懶人包更新到第 7 版，結論跟第 6 版相反"],
@@ -3133,14 +3153,14 @@ function tickSpawns() {
     const L = laneById[q.lane];
     if (q.type === "pair") { spawnEnemy("cycle", L); spawnEnemy("cog", laneById[OPP[q.lane]]); }
     else if (q.type === "talk") { const e = spawnEnemy("talk", L); G.bosses.push(e); fx.onBossIn(e); bossIntro("追問魔王", "政論名嘴登場：「你有回答到問題嗎？」"); }
-    else if (q.type === "debate") { const a = spawnEnemy("podA", laneById.threads, 0, 0), b = spawnEnemy("podB", laneById.market, 0, 0); G.bosses.push(a, b); fx.onBossIn(a); fx.onBossIn(b); startDebate(a, b); bossIntro("辯論會雙魔王", "兩座講台互相交叉詰問：打斷正在質詢的那一方"); }
+    else if (q.type === "debate") { const a = spawnEnemy("podA", laneById.threads, 0, 0), b = spawnEnemy("podB", laneById.market, 0, 0); G.bosses.push(a, b); fx.onBossIn(a); fx.onBossIn(b); startDebate(a, b); bossIntro("辯論會雙魔王", "兩座講台輪流質詢：先打沒在講話的那座"); }
     else if (q.type === "final") { const e = spawnEnemy("final", L, 0, 0); G.bosses.push(e); G.final = e; fx.onBossIn(e); bossIntro("終極反派", "「投了也沒用」：碰到的選民會變灰。中間選民對牠特攻"); }
     else spawnEnemy(q.type, L, q.u0 || 0);
   }
   for (let i = G.evQ.length - 1; i >= 0; i--) {
     const q = G.evQ[i]; if (G.t < q.at) continue; G.evQ.splice(i, 1);
     if (q.kind === "tut") { if (G.will > 8) { loseWill(4); floatText(V3(0, 4, 0), "懶人包說服了 1 位選民：算了…", "bad"); } continue; }
-    if (q.kind === "news" && !NEUTRAL) { notify(...NEWS[q.id], { news: true }); G.seenNews.add(q.id); }
+    if (q.kind === "news" && !NEUTRAL && NEWS[q.id]) { notify(...NEWS[q.id], { news: true }); G.seenNews.add(q.id); }
     else if (q.kind === "gen") { notify(...GEN[q.id], { gen: !["seal", "eve", "first"].includes(q.id) }); G.seenNews.add(q.id); }
   }
 }
@@ -3163,7 +3183,7 @@ function tickDays() {
 
 // ══════════════ v2：玩家決策層（換位、點路催票、救灰選民、戰場掉落、每日挑戰、梗圖鑑）══════════════
 // 難度旋鈕（以 ?auto 機器人／不操作基準調過）
-const DIFF = { hp: +(params.get("hpk") || 1.08), ramp: +(params.get("ramp") || 0.55), boss: +(params.get("bossk") || 2.5), final: 0.42, leak: 1.5, neutral: 0.42 }; // R3：?hpk ?bossk 只給平衡測試用
+const DIFF = { hp: +(params.get("hpk") || 1.08), ramp: +(params.get("ramp") || 0.55), late: +(params.get("late") || 5), boss: +(params.get("bossk") || 2.5), final: 0.42, leak: 1.5, neutral: 0.42 }; // R3：?hpk ?bossk 只給平衡測試用
 // 遊戲內計時（暫停時不走）
 const LATER = [];
 function later(sec, fn) { LATER.push({ at: G.t + sec, fn }); }
@@ -3243,13 +3263,12 @@ function onTap(x, y) {
   const h = heroNear(x, y, R + 4);
   if (h) { if (G.sel && G.sel !== h) { moveHero(G.sel, h.pad); selectHero(null); } else { selectHero(h); G.drag = { h, x0: x, y0: y, moved: false }; } return; }
   if (G.sel) { const pi = padAt(x, y, R + 16); if (pi >= 0) { moveHero(G.sel, pi); selectHero(null); return; } selectHero(null); }
-  if (G.actCd <= 0 || G.armed > 0) { const L = laneNear(x, y, MOBILE ? 70 : 60); if (L) { useAct(L); G.lastInput = G.t; return; } }
 }
 renderer.domElement.addEventListener("pointerdown", (ev) => { if (ev.isPrimary === false) return; sound.start(); onTap(ev.clientX, ev.clientY); });
 // ── 戰場掉落：打倒中型以上的怪偶爾掉東西，7 秒內點到才有效
 const DROP_K = NEUTRAL
   ? { fact: ["查", "事實查核", "#1d8a4c"], tea: ["茶", "茶水站", "#8a6a3c"] }
-  : { dumpling: ["餃", "8 包煎餃", "#e0952a"], fish: ["魚", "酸菜一魚", "#2f8fd6"], fact: ["查", "事實查核", "#1d8a4c"], tea: ["茶", "茶水站", "#8a6a3c"] };
+  : { fact: ["查", "事實查核", "#1d8a4c"], tea: ["茶", "茶水站", "#8a6a3c"] }; // 簡化：拿掉煎餃、酸菜魚（兩邊候選人梗一起拿掉）
 const DROP_TEX = {};
 function dropTex(k) {
   if (DROP_TEX[k]) return DROP_TEX[k];
@@ -3277,6 +3296,7 @@ function maybeDrop(e) {
 function tickDrops(dt) {
   for (const d of DROPS) {
     if (!d.on) continue;
+    if (G.on && !G.paused && d.t < 6.3) { collectDrop(d); continue; } // 簡化：掉落物自動撿，不用點
     if (G.on && !G.paused) d.t -= dt;
     d.sp.position.set(d.pos.x, d.y0 + 1.5 + Math.abs(Math.sin(elapsed * 3.2)) * 0.35, d.pos.z);
     d.sp.material.opacity = d.t < 2 ? 0.4 + 0.6 * Math.abs(Math.sin(elapsed * 8)) : 1;
@@ -3317,7 +3337,7 @@ function dumplingRain(L, n = 8) {
 function fishDrop() {
   let best = null, bn = 0; for (const e of ENEMIES) { if (!e.alive) continue; let n = 0; for (const q of ENEMIES) if (q.alive && q.pos.distanceTo(e.pos) < 3.4) n++; if (n > bn) { bn = n; best = e; } }
   if (!best) return; dexSee("fish"); const to = best.pos.clone(); to.y = bridgeY(best.lane, best.u);
-  fall(FALL_TEX.fish(), to, 2.6, (at0) => { aoe(at0.clone().setY(0.3), 3.6, 14 * (1 + campBonus()), null, { c: "#f2b632" }); G.shake = Math.max(G.shake, 0.3); floatText(at0.clone().setY(4), "酸菜一魚！", "gold"); }, 0.6);
+  fall(FALL_TEX.fish(), to, 2.6, (at0) => { aoe(at0.clone().setY(0.3), 3.6, 14 * (1 + campBonus()), null, { c: "#f2b632" }); G.shake = Math.max(G.shake, 0.3); floatText(at0.clone().setY(4), "空投！", "gold"); }, 0.6);
 }
 function factPulse() {
   dexSee("fact"); shockwave(V3(0, 0, 0), "#1d8a4c", 30, 1.2);
@@ -3342,19 +3362,19 @@ function tickTut(dt) { if (TUT.t > 0) { TUT.t -= dt; if (TUT.t <= 0 || G.wave > 
 // ── 梗圖鑑（localStorage；讀寫一律 try/catch）
 const DEX_R0 = { talk: "r", pods: "r", final: "l", seal: "r", bus: "r", debate: "r", sanzi: "r", lst: "r", holy: "r" };
 const DEX = [
-  ["swarm", "📄", "懶人包", "小而多，一次一群"], ["mini", "🌄", "長輩圖", "早安，不轉不是台灣人"], ["troll", "🔀", "問A答B 怪", "打它，傷害跑去別條路"],
-  ["cycle", "🏟️", "循環經濟怪", "輝達→巨蛋→牛奶輪換"], ["cog", "🧠", "認知作戰怪", "黑熊→大罷免→認知作戰輪換"], ["board", "🖼️", "修圖看板怪", "打五下才露出原圖"],
-  ["line", "💬", "長輩圖 LINE 群", "打倒會分裂成三張早安圖"], ["poll", "📋", "民調怪", "投票前 10 天封關"], ["truck", "📢", "宣傳車", "叭叭叭，把英雄吵暈"],
-  ["talk", "📺", "追問魔王", "你有回答到問題嗎？"], ["pods", "🎤", "辯論會雙講台", "打斷正在質詢的那一方"], ["final", "🌫️", "投了也沒用", "碰到的選民會變灰"],
-  ["rescue", "🙋", "救回選民", "灰掉的人點一下就回來排隊"], ["move", "🔁", "換位", "把英雄拖到別的石台"], ["dumpling", "🥟", "8 包煎餃", "煎餃從天而降"],
-  ["fish", "🐟", "酸菜一魚", "一條魚砸一整群"], ["fact", "✅", "事實查核", "修圖看板露出原圖"], ["tea", "🍵", "茶水站", "喝口茶，全隊出手變快"],
-  ["seal", "🔒", "民調封關", "封條蓋下去，民調怪消失"], ["slip", "🔄", "口誤", "子彈掉頭，喊錯名字"], ["rally", "🎙️", "造勢講不停", "全場鼓舞，自己停不下來"],
-  ["bear", "🐾", "黑熊出動", "沿著整條路衝過去"], ["bus", "🚌", "返鄉專車", "四條路一起撞飛"], ["debate", "⚖️", "交叉詰問", "藍綠同隊的組合技"],
-  ["sanzi", "🔷", "三子合體", "三位藍營隊友的組合技"], ["lst", "🟩", "賴蕭蔡", "綠營隊友的組合技"], ["holy", "🙏", "聖筊", "全隊 +25%"],
-  ["stage", "🎙️", "同台造勢", "韓國瑜 × 賴清德 同隊的組合技"], ["frame", "📸", "同框", "盧秀燕 × 蔡英文 同隊的組合技"], ["beam2", "🔦", "火力光束", "侯友宜 × 林俊憲 同隊的組合技"],
-  ["chest", "🎁", "開票寶箱", "魔王倒下就開箱", "r"], ["fever", "⏳", "投票日倒數", "民氣滿了，全隊攻速 ×2", "c"], ["clear", "🧹", "清場", "一波的怪全部擋下", "c"], ["chain10", "⛓️", "連破 ×10", "1.5 秒內一隻接一隻", "r"],
-  ...Object.entries(CARDS).map(([k, c]) => ["card:" + k, c.ic, c.name, c.d[0], c.rar]),
-  ...Object.entries(EVO).map(([k, v]) => ["evo:" + k, "✨", v.name, v.d, "l"]),
+  ["swarm", "📄", "懶人包", "小而多，一次一群"], ["mini", "🌄", "長輩圖", "早安，不轉不是台灣人"], ["troll", "🔀", "答非所問怪", "打它，傷害跑去別條路"],
+  ["cycle", "📢", "口號怪", "一直換口號，打就對了"], ["board", "🖼️", "修圖看板怪", "打五下才露出原圖"],
+  ["line", "💬", "長輩圖 LINE 群", "打倒會分裂成三張早安圖"], ["poll", "📋", "民調怪", "附近的怪跟著變快"], ["truck", "📢", "宣傳車", "叭叭叭，把英雄吵暈"],
+  ["talk", "📺", "追問魔王", "你有回答到問題嗎？"], ["pods", "🎤", "辯論會雙講台", "兩座輪流講，打沒在講的那座"], ["final", "🌫️", "投了也沒用", "碰到的選民會變灰"],
+  ["rescue", "🙋", "救回選民", "灰掉的人點一下就回來排隊"], ["move", "🔁", "換位", "把英雄拖到別的石台"],
+  ["fact", "✅", "事實查核", "修圖看板露出原圖"], ["tea", "🍵", "茶水站", "喝口茶，全隊出手變快"],
+  ["seal", "🔒", "民調封關", "投票前 10 天不能發布民調"], ["slip", "🔄", "失誤", "子彈飛歪"], ["rally", "🎙️", "講不停", "全隊加速，自己要休息"],
+  ["bear", "🐾", "黑熊衝鋒", "沿著整條路衝過去"], ["debate", "⚖️", "全場暈眩", "蔣萬安 × 沈伯洋 同隊的組合技"],
+  ["sanzi", "🔷", "全場重擊推回", "藍營三人同隊的組合技"], ["lst", "🟩", "全隊加傷＋補人", "綠營三人同隊的組合技"], ["holy", "🙏", "聖筊", "全隊 +25%"],
+  ["stage", "🎙️", "全隊加速＋補人", "韓國瑜 × 賴清德 同隊的組合技"], ["frame", "📸", "全場傷害＋爆擊", "盧秀燕 × 蔡英文 同隊的組合技"], ["beam2", "🔦", "雙光束掃射", "侯友宜 × 林俊憲 同隊的組合技"],
+  ["chest", "🎁", "開票寶箱", "魔王倒下就開箱", "r"], ["fever", "⏳", "爆發時刻", "全隊攻速 ×2，自動發動", "c"], ["clear", "🧹", "清場", "一波的怪全部擋下", "c"], ["chain10", "⛓️", "連破 ×10", "1.5 秒內一隻接一隻", "r"],
+  ...Object.entries(CARDS).map(([k, c]) => ["card:" + k, c.ic, c.s, `${c.name}：${c.d[0]}`, c.rar]),
+  ...CARD_COMBOS.map((c) => ["cc:" + c.id, "🔗", c.name, `${CARDS[c.need[0]].s}＋${CARDS[c.need[1]].s}：${c.d}`, "l"]),
 ].map((d) => (d[4] ? d : [...d, DEX_R0[d[0]] || (["stage", "frame", "beam2"].includes(d[0]) ? "r" : "c")]));
 const DEX_IDS = new Set(DEX.map((d) => d[0]));
 const DEXS = { have: new Set(), fresh: new Set() };
@@ -3384,7 +3404,7 @@ function saveDaily(n) { try { if (n > dailyBest()) localStorage.setItem("lv-dail
 // ── 結算用：「今天最荒謬的一則」只從中立梗，或藍綠成對的一句挑
 const RECEIPT_MEMES = [
   ["lazy", "neutral", () => GEN.lazy[2]], ["morning", "neutral", () => GEN.morning[2]], ["tv3", "neutral", () => GEN.tv3[2]], ["market", "neutral", () => GEN.market[2]],
-  ["ads", "neutral", () => NEWS.ads[2]], ["pair", "both", () => "北市政績濃縮成「輝達、巨蛋、牛奶」，對手回嗆「黑熊、大罷免、認知作戰」"],
+  ["ads", "neutral", () => NEWS.ads[2]],
 ];
 function receiptMeme() {
   const seen = G.seenNews, pool = RECEIPT_MEMES.filter(([k]) => (k === "pair" ? !NEUTRAL && seen.has("city") && seen.has("back") : seen.has(k)));
@@ -3427,37 +3447,38 @@ const lvlOf = (xp) => { let n = 1; while (n < 20 && xp >= XP_AT(n + 1)) n++; ret
 META.lvl = params.has("meta") ? clamp(+params.get("meta") || 1, 1, 20) : lvlOf(META.xp);
 function saveMeta() { try { const { lvl, ...m } = META; localStorage.setItem("lv-meta", JSON.stringify(m)); } catch {} }
 const BR_UNLOCK = { chiang: 4, shen: 4, han: 5, lai: 5, lu: 6, tsai: 6, hou: 7, lin: 7, huang: 8, mid: 8, air: 9, ground: 9 };
-const LV_UNLOCK = { 2: "每局重抽 +1", 3: "稀有卡「政見發表會」「政論節目第 3 小時」", 4: "蔣萬安／沈伯洋 Lv3 第二分支", 5: "韓國瑜／賴清德 Lv3 第二分支", 6: "盧秀燕／蔡英文 Lv3 第二分支", 7: "侯友宜／林俊憲 Lv3 第二分支",
-  8: "黃國昌／中間選民 Lv3 第二分支", 9: "空軍／陸軍 Lv3 第二分支", 10: "傳說卡「全民團結」「一票一票」", 11: "每局重抽 +1", 12: "傳說卡「開票速報」", 13: "稀有卡「選舉補助款」", 14: "開局志工 +20", 15: "每局重抽 +1",
-  16: "傳說卡「投票日倒數」", 17: "開局熱度半滿", 18: "開票寶箱多 1 張的機會", 19: "開局民氣 50", 20: "稱號【民主老兵】" };
-const metaRerolls = () => 2 + (META.lvl >= 2) + (META.lvl >= 11) + (META.lvl >= 15);
+const LV_UNLOCK = { 2: "每局重抽 +1", 3: "稀有卡「定時全場推回」", 4: "開局志工 +10", 5: "每局重抽 +1", 6: "開局志工 +10", 7: "開局熱度半滿",
+  8: "開票寶箱多 1 張的機會", 9: "每局重抽 +1", 10: "傳說卡「越多人投票越強」", 11: "每局重抽 +1", 12: "傳說卡「全場落閃電」", 13: "傳說卡「全場定格」", 14: "開局志工 +20", 15: "每局重抽 +1",
+  16: "每局重抽 +1", 17: "開局熱度半滿", 18: "開票寶箱多 1 張的機會", 19: "開局民氣 50", 20: "稱號【民主老兵】" };
+const metaRerolls = () => 2 + (META.lvl >= 2) + (META.lvl >= 5) + (META.lvl >= 9) + (META.lvl >= 11) + (META.lvl >= 15) + (META.lvl >= 16);
 // ── 英雄升級樹（Lv2 40 志工、Lv3 80 志工，Lv3 選 A 多目標／B 控場機制）──
 const UP_COST = [0, 40, 80];
-const BR = {
-  chiang: { L2: "每第 4 發是三合一彈（範圍＋緩速＋加傷）", A: ["AI 晶片連鎖", "輝達彈命中後彈跳 4 隻，每跳 +15%"], B: ["巨蛋全場壓制", "每 12 秒在最擠的地方罩巨蛋：緩速、受傷 +30%"] },
-  shen: { L2: "每第 4 道是三合一大浪（推回＋罷免＋混亂）", A: ["黑熊連隊", "大招變成 3 隻黑熊衝 3 條路"], B: ["黑潮全場", "每 12 秒全場大浪：推回、受傷 +30%"] },
-  han: { L2: "造勢 8 秒；講不停時身邊的怪變慢", A: ["造勢不散場", "造勢中每打倒 1 隻 +0.3 秒，可一直接下去"], B: ["院長敲槌", "造勢結束那一刻，全場暈 1.2 秒"] },
-  lai: { L2: "援軍 6 人，撞到會暈", A: ["新衫連換", "放援軍時全隊傷害 +20%；期間每打倒 1 隻 +0.3 秒"], B: ["返鄉大會師", "援軍衝到底時，全場暈 1.2 秒"] },
-  lu: { L2: "倍率上限 ×4，每第 4 拳擊退", A: ["全黨開打", "每一拳濺射旁邊 2 隻"], B: ["全黨打魔王", "專打血最多的那隻，傷害 ×1.6"] },
-  tsai: { L2: "爆擊率 35%，壽司補 3 人", A: ["壽司外送", "爆擊時有機會在路上放壽司：踩到暈、補 1 人"], B: ["YBSG 狙擊", "專打血最多的那隻，每 3 發必爆擊"] },
-  hou: { L2: "光束貫穿整條路", A: ["雙北生活圈", "同時打 2 條路（跟蔣萬安同隊 3 條）"], B: ["盯到底", "一直打同一隻，傷害 ×1 → ×4"] },
-  lin: { L2: "口誤 10%→6%，掉頭的子彈也會打到怪", A: ["火力連發", "每 5 發一次三連射"], B: ["口誤也算數", "口誤變 25%：掉頭追血最多的那隻，×3"] },
-  huang: { L2: "落地範圍 ×1.5，冷卻 13→10 秒", A: ["連續空降", "一次連跳 2 條路"], B: ["壓軸嘉賓", "落地後整條路的怪變慢 5 秒"] },
-  mid: { L2: "擲到陰筊可以免費重擲一次", A: ["連續聖筊", "聖筊加成可疊 3 層"], B: ["我只看政見", "打「投了也沒用」×6，全隊打魔王 +30%"] },
-  air: { L2: "愛心範圍 +50%，不再被帶風向", A: ["洗版", "每 10 秒全場愛心雨"], B: ["懶人包反制", "打懶人包、長輩圖 ×3"] },
-  ground: { L2: "宣傳車一次開 2 台", A: ["車隊遊行", "宣傳車開到半路停下來當路障 4 秒"], B: ["拜票掃街", "每打倒 10 隻補 1 位選民"] },
+const BR = { // [名稱, 說明, d＝⚔️傷害／c＝🧊控場]
+  chiang: { L2: "每第 4 發是三合一彈（範圍＋減速＋加傷）", A: ["連鎖彈跳", "加傷彈打中後跳到旁邊 4 隻，每跳更痛", "d"], B: ["範圍減速罩", "每 12 秒在最擠的地方罩一圈：怪變慢、受傷 +30%", "c"] },
+  shen: { L2: "每第 4 道是三合一大浪（推回＋斬殺＋打亂）", A: ["三路黑熊", "技能一次放 3 隻黑熊衝 3 條路", "d"], B: ["全場推回浪", "每 12 秒全場大浪：怪被推回、受傷 +30%", "c"] },
+  han: { L2: "加速 8 秒；講話時身邊的怪變慢", A: ["加速延長", "加速中每打倒 1 隻，多 0.3 秒", "d"], B: ["講完全場暈", "加速結束那一刻，全場暈 1.2 秒", "c"] },
+  lai: { L2: "援軍 6 人，撞到會暈", A: ["加傷延長", "放援軍時全隊傷害 +20%，期間每打倒 1 隻多 0.3 秒", "d"], B: ["衝到底全場暈", "援軍衝到底時，全場暈 1.2 秒", "c"] },
+  lu: { L2: "倍率上限 ×4，每第 4 拳把怪打退", A: ["拳拳濺射", "每一拳順便打旁邊 2 隻", "d"], B: ["專打大隻", "專打血最多的那隻，傷害 ×1.6", "d"] },
+  tsai: { L2: "爆擊率 35%，一次補 3 人", A: ["爆擊留陷阱", "爆擊時有機會在路上放陷阱：踩到暈、補 1 人", "c"], B: ["專打大隻必爆", "專打血最多的那隻，每 3 發必爆擊", "d"] },
+  hou: { L2: "光束貫穿整條路", A: ["雙路光束", "同時打 2 條路（跟蔣萬安同隊 3 條）", "d"], B: ["越打越痛", "一直打同一隻，傷害 ×1 → ×4", "d"] },
+  lin: { L2: "失誤 10%→6%，飛歪的子彈也會打到怪", A: ["三連發", "每 5 發一次三連射", "d"], B: ["失誤變追蹤彈", "失誤改 25%：飛去追血最多的那隻，×3", "d"] },
+  huang: { L2: "落地範圍 ×1.5，冷卻 13→10 秒", A: ["連跳兩路", "一次連續空降 2 條路", "c"], B: ["落地整路減速", "落地後整條路的怪變慢 5 秒", "c"] },
+  mid: { L2: "擲到陰筊可以免費重擲一次", A: ["加成疊 3 層", "聖筊加成可疊 3 層", "d"], B: ["打魔王特攻", "打最後的魔王 ×6，全隊打魔王 +30%", "d"] },
+  air: { L2: "愛心範圍 +50%", A: ["定時愛心雨", "每 10 秒全場愛心雨", "d"], B: ["小怪特攻", "打懶人包、長輩圖 ×3", "d"] },
+  ground: { L2: "宣傳車一次開 2 台", A: ["車停路中擋路", "宣傳車開到半路停下來當路障 4 秒", "c"], B: ["打倒怪補人", "每打倒 10 隻補 1 位選民", "c"] },
 };
+const KIND = { d: "⚔️ 傷害", c: "🧊 控場" };
 const upCost = (h) => (h.lv < 3 ? UP_COST[h.lv] : null);
 const branchPick = document.getElementById("branchPick");
 function upgradeHero(h) {
   if (!G.on || G.ended || G.paused || !h || h.lv >= 3 || G.vol < upCost(h)) return false;
   if (h.lv === 1) { G.vol -= UP_COST[1]; h.lv = 2; h.up = 1; G.upgrades++; banner(`${DEF[h.key].name} 升到 Lv2`, BR[h.key].L2, false, 2); heroSay(h, "Lv2！", 1); sound.sparkle(0.6); fx.onLevelUp(h, 2, null); tutDone("up"); buildHeroBar(); return true; }
-  openBranch(h); return true;
+  G.branchFor = h; chooseBranch("A"); return true; // 簡化：Lv3 不用選，直接變強
 }
 function openBranch(h) {
   G.branchFor = h; const b = BR[h.key], lockB = META.lvl < BR_UNLOCK[h.key];
   branchPick.querySelector("b").textContent = `${DEF[h.key].name} Lv3：選一條路（${UP_COST[2]} 志工）`;
-  branchPick.querySelector(".bc").innerHTML = ["A", "B"].map((k) => `<button type="button" data-b="${k}" ${k === "B" && lockB ? "disabled" : ""}><em>${k === "A" ? "A・多目標・👍 推薦" : "B・控場機制"}</em><b>${b[k][0]}</b><p>${k === "B" && lockB ? `公民 Lv${BR_UNLOCK[h.key]} 解鎖` : b[k][1]}</p></button>`).join("") + `<button type="button" data-x style="grid-column:1/-1;min-height:0;padding:6px;background:rgba(255,255,255,0.15);color:#fff">先不升</button>`;
+  branchPick.querySelector(".bc").innerHTML = ["A", "B"].map((k) => `<button type="button" data-b="${k}" ${k === "B" && lockB ? "disabled" : ""}><em>${KIND[b[k][2]]}${k === "A" ? "・👍 推薦" : ""}</em><b>${b[k][0]}</b><p>${k === "B" && lockB ? `公民 Lv${BR_UNLOCK[h.key]} 解鎖` : b[k][1]}</p></button>`).join("") + `<button type="button" data-x style="grid-column:1/-1;min-height:0;padding:6px;background:rgba(255,255,255,0.15);color:#fff">先不升</button>`;
   branchPick.classList.add("open"); G.branchT = 8; sound.ok();
 }
 function closeBranch() { branchPick.classList.remove("open"); G.branchFor = null; }
@@ -3474,16 +3495,17 @@ const feverBtn = document.getElementById("feverBtn");
 function startFever() {
   if (!G.on || G.paused || !G.feverReady) return;
   G.feverReady = false; G.morale = 0; G.fever = 6 + (lv("countdown") ? 3 : 0); G.fevers++; G.feverTimes.push(+G.t.toFixed(1));
-  document.body.classList.add("fever-on"); showTitle("爆發時刻", "投票日倒數！", "全隊攻速 ×2，打倒就有熱度", "rgba(224,69,42,0.94)"); sound.sparkle(); G.shake = Math.max(G.shake, 0.4);
+  document.body.classList.add("fever-on"); showTitle("爆發時刻", "全隊攻速 ×2！", "6 秒內打倒的怪熱度加倍", "rgba(224,69,42,0.94)"); sound.sparkle(); G.shake = Math.max(G.shake, 0.4);
   for (const h of team) burst(h.pos.clone().add(V3(0, 3, 0)), "#ffd36b", 10, 5);
   dexSee("fever"); tutDone("fever"); fx.onFever(true);
 }
 feverBtn.addEventListener("click", startFever);
 function tickFever(dt) {
-  addHeat(dt * 0.25); // 熱度也有一點時間累積，節奏不全看殺怪
+  addHeat(dt * 0.45); // 熱度也有時間累積，節奏不全看殺怪
   if (G.fever > 0) { G.fever -= dt; if (G.fever <= 0) { G.fever = 0; document.body.classList.remove("fever-on"); fx.onFever(false); } }
   else if (!G.feverReady && G.on) { G.morale = Math.min(100, G.morale + dt * 3 * (lv("countdown") ? 1.5 : 1)); } // 底速：民氣約 30 秒一輪；熱度也有一點時間累積
   if (!G.feverReady && G.morale >= 100) { G.feverReady = true; G.feverAt = G.t; fx.onFeverReady(); }
+  if (G.feverReady && G.fever <= 0 && G.on && !G.paused) startFever(); // 簡化：爆發全自動，玩家不用按
 }
 // ── 連破／清場 ──
 const chainC = document.getElementById("chainC");
@@ -3527,12 +3549,12 @@ function tickBallots() {
 const fingerEl = document.getElementById("finger");
 function guideOn() { return !params.has("notut") && (params.has("tut") || !META.tut); }
 function guideSay(k, text, sec) { G.guide = { k, real: 0, max: sec }; TUT.cur = k; tutEl.textContent = text; tutEl.classList.add("on"); }
-function guideEnd(k) { if (!G.guide || (k && G.guide.k !== k)) return; const g = G.guide; G.guide = null; G.guideGapUntil = G.t + 1.2; /* 指示淡出後再放其他字 */ G.guideDone.add(g.k); tutEl.classList.remove("on"); fingerEl.className = "finger"; TUT.cur = null; if (g.lane) setLaneGlow(g.lane, 0); if (g.p && g.p.st === "lost") g.p.lostT = Math.min(g.p.lostT, LOST_SEC); if (["rescue", "act", "tray", "fever", "up"].every((x) => G.guideDone.has(x)) && !META.tut) { META.tut = 1; saveMeta(); } }
+function guideEnd(k) { if (!G.guide || (k && G.guide.k !== k)) return; const g = G.guide; G.guide = null; G.guideGapUntil = G.t + 1.2; /* 指示淡出後再放其他字 */ G.guideDone.add(g.k); tutEl.classList.remove("on"); fingerEl.className = "finger"; TUT.cur = null; if (g.lane) setLaneGlow(g.lane, 0); if (g.p && g.p.st === "lost") g.p.lostT = Math.min(g.p.lostT, LOST_SEC); if (["rescue", "tray", "up"].every((x) => G.guideDone.has(x)) && !META.tut) { META.tut = 1; saveMeta(); } }
 function fingerAt(x, y, drag) { fingerEl.className = "finger on" + (drag ? " drag" : ""); fingerEl.style.left = `${x}px`; fingerEl.style.top = `${y}px`; if (drag) { fingerEl.style.setProperty("--dx", `${drag.x - x}px`); fingerEl.style.setProperty("--dy", `${drag.y - y}px`); } }
 function tickGuide(rdt) {
   { const on = G.on && !G.ended && (!!G.guide || (G.guideOn && !G.guideDone.has("rescue")) || G.t < (G.guideGapUntil || 0)); if (on !== G.guidingCls) { G.guidingCls = on; document.body.classList.toggle("guiding", on); if (on) { notifEl.classList.remove("on"); G.notifT = 0; } } } // 引導期間畫面只留引導一層說明
   if (!G.on || G.ended) { if (G.guide) guideEnd(); return; }
-  if (!G.guideOn) return;
+  if (!G.guideOn || G.intro) return;
   const g = G.guide;
   if (g) {
     g.real += rdt;
@@ -3547,20 +3569,14 @@ function tickGuide(rdt) {
   }
   const D = G.guideDone, w0 = G.wave === 0;
   if (!D.has("rescue") && G.t >= 0.5) { // 0–3 秒：中央 1 位選民變灰
-    loseWill(4); const p = lostList()[0];
-    if (p) { p.lostT = 99; guideSay("rescue", "他被懶人包洗到不想投了 → 點他", 7); G.guide.p = p; } else D.add("rescue");
+    const p0 = lostList()[0]; if (!p0) loseWill(4); const p = p0 || lostList()[0]; // 開場劇情已經有一位變灰，就用他
+    if (p) { p.lostT = 99; guideSay("rescue", "🙋‍♀️ 志工阿姨：那位被懶人包洗到想放棄了，點他一下拉回來！", 8); G.guide.p = p; } else D.add("rescue");
     return;
   }
-  if (!D.has("act") && D.has("rescue")) {
-    const ls = LANES.map((L) => [L, ENEMIES.filter((e) => e.alive && e.lane === L && e.u > 0.1).length]).sort((a, b) => b[1] - a[1]);
-    if (ls[0][1] >= 2 || (G.t > 8 && ls[0][1] >= 1)) { const L = ls[0][0]; G.actCd = 0; setLaneGlow(L, 1); guideSay("act", "一群懶人包上橋了 → 點這座橋催票", 7); G.guide.lane = L; }
-    return;
-  }
-  if (!D.has("tray") && D.has("act")) { if (G.offerN === 0 && G.t >= 13) addHeat(heatNeed()); if (G.trayOpen || G.pending > 0) guideSay("tray", "熱度滿了 → 挑一張卡（不知道選哪張？選 👍）", 10); return; }
-  if (G.trayOpen && D.has("tray")) return; // 卡盤開著時先不出下一個指示
-  if (!D.has("fever") && D.has("tray")) { if (w0 && G.waveT >= 26 && !G.feverReady && G.fever <= 0) { G.morale = 100; G.feverReady = true; G.feverAt = G.t; } if (G.feverReady) guideSay("fever", "民氣滿了 → 點「投票日倒數」", 10); return; }
-  if (!D.has("up") && D.has("fever")) { if (G.t >= 45) { const need = UP_COST[1] - G.vol; if (need > 0) { addVol(need); floatText(V3(0, 4.5, 0), `志工報到 +${need}`, "good"); } guideSay("up", "志工夠了 → 點頭像上的＋升級英雄", 10); } return; }
-  if (!D.has("move") && D.has("up") && G.moveDue) { const h = team.find((x) => x.stun > 0) || team[0]; guideSay("move", "英雄被吵暈了 → 把他拖到別的石台", 9); G.guide.h = h; }
+  if (!D.has("tray") && D.has("rescue")) { if (G.offerN === 0) addHeat(heatNeed()); if (G.trayOpen || G.pending > 0) guideSay("tray", "🙋‍♀️ 志工阿姨：熱度滿了，挑一張卡！不知道選哪張？選 👍", 10); return; }
+
+  if (!D.has("up") && D.has("tray")) { if (G.t >= 25) { const need = UP_COST[1] - G.vol; if (need > 0) { addVol(need); floatText(V3(0, 4.5, 0), `志工報到 +${need}`, "good"); } guideSay("up", "🙋‍♀️ 志工阿姨：志工夠了，點頭像上的＋幫英雄升級", 10); } return; }
+  if (!D.has("move") && D.has("up") && G.moveDue) { const h = team.find((x) => x.stun > 0) || team[0]; guideSay("move", "🙋‍♀️ 志工阿姨：他被吵暈了，把他拖到別的石台", 9); G.guide.h = h; }
 }
 function guideSlow() { const g = G.guide; return g && (g.k === "rescue" || g.k === "act") && g.real < 6 ? (g.k === "rescue" ? 0.5 : 0.3) : 1; } // 節奏：救人那步放慢 0.5×，畫面上的怪照樣在走
 // ── 倒數月曆（11/1–11/28；每日挑戰打過就蓋章）──
@@ -3588,17 +3604,73 @@ addEventListener("pointerup", (ev) => {
 function flashAll() { for (const e of ENEMIES) if (e.alive) { beam(e.pos.clone().add(V3(0, 9, 0)), e.pos.clone().add(V3(0, 1, 0)), "#ffe066", 1.4, 0.35); damage(e, 15, null, { raw: true }); } G.shake = Math.max(G.shake, 0.4); banner("開票速報！", "全場落下開票閃電", false, 1.4); }
 const R3G = () => ({ heat: 0, vol: 0, volTotal: 0, morale: 0, fever: 0, feverReady: false, feverAt: 0, fevers: 0, feverTimes: [], pending: 0, offerN: 0, offers: 0, trayOpen: false, trayOpts: null, trayT: 0, rerolls: 2, rerollsUsed: 0, pity: 0, pickTimes: [],
   recruitDue: 0, chests: 0, chestT: 0, chestIds: null, evo: {}, evoN: 0, upgrades: 0, branchFor: null, branchT: 0, chainN: 0, chainMax: 0, chainBoost: 0, lastKillT: -9, waveKills: 0, cleared: {}, clears: 0,
-  guide: null, guideDone: new Set(), guideOn: false, moveDue: false, drag: null, drags: 0, holyN: 0, rallyWas: false, firstT: 0, bentoT: 30, selT: 0 });
+  guide: null, guideDone: new Set(), guideOn: false, moveDue: false, drag: null, drags: 0, holyN: 0, rallyWas: false, firstT: 0, bentoT: 30, selT: 0, intro: null, ccN: 0 });
 const rVolEl = document.getElementById("rVol"), rHeatEl = document.getElementById("rHeat");
 function whyLost() {
   if (G.lostN > 0 && G.rescued === 0) return "你救回 0 位灰選民：灰掉的人點一下，每救 1 人就 +4 意願";
-  if (!G.acts) return "催票一次都沒用：冷卻好了，直接點一座橋就能把怪推回去";
+
   if (!G.upgrades && G.volTotal >= 40) return `志工 ${G.vol} 人沒用到：點頭像上的＋升級英雄`;
   if (G.pending > 0) return `還有 ${G.pending} 張卡沒挑：點左下的「有卡可挑」`;
-  if (G.feverReady) return "民氣滿了沒按：右下的「投票日倒數」會讓全隊攻速 ×2";
+
   if (G.bosses.some((b) => b.alive && b.type === "talk")) return "追問魔王很硬：把英雄拖到政論節目那座橋頭集中打";
-  if (G.bosses.some((b) => b.alive && (b.type === "podA" || b.type === "podB"))) return "辯論會要打斷「正在質詢」的那一方，才打得動";
+  if (G.bosses.some((b) => b.alive && (b.type === "podA" || b.type === "podB"))) return "辯論會兩座講台輪流講話，把英雄拖到兩座中間的橋頭";
   return "怪一直從同一條路漏：把英雄拖到最吵的那座橋頭";
+}
+const myCardsEl = document.getElementById("myCards");
+function syncMyCards() {
+  const own = Object.keys(G.cards).filter((k) => CARDS[k] && G.cards[k] > 0), n = CARD_COMBOS.filter((c) => CC[c.id]).length;
+  myCardsEl.innerHTML = own.map((k) => `<i class="${CARDS[k].tag}">${CARDS[k].ic}<b>${G.cards[k]}</b></i>`).join("") + (n ? `<em>🔗 組合 ${n}</em>` : "");
+}
+myCardsEl.addEventListener("click", () => {
+  const on = CARD_COMBOS.filter((c) => CC[c.id]), own = Object.keys(G.cards).filter((k) => CARDS[k] && G.cards[k] > 0);
+  const left = CARD_COMBOS.filter((c) => !CC[c.id] && c.need.some((k) => lv(k)));
+  tipEl.style.setProperty("--c", "#d66e14");
+  tipEl.innerHTML = `<b>我的組合 ${on.length}/${CARD_COMBOS.length}</b><p>${on.length ? on.map((c) => `🔗 <b style="font-size:13px">${c.name} Lv${CL(c.id)}</b>：${c.d}`).join("<br>") : "還沒有組合。卡面寫「再拿這張 → 成組」的就是。"}${left.length ? `<br><small>差一張：${left.map((c) => `${c.name}（${c.need.map((k) => CARDS[k].s).join("＋")}）`).join("、")}</small>` : ""}</p><p><small>${own.map((k) => `${CARDS[k].ic}${CARDS[k].s} Lv${G.cards[k]}`).join("・")}</small></p>`;
+  tipEl.classList.add("on"); tipT = 5;
+});
+// ══ 開場小劇情（≤10 秒，可略過）：鏡頭拉近排隊 → 雜音衝上橋 → 一位選民放棄 → 你是志工 → 拉回戰場 ══
+const introEl = document.getElementById("intro"), introCap = document.getElementById("introCap");
+const INTRO = [
+  [0, 2.4, "投票所前，大家正在排隊。", "queue"],
+  [2.4, 4.8, "懶人包、宣傳車從四座橋衝過來，一路吵。", "bridge"],
+  [4.8, 7.2, "有人聽了一句「算了，投了也沒用…」就想回家。", "lost"],
+  [7.2, 10, "你是投票所志工，把想放棄的人救回來。<em>英雄幫你擋雜音；每走進投票所一位，就得 1 分。</em>", "you"],
+];
+let forceIntro = false;
+const introWanted = () => !NEUTRAL && !params.has("notut") && !params.has("auto") && (forceIntro || !META.intro);
+function startIntro() {
+  fitCamera();
+  const tgt = V3(0, 0.6, 0), base = camera.position.clone();
+  G.intro = { t: 0, beat: -1, base, baseQ: camera.quaternion.clone(), tgt, look: tgt.clone(), pos: base.clone(), lost: null };
+  document.body.classList.add("intro-on"); introEl.classList.add("on"); tickIntro(0);
+}
+function endIntro() {
+  const I = G.intro; if (!I) return; G.intro = null;
+  camera.position.copy(I.base); camera.quaternion.copy(I.baseQ); camera.updateMatrixWorld();
+  document.body.classList.remove("intro-on"); introEl.classList.remove("on");
+  if (I.lost && I.lost.st === "lost") I.lost.lostT = 99; // 留給第一步引導「點他」
+  META.intro = 1; saveMeta(); forceIntro = false;
+}
+document.getElementById("introSkip").addEventListener("click", (e) => { e.stopPropagation(); endIntro(); });
+document.getElementById("replayIntro").addEventListener("click", () => { forceIntro = true; startQuick(); });
+function tickIntro(rdt) {
+  const I = G.intro; if (!I) return;
+  I.t += rdt; if (I.t >= 10 || !G.on) { endIntro(); return; }
+  const bi = INTRO.findIndex(([a, b]) => I.t >= a && I.t < b);
+  if (bi !== I.beat) { I.beat = bi; const [, , txt, k] = INTRO[bi]; introCap.innerHTML = txt; introCap.className = k === "you" ? "big" : "";
+    introCap.animate?.([{ opacity: 0, transform: "translate(-50%, 10px)" }, { opacity: 1, transform: "translate(-50%, 0)" }], { duration: 260 });
+    if (k === "lost") { const p0 = lostList()[0]; if (!p0) loseWill(4); I.lost = lostList()[0] || null; if (I.lost) I.lost.lostT = 99; sound.bad?.(); }
+    if (k === "bridge") sound.honk?.();
+  }
+  const k = INTRO[bi][3], off = I.base.clone().sub(I.tgt);
+  let look = I.tgt, dist = 1;
+  if (k === "queue") { look = queueAt(1.5).clone().setY(0.8); dist = 0.34; }
+  else if (k === "bridge") { const L = busiestLane() || LANES[0]; const e = ENEMIES.filter((q) => q.alive && q.lane === L).sort((a, b) => b.u - a.u)[0]; look = (e ? e.pos.clone() : laneAt(L, 0.45, V3())).setY(1); dist = 0.42; }
+  else if (k === "lost") { look = I.lost ? I.lost.pos.clone().setY(0.8) : queueAt(3).clone().setY(0.8); dist = 0.3; }
+  else { look = I.tgt; dist = 1; }
+  const want = look.clone().add(off.multiplyScalar(dist)), kk = rdt ? Math.min(1, rdt * 2.6) : 1;
+  I.pos.lerp(want, kk); I.look.lerp(look, kk);
+  camera.position.copy(I.pos); camera.lookAt(I.look); camera.updateMatrixWorld();
 }
 // ── 遊戲狀態 ──
 const freshG = () => ({ ...R3G(), on: false, ended: false, t: 0, wave: 0, waveT: 0, will: 100, kills: 0, leaks: 0, dmgTotal: 0, spawnQ: [], evQ: [], paused: false, picking: false, picks: 0, cards: {}, comboOn: {}, comboCd: {}, comboN: {}, buff: { rally: 0, sanzi: 0, lst: 0, tea: 0, shirt: 0, frame: 0 }, bosses: [], final: null, debate: null, notifQ: [], notifT: 0, notifGap: 0, lastNews: null, holy: false, midIdle: false, actCd: 6, busReady: false, busUsed: false, factT: 0, fishT: 0, day: 28, sealed: false, shake: 0, seen: {}, bossKills: 0, bossLeaks: 0, slips: 0, acts: 0, interrupts: 0, winAt: null, lowFx: false, hard: 1, lastCombo: null, toss: null,
@@ -3618,6 +3690,7 @@ function resetGame(seed = 20261128) {
   const keepLow = G.lowFx; Object.assign(G, freshG(), { lowFx: keepLow });
   busBtn.hidden = true; closeDecide(); document.body.classList.remove("boss-on", "low");
   LATER.length = 0; for (const d of DROPS) { d.on = false; d.sp.visible = false; } for (const f of FALLS) { f.on = false; f.sp.visible = false; }
+  for (const k in CC) delete CC[k]; myCardsEl.innerHTML = "";
   disarmAct(); TUT.cur = null; TUT.t = 0; tutEl.classList.remove("on"); DEXS.fresh.clear();
   for (const F of FIELDS) if (F.sp) scene.remove(F.sp); FIELDS.length = 0; for (const T of TEA) scene.remove(T.sp); TEA.length = 0;
   closeTray(); closeBranch(); picker.classList.remove("open"); document.body.classList.remove("fever-on", "picking"); fingerEl.className = "finger"; lastVotedI = 0; for (const f of DNUM) { f.t = 1; f.o.visible = false; }
@@ -3632,13 +3705,14 @@ function startGame(keys, opt = {}) {
   resetGame(seed); placeTeam(keys);
   if (opt.daily) { G.daily = opt.daily; G.mod = opt.daily.mod.mod; }
   G.on = true; document.body.classList.add("playing");
-  G.rerolls = metaRerolls(); if (META.lvl >= 14) G.vol += 20; if (META.lvl >= 17) G.heat = heatNeed() / 2; if (META.lvl >= 19) G.morale = 50;
+  G.rerolls = metaRerolls(); G.vol += (META.lvl >= 4 ? 10 : 0) + (META.lvl >= 6 ? 10 : 0) + (META.lvl >= 14 ? 20 : 0); if (META.lvl >= 7) G.heat = heatNeed() / 2; if (META.lvl >= 17) G.heat = heatNeed() / 2; if (META.lvl >= 19) G.morale = 50;
   G.guideOn = guideOn() && !opt.daily; if (!G.guideOn) ["rescue", "act", "tray", "fever", "up"].forEach((k) => G.guideDone.add(k));
   document.getElementById("startScreen").classList.remove("open"); document.getElementById("endScreen").classList.remove("open");
   buildHeroBar(); startWave(0); sound.start(); sound.setMode("normal");
   notify("⏳", "倒數", "距離投票還有 28 天。懶人包開始在群組裡流傳", { force: true }); G.notifGap = 1.2;
   if (G.daily) banner(`每日挑戰 ${G.daily.label}：${G.daily.mod.name}`, G.daily.mod.d, false, 3);
   fitCamera();
+  if (!opt.daily && introWanted()) startIntro(); // 第一次玩：開場小劇情
 }
 function lose() {
   if (G.ended) return; G.ended = true; G.on = false; G.won = false;
@@ -3680,9 +3754,9 @@ function tickEnemy(e, dt) {
   if (e.punch > 0) { e.punch = Math.max(0, e.punch - dt); const t = 1 - e.punch / 0.14, k = t < 0.3 ? t / 0.3 : (1 - (t - 0.3) / 0.7) * Math.cos((t - 0.3) * 7); e.g.scale.set(e.sc * (1 + 0.22 * k), e.sc * (1 - 0.18 * k), e.sc * (1 + 0.22 * k)); if (e.punch <= 0) e.g.scale.setScalar(e.sc); } // R3：擠壓→回彈
   if (e.flash > 0) { e.flash -= dt; if (e.mat.emissive) { e.mat.emissive.set("#ffffff"); e.mat.emissiveIntensity = Math.min(1, Math.max(0, e.flash) / 0.07) * (RM_FX ? 0.5 : 1); } } else if (e.mat.emissive && e.mat.emissiveIntensity) e.mat.emissiveIntensity = 0;
   e.factT = Math.max(0, e.factT - dt); e.vuln = Math.max(0, e.vuln - dt); e.markT = Math.max(0, (e.markT || 0) - dt);
-  if (e.type === "cycle" || e.type === "cog") { e.formT -= dt; if (e.formT <= 0) { e.formT = 3; e.formI = (e.formI + 1) % 3; e.form = (e.type === "cycle" ? FORMS_C : FORMS_S)[e.formI]; e.icon.material.map = (e.type === "cycle" ? TX.cyc : TX.cog)[e.form]; } e.icon.position.y = 1.5 + Math.sin(elapsed * 3 + e.ph) * 0.08; }
+  if (e.type === "cycle" || e.type === "cog") { if (e.type === "cog") dexSee("cycle"); e.formT -= dt; if (e.formT <= 0) { e.formT = 3; e.formI = (e.formI + 1) % 3; e.form = (e.type === "cycle" ? FORMS_C : FORMS_S)[e.formI]; e.icon.material.map = (e.type === "cycle" ? TX.cyc : TX.cog)[e.form]; } e.icon.position.y = 1.5 + Math.sin(elapsed * 3 + e.ph) * 0.08; }
   if (e.type === "truck") { e.honkT -= dt; if (e.honkT <= 0) { e.honkT = 4; shockwave(e.pos, "#8a3a5c", 7.5, 0.5); let hit = false; for (const h of team) if (h.pos.distanceTo(e.pos) < 7.5) { stunHero(h, 1.2, "被吵到", e.lane); hit = true; } if (hit && once("honk", 1)) sound.honk(); if (once("honkT" + e.gen, 3.5)) floatText(e.pos.clone().add(V3(0, 3.4, 0)), "叭叭叭！", "bad"); } }
-  let sp = e.speed * (tagOn("ctrl") ? 0.9 : 1);
+  let sp = e.speed * (tagOn("ctrl") ? 0.9 : 1) * (1 - [0, 0.06, 0.11, 0.16, 0.2, 0.24][lv("slow")]);
   if (e.stun > 0) { e.stun -= dt; sp = 0; }
   if (e.slowT > 0) { e.slowT -= dt; sp *= 0.6; }
   if (!lv("seal") && !ET[e.type].boss && e.type !== "poll" && sp > 0) for (const q of ENEMIES) if (q.alive && q.type === "poll" && Math.abs(q.pos.x - e.pos.x) + Math.abs(q.pos.z - e.pos.z) < 5) { sp *= 1.3; break; }
@@ -3739,7 +3813,7 @@ function updateHud(dt) {
   sound.setMode(bossesAlive.length && G.on ? "boss" : "normal");
   if (bossesAlive.length) {
     const hp = bossesAlive.reduce((a, b) => a + Math.max(0, b.hp), 0), max = G.bosses.reduce((a, b) => a + b.maxHp, 0) || 1;
-    hud.boss.querySelector("b").textContent = `BOSS　${bossesAlive.map((b) => ET[b.type].name).join("＋")}${bossesAlive.some((b) => b.shielded) ? "（質詢中：打斷才打得動）" : ""}`;
+    hud.boss.querySelector("b").textContent = `BOSS　${bossesAlive.map((b) => ET[b.type].name).join("＋")}${bossesAlive.some((b) => b.shielded) ? "（質詢中：先打另一座）" : ""}`;
     hud.boss.querySelector(".hp i").style.width = `${(hp / max) * 100}%`;
   }
   heroBar.querySelectorAll(".hb").forEach((b, i) => { const h = team[i]; if (!h) return; b.style.setProperty("--p", h.hs.cd ? clamp(1 - h.skT / (h.hs.cd * (1 - 0.15 * h.up)), 0, 1).toFixed(2) : 1); b.classList.toggle("stun", h.stun > 0); b.classList.toggle("grey", h.grey > 0); b.classList.toggle("mute", h.mute > 0 || (h.key === "mid" && G.midIdle)); });
@@ -3798,11 +3872,12 @@ function setupStart() {
   const X = Math.max(0, DAYS_LEFT);
   document.getElementById("cdNum").textContent = X;
   const sub = document.getElementById("subLine");
-  sub.textContent = "懶人包、名嘴、宣傳車正在把選民吵回家。點一下，把他們救回投票所。";
+  sub.textContent = "你是投票所志工。英雄幫你擋住懶人包和宣傳車，你負責把想放棄的人救回來——每走進投票所一位就得 1 分。";
+  document.getElementById("replayIntro").hidden = !META.intro || NEUTRAL;
   if (NEUTRAL) { document.getElementById("countBox").hidden = true; document.getElementById("voteDay").hidden = false; document.getElementById("selfBtn").hidden = true; document.getElementById("quickBtn").innerHTML = "投完票了，回來玩<small>今天只有中立選民上場</small>"; }
   else if (AFTER) { sub.textContent = "投票日已經過了。謝謝每一位去投票的人，這局當作慶功。"; document.getElementById("countBox").hidden = true; }
   if (VS != null) { const v = document.getElementById("vsLine"); v.hidden = false; v.textContent = `你朋友救了 ${VS} 人，你只要 30 秒就能開始超車`; }
-  carousel.innerHTML = ORDER.map((k) => { const d = DEF[k], r = HERO_ROLE[k]; return `<button class="hc" type="button" data-k="${k}" style="--c:${CAMP_C[d.camp]};--cl:${CAMP_L[d.camp]}"><span class="pic"><img src="${PORTRAIT[k]}" alt="${d.name} 立繪"></span><span class="camp">${CAMP_N[d.camp]}</span><span class="role">${r[0]}</span><i class="chk">✓</i><b>${d.name}</b><em>${HS[k].skill}</em><p>${HS[k].short}</p><span class="weak">弱點：${r[1]}</span></button>`; }).join("");
+  carousel.innerHTML = ORDER.map((k) => { const d = DEF[k], r = HERO_ROLE[k]; return `<button class="hc" type="button" data-k="${k}" style="--c:${CAMP_C[d.camp]};--cl:${CAMP_L[d.camp]}"><span class="pic"><img src="${PORTRAIT[k]}" alt="${d.name} 立繪"></span><span class="camp">${CAMP_N[d.camp]}</span><span class="role ${r[0] === "控場" ? "ctrl" : "dmg"}">${r[0] === "控場" ? "🧊" : "⚔️"} ${r[0]}</span><i class="chk">✓</i><b>${d.name}</b><em>${HS[k].skill}</em><p>${HS[k].short}</p><span class="weak">弱點：${r[1]}</span></button>`; }).join("");
   document.getElementById("presets").innerHTML = NEUTRAL ? "" : PRESETS.map(([n], i) => `<button type="button" data-p="${i}">${n}</button>`).join("");
   picked = quick.slice(); syncQuick(); syncPick();
 }
@@ -3882,16 +3957,16 @@ async function renderPortraits() {
 
 // ── 結算 ──
 const endScreen = document.getElementById("endScreen"), endPanel = document.getElementById("endPanel");
-const HERO_TITLE = { chiang: "循環經濟研究員", han: "造勢晚會常客", lu: "全黨打一人教練", hou: "雙北通勤族", shen: "洋流衝浪手", lai: "換新衫模特兒", tsai: "芋頭壽司外送員", lin: "口誤糾察隊", huang: "神秘嘉賓本嘉賓", mid: "擲筊決定派", air: "鍵盤空軍司令", ground: "掃街陸軍班長" };
-const HERO_LINE = { chiang: "輝達、巨蛋、牛奶，一發一發輪著打。", han: "一開口停不下來，但全場都被鼓舞了。", lu: "怪越多越痛，全黨打一人。", hou: "雙北合作，光束一路打到底。", shen: "穿透浪越推越大，黑熊還會幫忙。", lai: "換了新衫，還叫來一車首投族。", tsai: "YBSG 爆擊之外，還記得送芋頭壽司。", lin: "火力最高，偶爾喊錯名字。", huang: "哪條路最危險，就空降到哪裡。", mid: "每一波都先擲筊，終極反派最怕你。", air: "人在鍵盤後面，愛心灑遍全場。", ground: "宣傳車開過去，整條路都安靜了。" };
+const HERO_TITLE = { chiang: "三種子彈射手", han: "開講加速達人", lu: "越多越痛拳擊手", hou: "光束狙擊手", shen: "穿透浪衝浪手", lai: "援軍隊長", tsai: "爆擊高手", lin: "火力擔當", huang: "空降嘉賓", mid: "擲筊決定派", air: "鍵盤空軍司令", ground: "掃街陸軍班長" };
+const HERO_LINE = { chiang: "加傷、範圍、減速，三種子彈輪著打。", han: "一開講全隊都加速了。", lu: "怪越多拳頭越重。", hou: "光束一路打到底。", shen: "浪越推越大，黑熊也來幫忙。", lai: "全隊加傷，還叫來一車年輕人。", tsai: "爆擊之外，還記得把人拉回來。", lin: "火力最高，偶爾飛歪。", huang: "哪條路最危險，就空降到哪裡。", mid: "每一波都先擲筊，最後的魔王最怕你。", air: "人在鍵盤後面，愛心灑遍全場。", ground: "宣傳車開過去，整條路都安靜了。" };
 function titleOf() {
   const keys = team.map((h) => h.key), camps = new Set(keys.map((k) => DEF[k].camp));
-  if (G.comboN.debate) return { t: "交叉詰問主持人", line: "蔣萬安＋沈伯洋同隊，全場交叉詰問。" };
-  if (G.comboN.sanzi) return { t: "三子合體信徒", line: "韓國瑜、盧秀燕、侯友宜湊齊，全場一起打。" };
-  if (G.comboN.lst) return { t: "賴蕭蔡應援團", line: "賴清德、蔡英文帶著綠營隊友一起上。" };
-  if (G.comboN.stage) return { t: "同台造勢主持人", line: "韓國瑜、賴清德站上同一個台。" };
-  if (G.comboN.frame) return { t: "同框攝影師", line: "盧秀燕、蔡英文擠進同一張照片。" };
-  if (G.comboN.beam2) return { t: "火力光束操作員", line: "侯友宜、林俊憲兩道光束一起掃。" };
+  if (G.comboN.debate) return { t: "全場暈眩指揮官", line: "蔣萬安＋沈伯洋同隊，全場一起暈。" };
+  if (G.comboN.sanzi) return { t: "藍營三人組隊長", line: "韓國瑜、盧秀燕、侯友宜湊齊，全場重擊。" };
+  if (G.comboN.lst) return { t: "綠營三人組隊長", line: "賴清德、蔡英文帶著綠營隊友一起上。" };
+  if (G.comboN.stage) return { t: "全隊加速主持人", line: "韓國瑜、賴清德站上同一個台。" };
+  if (G.comboN.frame) return { t: "全場爆擊攝影師", line: "盧秀燕、蔡英文擠進同一張照片。" };
+  if (G.comboN.beam2) return { t: "雙光束操作員", line: "侯友宜、林俊憲兩道光束一起掃。" };
   const top = [...team].sort((a, b) => b.dmgDone - a.dmgDone)[0];
   if (camps.has("blue") && camps.has("green")) {
     const neu = [...team].filter((h) => ["mid", "air", "ground", "huang"].includes(h.key)).sort((a, b) => b.dmgDone - a.dmgDone)[0];
@@ -3959,9 +4034,9 @@ function showEnd(won) {
       <p><span>跨陣營加成</span><i>+${Math.round(campBonus() * 100)}%</i></p>
       <p><span>投了票的選民</span><i>${N} 位</i></p>
       <p><span>救回的灰選民</span><i>${G.rescued} / ${G.lostN} 位</i></p>
-      <p><span>換位／催票</span><i>${G.moves} 次／${G.acts} 次</i></p>
+      <p><span>換位</span><i>${G.moves} 次</i></p>
       <p><span>挑卡／升級</span><i>${G.picks} 張／${G.upgrades} 次</i></p>
-      <p><span>爆發時刻／最高連破</span><i>${G.fevers} 次／×${G.chainMax}</i></p>
+      <p><span>爆發／最高連破</span><i>${G.fevers} 次／×${G.chainMax}</i></p>
       <p><span>擋下的假訊息</span><i>${G.kills} 則</i></p>
       <p><span>觸發的組合技</span><i>${combos}</i></p>
       <p><span>擊退的魔王</span><i>${G.bossKills} 隻</i></p>
@@ -4130,18 +4205,18 @@ function bot(dt) {
     if (G.trayOpen) { if (bot.tr == null) bot.tr = G.t + react() * 0.6; if (G.t >= bot.tr) { bot.tr = null; const ids = G.trayOpts || [];
       if (G.rerolls > 0 && ids.length && ids.every((i) => CARDS[i]?.rar === "c") && R() < 0.3) { act(doReroll); return; }
       const sc = Object.fromEntries(ids.map((id) => [id, (id.startsWith("evo:") ? 9 : id.startsWith("rec:") ? 8 : CARDS[id]?.rar === "l" ? 6 : CARDS[id]?.rar === "r" ? 4 : 2) + (CARDS[id] && synNote(id) ? 3 * skill : 0) + R() * 2.5]));
-      const best = [...ids].sort((a, b) => sc[b] - sc[a])[0]; if (best) { act(() => takeCard(best)); return; } } }
+      const pm = params.get("pick"), best = pm === "best" ? bestCard(ids) : pm === "rand" ? ids[Math.floor(R() * ids.length)] : [...ids].sort((a, b) => sc[b] - sc[a])[0]; if (best) { act(() => takeCard(best)); return; } } }
   }
   if (G.branchFor) { const bp = params.get("br"), k = bp === "A" || bp === "B" ? bp : R() < 0.5 ? "A" : "B"; act(() => chooseBranch(META.lvl >= BR_UNLOCK[G.branchFor.key] ? k : "A")); return; }
   { const want = team.filter((h) => h.lv < 3).sort((a, b) => (a.slot < 3 ? 0 : 1) - (b.slot < 3 ? 0 : 1) || b.lv - a.lv)[0]; // 先把開局三人練到 Lv3，再管後來加入的
     if (want && G.vol >= upCost(want) && R() < 0.4 + 0.6 * skill) { act(() => upgradeHero(want)); return; } }
-  if (G.feverReady && G.t - G.feverAt > react()) { act(startFever); return; }
+
   for (const p of lostList()) { if (p.botT == null) p.botT = G.t + react() + 0.6; if (G.t >= p.botT && p.botT > 0) { if (R() < 0.55 + 0.45 * skill) { act(() => rescueVoter(p)); p.botT = null; return; } p.botT = -1; } }
   for (const d of DROPS) { if (!d.on) continue; if (d.botT == null) d.botT = G.t + react(); if (G.t >= d.botT && d.botT > 0) { if (R() < 0.5 + 0.4 * skill) { act(() => collectDrop(d)); return; } d.botT = -1; } }
-  if (G.debate && G.debate.open > 0 && G.debate.open < 4.5) { act(() => decide(R() < 0.75 + 0.25 * skill ? G.debate.asker : 1 - G.debate.asker)); return; }
-  if (G.busReady && G.final?.alive && G.final.u > 0.3) { act(() => useBus()); return; }
+
+
   const threat = (L) => { let s0 = 0, front = null; for (const e of ENEMIES) if (e.alive && e.lane === L) { s0 += (0.3 + e.u * e.u) * (ET[e.type].boss ? 4 : 1) * Math.min(3, e.hp / 6 + 0.5); if (!front || e.u > front.u) front = e; } return { s: s0, front }; };
-  if (G.actCd <= 0 && alive().length >= 4 && R() < 0.5 + 0.5 * skill) { let bl = null, bs = 0; for (const L of LANES) { const t = threat(L).s; if (t > bs) { bs = t; bl = L; } } if (bl) { act(() => useAct(bl)); return; } }
+
   // 換位：最危險、又沒人顧的那條路，派最閒的英雄過去
   bot.mv = (bot.mv || 0) - 0.5; if (bot.mv > 0) return;
   const inR = (h, e) => Math.hypot(e.pos.x - PADS[h.pad].x, e.pos.z - PADS[h.pad].z) <= rangeOf(h);
@@ -4374,7 +4449,7 @@ void main(){ vec4 t = texture2D(map, vUv); gl_FragColor = vec4(t.rgb * vCol.rgb,
         break;
       }
       case "lu": { emit({ p: toV, c: s.fx.c2, s0: 1.4 * VS * TS[T], s1: 2.4 * VS * TS[T], life: 0.18, cell: "star", bat: 2, a0: 0.95, a1: 0 }); for (let i = 0; i < n_(6); i++) emit({ p: toV, v: sv(9), c: "#ffffff", s0: 0.5 * VS, s1: 0, sy: 0.2, life: 0.16, cell: "spark", bat: 2, stretch: 1 }); if (s.o.aoe) ring(toV, s.fx.c2, s.o.aoe, 0.35); if (T >= 4) icons(toV, "fist", 6, 5, 0.6, 0.5, 4);
-        if (h && h.n % 4 === 0) { ring(toV, s.fx.c2, 2.2 * TS[T], 0.35); icons(toV.clone().add(V3(0, 0.6, 0)), "fist", 1, 0, 1.6 * TS[T], 0.5, -1); shakeL(1); sweepOnce("lu", "全黨打一人！", "#9cc6ff", toV); }
+        if (h && h.n % 4 === 0) { ring(toV, s.fx.c2, 2.2 * TS[T], 0.35); icons(toV.clone().add(V3(0, 0.6, 0)), "fist", 1, 0, 1.6 * TS[T], 0.5, -1); shakeL(1); sweepOnce("lu", "越多越痛！", "#9cc6ff", toV); }
         break; }
       case "tsai": { emit({ p: toV, c: "#ffd36b", s0: 0.9 * VS, s1: 0.2, life: 0.3, cell: "star5", bat: 1, rv: 6 }); if (T >= 4) ring(toV, "#b48cff", 2.2, 0.35); break; }
       case "lin": { flash(toV, "#ff9a4a", 1.5 * TS[T], 0.16, 0.7); chunks(toV, "#ffb070", 3 * nk, 5, 0.4); decal(toV, "scorch", "#ffffff", 1.2 * TS[T], 0.8); stop(0.03); break; }
@@ -4549,7 +4624,7 @@ void main(){ vec4 t = texture2D(map, vUv); gl_FragColor = vec4(t.rgb * vCol.rgb,
     onHit(e, dmg, crit, h) {
       e.punch = 0.14; if (!ET[e.type].boss) { e.r3kb = 0.3; e.r3kbD = crit ? 0.8 : h?.key === "lin" ? 0.6 : 0.4; }
       if (crit) { const p = e.pos.clone().add(V3(0, 1.2 + (e.lift || 0), 0)); flash(p, "#ffd36b", 2.6, 0.18, 0.9); emit({ p, c: "#ffffff", s0: 1.6 * VS, s1: 3.2 * VS, life: 0.16, cell: "star", bat: 2, a0: 1, a1: 0 }); sparks(p, "#ffd36b", 8, 8); shakeL(1);
-        if (h?.key === "tsai") { ["Y", "B", "S", "G"].forEach((L, i) => emit({ p: p.clone().add(V3((i - 1.5) * 0.7 * VS, 1.2 * VS, 0)), v: V3(0, 1.4, 0), c: "#ffffff", s0: 0.2, s1: 1.0 * VS * TS[tierOf(h)], life: 0.75, cell: L, bat: 1, a0: 1, a1: 1, fade: 0.25, delay: i * 0.05, ease: 1, rot: 0 })); sweepOnce("ybsg", "YBSG！", "#ffd36b", p); if (G.evo.tsai) ring(p, "#ffd36b", 2.6, 0.4); } }
+        if (false && h?.key === "tsai") { ["Y", "B", "S", "G"].forEach((L, i) => emit({ p: p.clone().add(V3((i - 1.5) * 0.7 * VS, 1.2 * VS, 0)), v: V3(0, 1.4, 0), c: "#ffffff", s0: 0.2, s1: 1.0 * VS * TS[tierOf(h)], life: 0.75, cell: L, bat: 1, a0: 1, a1: 1, fade: 0.25, delay: i * 0.05, ease: 1, rot: 0 })); sweepOnce("ybsg", "爆擊！", "#ffd36b", p); if (G.evo.tsai) ring(p, "#ffd36b", 2.6, 0.4); } }
       if (ET[e.type].boss && dmg >= 6) shakeL(1);
     },
     onKill(e, h) {
@@ -4592,23 +4667,23 @@ void main(){ vec4 t = texture2D(map, vUv); gl_FragColor = vec4(t.rgb * vCol.rgb,
   };
   // ── 技能演出（藍綠對等：韓↔賴、蔣↔沈、盧↔蔡、侯↔林）──
   const SK = {
-    han(h) { for (const q of team) pillar(q.pos, "#ffd36b", 9, 1.8, 0.9); confetti(h.pos, 20, ["#ffd36b", "#e0452a", "#1f56b0", "#ffffff"], 13, 7); ring(h.pos, "#ffd36b", rangeOf(h) + 3, 0.6); for (let i = 0; i < n_(8); i++) emit({ p: h.pos.clone().add(V3(0, 3 * VS, 0)), v: sv(4).setY(3), c: "#ffffff", s0: 0.8 * VS, s1: 0.5 * VS, life: 1.0, cell: i % 2 ? "note" : "note2", bat: 1, g: -0.4 }); if (G.evo.han) for (let i = 0; i < n_(16); i++) emit({ p: V3(h.pos.x + (rnd() - 0.5) * 12, 9, h.pos.z + (rnd() - 0.5) * 12), v: V3(0, -6, 0), c: "#ffffff", s0: 0.7 * VS, s1: 0.7 * VS, a1: 1, fade: 0.2, life: 1.3, cell: "coin", bat: 1, rv: 6, g: 4 }); shakeL(2); screenFlash("rgba(255,214,107,0.2)", 260, scr(h.pos, 3)); sweepText("造勢！", "#ffd36b", h.pos); },
-    lai(h) { for (const q of team) { pillar(q.pos, "#3fbf6c", 9, 1.8, 0.9); icons(q.pos.clone().add(V3(0, 3 * VS, 0)), "shirt", 1, 1, 1.0, 0.9, -1); } const L = busiestLane(); if (L) { setLaneGlow(L, 1); setTimeout(() => setLaneGlow(L, G.armed ? 1 : 0), 1500); for (let u = 0.2; u < 1; u += 0.2) confetti(laneAt(L, u, V3()), 5, ["#3fbf6c", "#ffffff", "#ffd36b", "#5aa0ee"], 3, 5); } shakeL(2); screenFlash("rgba(63,191,108,0.2)", 260, scr(h.pos, 3)); sweepText("返鄉投票！", "#7ee39e", h.pos); },
-    shen(h) { const ls = new Set(RUNNERS.filter((r) => r.kind === "bear" && r.h === h).map((r) => r.L)); for (const L of ls) { setLaneGlow(L, 1); setTimeout(() => setLaneGlow(L, G.armed ? 1 : 0), 1600); } ring(h.pos, "#1fb6c9", 4, 0.5); dust(h.pos, 12, 1.5); shakeL(2); sweepText("黑熊出動！", "#9fe8f2", h.pos); },
+    han(h) { for (const q of team) pillar(q.pos, "#ffd36b", 9, 1.8, 0.9); confetti(h.pos, 20, ["#ffd36b", "#e0452a", "#1f56b0", "#ffffff"], 13, 7); ring(h.pos, "#ffd36b", rangeOf(h) + 3, 0.6); for (let i = 0; i < n_(8); i++) emit({ p: h.pos.clone().add(V3(0, 3 * VS, 0)), v: sv(4).setY(3), c: "#ffffff", s0: 0.8 * VS, s1: 0.5 * VS, life: 1.0, cell: i % 2 ? "note" : "note2", bat: 1, g: -0.4 }); if (G.evo.han) for (let i = 0; i < n_(16); i++) emit({ p: V3(h.pos.x + (rnd() - 0.5) * 12, 9, h.pos.z + (rnd() - 0.5) * 12), v: V3(0, -6, 0), c: "#ffffff", s0: 0.7 * VS, s1: 0.7 * VS, a1: 1, fade: 0.2, life: 1.3, cell: "coin", bat: 1, rv: 6, g: 4 }); shakeL(2); screenFlash("rgba(255,214,107,0.2)", 260, scr(h.pos, 3)); sweepText("全隊加速！", "#ffd36b", h.pos); },
+    lai(h) { for (const q of team) { pillar(q.pos, "#3fbf6c", 9, 1.8, 0.9); icons(q.pos.clone().add(V3(0, 3 * VS, 0)), "shirt", 1, 1, 1.0, 0.9, -1); } const L = busiestLane(); if (L) { setLaneGlow(L, 1); setTimeout(() => setLaneGlow(L, G.armed ? 1 : 0), 1500); for (let u = 0.2; u < 1; u += 0.2) confetti(laneAt(L, u, V3()), 5, ["#3fbf6c", "#ffffff", "#ffd36b", "#5aa0ee"], 3, 5); } shakeL(2); screenFlash("rgba(63,191,108,0.2)", 260, scr(h.pos, 3)); sweepText("援軍衝鋒！", "#7ee39e", h.pos); },
+    shen(h) { const ls = new Set(RUNNERS.filter((r) => r.kind === "bear" && r.h === h).map((r) => r.L)); for (const L of ls) { setLaneGlow(L, 1); setTimeout(() => setLaneGlow(L, G.armed ? 1 : 0), 1600); } ring(h.pos, "#1fb6c9", 4, 0.5); dust(h.pos, 12, 1.5); shakeL(2); sweepText("黑熊衝鋒！", "#9fe8f2", h.pos); },
     chiang(h) {},
     tsai(h) { // 芋頭壽司：一盤壽司拋到排隊隊伍，落地紫色芋頭＋愛心
       const to = queueAt(2); const from = h.pos.clone().add(V3(0, 3 * VS, 0)); const it = { t: 0 };
       const step = () => { it.t += 1 / 30; const k = Math.min(1, it.t / 0.6); emit({ p: _t.lerpVectors(from, to, k).setY(lerp(from.y, to.y + 1, k) + Math.sin(k * Math.PI) * 4).clone(), c: "#ffffff", s0: 1.3 * VS, s1: 1.3 * VS, life: 0.05, a1: 1, cell: "sushi", bat: 1, rot: k * 6 }); if (k < 1) setTimeout(step, 33); else { for (let i = 0; i < n_(14); i++) emit({ p: to.clone().setY(to.y + 1), v: sv(5), c: i % 2 ? "#b48cff" : "#d9c2ff", s0: 0.45 * VS, s1: 0.1, life: 0.7, cell: i % 3 ? "glow" : "chunk", bat: i % 3 ? 2 : 1, g: 8 }); icons(to.clone().setY(to.y + 1.5), "heart", 3, 2, 0.8, 1.1, -1.5); ring(to, "#b48cff", 3, 0.5); pillar(to, "#b48cff", 6, 1.6, 0.8); } };
-      step(); pillar(h.pos, "#2fae68", 7, 1.6, 0.7); sweepText("芋頭壽司！", "#c9a8ff", h.pos); shakeL(1);
+      step(); pillar(h.pos, "#2fae68", 7, 1.6, 0.7); sweepText("補人！", "#c9a8ff", h.pos); shakeL(1);
     },
     huang(h) { const p = h.holder.position; for (let i = 0; i < 1; i++) emit({ p: V3(p.x, groundAt(p) + 0.06, p.z), c: "#ffffff", s0: 0.6 * VS, s1: 3.2 * VS, a0: 0.6, a1: 0.9, life: 0.5, cell: "shadow", bat: 0, mode: 1 }); pillar(p, "#a8f0ee", 14, 2.4, 0.6); for (let i = 0; i < n_(10); i++) emit({ p: V3(p.x + (rnd() - 0.5) * 1.5, 6 + rnd() * 4, p.z + (rnd() - 0.5) * 1.5), v: V3(0, -22, 0), c: "#a8f0ee", s0: 0.5 * VS, s1: 0.3, sy: 0.25, life: 0.35, cell: "spark", bat: 2, stretch: 1, delay: rnd() * 0.3 }); },
-    land(h) { const p = h.pos.clone(); const R0 = 4.2 * (h.lv >= 2 ? 1.5 : 1); stop(0.08); shakeL(3); ring(p, "#28c8c8", R0, 0.5); ring(p, "#ffffff", R0 * 1.45, 0.7, 0.7); dust(p, 24, 3); decal(p, "crack", "#ffffff", 3.4, 2.4); flash(p.clone().setY(p.y + 1), "#a8f0ee", 4, 0.2); if (G.evo.huang) [0.25, 0.5].forEach((d, i) => setTimeout(() => ring(p, "#28c8c8", R0 * (1.2 + i * 0.3), 0.5), d * 1000)); sweepText("神秘嘉賓！", "#a8f0ee", h.pos); },
+    land(h) { const p = h.pos.clone(); const R0 = 4.2 * (h.lv >= 2 ? 1.5 : 1); stop(0.08); shakeL(3); ring(p, "#28c8c8", R0, 0.5); ring(p, "#ffffff", R0 * 1.45, 0.7, 0.7); dust(p, 24, 3); decal(p, "crack", "#ffffff", 3.4, 2.4); flash(p.clone().setY(p.y + 1), "#a8f0ee", 4, 0.2); if (G.evo.huang) [0.25, 0.5].forEach((d, i) => setTimeout(() => ring(p, "#28c8c8", R0 * (1.2 + i * 0.3), 0.5), d * 1000)); sweepText("空降！", "#a8f0ee", h.pos); },
     ground(h) { for (const r of RUNNERS) if (r.kind === "truck" && r.h === h) { r.r3 = null; } icons(h.pos.clone().add(V3(0, 3 * VS, 0)), "mega", 1, 1, 1.2, 0.9, -1); shakeL(1); },
-    tri(h) {}, rain(h) { confetti(V3(0, 0, 0), 30, ["#ff5c8a", "#ffc1d4", "#ffffff"], 16, 8); for (let i = 0; i < n_(20); i++) emit({ p: V3((rnd() - 0.5) * 24, 10 + rnd() * 4, (rnd() - 0.5) * 18), v: V3(0, -8, 0), c: "#ffffff", s0: 0.8 * VS, s1: 0.8 * VS, a1: 1, fade: 0.2, life: 1.2, cell: "heart", bat: 1, g: 3, delay: rnd() * 0.5 }); sweepText("全網洗版！", "#ff8ab3"); },
+    tri(h) {}, rain(h) { confetti(V3(0, 0, 0), 30, ["#ff5c8a", "#ffc1d4", "#ffffff"], 16, 8); for (let i = 0; i < n_(20); i++) emit({ p: V3((rnd() - 0.5) * 24, 10 + rnd() * 4, (rnd() - 0.5) * 18), v: V3(0, -8, 0), c: "#ffffff", s0: 0.8 * VS, s1: 0.8 * VS, a1: 1, fade: 0.2, life: 1.2, cell: "heart", bat: 1, g: 3, delay: rnd() * 0.5 }); sweepText("愛心雨！", "#ff8ab3"); },
     dome(h) { const p = h?.pos || V3(0, 0, 0); disc(p, "#cfd8e3", 7, 1.2, 0.35); ring(p, "#cfd8e3", 7, 0.7); dust(p, 16, 3, "#e2dccd"); shakeL(2); },
-    tide(h) { ring(V3(0, 0, 0), "#1fb6c9", 22, 0.9); ring(V3(0, 0, 0), "#ffffff", 16, 0.7, 0.6); for (const L of LANES) for (let u = 0.15; u < 1; u += 0.15) { const q = laneAt(L, u, V3()).setY(bridgeY(L, u)); for (let i = 0; i < n_(3); i++) emit({ p: q, v: sv(5).setY(5), c: "#ffffff", s0: 0.4 * VS, s1: 0.1, life: 0.6, cell: "drop", bat: 1, g: 14, stretch: 1, sy: 1.3 }); } shakeL(3); screenFlash("rgba(31,182,201,0.2)", 300); sweepText("黑潮！", "#9fe8f2"); },
-    gavel(h) { ring(V3(0, 0, 0), "#ffd36b", 22, 0.7); icons(V3(0, 6, 0), "gavel", 1, 0, 2.6, 0.9, 14); setTimeout(() => { dust(V3(0, 0.3, 0), 20, 3); shakeL(3); }, 250); sweepText("院長敲槌！", "#ffd36b"); },
-    rally2(h) { ring(V3(0, 0, 0), "#3fbf6c", 22, 0.7); confetti(V3(0, 0, 0), 40, ["#3fbf6c", "#ffffff", "#ffd36b"], 14, 7); shakeL(3); sweepText("返鄉大會師！", "#7ee39e"); },
+    tide(h) { ring(V3(0, 0, 0), "#1fb6c9", 22, 0.9); ring(V3(0, 0, 0), "#ffffff", 16, 0.7, 0.6); for (const L of LANES) for (let u = 0.15; u < 1; u += 0.15) { const q = laneAt(L, u, V3()).setY(bridgeY(L, u)); for (let i = 0; i < n_(3); i++) emit({ p: q, v: sv(5).setY(5), c: "#ffffff", s0: 0.4 * VS, s1: 0.1, life: 0.6, cell: "drop", bat: 1, g: 14, stretch: 1, sy: 1.3 }); } shakeL(3); screenFlash("rgba(31,182,201,0.2)", 300); sweepText("全場推回！", "#9fe8f2"); },
+    gavel(h) { ring(V3(0, 0, 0), "#ffd36b", 22, 0.7); icons(V3(0, 6, 0), "gavel", 1, 0, 2.6, 0.9, 14); setTimeout(() => { dust(V3(0, 0.3, 0), 20, 3); shakeL(3); }, 250); sweepText("全場暈！", "#ffd36b"); },
+    rally2(h) { ring(V3(0, 0, 0), "#3fbf6c", 22, 0.7); confetti(V3(0, 0, 0), 40, ["#3fbf6c", "#ffffff", "#ffd36b"], 14, 7); shakeL(3); sweepText("全場暈！", "#7ee39e"); },
     park(h) { const r = RUNNERS.find((x) => x.park && x.parked); if (r) { ring(r.mesh.position, "#f08a24", 3, 0.5); icons(r.mesh.position.clone().add(V3(0, 2, 0)), "cone", 3, 2, 0.8, 1.2, 6); } },
   };
   Object.assign(fx, ff);
@@ -4635,8 +4710,9 @@ function tick(dt) {
   if (params.has("auto")) bot(dt);
   let gdt = dt; if (G.hitStop > 0) { G.hitStop -= dt; gdt = dt * 0.1; } // v2：爆擊／打魔王停格
   gdt *= R3FX.timeK(dt); // R3：魔王登場／擊倒、升 Lv3、進化的慢動作
+  if (G.intro) gdt *= 0.55; // 劇情中戰場照跑、放慢
   gdt *= Math.min(guideSlow(), G.trayOpen || G.branchFor ? 0.3 : 1); // 引導、卡盤、分支都放慢到 0.3×（不暫停）；卡盤不會自己收，挑完或按「先收著」才收
-  tickGuide(dt);
+  tickIntro(dt); tickGuide(dt);
   tickWorld(dt);
   tickGame(gdt);
   if (!G.on || G.paused) { for (const e of ENEMIES) if (!e.alive && e.dying > 0) tickEnemy(e, dt); }
@@ -4663,7 +4739,7 @@ window.__state = () => ({ voted: Math.floor(G.voted), rescued: G.rescued, lostN:
 window.__scene = scene; window.__people = PEOPLE; window.__cam = camera; window.__team = () => team; window.__enemies = () => ENEMIES;
 window.__info = () => ({ ...renderer.info.render, pr: renderer.getPixelRatio() });
 window.__startGame = (keys, opt) => { picked = keys; startGame(keys, opt); };
-window.__r3 = () => ({ t: +G.t.toFixed(1), wave: G.wave, voted: Math.floor(G.voted), will: +G.will.toFixed(1), won: G.won, ended: G.ended, heat: +G.heat.toFixed(1), vol: G.vol, volTotal: G.volTotal, morale: +G.morale.toFixed(0), fevers: G.fevers, feverTimes: G.feverTimes, picks: G.picks, pickTimes: G.pickTimes, offers: G.offers, pending: G.pending, rerolls: G.rerolls, rerollsUsed: G.rerollsUsed, chests: G.chests, evo: Object.keys(G.evo), upgrades: G.upgrades, chainMax: G.chainMax, clears: G.clears, acts: G.acts, rescued: G.rescued, lostN: G.lostN, moves: G.moves, drags: G.drags, cards: { ...G.cards }, team: team.map((h) => `${h.key}:L${h.lv}${h.branch || ""}`), guide: G.guide?.k || null, guideDone: [...G.guideDone], slowGuide: guideSlow(), trayOpen: G.trayOpen, meta: { lvl: META.lvl, xp: META.xp, runs: META.runs }, dex: DEXS.have.size, dexFresh: DEXS.fresh.size });
+window.__r3 = () => ({ cc: Object.keys(CC), t: +G.t.toFixed(1), wave: G.wave, voted: Math.floor(G.voted), will: +G.will.toFixed(1), won: G.won, ended: G.ended, heat: +G.heat.toFixed(1), vol: G.vol, volTotal: G.volTotal, morale: +G.morale.toFixed(0), fevers: G.fevers, feverTimes: G.feverTimes, picks: G.picks, pickTimes: G.pickTimes, offers: G.offers, pending: G.pending, rerolls: G.rerolls, rerollsUsed: G.rerollsUsed, chests: G.chests, evo: Object.keys(G.evo), upgrades: G.upgrades, chainMax: G.chainMax, clears: G.clears, acts: G.acts, rescued: G.rescued, lostN: G.lostN, moves: G.moves, drags: G.drags, cards: { ...G.cards }, team: team.map((h) => `${h.key}:L${h.lv}${h.branch || ""}`), guide: G.guide?.k || null, guideDone: [...G.guideDone], slowGuide: guideSlow(), trayOpen: G.trayOpen, meta: { lvl: META.lvl, xp: META.xp, runs: META.runs }, dex: DEXS.have.size, dexFresh: DEXS.fresh.size });
 window.__r3x = { lose, win, openTray, takeCard, openChest, closeChest, upgradeHero, chooseBranch, startFever, useAct, addHeat, addVol, CARDS, EVO, BR, LANES, PADS, moveHero, scr, laneAt, bridgeY };
 // v2 測試掛勾
 window.__v2 = { spawnDrop, dropEffect, enemyPx: () => alive().map((e) => { const bb = new THREE.Box3().setFromObject(e.b); let y0 = 1e9, y1 = -1e9; for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) { const q = scr(V3(x, y, z)); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); } return [e.type, Math.round(y1 - y0)]; }), LOST, VQ, PEOPLE, PADS, onTap, scr: (v, dy) => scr(v, dy), moveHero, useAct, rescueVoter, lostList, DROPS, collectDrop, armAct, selectHero, dexOpen: openDex, DEX, DEXS, DAILY, laneById, LANES, padOwner, startDaily, rangeOf };
