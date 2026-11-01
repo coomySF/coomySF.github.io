@@ -511,16 +511,17 @@ $("rec-btn").addEventListener("click", async () => {
   if (recorder && recorder.state === "recording") { recorder.stop(); return; }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
-    const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+    // 先挑 iPad 播得了的 mp4；錄出來若是 webm／opus，停止時會轉成 WAV 再上傳
+    const type = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
     recorder = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
     recChunks = [];
     recorder.ondataavailable = e => e.data.size && recChunks.push(e.data);
-    recorder.onstop = () => {
+    recorder.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
       clearInterval(recTick);
       $("rec-btn").classList.remove("is-recording");
       $("rec-timer").classList.remove("is-shown");
-      recBlob = new Blob(recChunks, { type: (recorder.mimeType || "audio/webm").split(";")[0] });
+      recBlob = await toPlayableBlob(new Blob(recChunks, { type: (recorder.mimeType || "audio/webm").split(";")[0] }));
       $("rec-audio").src = URL.createObjectURL(recBlob);
       $("rec-preview").classList.add("is-shown");
       refreshSend();
@@ -538,6 +539,41 @@ $("rec-btn").addEventListener("click", async () => {
     toast("沒有麥克風權限");
   }
 });
+// 孩子的 iPad（Safari）播不了 webm／opus。錄音不是 mp4／mp3／wav 時，在這裡解碼成單聲道 22.05kHz 的 WAV 再上傳；
+// 兩分鐘約 5MB，在後端 10MB 的上限內。轉不了就照原樣送，至少不會卡住回信。
+async function toPlayableBlob(blob) {
+  if (/mp4|mpeg|wav|aac/.test(blob.type)) return blob;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+    ctx.close?.();
+    const rate = 22050;
+    const offline = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * rate)), rate);
+    const src = offline.createBufferSource();
+    src.buffer = decoded;
+    src.connect(offline.destination);
+    src.start();
+    const mono = (await offline.startRendering()).getChannelData(0);
+    return new Blob([wavBytes(mono, rate)], { type: "audio/wav" });
+  } catch (error) {
+    console.warn("transcode failed", error);
+    return blob;
+  }
+}
+function wavBytes(samples, rate) {
+  const buf = new ArrayBuffer(44 + samples.length * 2);
+  const v = new DataView(buf);
+  const str = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); str(8, "WAVE");
+  str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  str(36, "data"); v.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, s < 0 ? s * 32768 : s * 32767, true);
+  }
+  return buf;
+}
 $("rec-discard").addEventListener("click", () => {
   recBlob = null;
   $("rec-audio").removeAttribute("src");
@@ -574,7 +610,7 @@ $("send").addEventListener("click", async () => {
   }
   const form = new FormData();
   if (body) form.append("text", body);
-  if (recBlob) form.append("audio", recBlob, `parent.${recBlob.type.includes("mp4") ? "m4a" : "webm"}`);
+  if (recBlob) form.append("audio", recBlob, `parent.${recBlob.type.includes("mp4") ? "m4a" : recBlob.type.includes("wav") ? "wav" : "webm"}`);
   form.append("to", $("both").checked ? "both" : activeKid);
   const lastKid = [...messages].reverse().find(m => m.sender === "kid" && m.kid === activeKid);
   if (lastKid) form.append("reply_to", lastKid.id);
