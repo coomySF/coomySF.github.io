@@ -256,7 +256,7 @@
   <form class="key-gate" id="key-gate" hidden autocomplete="off">
     <label for="key-input">輸入你的鑰匙 🔑</label>
     <div class="row">
-      <input id="key-input" type="text" inputmode="numeric" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="鑰匙" required>
+      <input id="key-input" type="text" inputmode="numeric" enterkeyhint="go" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="鑰匙" required>
       <button type="submit" id="key-submit">開門</button>
     </div>
     <div class="msg" id="key-msg" aria-live="polite"></div>
@@ -304,6 +304,21 @@ if (doorLocked) {
   document.getElementById("grown-up").hidden = true;
 }
 keyInput.addEventListener("input", () => { keyGate.classList.remove("is-error"); keyMsg.textContent = ""; });
+function nudgeKeyGate() {
+  keyGate.classList.remove("is-error");
+  void keyInput.offsetWidth;
+  keyGate.classList.add("is-error");
+  keyMsg.textContent = "先輸入鑰匙，門才會開";
+}
+// iOS 的鍵盤會把整頁往上推，收起後常常不會自己回來；鍵盤一收就把頁面拉回原位
+function settleViewport() { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; }
+let viewportShrunk = false;
+window.visualViewport?.addEventListener("resize", () => {
+  const shrunk = window.visualViewport.height < window.innerHeight - 100;
+  if (viewportShrunk && !shrunk) setTimeout(settleViewport, 50);
+  viewportShrunk = shrunk;
+});
+keyInput.addEventListener("blur", () => setTimeout(settleViewport, 80));
 keyGate.addEventListener("submit", async event => {
   event.preventDefault();
   const key = keyInput.value.trim();
@@ -323,8 +338,10 @@ keyGate.addEventListener("submit", async event => {
     baseKey = key;
     demo = false;
     doorLocked = false;
+    keyInput.blur();
     keyGate.hidden = true;
     delete doorWrap.dataset.locked;
+    setTimeout(settleViewport, 80);
     return;
   }
   keyGate.classList.remove("is-error");
@@ -1282,7 +1299,7 @@ function setState(next) {
 
 // ---------- 開門 ----------
 document.getElementById("door").addEventListener("click", async () => {
-  if (doorLocked) { keyInput.focus(); return; }
+  if (doorLocked) { nudgeKeyGate(); return; }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   audioCtx.resume();
   sfx.sent();
