@@ -121,6 +121,7 @@ nav { display: flex; align-items: center; gap: 26px; }
 nav a { position: relative; color: var(--muted); text-decoration: none; }
 nav a::after { content: ""; position: absolute; right: 0; bottom: -8px; left: 0; height: 1px; background: var(--clay); transform: scaleX(0); transform-origin: right; transition: transform .3s var(--ease); }
 nav a:hover::after { transform: scaleX(1); transform-origin: left; }
+nav a.nav-new::before { content: ""; position: absolute; top: -3px; right: -7px; width: 5px; height: 5px; border-radius: 50%; background: var(--clay); }
 .theme-toggle {
   min-width: 68px;
   min-height: 44px;

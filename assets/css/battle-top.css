@@ -286,6 +286,11 @@
 .wish-pool-shortcut { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:48px; margin-top:10px; border:1px dashed rgba(202,255,61,.5); background:rgba(202,255,61,.045); color:var(--arena-lime); font:800 12px/1.25 system-ui,sans-serif; letter-spacing:.04em; text-align:center; text-decoration:none; cursor:pointer; transition:background .2s ease,border-color .2s ease,transform .2s ease; }
 .wish-pool-shortcut span { font-size:18px; }
 .wish-pool-shortcut:hover,.wish-pool-shortcut:focus-visible { border-color:var(--arena-lime); background:rgba(202,255,61,.13); color:#eaffaf; transform:translateY(2px); outline:none; }
+.sister-game-link { position:relative; z-index:2; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:14px; padding:6px 0; color:#91a5ab; font:700 11px/1.4 system-ui,sans-serif; letter-spacing:.03em; text-decoration:none; transition:color .2s ease; }
+.sister-game-link span { transition:transform .2s cubic-bezier(.22,1,.36,1); }
+.sister-game-link:hover,.sister-game-link:focus-visible { color:var(--arena-lime); outline:none; }
+.sister-game-link:hover span,.sister-game-link:focus-visible span { transform:translateX(3px); }
+@media (prefers-reduced-motion: reduce) { .sister-game-link span { transition:none; } }
 .arena-online-count { display:flex; align-items:center; justify-content:center; gap:8px; min-height:30px; margin:7px 0 0; color:#91a5ab; font:700 10px/1.4 "IBM Plex Mono",monospace; text-align:center; }
 .arena-online-count[hidden] { display:none!important; }
 .arena-online-count span { width:8px; height:8px; flex:0 0 8px; border-radius:50%; background:var(--arena-lime); box-shadow:0 0 12px var(--arena-lime); animation:arena-online-pulse 1.8s ease-in-out infinite; }
