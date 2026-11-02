@@ -421,6 +421,17 @@
   .sp-it .best { position: absolute; top: -8px; left: 8px; font-style: normal; font-size: 11px; font-weight: 900; background: #ffd36b; color: #2a2340; border-radius: 999px; padding: 1px 8px; }
   .sp-it > button { flex: none; border: 0; font: inherit; font-size: 14px; font-weight: 900; border-radius: 12px; padding: 9px 12px; background: #e0452a; color: #fff; cursor: pointer; min-width: 74px; }
   .sp-it > button:disabled { background: #d8d2c6; color: #8a8273; cursor: default; }
+  .sp-it.pick { flex-wrap: wrap; box-shadow: inset 4px 0 0 var(--kc, #e0452a), 0 0 0 3px #ffb03a, 0 6px 16px rgba(0,0,0,0.15); }
+  .sp-it > button.go-here, .sp-who button.go-here { animation: ready 0.8s ease-in-out infinite; box-shadow: 0 0 0 3px #fff, 0 0 0 6px #ffb03a; }
+  .sp-it .sp-who { flex: none; flex-basis: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin-top: 6px; animation: whoIn .25s cubic-bezier(0.22, 1, 0.36, 1); }
+  .sp-it .sp-who > p { grid-column: 1 / -1; margin: 0 0 6px !important; font-size: 13.5px !important; font-weight: 900; color: #8a4a00 !important; }
+  .sp-who button { position: relative; border: 0; font: inherit; border-radius: 14px; padding: 9px 4px 7px; background: #fff3c9; box-shadow: inset 0 0 0 2px var(--c, #ffb03a); display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; color: #2a2340; }
+  .sp-who img { width: 46px; height: 46px; border-radius: 50%; background: #eef1f4; display: block; }
+  .sp-it .sp-who b { font-size: 12.5px; } .sp-who small { font-size: 11px; font-weight: 900; color: #8a4a00; white-space: nowrap; }
+  .sp-who button:disabled { opacity: .45; cursor: default; }
+  .sp-it .sp-who .best { left: 50%; transform: translateX(-50%); white-space: nowrap; }
+  @keyframes whoIn { from { opacity: 0; transform: translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { .sp-it .sp-who { animation: none; } .sp-it > button.go-here, .sp-who button.go-here { animation: none; } }
   .hb.equip { animation: ready 0.8s ease-in-out infinite; box-shadow: 0 0 0 3px #fff, 0 0 0 6px #ffb03a, 0 4px 12px rgba(28,36,48,0.3); }
   .hb .gear { position: absolute; left: -4px; top: -9px; font-style: normal; font-size: 12px; background: #fff; border-radius: 999px; padding: 0 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); white-space: nowrap; }
   .hb .gear:empty { display: none; }
@@ -3146,7 +3157,7 @@ for (const w of W) { if (w.final) continue; const last = Math.max(...w.sp.map(([
 const PICK_WAVES = [2, 5, 8, 9]; // v2：一局只選 4 次卡（其餘靠戰場掉落）
 const FINAL_T = W.slice(0, -1).reduce((a, w) => a + w.dur, 0);
 const NEWS = { // 梗審查：只留一句話看得懂的；候選人個人梗（煎餃、口誤、北市政績與回嗆）藍綠一起拿掉
-  ads: ["🧵", "Threads", "網友比賽找「競選看板和本人差最多」的照片"],
+  ads: ["🧵", "Threads", "網友比賽誰家巷口的競選看板最多"],
   kang: ["📺", "節目片段", "主持人說：投給你想要的生活，你就贏了"],
 };
 const GEN = {
@@ -3407,7 +3418,7 @@ function tut(text, sec, key) {
   if (params.has("notut") || TUT.done.has(key) || G.wave > 0) return;
   TUT.cur = key; TUT.t = sec; tutEl.textContent = text; tutEl.classList.add("on");
 }
-function tutDone(key) { TUT.done.add(key); if (G.guideDone) { G.guideDone.add(key); guideEnd(key); } if (TUT.cur === key) { TUT.cur = null; tutEl.classList.remove("on"); } }
+function tutDone(key) { TUT.done.add(key); tkSave(key); if (G.guideDone) { G.guideDone.add(key); guideEnd(key); } if (TUT.cur === key) { TUT.cur = null; tutEl.classList.remove("on"); } }
 function tickTut(dt) { if (TUT.t > 0) { TUT.t -= dt; if (TUT.t <= 0 || G.wave > 0 || !G.on) { TUT.cur = null; tutEl.classList.remove("on"); } } }
 // ── 梗圖鑑（localStorage；讀寫一律 try/catch）
 const DEX_R0 = { talk: "r", pods: "r", final: "l", seal: "r", bus: "r", debate: "r", sanzi: "r", lst: "r", holy: "r" };
@@ -3591,7 +3602,10 @@ function tickBallots() {
 }
 // ── 前 60 秒引導：一次只一個指示，用放慢不暫停 ──
 const fingerEl = document.getElementById("finger");
-function guideOn() { return !params.has("notut") && (params.has("tut") || !META.tut); }
+const TUT_NEED = ["rescue", "tray", "bag", "equip", "item"];
+if (META.tut && !META.tk) META.tk = ["rescue", "act", "tray", "fever", "up"]; // 舊版玩過：開場教學看過了，包包／武器／道具還沒
+function tkSave(k) { if (params.has("auto") || !TUT_NEED.includes(k)) return; META.tk ||= []; if (!META.tk.includes(k)) { META.tk.push(k); saveMeta(); } }
+function guideOn() { return !params.has("notut") && (params.has("tut") || !TUT_NEED.every((k) => (META.tk || []).includes(k))); }
 function guideSay(k, text, sec) { tutEl.classList.toggle("hi", k === "item" || k === "bag"); G.guide = { k, real: 0, max: sec }; TUT.cur = k; tutEl.textContent = text; tutEl.classList.add("on"); }
 function guideEnd(k) { if (!G.guide || (k && G.guide.k !== k)) return; const g = G.guide; G.guide = null; G.guideGapUntil = G.t + 1.2; /* 指示淡出後再放其他字 */ G.guideDone.add(g.k); tutEl.classList.remove("on"); fingerEl.className = "finger"; TUT.cur = null; if (g.lane) setLaneGlow(g.lane, 0); if (g.p && g.p.st === "lost") g.p.lostT = Math.min(g.p.lostT, LOST_SEC); if (["rescue", "tray", "bag", "equip", "item"].every((x) => G.guideDone.has(x)) && !META.tut) { META.tut = 1; saveMeta(); } }
 function fingerAt(x, y, drag) { fingerEl.className = "finger on" + (drag ? " drag" : ""); fingerEl.style.left = `${x}px`; fingerEl.style.top = `${y}px`; if (drag) { fingerEl.style.setProperty("--dx", `${drag.x - x}px`); fingerEl.style.setProperty("--dy", `${drag.y - y}px`); } }
@@ -3607,7 +3621,7 @@ function tickGuide(rdt) {
     if (g.k === "tray") { if (!G.trayOpen) { if (G.pending > 0) openTray(); } const c = trayC.querySelector(".tc.best") || trayC.querySelector(".tc"); if (c) { const r = c.getBoundingClientRect(); fingerAt(r.left + r.width / 2, r.top + r.height * 0.45); } }
     if (g.k === "fever") { const r = feverBtn.getBoundingClientRect(); fingerAt(r.left + r.width / 2, r.top + r.height / 2); if (!G.feverReady && G.fever <= 0) guideEnd("fever"); }
     if (g.k === "bag") { const r = bagBtn.getBoundingClientRect(); fingerAt(r.left + r.width / 2, r.top + r.height / 2); if (G.shopOpen) fingerEl.className = "finger"; }
-    if (g.k === "equip") { const b = heroBar.querySelector(".hb"); if (b) { const r = b.getBoundingClientRect(); fingerAt(r.left + r.width / 2, r.top + r.height / 2); } }
+    if (g.k === "equip") { if (G.shopOpen) fingerEl.className = "finger"; else { const r = bagBtn.getBoundingClientRect(); fingerAt(r.left + r.width / 2, r.top + r.height / 2); } }
     if (g.k === "item") { const b = itemBar.querySelector("button"); if (b) { const r = b.getBoundingClientRect(); fingerAt(r.left + r.width / 2, r.top + r.height / 2); } else guideEnd("item"); }
     if (g.k === "move") { const h = g.h; if (!h || h.hop) guideEnd("move"); else { const a = scr(h.pos, 1.0 * HERO_S), P = PADS.find((P) => !padOwner(P.i) && P.lane === h.stunLane) || PADS.find((P) => !padOwner(P.i)); const b = scr(P.v); fingerAt(a.x, a.y, b); } }
     if (G.guide && g.real >= g.max) guideEnd(g.k);
@@ -3622,7 +3636,7 @@ function tickGuide(rdt) {
   if (!D.has("tray") && D.has("rescue")) { if (G.offerN === 0) addHeat(heatNeed()); if (G.trayOpen || G.pending > 0) guideSay("tray", "🙋‍♀️ 志工阿姨：熱度滿了，挑一張卡！不知道選哪張？選 👍", 10); return; }
 
   if (!D.has("bag") && D.has("tray")) { if (G.t >= 15 && !G.trayOpen) { const need = cheapest() - G.vol; if (need > 0) { G.vol += need; G.volTotal += need; } guideSay("bag", "🙋‍♀️ 志工阿姨：錢夠了！點右下的 🎒 包包買一把武器", 14); } return; }
-  if (!D.has("equip") && D.has("bag")) { if (G.equip && !G.shopOpen) guideSay("equip", "🙋‍♀️ 志工阿姨：點一位英雄，把武器裝上去", 14); else if (!G.equip && !G.shopOpen && G.buys) D.add("equip"); return; }
+  if (!D.has("equip") && D.has("bag")) { if (G.buys) D.add("equip"); else if (!G.shopOpen && !G.trayOpen) { G.eqAskT ||= G.t + 3; if (G.t >= G.eqAskT) { G.eqAskT = G.t + 20; guideSay("equip", "🙋‍♀️ 志工阿姨：再點一次 🎒，按武器的價錢，再選要裝給哪位英雄", 12); } } return; }
   if (!D.has("item") && D.has("equip")) { if (!G.itemGiftT) G.itemGiftT = G.t + 5; if (G.t >= G.itemGiftT && !G.trayOpen && !G.shopOpen) { if (!G.items.length) { G.items.push({ id: "bomb", cdT: 0 }); syncItems(); floatText(V3(0, 4.5, 0), "志工阿姨送你一顆「空投炸彈」", "good"); } guideSay("item", "🙋‍♀️ 志工阿姨：點一下右邊的道具就能放！", 12); } return; }
   if (!D.has("move") && D.has("item") && G.moveDue) { const h = team.find((x) => x.stun > 0) || team[0]; guideSay("move", "🙋‍♀️ 志工阿姨：他被吵暈了，把他拖到別的石台", 9); G.guide.h = h; }
 }
@@ -3712,18 +3726,28 @@ function renderShop() {
   const tip = document.getElementById("shopTip");
   if (tab === "w") {
     const best = ["rapid", "firecracker", "megaphone", "slush", "scope", "horn", "pusher"].find((k) => WEAPONS[k].price <= m);
-    tip.textContent = G.guideOn && !G.guideDone.has("equip") ? "志工阿姨：買 👍 那把，買了再點一位英雄裝上。" : "買了點一位英雄裝上（每人 2 格）；同一把裝在同一人身上會升級，最多 Lv3。";
-    shopList.innerHTML = Object.entries(WEAPONS).map(([k, w]) => `<div class="sp-it k-${w.tag}">${k === best ? `<i class="best">👍 推薦</i>` : ""}<span class="ic">${R3FX ? R3FX.wImgHTML(k, w.ic) : w.ic}</span><div><b>${w.name}</b><em>${KIND3[w.tag]}</em><p>${w.d[0]}<br><small>升到 Lv3：${w.d[2]}</small></p></div><button type="button" data-buy="w:${k}" ${w.price > m ? "disabled" : ""}>💰 ${w.price}</button></div>`).join("");
+    const pk = G.shopPick && WEAPONS[G.shopPick].price <= m ? G.shopPick : (G.shopPick = null), newbie = !(META.tk || []).includes("equip");
+    tip.textContent = pk ? "" : newbie ? "志工阿姨：按 👍 那把的價錢，再選要裝給哪位英雄。" : "按價錢 → 選英雄就裝上（每人 2 把）；同一把再裝給同一人會升級，最多 Lv3。";
+    shopList.innerHTML = Object.entries(WEAPONS).map(([k, w]) => `<div class="sp-it k-${w.tag}${k === pk ? " pick" : ""}">${k === best && !pk ? `<i class="best">👍 推薦</i>` : ""}<span class="ic">${R3FX ? R3FX.wImgHTML(k, w.ic) : w.ic}</span><div><b>${w.name}</b><em>${KIND3[w.tag]}</em><p>${w.d[0]}<br><small>升到 Lv3：${w.d[2]}</small></p></div><button type="button" data-buy="w:${k}" class="${newbie && !pk && k === best ? "go-here" : ""}" ${w.price > m ? "disabled" : ""}>${k === pk ? "取消" : `💰 ${w.price}`}</button>${k === pk ? whoHTML(k) : ""}</div>`).join("");
   } else {
     tip.textContent = `買一次就一直有，放在右邊道具欄（最多 3 個），點一下就放，放完等冷卻。`;
     shopList.innerHTML = Object.entries(ITEMS).map(([k, it]) => { const own = G.items.some((x) => x.id === k), full = G.items.length >= 3;
       return `<div class="sp-it k-${it.tag}"><span class="ic">${it.ic}</span><div><b>${it.name}</b><em>${KIND3[it.tag]}</em><p>${it.d}<br><small>冷卻 ${it.cd} 秒</small></p></div><button type="button" data-buy="i:${k}" ${own || full || it.price > m ? "disabled" : ""}>${own ? "已擁有" : full ? "欄位滿了" : `💰 ${it.price}`}</button></div>`; }).join("");
   }
 }
+// 選了武器 → 直接在包包裡挑英雄（買＋裝一步完成），不用關掉包包再去場上找人
+function whoBest(k) { return team.filter((h) => gl(h, k) && gl(h, k) < 3).sort((a, b) => gl(a, k) - gl(b, k))[0] || [...team].sort((a, b) => (a.gear?.length || 0) - (b.gear?.length || 0))[0]; }
+function whoHTML(k) {
+  const bh = whoBest(k);
+  return `<div class="sp-who"><p>👇 裝給誰？</p>${team.map((h) => { const lv = gl(h, k), g = h.gear || [], low = [...g].sort((a, b) => a.lv - b.lv)[0];
+    const say = lv >= 3 ? "已經滿級" : lv ? `升到 Lv${lv + 1}` : g.length < 2 ? `裝上（${g.length}/2）` : `換掉 ${WEAPONS[low.id].ic}`;
+    return `<button type="button" data-to="${h.key}" style="--c:${CAMP_C[DEF[h.key].camp]}" class="${h === bh ? "go-here" : ""}" ${lv >= 3 ? "disabled" : ""}>${h === bh ? `<i class="best">👍</i>` : ""}<img src="${AV[h.key]}" alt=""><b>${DEF[h.key].name}</b><small>${g.length ? gearTxt(h) + "・" : ""}${say}</small></button>`; }).join("")}</div>`;
+}
+function buyEquip(k, h) { if (!h || !buyWeapon(k, true)) return; G.shopPick = null; closeShop(); equipTo(h); }
 function openShop() {
   if (!G.on || G.ended || G.picking || G.intro) return;
   if (G.equip) { G.shopTab = "w"; }
-  closeTray(); G.shopOpen = true; G.paused = true; shopEl.classList.add("open"); renderShop(); sound.ok(); tutDone("bag");
+  closeTray(); G.shopPick = null; G.shopOpen = true; G.paused = true; shopEl.classList.add("open"); renderShop(); sound.ok(); tutDone("bag");
 }
 function closeShop() { if (!G.shopOpen) return; G.shopOpen = false; G.paused = false; shopEl.classList.remove("open"); syncEquipHint(); if (G.pending > 0) syncTrayBadge(); }
 function buyWeapon(k, quiet) {
@@ -3770,8 +3794,9 @@ document.getElementById("shopClose").addEventListener("click", closeShop);
 shopEl.addEventListener("click", (e) => {
   if (e.target === shopEl) { closeShop(); return; }
   const t = e.target.closest(".sp-tabs [data-t]"); if (t) { G.shopTab = t.dataset.t; renderShop(); return; }
+  const to = e.target.closest("[data-to]"); if (to) { if (!to.disabled) buyEquip(G.shopPick, team.find((x) => x.key === to.dataset.to)); return; }
   const b = e.target.closest("[data-buy]"); if (!b || b.disabled) return; const [kind, k] = b.dataset.buy.split(":");
-  if (kind === "w") buyWeapon(k); else buyItem(k);
+  if (kind === "w") { G.shopPick = G.shopPick === k ? null : k; renderShop(); sound.ok(); } else buyItem(k);
 });
 function tickShop(dt) {
   for (const x of G.items) x.cdT = Math.max(0, x.cdT - dt);
@@ -3866,7 +3891,7 @@ function startGame(keys, opt = {}) {
   if (opt.daily) { G.daily = opt.daily; G.mod = opt.daily.mod.mod; }
   G.on = true; document.body.classList.add("playing");
   G.rerolls = metaRerolls(); G.vol += (META.lvl >= 4 ? 10 : 0) + (META.lvl >= 6 ? 10 : 0) + (META.lvl >= 14 ? 20 : 0); if (META.lvl >= 7) G.heat = heatNeed() / 2; if (META.lvl >= 17) G.heat = heatNeed() / 2; if (META.lvl >= 19) G.morale = 50;
-  G.guideOn = guideOn() && !opt.daily; if (!G.guideOn) ["rescue", "act", "tray", "fever", "up", "bag", "equip", "item"].forEach((k) => G.guideDone.add(k));
+  G.guideOn = guideOn() && !opt.daily; if (G.guideOn && !params.has("tut")) (META.tk || []).forEach((k) => G.guideDone.add(k)); if (!G.guideOn) ["rescue", "act", "tray", "fever", "up", "bag", "equip", "item"].forEach((k) => G.guideDone.add(k));
   document.getElementById("startScreen").classList.remove("open"); document.getElementById("endScreen").classList.remove("open");
   buildHeroBar(); startWave(0); sound.start(); sound.setMode("normal");
   notify("⏳", "倒數", "距離投票還有 28 天。懶人包開始在群組裡流傳", { force: true }); G.notifGap = 1.2;
