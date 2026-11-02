@@ -306,9 +306,9 @@
   .voteday b { display: block; font-size: 20px; font-weight: 900; line-height: 1.35; }
   .voteday ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.7; }
   .voteday a, .vote-cta a { color: #1f56b0; font-weight: 900; }
-  .pick-head { margin-top: 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .pick-head { margin-top: 12px; display: flex; flex-direction: column; gap: 3px; }
   .pick-head b { font-size: 16px; font-weight: 900; }
-  .pick-head span { font-size: 12px; font-weight: 700; color: var(--muted); text-align: right; }
+  .pick-head span { font-size: 12.5px; font-weight: 700; color: var(--muted); line-height: 1.5; }
   .carousel { margin: 8px -18px 0; padding: 4px 18px 10px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 18px; -webkit-overflow-scrolling: touch; }
   .carousel::-webkit-scrollbar { height: 6px; } .carousel::-webkit-scrollbar-thumb { background: rgba(34,42,54,0.2); border-radius: 9px; }
   .hc { position: relative; flex: 0 0 138px; scroll-snap-align: start; border: 0; border-radius: 16px; padding: 0 0 8px; background: #fff; font: inherit; color: var(--ink); cursor: pointer; text-align: center; overflow: hidden;
@@ -335,7 +335,11 @@
   .btn.ghost { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1.5px rgba(34,42,54,0.2); }
   .btn.dark { background: #2a2340; box-shadow: 0 6px 16px rgba(42,35,64,0.3); }
   .disc a { color: inherit; font-weight: 700; text-underline-offset: 2px; }
-  .disc { margin-top: 10px !important; text-align: center; font-size: 11.5px !important; color: var(--muted) !important; }
+  .disc { margin-top: 10px !important; text-align: center; font-size: 11.5px !important; color: var(--muted) !important; line-height: 1.6; }
+  .disc details { margin: 4px auto 6px; max-width: 520px; }
+  .disc summary { display: inline-block; cursor: pointer; font-weight: 900; list-style: none; text-decoration: underline; text-underline-offset: 2px; }
+  .disc summary::-webkit-details-marker { display: none; } .disc summary::after { content: " ▾"; } .disc details[open] summary::after { content: " ▴"; }
+  .disc details p { margin: 6px 0 0 !important; text-align: left; font-size: 12px !important; line-height: 1.65 !important; }
   .btn4 { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .btn4 .btn { margin: 0; font-size: 14.5px; padding: 11px 8px; }
   .dare, .shr { margin-top: 10px; padding: 10px 12px 12px; border-radius: 16px; background: #fff; box-shadow: inset 0 0 0 1.5px rgba(34,42,54,0.12); }
@@ -661,7 +665,7 @@
       <button class="back-link" id="replayIntro" type="button" hidden>▶ 重看開場</button>
     </div>
     <div id="pickBox" hidden>
-      <div class="pick-head"><b id="pickTitle">挑 3 位：你挺的、你想看他出糗的，都行</b><span id="pickInfo">左右滑・跨陣營越多加成越大</span></div>
+      <div class="pick-head"><b id="pickTitle">挑選 3 位跨陣營英雄，一起守護選民！</b><span id="pickInfo">不同角色擁有不同技能，跨陣營組隊還能獲得額外加成。</span></div>
       <div class="presets" id="presets"></div>
       <div class="carousel" id="carousel" aria-label="英雄選角"></div>
       <div class="team" id="teamRow"></div>
@@ -669,7 +673,16 @@
       <button class="back-link" id="backBtn" type="button">← 回去用推薦隊</button>
     </div>
     <div class="meta-line" id="metaLine"></div>
-    <p class="disc">純屬惡搞，台詞皆為公開發言或技能名；不代表任何陣營。<br>內容有疑慮？<a href="https://github.com/coomySF/coomySF.github.io/issues" target="_blank" rel="noopener">到這裡告訴我們</a><br>使用 <a href="https://allwill.ai/" target="_blank" rel="noopener">AllWill</a> 製作</p>
+    <div class="disc">非官方創作，不代表任何政黨或候選人。
+      <details class="about"><summary>關於本作品</summary>
+        <p>《迷失的選民》（Lost Voters）是一款透過 Vibe Coding，將小孩的創意發想實現為互動塔防遊戲的作品。</p>
+        <p>遊戲以跨陣營合作為核心概念，讓不同政治立場的角色共同守護選民，面對假訊息、詐騙與政治冷漠等挑戰。</p>
+        <p>我們希望透過輕鬆、有趣的遊戲方式，鼓勵小孩發揮想像力與創造力，同時讓更多人認識投票的意義、民主參與及資訊識讀的重要性。</p>
+        <p>遊戲中的人物、技能、事件與數值均經過虛構、誇張及遊戲化處理，不代表真實人物或政黨的實際能力、政策表現或立場。</p>
+        <p>本作品為非官方創作，不代表任何政黨、候選人或政府機關，也不表示獲得其授權或背書。</p>
+        <p>本作品不以支持或反對特定政黨、候選人為目的，鼓勵玩家參考可靠資訊，自主形成判斷。</p>
+      </details>
+      內容有疑慮？<a href="https://github.com/coomySF/coomySF.github.io/issues" target="_blank" rel="noopener">到這裡告訴我們</a><br>使用 <a href="https://allwill.ai/" target="_blank" rel="noopener">AllWill</a> 製作</div>
   </div>
 </div>
 <div class="screen" id="endScreen"><div class="panel" id="endPanel"></div></div>
@@ -4099,7 +4112,7 @@ function syncPick() {
   teamRow.innerHTML = [0, 1, 2].map((i) => `<span class="slot">${picked[i] ? `<img src="${AV[picked[i]]}" alt="">` : ""}</span>`).join("") +
     `<span class="bonus${bonus ? " hot" : ""}">${camps.size || 0} 陣營・跨陣營 ${bonus ? "+" + Math.round(bonus * 100) + "%" : "+0%"}</span>` + combos.map((c) => `<span class="bonus hot">組合技：${c.name}</span>`).join("");
   startBtn.disabled = picked.length < 3;
-  if (!NEUTRAL) document.getElementById("pickTitle").textContent = picked.length < 3 ? `挑 3 位：你挺的、你想看他出糗的，都行（${picked.length}/3）` : "小隊到齊";
+  if (!NEUTRAL) document.getElementById("pickTitle").textContent = picked.length < 3 ? `挑選 3 位跨陣營英雄，一起守護選民！（${picked.length}/3）` : "小隊到齊";
   if (!G.on) placeTeam(picked.length ? picked : quick); // 背景地圖上直接站出來
 }
 startBtn.addEventListener("click", () => { if (picked.length === 3) { sound.start(); startGame(picked.slice()); } });
@@ -4216,7 +4229,7 @@ function showEnd(won) {
       <p><span>撐到</span><i>${won ? "投票日" : `投票前 ${G.day} 天`}</i></p>
       ${meme ? `<hr><small>今天最荒謬的一則</small><q>${meme}</q>` : ""}
     </div>
-    <p class="disc">純屬惡搞，台詞皆為公開發言或技能名；不代表任何陣營。<br>內容有疑慮？<a href="https://github.com/coomySF/coomySF.github.io/issues" target="_blank" rel="noopener">到這裡告訴我們</a><br>使用 <a href="https://allwill.ai/" target="_blank" rel="noopener">AllWill</a> 製作</p>`;
+    ${document.querySelector("#startScreen .disc").outerHTML}`;
   endScreen.classList.add("open"); endPanel.scrollTop = 0;
   document.body.classList.remove("playing");
   document.getElementById("againBtn").addEventListener("click", () => { endScreen.classList.remove("open"); startScreen.classList.add("open"); resetGame(); quick = recTeam(); document.getElementById("quickBox").hidden = false; document.getElementById("pickBox").hidden = true; picked = quick.slice(); syncQuick(); syncPick(); syncStartExtras(); fitCamera(); });
@@ -4346,7 +4359,7 @@ async function shareCanvas(kind = "post") {
   x.fillStyle = "#fff"; x.font = SH_FONT(700, story ? 32 : 28); x.fillText(`${SITE_URL.replace(/^https?:\/\//, "")}`, W0 / 2, H0 - (story ? 150 : 112));
   // 7 小字：投票提醒＋聲明
   x.fillStyle = "#ffd36b"; x.font = SH_FONT(900, story ? 30 : 26); x.fillText(NEUTRAL ? "今天 8:00–16:00 記得去投票" : "11/28（六）8:00–16:00 記得去投票", W0 / 2, H0 - (story ? 92 : 66));
-  x.fillStyle = "rgba(255,255,255,0.55)"; x.font = SH_FONT(700, 20); x.fillText("純屬惡搞，台詞皆為公開發言或技能名；不代表任何陣營。", W0 / 2, H0 - (story ? 40 : 26));
+  x.fillStyle = "rgba(255,255,255,0.55)"; x.font = SH_FONT(700, 20); x.fillText("非官方創作，不代表任何政黨、候選人或政府機關。", W0 / 2, H0 - (story ? 40 : 26));
   return c;
 }
 // LINE 長輩圖：只有投票提醒，畫面用遊戲實景（投票所前排隊），不放任何真人英雄
