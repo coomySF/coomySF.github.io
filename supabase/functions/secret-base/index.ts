@@ -46,6 +46,9 @@ const kids: Kid[] = (() => {
   return key ? [{ id: 'kid', name: env('SECRET_BASE_KID_NAME') || '小寶', key }] : [];
 })();
 const replyPage = env('SECRET_BASE_REPLY_URL') || 'https://coomysf.github.io/secret-base/reply/';
+// Mac 上的 agent 用這把鑰匙取待回的話、送回判斷結果；娃娃回信用另一個聲音，刻意不用家長的聲音
+const agentKey = env('SECRET_BASE_AGENT_KEY');
+const dollVoiceId = env('SECRET_BASE_DOLL_VOICE_ID') || 'pFZP5JQG7iQjIQuC4Bku';
 
 Deno.serve(async request => {
   const origin = request.headers.get('origin') || '';
@@ -60,7 +63,19 @@ Deno.serve(async request => {
   if (origin && !allowedOrigins.has(origin)) return json({ error: 'origin not allowed' }, 403, cors);
 
   const route = new URL(request.url).pathname.split('/secret-base')[1] || '/';
-  const who = roleFor(request.headers.get('x-base-key') || '');
+  const key = request.headers.get('x-base-key') || '';
+  if (agentKey && safeEqual(key, agentKey)) {
+    const supabase = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
+    try {
+      if (request.method === 'GET' && route === '/agent/pending') return await agentPending(supabase, cors);
+      if (request.method === 'POST' && route === '/agent/result') return await agentResult(request, supabase, cors);
+      return json({ error: 'not found' }, 404, cors);
+    } catch (error) {
+      console.error(route, error);
+      return json({ error: 'server error' }, 500, cors);
+    }
+  }
+  const who = roleFor(key);
   if (!who) return json({ error: 'unauthorized' }, 401, cors);
   const role = who === 'parent' ? 'parent' : 'kid';
   const kid = who === 'parent' ? null : who;
@@ -74,6 +89,8 @@ Deno.serve(async request => {
     if (kid && request.method === 'POST' && route === '/kid/heard') return await kidHeard(request, kid, supabase, cors);
     if (role === 'parent' && request.method === 'GET' && route === '/parent/thread') return await parentThread(supabase, cors);
     if (role === 'parent' && request.method === 'POST' && route === '/parent/reply') return await parentReply(request, supabase, cors);
+    if (role === 'parent' && request.method === 'GET' && route === '/parent/presence') return json({ presence: await getPresence(supabase) }, 200, cors);
+    if (role === 'parent' && request.method === 'POST' && route === '/parent/presence') return await setPresence(request, supabase, cors);
   } catch (error) {
     console.error(route, error);
     return json({ error: 'something went wrong' }, 500, cors);
@@ -120,7 +137,7 @@ async function kidMessage(request: Request, kid: Kid, supabase: Db, cors: Cors) 
   });
 
   const { error } = await supabase.from('secret_base_messages').insert({
-    id, sender: 'kid', kid: kid.id, audio_path: path, audio_kind: 'recording', body: transcript
+    id, sender: 'kid', kid: kid.id, audio_path: path, audio_kind: 'recording', body: transcript, friend
   });
   if (error) throw error;
 
@@ -132,7 +149,7 @@ async function kidInbox(kid: Kid, supabase: Db, cors: Cors) {
   const { data, error } = await supabase
     .from('secret_base_messages')
     .select('id, audio_path, created_at')
-    .eq('sender', 'parent')
+    .in('sender', ['parent', 'doll'])
     .eq('kid', kid.id)
     .is('heard_at', null)
     .not('audio_path', 'is', null)
@@ -147,7 +164,7 @@ async function kidLetters(kid: Kid, supabase: Db, cors: Cors) {
   const { data, error } = await supabase
     .from('secret_base_messages')
     .select('id, audio_path, created_at, heard_at')
-    .eq('sender', 'parent')
+    .in('sender', ['parent', 'doll'])
     .eq('kid', kid.id)
     .not('heard_at', 'is', null)
     .not('audio_path', 'is', null)
@@ -165,7 +182,7 @@ async function kidHeard(request: Request, kid: Kid, supabase: Db, cors: Cors) {
     .update({ heard_at: new Date().toISOString() })
     .eq('id', id)
     .eq('kid', kid.id)
-    .eq('sender', 'parent')
+    .in('sender', ['parent', 'doll'])
     .is('heard_at', null);
   if (error) throw error;
   return json({ ok: true }, 200, cors);
@@ -174,12 +191,13 @@ async function kidHeard(request: Request, kid: Kid, supabase: Db, cors: Cors) {
 async function parentThread(supabase: Db, cors: Cors) {
   const { data, error } = await supabase
     .from('secret_base_messages')
-    .select('id, sender, kid, audio_path, audio_kind, body, reply_to, heard_at, created_at')
+    .select('id, sender, kid, friend, audio_path, audio_kind, body, reply_to, heard_at, analysis, created_at')
     .order('created_at', { ascending: false })
     .limit(120);
   if (error) throw error;
   return json({
     kids: kids.map(({ id, name }) => ({ id, name })),
+    presence: await getPresence(supabase),
     messages: (await withAudioUrls(supabase, data)).reverse()
   }, 200, cors);
 }
@@ -250,9 +268,8 @@ async function transcribe(bytes: Uint8Array, mime: string, ext: string) {
   return typeof result.text === 'string' ? (await toTraditional(result.text)).trim().slice(0, 2000) || null : null;
 }
 
-async function speak(text: string) {
+async function speak(text: string, voiceId = env('ELEVENLABS_VOICE_ID')) {
   const apiKey = env('ELEVENLABS_API_KEY');
-  const voiceId = env('ELEVENLABS_VOICE_ID');
   if (!apiKey || !voiceId) throw new Error('elevenlabs not configured');
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`, {
     method: 'POST',
@@ -280,6 +297,130 @@ async function notifyDiscord(id: string, kid: Kid, transcript: string | null, fr
   form.append('payload_json', JSON.stringify(payload));
   form.append('files[0]', new Blob([bytes], { type: mime }), `${kid.name}.${ext}`);
   const response = await fetch(`${webhook}?wait=true`, { method: 'POST', body: form });
+  if (!response.ok) throw new Error(`discord ${response.status}: ${await response.text()}`);
+}
+
+// ---------- 家長的「我在／我忙」：我在 → 娃娃只處理緊急；我忙 → 娃娃先回 ----------
+type Presence = 'here' | 'away';
+async function getPresence(supabase: Db): Promise<Presence> {
+  const { data } = await supabase.from('secret_base_settings').select('value').eq('key', 'presence').maybeSingle();
+  return data?.value === 'here' ? 'here' : 'away';
+}
+async function setPresence(request: Request, supabase: Db, cors: Cors) {
+  const { presence } = await request.json().catch(() => ({}));
+  if (presence !== 'here' && presence !== 'away') return json({ error: 'presence must be here or away' }, 400, cors);
+  const { error } = await supabase.from('secret_base_settings').upsert({ key: 'presence', value: presence, updated_at: new Date().toISOString() });
+  if (error) throw error;
+  return json({ presence }, 200, cors);
+}
+
+// ---------- Mac 上的 agent ----------
+// 待回：最近兩小時內、有逐字稿、還沒判斷過的孩子的話，附同一個孩子最近的對話當脈絡。
+// 只看兩小時是為了 Mac 睡了一覺醒來時，不要對半天前的話突然回信。
+async function agentPending(supabase: Db, cors: Cors) {
+  const since = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('secret_base_messages')
+    .select('id, kid, friend, body, created_at')
+    .eq('sender', 'kid')
+    .is('analyzed_at', null)
+    .not('body', 'is', null)
+    .gt('created_at', since)
+    .order('created_at', { ascending: true })
+    .limit(5);
+  if (error) throw error;
+  const items = [];
+  for (const row of data) {
+    const { data: recent } = await supabase
+      .from('secret_base_messages')
+      .select('sender, body, created_at')
+      .eq('kid', row.kid)
+      .lt('created_at', row.created_at)
+      .not('body', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(8);
+    const kid = kids.find(k => k.id === row.kid);
+    items.push({
+      id: row.id, kid: row.kid, kid_name: kid?.name || '孩子', friend: friendNames[row.friend || ''] || row.friend || '娃娃',
+      body: row.body, created_at: row.created_at, recent: (recent || []).reverse()
+    });
+  }
+  return json({ presence: await getPresence(supabase), kids: kids.map(({ id, name }) => ({ id, name })), items }, 200, cors);
+}
+
+// 判斷結果：存小抄；doll／pass／urgent 有回話就用娃娃的聲音念成信；小抄發到 Discord。
+// 「我在」時 doll 這一格不寄信（留給家長親口回），urgent 與 pass 照寄。
+type AgentMode = 'doll' | 'pass' | 'urgent' | 'skip';
+async function agentResult(request: Request, supabase: Db, cors: Cors) {
+  const payload = await request.json().catch(() => null);
+  const id = String(payload?.id || '');
+  const mode = (['doll', 'pass', 'urgent', 'skip'] as AgentMode[]).includes(payload?.mode) ? payload.mode as AgentMode : 'skip';
+  const reply = String(payload?.reply || '').trim().slice(0, 400);
+  const analysis = payload?.analysis && typeof payload.analysis === 'object' ? payload.analysis : {};
+  if (!id) return json({ error: 'id required' }, 400, cors);
+
+  const { data: message, error: readError } = await supabase
+    .from('secret_base_messages').select('id, kid, friend, body, analyzed_at').eq('id', id).eq('sender', 'kid').maybeSingle();
+  if (readError) throw readError;
+  if (!message) return json({ error: 'not found' }, 404, cors);
+  if (message.analyzed_at) return json({ ok: true, duplicate: true }, 200, cors);
+
+  const presence = await getPresence(supabase);
+  const kid = kids.find(k => k.id === message.kid);
+  const sendLetter = Boolean(reply) && (mode === 'urgent' || mode === 'pass' || (mode === 'doll' && presence === 'away'));
+  let letterId: string | null = null;
+  if (sendLetter && kid) {
+    try {
+      const speech = await speak(reply, dollVoiceId);
+      letterId = crypto.randomUUID();
+      const path = `doll/${letterId}.mp3`;
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(path, speech, { contentType: 'audio/mpeg' });
+      if (uploadError) throw uploadError;
+      const { error } = await supabase.from('secret_base_messages').insert({
+        id: letterId, sender: 'doll', kid: kid.id, friend: message.friend, audio_path: path, audio_kind: 'tts', body: reply, reply_to: id
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('doll letter', error);
+      letterId = null;
+    }
+  }
+
+  const stored = { ...analysis, mode, reply: reply || null, letter_id: letterId, presence };
+  const { error: updateError } = await supabase
+    .from('secret_base_messages').update({ analysis: stored, analyzed_at: new Date().toISOString() }).eq('id', id);
+  if (updateError) throw updateError;
+
+  if (kid) await notifyCoach(id, kid, message.body, mode, reply, letterId, analysis).catch(error => console.error('discord coach', error));
+  return json({ ok: true, letter_id: letterId }, 200, cors);
+}
+
+// Discord 小抄：孩子狀態、建議、陪伴提議、三句草稿；緊急的 @here
+async function notifyCoach(id: string, kid: Kid, said: string | null, mode: AgentMode, reply: string, letterId: string | null, analysis: Record<string, unknown>) {
+  const webhook = env('DISCORD_WEBHOOK_URL');
+  if (!webhook) return;
+  const line = (label: string, value: unknown) => (typeof value === 'string' && value.trim() ? `**${label}**：${value.trim()}\n` : '');
+  const drafts = Array.isArray(analysis.drafts) ? analysis.drafts.filter(d => typeof d === 'string' && d.trim()).slice(0, 3) : [];
+  const head =
+    mode === 'urgent' ? `🚨 @here **${kid.name}說了需要大人馬上看的事**` :
+    mode === 'pass' ? `🙋 **${kid.name}在找你**（娃娃沒回內容，只說會把話帶到）` :
+    mode === 'doll' ? (letterId ? `🧸 娃娃先回了${kid.name}` : `🧸 娃娃沒回（你在），等你親口回${kid.name}`) :
+    `📝 ${kid.name}的小抄`;
+  const content =
+    `${head}\n` +
+    (said ? `> ${said}\n` : '') +
+    (reply && letterId ? `🗣 娃娃說：「${reply}」\n` : '') +
+    `\n` +
+    line('狀態', analysis.state) +
+    line('建議', analysis.advice) +
+    line('陪伴提議', analysis.suggestion) +
+    (drafts.length ? `**一鍵回**（回信頁點一句就用你的聲音送）\n${drafts.map((d, i) => `${i + 1}. ${d}`).join('\n')}\n` : '') +
+    `👉 ${replyPage}#m=${id}`;
+  const response = await fetch(`${webhook}?wait=true`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username: '秘密基地小抄', content: content.slice(0, 1900), allowed_mentions: { parse: mode === 'urgent' ? ['everyone'] : [] } })
+  });
   if (!response.ok) throw new Error(`discord ${response.status}: ${await response.text()}`);
 }
 

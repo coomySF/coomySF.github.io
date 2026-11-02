@@ -57,6 +57,17 @@
   header .bear { font-size: 26px; }
   header h1 { margin: 0; font-size: 18px; font-weight: 800; }
   header p { margin: 0; font-size: 12px; color: var(--muted); }
+  header > div { flex: 1; min-width: 0; }
+  /* 我在／我忙：我在 → 娃娃只處理緊急，等你親口回；我忙 → 娃娃先接住孩子 */
+  .presence { flex: none; border: 1.5px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 800;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background-color var(--duration-fast) var(--ease-smooth-out), color var(--duration-fast) var(--ease-smooth-out); }
+  .presence::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #c9c3bb; }
+  .presence[data-presence="here"] { background: #e6f6ee; border-color: #3f9a74; color: #2b6e51; }
+  .presence[data-presence="here"]::before { background: #3f9a74; }
+  .presence[data-presence="away"] { background: #fff1d6; border-color: #e0a84a; color: #8a5a12; }
+  .presence[data-presence="away"]::before { background: #e0a84a; }
+  .presence[hidden] { display: none; }
+  .presence[disabled] { opacity: 0.6; pointer-events: none; }
 
   /* 孩子分頁：虎妞／屁孩，各自一條對話線；有新的悄悄話會亮小紅點 */
   .kid-tabs { display: flex; gap: 8px; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
@@ -79,6 +90,20 @@
   .bubble { padding: 12px 14px; border-radius: 18px; line-height: 1.6; font-size: 16px; word-break: break-word; }
   .kid .bubble { background: var(--kid); border-bottom-left-radius: 6px; }
   .parent .bubble { background: var(--me); color: var(--me-ink); border-bottom-right-radius: 6px; }
+  /* 娃娃先回的信：靠左、奶油色，和孩子的話區分 */
+  .msg.doll { align-self: flex-start; }
+  .doll .bubble { background: #fff1d6; border-bottom-left-radius: 6px; }
+  .doll .bubble .who { display: block; font-size: 12px; font-weight: 800; color: #8a5a12; margin-bottom: 2px; }
+  /* 小抄：掛在孩子那句話底下 */
+  .note { max-width: 100%; border: 1px solid var(--line); background: var(--card); border-radius: 14px; padding: 8px 12px; font-size: 13px; line-height: 1.6; }
+  .note summary { cursor: pointer; font-weight: 800; list-style: none; display: flex; gap: 6px; align-items: center; }
+  .note summary::-webkit-details-marker { display: none; }
+  .note summary .tag { font-weight: 700; font-size: 11px; padding: 1px 8px; border-radius: 999px; background: #efe9ff; color: #5b43b3; }
+  .note summary .tag.urgent { background: #ffe1e1; color: #b32626; }
+  .note summary .tag.pass { background: #fff1d6; color: #8a5a12; }
+  .note dl { margin: 8px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; }
+  .note dt { color: var(--muted); font-weight: 700; white-space: nowrap; }
+  .note dd { margin: 0; }
   .bubble audio { display: block; width: 240px; max-width: 100%; height: 36px; margin-top: 6px; }
   .bubble .said { font-weight: 700; }
   .bubble .unclear { color: var(--muted); font-size: 14px; }
@@ -228,11 +253,12 @@
       <h1>秘密基地</h1>
       <p id="status">小信差會把你的話念給孩子聽</p>
     </div>
+    <button class="presence" id="presence" type="button" hidden aria-label="切換我在／我忙">我忙</button>
   </header>
 
   <section class="gate" id="gate" hidden>
     <form id="gate-form">
-      <h2>爸爸的鑰匙</h2>
+      <h2>爸爸媽媽的鑰匙</h2>
       <p>輸入設定時的家長密碼，這台手機之後就不用再輸入。</p>
       <div class="t-input-wrap" id="gate-wrap">
         <input class="t-input" id="gate-key" type="password" autocomplete="current-password" placeholder="家長密碼" required>
@@ -289,6 +315,7 @@ const $ = id => document.getElementById(id);
 const focusId = new URLSearchParams(location.hash.slice(1)).get("m");
 const demo = new URLSearchParams(location.search).has("demo");
 let parentKey = store.get(KEY_STORE);
+let presence = "away";
 let messages = [];
 let kids = demo ? [{ id: "huniu", name: "虎妞" }, { id: "pihai", name: "屁孩" }] : [];
 let activeKid = null;
@@ -358,6 +385,7 @@ async function load() {
     const data = await res.json();
     messages = data.messages;
     kids = data.kids || [];
+    if (data.presence) { presence = data.presence; renderPresence(); }
     $("status").textContent = "小信差會把你的話念給孩子聽";
     return true;
   } catch (error) {
@@ -366,6 +394,32 @@ async function load() {
     return messages.length > 0;
   }
 }
+
+// ---------- 我在／我忙 ----------
+function renderPresence() {
+  const b = $("presence");
+  b.hidden = demo || !parentKey;
+  b.dataset.presence = presence;
+  b.textContent = presence === "here" ? "我在" : "我忙";
+  b.title = presence === "here" ? "娃娃只處理緊急的事，其他等你親口回" : "你沒空時娃娃會先接住孩子";
+}
+$("presence").addEventListener("click", async () => {
+  const next = presence === "here" ? "away" : "here";
+  const b = $("presence");
+  b.disabled = true;
+  try {
+    const res = await fetch(`${ENDPOINT}/parent/presence`, { method: "POST", headers: { "x-base-key": parentKey, "content-type": "application/json" }, body: JSON.stringify({ presence: next }) });
+    if (!res.ok) throw new Error(`presence ${res.status}`);
+    presence = next;
+    renderPresence();
+    toast(next === "here" ? "我在：娃娃只在緊急時開口，其他等你回" : "我忙：娃娃會先接住孩子，小抄照樣給你");
+  } catch (error) {
+    console.warn(error);
+    toast("切換沒成功，等一下再試");
+  } finally {
+    b.disabled = false;
+  }
+});
 
 const timeFmt = new Intl.DateTimeFormat("zh-TW", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
 // ---------- 孩子分頁 ----------
@@ -420,6 +474,7 @@ function render() {
   const name = kidName(activeKid);
   $("to-label").textContent = $("both").checked ? "回給兩個人" : `回給${name}`;
   text.placeholder = `打字，會用你的聲音念給${$("both").checked ? "兩個人" : name}聽`;
+  renderChips();
   const thread = $("thread");
   const list = kids.length > 1 ? messages.filter(m => m.kid === activeKid) : messages;
   if (!list.length) {
@@ -443,6 +498,11 @@ function render() {
       said.className = m.body ? "said" : "unclear";
       said.textContent = m.body ? `「${m.body}」` : (demo ? "（示範模式不轉文字，聽聽錄音）" : "（沒轉出文字，聽聽錄音）");
       bubble.append(said);
+    } else if (m.sender === "doll") {
+      const who = document.createElement("span");
+      who.className = "who";
+      who.textContent = `🧸 ${friendName(m.friend)}先回：`;
+      bubble.append(who, document.createTextNode(m.body || ""));
     } else if (m.body) {
       bubble.append(document.createTextNode(m.body));
     } else {
@@ -458,6 +518,7 @@ function render() {
     const meta = document.createElement("div");
     meta.className = "meta";
     el.append(bubble, meta);
+    if (m.sender === "kid" && m.analysis) el.append(renderNote(m));
     updateMeta(el, m);
     thread.append(el);
     rendered.set(m.id, el);
@@ -472,9 +533,63 @@ function render() {
     scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }
 }
+const friendName = id => ({ bear: "嚕嚕", sheep: "綿綿", bird: "啾啾" })[id] || id || "娃娃";
+const MODE_LABEL = { doll: "娃娃先回", pass: "找你", urgent: "緊急", skip: "沒回" };
+// 小抄：狀態、建議、陪伴提議；最新那則預設展開
+function renderNote(m) {
+  const a = m.analysis || {};
+  const note = document.createElement("details");
+  note.className = "note";
+  const latest = [...messages].reverse().find(x => x.sender === "kid" && x.kid === m.kid);
+  note.open = latest?.id === m.id;
+  const summary = document.createElement("summary");
+  summary.append("🧠 小抄");
+  if (a.mode && a.mode !== "skip") {
+    const tag = document.createElement("span");
+    tag.className = `tag ${a.mode}`;
+    tag.textContent = MODE_LABEL[a.mode] || a.mode;
+    summary.append(tag);
+  }
+  note.append(summary);
+  const dl = document.createElement("dl");
+  [["狀態", a.state], ["建議", a.advice], ["提議", a.suggestion]].forEach(([k, v]) => {
+    if (!v) return;
+    const dt = document.createElement("dt"); dt.textContent = k;
+    const dd = document.createElement("dd"); dd.textContent = v;
+    dl.append(dt, dd);
+  });
+  if (!dl.children.length) {
+    const dd = document.createElement("dd"); dd.textContent = a.error ? "這則沒分析成功" : "沒有小抄";
+    dl.append(dd);
+  }
+  note.append(dl);
+  return note;
+}
+// 快速回覆：最新那則孩子的話有草稿就用草稿，沒有就用固定的四句
+const DEFAULT_CHIPS = ["我收到了，謝謝你跟我說 💛", "你好勇敢，願意說出來", "晚上睡前我們抱抱聊聊好不好？", "不管生氣還是難過，我都愛你"];
+function renderChips() {
+  const latest = [...messages].reverse().find(x => x.sender === "kid" && x.kid === activeKid);
+  const drafts = Array.isArray(latest?.analysis?.drafts) ? latest.analysis.drafts.filter(d => typeof d === "string" && d.trim()).slice(0, 3) : [];
+  const list = drafts.length ? drafts : DEFAULT_CHIPS;
+  const chips = $("chips");
+  if (chips.dataset.key === list.join("|")) return;
+  chips.dataset.key = list.join("|");
+  chips.replaceChildren(...list.map(t => { const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t; return b; }));
+}
 function updateMeta(el, m) {
   const meta = el.querySelector(".meta");
   const parts = [timeFmt.format(new Date(m.created_at))];
+  if (m.sender === "kid" && m.analysis && !el.querySelector(".note")) el.append(renderNote(m));
+  if (m.sender === "doll") {
+    parts.push("娃娃的聲音");
+    meta.innerHTML = "";
+    meta.append(parts.join(" · "));
+    const heard = document.createElement("span");
+    heard.className = m.heard_at ? "heard" : "";
+    heard.textContent = m.heard_at ? `${kidName(m.kid)}聽到了 ✓` : "還沒聽";
+    meta.append(heard);
+    return;
+  }
   if (m.sender === "parent") {
     parts.push(m.audio_kind === "tts" ? "用你的聲音念" : "你的錄音");
     meta.innerHTML = "";
