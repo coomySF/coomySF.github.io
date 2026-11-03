@@ -23,6 +23,14 @@ const allowedOrigins = new Set([
 ]);
 const bucket = 'secret-base';
 const maxAudioBytes = 10 * 1024 * 1024;
+const maxPhotoBytes = 6 * 1024 * 1024;
+const photoTypes: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+// 貼紙的代號固定在這裡，孩子頁與回信頁各有一份同樣的表；信裡只存代號
+const stickers: Record<string, string> = {
+  star: '星星', medal: '獎牌', rainbow: '彩虹', unicorn: '獨角獸', strawberry: '草莓',
+  rocket: '火箭', heart: '愛心', chick: '小雞', icecream: '冰淇淋', dino: '恐龍'
+};
+type Attachment = { kind: 'photo'; path: string } | { kind: 'sticker'; sticker: string };
 const audioTypes: Record<string, string> = {
   'audio/webm': 'webm',
   'audio/mp4': 'm4a',
@@ -86,6 +94,7 @@ Deno.serve(async request => {
     if (kid && request.method === 'POST' && route === '/kid/message') return await kidMessage(request, kid, supabase, cors);
     if (kid && request.method === 'GET' && route === '/kid/inbox') return await kidInbox(kid, supabase, cors);
     if (kid && request.method === 'GET' && route === '/kid/letters') return await kidLetters(kid, supabase, cors);
+    if (kid && request.method === 'GET' && route === '/kid/stickers') return await kidStickers(kid, supabase, cors);
     if (kid && request.method === 'POST' && route === '/kid/heard') return await kidHeard(request, kid, supabase, cors);
     if (role === 'parent' && request.method === 'GET' && route === '/parent/thread') return await parentThread(supabase, cors);
     if (role === 'parent' && request.method === 'POST' && route === '/parent/reply') return await parentReply(request, supabase, cors);
@@ -148,7 +157,7 @@ async function kidMessage(request: Request, kid: Kid, supabase: Db, cors: Cors) 
 async function kidInbox(kid: Kid, supabase: Db, cors: Cors) {
   const { data, error } = await supabase
     .from('secret_base_messages')
-    .select('id, audio_path, created_at')
+    .select('id, audio_path, attachment, created_at')
     .in('sender', ['parent', 'doll'])
     .eq('kid', kid.id)
     .is('heard_at', null)
@@ -163,7 +172,7 @@ async function kidInbox(kid: Kid, supabase: Db, cors: Cors) {
 async function kidLetters(kid: Kid, supabase: Db, cors: Cors) {
   const { data, error } = await supabase
     .from('secret_base_messages')
-    .select('id, audio_path, created_at, heard_at')
+    .select('id, audio_path, attachment, created_at, heard_at')
     .in('sender', ['parent', 'doll'])
     .eq('kid', kid.id)
     .not('heard_at', 'is', null)
@@ -172,6 +181,24 @@ async function kidLetters(kid: Kid, supabase: Db, cors: Cors) {
     .limit(20);
   if (error) throw error;
   return json({ letters: await withAudioUrls(supabase, data) }, 200, cors);
+}
+
+// 貼紙簿：孩子聽過的信裡附的貼紙，舊的在前
+async function kidStickers(kid: Kid, supabase: Db, cors: Cors) {
+  const { data, error } = await supabase
+    .from('secret_base_messages')
+    .select('id, attachment, created_at')
+    .eq('sender', 'parent')
+    .eq('kid', kid.id)
+    .not('heard_at', 'is', null)
+    .eq('attachment->>kind', 'sticker')
+    .order('created_at', { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  const list = (data as { id: string; attachment: Attachment; created_at: string }[])
+    .filter(row => row.attachment.kind === 'sticker')
+    .map(row => ({ id: row.id, sticker: (row.attachment as { sticker: string }).sticker, created_at: row.created_at }));
+  return json({ stickers: list }, 200, cors);
 }
 
 async function kidHeard(request: Request, kid: Kid, supabase: Db, cors: Cors) {
@@ -191,7 +218,7 @@ async function kidHeard(request: Request, kid: Kid, supabase: Db, cors: Cors) {
 async function parentThread(supabase: Db, cors: Cors) {
   const { data, error } = await supabase
     .from('secret_base_messages')
-    .select('id, sender, kid, friend, audio_path, audio_kind, body, reply_to, heard_at, analysis, created_at')
+    .select('id, sender, kid, friend, audio_path, audio_kind, body, attachment, reply_to, heard_at, analysis, created_at')
     .order('created_at', { ascending: false })
     .limit(120);
   if (error) throw error;
@@ -203,6 +230,7 @@ async function parentThread(supabase: Db, cors: Cors) {
 }
 
 // 爸爸回覆：錄音直接存；只有文字就用 ElevenLabs 念成爸爸的聲音。孩子不識字，所以一定要有聲音。
+// 可以附一張照片或一張貼紙；什麼話都沒留時由娃娃用自己的聲音報一句（刻意不用家長的聲音說家長沒說過的話）。
 async function parentReply(request: Request, supabase: Db, cors: Cors) {
   const form = await request.formData();
   const text = String(form.get('text') || '').trim().slice(0, 2000) || null;
@@ -214,7 +242,24 @@ async function parentReply(request: Request, supabase: Db, cors: Cors) {
   const audio = form.get('audio');
   const id = crypto.randomUUID();
   let path: string;
-  let kind: 'recording' | 'tts';
+  let kind: 'recording' | 'tts' | 'doll';
+
+  const photo = form.get('photo');
+  const stickerId = String(form.get('sticker') || '');
+  let attachment: Attachment | null = null;
+  if (photo instanceof File && photo.size > 0) {
+    if (photo.size > maxPhotoBytes) return json({ error: 'photo too large' }, 413, cors);
+    const ext = photoTypes[photo.type];
+    if (!ext) return json({ error: 'unsupported photo' }, 415, cors);
+    const photoPath = `photo/${id}.${ext}`;
+    const { error } = await supabase.storage.from(bucket).upload(photoPath, new Uint8Array(await photo.arrayBuffer()), { contentType: photo.type });
+    if (error) throw error;
+    attachment = { kind: 'photo', path: photoPath };
+  } else if (stickerId) {
+    if (!stickers[stickerId]) return json({ error: 'unknown sticker' }, 400, cors);
+    attachment = { kind: 'sticker', sticker: stickerId };
+  }
+  let body = text;
 
   if (audio instanceof File && audio.size > 0) {
     if (audio.size > maxAudioBytes) return json({ error: 'audio too large' }, 413, cors);
@@ -231,26 +276,44 @@ async function parentReply(request: Request, supabase: Db, cors: Cors) {
     kind = 'tts';
     const { error } = await supabase.storage.from(bucket).upload(path, speech, { contentType: 'audio/mpeg' });
     if (error) throw error;
+  } else if (attachment) {
+    body = attachment.kind === 'photo' ? '爸爸媽媽寄了一張照片給你，你看！' : `爸爸媽媽送你一張${stickers[attachment.sticker]}貼紙！`;
+    const speech = await speak(body, dollVoiceId);
+    path = `parent/${id}.mp3`;
+    kind = 'doll';
+    const { error } = await supabase.storage.from(bucket).upload(path, speech, { contentType: 'audio/mpeg' });
+    if (error) throw error;
   } else {
-    return json({ error: 'text or audio required' }, 400, cors);
+    return json({ error: 'text, audio, photo or sticker required' }, 400, cors);
   }
 
   const rows = targets.map((kid, i) => ({
-    id: i === 0 ? id : crypto.randomUUID(), sender: 'parent', kid: kid.id, audio_path: path, audio_kind: kind, body: text,
-    reply_to: replyTo
+    id: i === 0 ? id : crypto.randomUUID(), sender: 'parent', kid: kid.id, audio_path: path, audio_kind: kind, body,
+    attachment, reply_to: replyTo
   }));
   const { error } = await supabase.from('secret_base_messages').insert(rows);
   if (error) throw error;
   return json({ ids: rows.map(row => row.id), audio_kind: kind }, 200, cors);
 }
 
-async function withAudioUrls<T extends { audio_path: string | null }>(supabase: Db, rows: T[]) {
-  const paths = rows.map(row => row.audio_path).filter((path): path is string => Boolean(path));
-  if (!paths.length) return rows.map(row => ({ ...row, audio_url: null }));
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrls(paths, 60 * 60);
-  if (error) throw error;
-  const urls = new Map(data.map(item => [item.path, item.signedUrl]));
-  return rows.map(row => ({ ...row, audio_url: row.audio_path ? urls.get(row.audio_path) || null : null }));
+// 聲音和照片都放在私有 bucket，回給前端的是一小時有效的簽名網址
+async function withAudioUrls<T extends { audio_path: string | null; attachment?: Attachment | null }>(supabase: Db, rows: T[]) {
+  const paths = new Set<string>();
+  for (const row of rows) {
+    if (row.audio_path) paths.add(row.audio_path);
+    if (row.attachment?.kind === 'photo') paths.add(row.attachment.path);
+  }
+  const urls = new Map<string, string>();
+  if (paths.size) {
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrls([...paths], 60 * 60);
+    if (error) throw error;
+    data.forEach(item => item.path && item.signedUrl && urls.set(item.path, item.signedUrl));
+  }
+  return rows.map(row => ({
+    ...row,
+    audio_url: row.audio_path ? urls.get(row.audio_path) || null : null,
+    attachment: row.attachment?.kind === 'photo' ? { ...row.attachment, url: urls.get(row.attachment.path) || null } : row.attachment ?? null
+  }));
 }
 
 async function transcribe(bytes: Uint8Array, mime: string, ext: string) {

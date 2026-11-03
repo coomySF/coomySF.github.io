@@ -137,6 +137,29 @@
   .rec-timer.is-shown { display: inline; }
   .hint-line { font-size: 12px; color: var(--muted); min-height: 18px; }
 
+  /* 附件：一封信只能帶一張照片或一張貼紙；選了就在這裡預覽，叉掉就拿掉 */
+  .attach-row { display: flex; gap: 8px; align-items: center; }
+  .attach-btn { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 12px; font-size: 13px; font-weight: 700;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: transform var(--duration-quick) var(--ease-smooth-out); }
+  .attach-btn:active { transform: scale(0.96); }
+  .attach-btn[aria-expanded="true"] { background: #fff1d6; border-color: #e0a84a; }
+  .attach-preview { display: none; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .attach-preview.is-shown { display: flex; }
+  .attach-preview img { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; background: var(--kid); }
+  .attach-preview .big { font-size: 40px; line-height: 1; width: 56px; text-align: center; }
+  .attach-preview .what { flex: 1; font-size: 13px; line-height: 1.5; }
+  .attach-preview .what b { display: block; font-size: 14px; }
+  .attach-preview .what span { color: var(--muted); }
+  .sticker-tray { display: none; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 10px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); }
+  .sticker-tray.is-shown { display: grid; }
+  .sticker-tray button { border: 0; background: var(--kid); border-radius: 14px; padding: 8px 0 6px; font-size: 30px; line-height: 1; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; transition: transform var(--duration-quick) var(--ease-smooth-out); }
+  .sticker-tray button:active { transform: scale(0.92); }
+  .sticker-tray button small { font-size: 11px; font-weight: 700; color: var(--muted); }
+  .bubble img.photo { display: block; width: 220px; max-width: 100%; border-radius: 12px; margin-top: 6px; background: rgba(255,255,255,0.3); }
+  .bubble .sticker { display: flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 15px; }
+  .bubble .sticker b { font-size: 44px; line-height: 1; }
+
   /* Shimmer：ElevenLabs 生成中 */
   .t-shimmer {
     position: relative;
@@ -284,9 +307,23 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
       </button>
     </div>
+    <div class="attach-preview" id="attach-preview">
+      <img id="attach-img" alt="" hidden>
+      <span class="big" id="attach-big" hidden></span>
+      <div class="what"><b id="attach-title"></b><span id="attach-sub"></span></div>
+      <button class="icon-btn" id="attach-discard" type="button" aria-label="拿掉附件">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="sticker-tray" id="sticker-tray"></div>
     <div class="to-line">
       <span id="to-label">回給虎妞</span>
       <label class="both"><input type="checkbox" id="both"> 兩個都聽</label>
+    </div>
+    <div class="attach-row">
+      <button class="attach-btn" id="photo-btn" type="button">📷 照片</button>
+      <button class="attach-btn" id="sticker-btn" type="button" aria-expanded="false">🌟 貼紙</button>
+      <input id="photo-input" type="file" accept="image/*" hidden>
     </div>
     <div class="row">
       <button class="icon-btn" id="rec-btn" type="button" aria-label="錄自己的聲音">
@@ -508,6 +545,21 @@ function render() {
     } else {
       bubble.append(document.createTextNode("🎙 你的錄音"));
     }
+    if (m.attachment?.kind === "photo" && m.attachment.url) {
+      const img = document.createElement("img");
+      img.className = "photo";
+      img.alt = "你寄的照片";
+      img.loading = "lazy";
+      img.src = m.attachment.url;
+      bubble.append(img);
+    } else if (m.attachment?.kind === "sticker" && STICKERS[m.attachment.sticker]) {
+      const s = STICKERS[m.attachment.sticker];
+      const row = document.createElement("div");
+      row.className = "sticker";
+      const b = document.createElement("b"); b.textContent = s.emoji;
+      row.append(b, document.createTextNode(`${s.name}貼紙`));
+      bubble.append(row);
+    }
     if (m.audio_url) {
       const audio = document.createElement("audio");
       audio.controls = true;
@@ -591,7 +643,7 @@ function updateMeta(el, m) {
     return;
   }
   if (m.sender === "parent") {
-    parts.push(m.audio_kind === "tts" ? "用你的聲音念" : "你的錄音");
+    parts.push(m.audio_kind === "tts" ? "用你的聲音念" : m.audio_kind === "doll" ? "娃娃幫你報的" : "你的錄音");
     meta.innerHTML = "";
     meta.append(parts.join(" · "));
     const heard = document.createElement("span");
@@ -606,7 +658,86 @@ function updateMeta(el, m) {
 // ---------- 撰寫 ----------
 const text = $("text");
 function refreshSend() {
-  $("send").disabled = sending || !(text.value.trim() || recBlob);
+  $("send").disabled = sending || !(text.value.trim() || recBlob || photoBlob || sticker);
+}
+
+// ---------- 附件：照片或貼紙（二選一） ----------
+// 貼紙代號要和後端、孩子頁一致；信裡只存代號
+const STICKERS = {
+  star: { emoji: "⭐", name: "星星" }, medal: { emoji: "🏅", name: "獎牌" }, rainbow: { emoji: "🌈", name: "彩虹" },
+  unicorn: { emoji: "🦄", name: "獨角獸" }, strawberry: { emoji: "🍓", name: "草莓" }, rocket: { emoji: "🚀", name: "火箭" },
+  heart: { emoji: "💖", name: "愛心" }, chick: { emoji: "🐣", name: "小雞" }, icecream: { emoji: "🍦", name: "冰淇淋" }, dino: { emoji: "🦖", name: "恐龍" }
+};
+let photoBlob = null, sticker = null;
+Object.entries(STICKERS).forEach(([id, s]) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.innerHTML = `<span></span><small></small>`;
+  b.firstChild.textContent = s.emoji;
+  b.lastChild.textContent = s.name;
+  b.setAttribute("aria-label", `${s.name}貼紙`);
+  b.addEventListener("click", () => { setAttachment({ sticker: id }); });
+  $("sticker-tray").append(b);
+});
+function setAttachment({ photo = null, sticker: stickerId = null } = {}) {
+  photoBlob = photo;
+  sticker = stickerId;
+  $("sticker-tray").classList.remove("is-shown");
+  $("sticker-btn").setAttribute("aria-expanded", "false");
+  const preview = $("attach-preview"), img = $("attach-img"), big = $("attach-big");
+  if (img.src) { URL.revokeObjectURL(img.src); img.removeAttribute("src"); }
+  img.hidden = big.hidden = true;
+  if (photo) {
+    img.src = URL.createObjectURL(photo);
+    img.hidden = false;
+    $("attach-title").textContent = "一張照片";
+    $("attach-sub").textContent = "開信時娃娃會攤開給孩子看";
+  } else if (stickerId) {
+    big.textContent = STICKERS[stickerId].emoji;
+    big.hidden = false;
+    $("attach-title").textContent = `${STICKERS[stickerId].name}貼紙`;
+    $("attach-sub").textContent = "會貼進孩子的貼紙簿";
+  }
+  preview.classList.toggle("is-shown", !!(photo || stickerId));
+  refreshSend();
+}
+$("attach-discard").addEventListener("click", () => setAttachment());
+$("sticker-btn").addEventListener("click", () => {
+  const open = !$("sticker-tray").classList.contains("is-shown");
+  $("sticker-tray").classList.toggle("is-shown", open);
+  $("sticker-btn").setAttribute("aria-expanded", String(open));
+});
+$("photo-btn").addEventListener("click", () => $("photo-input").click());
+$("photo-input").addEventListener("change", async () => {
+  const file = $("photo-input").files?.[0];
+  $("photo-input").value = "";
+  if (!file) return;
+  try {
+    setAttachment({ photo: await shrinkPhoto(file) });
+  } catch (error) {
+    console.warn(error);
+    toast("這張照片讀不出來，換一張試試");
+  }
+});
+// 相簿原圖動輒好幾 MB，縮到長邊 1280 的 JPEG 再上傳；iPad 看起來一樣清楚，後端上限 6MB
+async function shrinkPhoto(file) {
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  const source = bitmap || await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+  const w = source.width, h = source.height;
+  const scale = Math.min(1, 1280 / Math.max(w, h));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+  canvas.getContext("2d").drawImage(source, 0, 0, canvas.width, canvas.height);
+  bitmap?.close?.();
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.82));
+  if (!blob) throw new Error("toBlob failed");
+  return blob;
 }
 text.addEventListener("input", () => {
   text.style.height = "auto";
@@ -699,22 +830,26 @@ $("rec-discard").addEventListener("click", () => {
 $("send").addEventListener("click", async () => {
   if (sending) return;
   const body = text.value.trim();
-  if (!body && !recBlob) return;
+  if (!body && !recBlob && !photoBlob && !sticker) return;
   sending = true;
   refreshSend();
   const hint = $("hint-line");
-  const label = recBlob ? "送出中…" : "正在用你的聲音念…";
+  const label = recBlob ? "送出中…" : body ? "正在用你的聲音念…" : "送出中，娃娃會幫你報一聲…";
   hint.innerHTML = `<span class="t-shimmer" data-text="${label}">${label}</span>`;
+  const attachment = photoBlob ? { kind: "photo", blob: photoBlob } : sticker ? { kind: "sticker", sticker } : null;
   if (demo) {
     const id = `parent-${Date.now()}`;
     await new Promise(r => setTimeout(r, recBlob ? 300 : 900));
     const targets = $("both").checked ? kids.map(k => k.id) : [activeKid];
-    targets.forEach((kid, i) => messages.push({ id: i ? `${id}-${kid}` : id, sender: "parent", kid, body: body || null, audio_kind: recBlob ? "recording" : "tts",
-      audio_url: recBlob ? URL.createObjectURL(recBlob) : null, heard_at: null, created_at: new Date().toISOString() }));
-    demoChannel.postMessage({ type: "parent", id, text: body, blob: recBlob });
+    const demoBody = body || (attachment?.kind === "photo" ? "爸爸媽媽寄了一張照片給你，你看！" : attachment ? `爸爸媽媽送你一張${STICKERS[attachment.sticker].name}貼紙！` : null);
+    targets.forEach((kid, i) => messages.push({ id: i ? `${id}-${kid}` : id, sender: "parent", kid, body: demoBody, audio_kind: recBlob ? "recording" : body ? "tts" : "doll",
+      audio_url: recBlob ? URL.createObjectURL(recBlob) : null, heard_at: null, created_at: new Date().toISOString(),
+      attachment: attachment?.kind === "photo" ? { kind: "photo", url: URL.createObjectURL(attachment.blob) } : attachment }));
+    demoChannel.postMessage({ type: "parent", id, text: demoBody, blob: recBlob, attachment });
     text.value = "";
     text.style.height = "";
     $("rec-discard").click();
+    setAttachment();
     toast(baseOpen ? "送出了，小信差正把信送去基地 ✉️" : "送出了（但孩子頁沒開，打開 /secret-base/?demo 才收得到）");
     $("both").checked = false;
     render();
@@ -726,6 +861,8 @@ $("send").addEventListener("click", async () => {
   const form = new FormData();
   if (body) form.append("text", body);
   if (recBlob) form.append("audio", recBlob, `parent.${recBlob.type.includes("mp4") ? "m4a" : recBlob.type.includes("wav") ? "wav" : "webm"}`);
+  if (photoBlob) form.append("photo", photoBlob, "photo.jpg");
+  if (sticker) form.append("sticker", sticker);
   form.append("to", $("both").checked ? "both" : activeKid);
   const lastKid = [...messages].reverse().find(m => m.sender === "kid" && m.kid === activeKid);
   if (lastKid) form.append("reply_to", lastKid.id);
@@ -735,6 +872,7 @@ $("send").addEventListener("click", async () => {
     text.value = "";
     text.style.height = "";
     $("rec-discard").click();
+    setAttachment();
     toast($("both").checked ? "送出了，兩個人都會收到 ✉️" : `送出了，小信差正把信送去給${kidName(activeKid)} ✉️`);
     $("both").checked = false;
     await load();
