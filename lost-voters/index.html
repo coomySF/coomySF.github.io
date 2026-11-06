@@ -55,6 +55,9 @@
 -->
 <html lang="zh-Hant">
 <head>
+<script>/* 數據：沿用全站 GTM（GTM-T277CMLJ → GA4 G-6MLTVNFYPV）。本機與測試參數（?auto ?rec）不送，本機要測加 ?track */
+(function(w,d){var q=location.search,loc=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);w.LV_TRACK=!/[?&](auto|rec)\b/.test(q)&&(!loc||/[?&]track\b/.test(q));if(!w.LV_TRACK)return;
+w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName('script')[0],j=d.createElement('script');j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id=GTM-T277CMLJ';f.parentNode.insertBefore(j,f);})(window,document);</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>迷失的選民｜30 秒上手的選舉塔防小遊戲・11/28 記得去投票</title>
@@ -789,6 +792,17 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const SITE_URL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) ? "https://coomysf.github.io/lost-voters/" : location.origin + location.pathname;
 const params = new URLSearchParams(location.search);
+// 數據事件（GA4）：只記玩法漏斗，不記任何陣營或英雄選擇
+function lvTrack(name, p = {}) { if (!window.LV_TRACK) return; try { window.dataLayer = window.dataLayer || []; window.gtag = window.gtag || function gtag() { window.dataLayer.push(arguments); }; window.gtag("event", name, { send_to: "G-6MLTVNFYPV", game: "lost_voters", ...p }); } catch (e) {} }
+document.addEventListener("click", (e) => { const b = e.target.closest?.("a,button"); if (!b) return; const href = b.getAttribute("href") || "";
+  if (b.id === "shareBtn") lvTrack("lv_share", { method: "threads_text" });
+  else if (b.dataset.s) lvTrack("lv_share", { method: "image_" + b.dataset.s });
+  else if (b.id === "dareBtn") lvTrack("lv_share", { method: "copy_dare" });
+  else if (b.id === "againBtn") lvTrack("lv_replay");
+  else if (href.includes("cec.gov.tw")) lvTrack("lv_vote_info");
+  else if (href.includes("threads.")) lvTrack("lv_follow_threads"); }, true);
+// 中途離開：玩到一半切走（關分頁、滑走）記一次
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && typeof G !== "undefined" && G.on && !G.ended && G.trk && !G.trk.left) { G.trk.left = 1; lvTrack("lv_leave_mid", { wave: G.wave + 1, sec: Math.round(G.t), hero: G.trk.hero }); } });
 const MOBILE = matchMedia("(pointer: coarse)").matches || innerWidth < 700;
 if (MOBILE) document.body.classList.add("mob");
 const TEX_WAIT = [];
@@ -3307,6 +3321,7 @@ const GEN = {
 function dayOf(t) { return t >= FINAL_T ? 1 : Math.max(1, Math.ceil(28 - (27 * t) / FINAL_T)); }
 function startWave(i) {
   G.wave = i; G.waveT = 0; G.waveKills = 0; const w = W[i];
+  lvTrack("lv_wave", { wave: i + 1 });
   if (G.incFor !== i) showInc(i); // 這波會從哪幾座橋來：橋頭插旗（只顯示，不用按）
   for (const [type, n0, lanes, gap0, at0, u0] of w.sp) {
     const mul = (G.mod?.[type] || 1) * (W_CNT[type] || 1), n = Math.round(n0 * mul), gap = gap0 / Math.max(1, mul * 0.9); // 每日挑戰的規則改數量
@@ -3486,6 +3501,7 @@ function drawHero(pi, force) {
 function placeHero(k, pi, quiet) {
   if (!DEF[k] || hasHero(k) || pi == null || padOwner(pi)) return null;
   const b0 = campBonus(), h = makeHero(k, team.length, pi); team.push(h);
+  if (G.trk && !quiet && !G.trk.hero) { G.trk.hero = 1; lvTrack("lv_first_hero", { sec: Math.round(G.t) }); }
   if (!quiet) { h.holder.position.y = 9; h.dropIn = 0; heroSay(h, "交給我！", 1.4); }
   const b1 = campBonus();
   if (!quiet) {
@@ -4260,6 +4276,7 @@ function coldGone(e) { if (!e) return; e.alive = false; e.dying = 0; e.g.visible
 function coldSpawn2() { const C = G.cold; if (!C || C.ens.length) return; for (const [u, side] of [[0.04, -0.5], [0, 0.55]]) C.ens.push(spawnEnemy("swarm", C.L, u, side)); laneFlag(C.L, "⚠️ 雜音從這裡來", "cold"); }
 function endIntro(skip) {
   const I = G.intro; if (!I) return; G.intro = null;
+  lvTrack("lv_intro_end", { skipped: skip ? 1 : 0 });
   if (I.e && !I.hit && ENEMIES.includes(I.e)) coldGone(I.e); // 略過：示範那隻直接收掉（沒撞到就不扣分）
   coldSpawn2();
   camera.position.copy(I.base); camera.quaternion.copy(I.baseQ); camera.updateMatrixWorld();
@@ -4358,6 +4375,7 @@ function startGame(keys, opt = {}) {
   G.rerolls = metaRerolls(); G.vol += (META.lvl >= 4 ? 10 : 0) + (META.lvl >= 6 ? 10 : 0) + (META.lvl >= 14 ? 20 : 0); if (META.lvl >= 7) G.heat = heatNeed() / 2; if (META.lvl >= 17) G.heat = heatNeed() / 2; if (META.lvl >= 19) G.morale = 50;
   G.guideOn = guideOn() && !opt.daily; if (G.guideOn && !params.has("tut")) (META.tk || []).forEach((k) => G.guideDone.add(k)); if (!G.guideOn) TUT_ALL.forEach((k) => G.guideDone.add(k));
   G.veteran = G.guideOn && !params.has("tut") && isVeteran();
+  lvTrack("lv_game_start", { mode: NEUTRAL ? "election_day" : opt.daily ? "daily" : META.runs ? "returning" : "new", runs: META.runs || 0 }); G.trk = { hero: 0, end: 0 };
   G.waitHero = !team.length; if (team.length) G.guideDone.add("place"); if (team.length >= 2) G.guideDone.add("place2"); // ?team= 測試：直接放好
   document.getElementById("startScreen").classList.remove("open"); document.getElementById("endScreen").classList.remove("open");
   buildHeroBar(); if (G.waitHero) syncHudSub(true); else startWave(0); sound.start(); sound.setMode("normal"); // 第一位英雄放下前怪不會來
@@ -4620,6 +4638,7 @@ function starsOf(won) { if (!won) return 0; return G.will >= 75 ? 3 : G.will >= 
 function campSummary() { const c = {}; team.forEach((h) => (c[DEF[h.key].camp] = (c[DEF[h.key].camp] || 0) + 1)); return ["blue", "green", "white", "neu"].filter((k) => c[k]).map((k) => `${CAMP_N[k]} ${c[k]}`).join("・"); }
 async function copyText(t) { try { await navigator.clipboard.writeText(t); return true; } catch { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch {} ta.remove(); return ok; } }
 function showEnd(won) {
+  if (G.trk && !G.trk.end) { G.trk.end = 1; lvTrack("lv_game_end", { won: won ? 1 : 0, wave: G.wave + 1, voters: Math.round(G.will), sec: Math.round(G.t) }); }
   closeDecide(); picker.classList.remove("open"); document.body.classList.remove("picking", "boss-on");
   closeTray(); closeBranch(); guideEnd(); document.body.classList.remove("fever-on");
   const N = Math.floor(G.voted), stars = starsOfScore(won, N), T = titleOf();
