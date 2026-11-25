@@ -175,6 +175,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .alertbar .hit.sell { border-color: color-mix(in oklab, var(--up) 50%, var(--line)); }
   .alertbar .hit.buy { border-color: color-mix(in oklab, var(--down) 50%, var(--line)); }
   .alertset { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 13px; }
+  .astate { flex-basis: 100%; }
+  .aln { display: block; font-size: 11px; color: var(--muted); font-weight: 400; } .aln.hit { color: var(--ink); font-weight: 700; }
   .alertset input, .numin { width: 80px; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
   .clr { margin-left: 8px; height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 12px; color: var(--ink-2); }
   .mine-hint { margin: 0 0 8px; font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
@@ -205,12 +207,36 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   #profView .tiles { margin-top: 10px; }
   .ptab .lt { text-align: left; white-space: normal; min-width: 140px; }
   .ptab .drops div { margin-bottom: 3px; }
-  @media (max-width: 600px) { .ptab .lt { min-width: 190px; } .ptab td:first-child { white-space: normal; min-width: 96px; } }
+  .src-v { min-width: 0; overflow-wrap: anywhere; }
+  /* 手機：寬表格改成卡片，每格前面標欄名（labelTables 從表頭抄過來） */
+  @media (max-width: 600px) {
+    .tscroll { overflow-x: visible; }
+    table.ptab, .ptab tbody, .ptab td { display: block; }
+    .ptab thead { display: none; }
+    .ptab tr { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .ptab td { text-align: left !important; white-space: normal; border: 0; padding: 0; min-width: 0; overflow-wrap: anywhere; }
+    .ptab td:first-child, .ptab td.mats, .ptab td.lt, .ptab td.wide { grid-column: 1 / -1; }
+    .ptab td[data-l]:not(:first-child)::before { content: attr(data-l); display: block; font-size: 11px; color: var(--muted); }
+    .ptab td.bcell, .ptab td:empty { display: none; }
+    .ptab td *:not(.chip) { white-space: normal; }
+    .ptab tr[data-skill]:hover { background: none; }
+  }
   .srcs { display: grid; gap: 0; margin-top: 6px; }
   .src { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--grid); font-size: 13px; }
   .src-k { font-weight: 700; color: var(--ink-2); }
   .src-v ul { margin: 0; padding-left: 16px; } .src-v li { margin: 2px 0; } .src-v p { margin: 0 0 6px; }
   @media (max-width: 600px) { .src { grid-template-columns: 1fr; gap: 4px; } }
+  .ihead .tag { margin-left: 8px; }
+  .ginfo { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .ugrp { margin: 14px 0 4px; font-size: 14px; }
+  #uTabs { margin-top: 6px; flex-wrap: wrap; }
+  .more-d { margin-top: 10px; } .more-d summary { cursor: pointer; color: var(--ink-2); font-size: 13px; }
+  .report { margin-left: 6px; color: var(--muted); }
+  .charbar { padding-top: 4px; }
+  #fKind { margin: 4px 0 8px; }
+  .skel { display: grid; gap: 12px; } .skel i { display: block; height: 120px; border-radius: 12px; background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%); background-size: 200% 100%; animation: sk 1.2s linear infinite; }
+  @keyframes sk { to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skel i { animation: none; } }
   .headline { font-size: 15px; line-height: 1.6; margin: 8px 0; }
   .pfilters label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
   .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -578,7 +604,8 @@ function spark(vals, w = 92, h = 26) {
 
 function itemCell(r) {
   const img = r.icon ? `<img src="${esc(r.icon)}" alt="" loading="lazy" width="26" height="26">` : '<span class="noimg"></span>';
-  return `<div class="it">${img}<span class="nm q-${esc(r.q)}">${esc(r.name)}<span class="cl">${esc(r.sub || r.cls)}</span></span></div>`;
+  const al = ALERTS[r.id] ? `<span class="aln${alertHit(r.id) ? " hit" : ""}">🔔 ${alertState(r.id)}</span>` : "";
+  return `<div class="it">${img}<span class="nm q-${esc(r.q)}">${esc(r.name)}<span class="cl">${esc(r.sub || r.cls)}</span>${al}</span></div>`;
 }
 function devCell(r) {
   if (r.dev == null) return '<span class="mut">—</span>';
@@ -590,6 +617,8 @@ const lastTxt = (r) => r.lastSoldT ? `${money(r.lastSoldP)} <span class="mut">${
 
 function renderList() {
   const list = ROWS.filter(matches).sort(sorter());
+  // 有搜尋字時，算出被其他篩選藏起來的筆數，讓玩家一鍵看全部
+  const hidden = state.q ? ROWS.filter((r) => r.key.includes(state.q)).length - list.length : 0;
   $("#list thead").querySelectorAll("th").forEach((th) => th.dataset.k === state.sort ? th.setAttribute("aria-sort", state.dir > 0 ? "ascending" : "descending") : th.removeAttribute("aria-sort"));
   const hints = { cheap: `現價比 7 日均低 ${state.thr * 100}% 以上、24h 至少成交 ${state.minv} 件`, dear: `現價比 7 日均高 ${state.thr * 100}% 以上、24h 至少成交 ${state.minv} 件`, hot: "24 小時賣出比新上架多：貨在變少", slow: "24 小時取消＋過期遠多於成交：賣不動或有人撤單", watch: "點商品左邊的 ★ 加入，只存在這台裝置" };
   $("#hint").textContent = `${list.length.toLocaleString()} 項${hints[state.sig] ? "・" + hints[state.sig] : ""}`;
@@ -608,13 +637,25 @@ function renderList() {
   </tr>`).join("");
   $("#rows").innerHTML = html;
   $("#empty").hidden = list.length > 0;
-  const active = [state.q && `搜尋「${state.q}」`, state.cls && `類別「${state.cls}」`, state.sub && `子類「${state.sub}」`, state.sig && "訊號篩選", state.minv !== 5 && null].filter(Boolean);
-  if (active.length) $("#hint").insertAdjacentHTML("beforeend", ` <button class="clr" id="clr">清除篩選（${active.length}）</button>`);
-  if (!list.length) $("#empty").innerHTML = `沒有符合的商品${active.length ? `——可能被 ${active.map(esc).join("、")} 篩掉了。<button class="clr" id="clr2">清除篩選</button>` : ""}${state.minv > 0 && !active.length ? "（試試把「24h 成交」改成不限）" : ""}`;
+  const SIG_NAME = { cheap: "「可撿」", dear: "「可出」", hot: "「搶手」", slow: "「滯銷」", watch: "「★ 觀察」" };
+  const active = [state.cls && `類別「${state.cls}」`, state.sub && `子類「${state.sub}」`, state.sig && SIG_NAME[state.sig]].filter(Boolean);
+  if (hidden > 0) $("#hint").insertAdjacentHTML("beforeend", ` <button class="clr" id="clr">另有 ${hidden} 筆被篩選藏起來・全部顯示</button>`);
+  else if (active.length) $("#hint").insertAdjacentHTML("beforeend", ` <button class="clr" id="clr">清除篩選（${active.length}）</button>`);
+  if (!list.length) $("#empty").innerHTML = `沒有符合的商品${active.length ? `——被 ${active.map(esc).join("、")} 篩掉了。<button class="clr" id="clr2">清除篩選${state.q ? "（保留搜尋字）" : ""}</button>` : state.q ? `——拍賣場上沒有名稱包含「${esc(state.q)}」的商品。` : ""}${state.minv > 0 && !active.length && !state.q ? "（試試把「24h 成交」改成不限）" : ""}`;
   for (const id of ["#clr", "#clr2"]) { const b = $(id); if (b) b.onclick = clearFilters; }
   $("#more").hidden = list.length <= state.shown;
   if (state.q) $("#q").value = state.q;
 }
+
+// 手機卡片版：把表頭文字抄到每一格的 data-l，CSS 在窄螢幕顯示成小標
+function labelTables() {
+  document.querySelectorAll("table.ptab:not([data-lab])").forEach((t) => {
+    t.dataset.lab = "1";
+    const hs = [...t.querySelectorAll("thead th")].map((th) => th.textContent.trim());
+    t.querySelectorAll("tbody tr").forEach((tr) => [...tr.children].forEach((td, i) => { if (hs[i] && !td.hasAttribute("colspan")) td.dataset.l = hs[i]; }));
+  });
+}
+new MutationObserver(labelTables).observe(document.body, { childList: true, subtree: true });
 
 /* ---------------- 單一商品 ---------------- */
 
@@ -636,7 +677,7 @@ async function showItem(id) {
   $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true;
   const view = $("#itemView");
   view.hidden = false;
-  view.innerHTML = '<button class="back" id="back">← 回列表</button><p class="mut">讀取中…</p>';
+  view.innerHTML = '<button class="back" id="back">← 回列表</button><div class="skel"><i style="height:64px"></i><i style="height:96px"></i><i></i><i></i></div>';
   $("#back").onclick = () => history.length > 1 ? history.back() : (location.hash = "");
   window.scrollTo(0, 0);
   const shard = id % SHARDS;
@@ -650,8 +691,8 @@ async function showItem(id) {
   const img = r.icon ? `<img src="${esc(r.icon)}" alt="" width="46" height="46">` : '<span class="noimg"></span>';
   const inWatch = watch.has(id);
   view.innerHTML = `<button class="back" id="back">← 回列表</button>
-    <div class="ihead">${img}<div><h2 class="q-${esc(r.q)}">${esc(r.name)}</h2><div class="cl">${esc([r.cls, r.sub].filter(Boolean).join("・"))}${r.nc ? "<span class='tag'>非堆疊：成交全是估計</span>" : ""}
-      <button class="star" id="istar" aria-pressed="${inWatch}" aria-label="加入觀察">★</button></div></div></div>
+    <div class="ihead">${img}<div><h2 class="q-${esc(r.q)}">${esc(r.name)}</h2><div class="cl">${esc([r.cls, r.sub].filter(Boolean).join("・"))}${r.nc ? `<span class="tag" title="這種商品每口只有 1 個，暴雪 API 看不出是賣掉還是下架，成交量都是推算的">非堆疊・成交是估計 ⓘ</span>` : ""}
+      <button class="star" id="istar" aria-pressed="${inWatch}" aria-label="加入觀察">★</button></div><div class="ginfo" id="gearInfo" hidden></div></div></div>
     <div class="tiles">
       <div class="tile"><div class="k">現價（最低一口）</div><div class="v">${money(r.ask)}</div><div class="x">第二檔 ${money(r.ask2)}</div></div>
       <div class="tile"><div class="k">7 日均</div><div class="v">${money(r.avg7)}</div><div class="x">偏離 ${devCell(r)}</div></div>
@@ -961,27 +1002,30 @@ const mobName = (m) => CRE[m] || DROPS.mobs[m]?.[0] || `#${m}`;
 const mobLv = (m) => { const x = DROPS.mobs[m]; return x[2] === x[3] ? `${x[2]}` : `${x[2]}–${x[3]}`; };
 const dropPct = (pm) => (pm >= 100 ? `${Math.round(pm / 10)}%` : `${(pm / 10).toFixed(1)}%`);   // ‰ → %
 const killsFor = (pm) => Math.max(1, Math.round(1000 / pm));
+const SUMMON_TIP = "這隻怪沒有固定出生點，要觸發事件、任務或召喚才會出現";
+const isRaid = (pl) => (DROPS.places[pl]?.[1] || 0) >= 20;
 function placeTxt(pl, short) {
   const p = DROPS.places[pl];
-  if (!p) return '<span class="mut">召喚／事件怪</span>';
+  if (!p) return `<span class="mut" title="${SUMMON_TIP}">召喚／事件怪 ⓘ</span>`;
   if (!p[1]) return esc(p[0]);
-  return `${esc(p[0])}${short ? "" : `<span class="mut sm">・${p[1] >= 20 ? `${p[1]} 人團隊` : ""}副本</span>`}`;
+  if (short) return esc(p[0]);
+  return `${esc(p[0])}<span class="mut sm">・${p[2] ? `Lv ${p[2]}–${p[3]}・` : ""}${p[1] >= 20 ? `${p[1]} 人團隊副本` : `${p[1]} 人副本`}</span>`;
 }
 function mobCell(m) {
   const x = DROPS.mobs[m], rk = RANK[x[1]];
-  const en = CRE[m] && x[0] !== CRE[m] ? `<div class="mut sm">${esc(x[0])}</div>` : "";
-  return `<b>${esc(mobName(m))}</b>${rk ? ` <span class="chip ${x[1] === 3 ? "c-or" : x[1] === 2 || x[1] === 4 ? "c-ye" : "c-gy"}">${rk}</span>` : ""}${en}`;
+  const name = CRE[m] ? `<b>${esc(CRE[m])}</b>${x[0] !== CRE[m] ? `<div class="mut sm">${esc(x[0])}</div>` : ""}` : `<b>${esc(x[0])}</b> <span class="chip c-gy" title="台服中文名稱還沒查到，先顯示英文">未翻譯</span>`;
+  return `${name}${rk ? ` <span class="chip ${x[1] === 3 ? "c-or" : x[1] === 2 || x[1] === 4 ? "c-ye" : "c-gy"}">${rk}</span>` : ""}`;
 }
-// 打一隻平均值多少：拍賣場 7 日均（沒有就現價）扣 5%，只算有人在買的
+// 打一隻平均值多少：拍賣場 7 日均（沒有就現價）扣 5%
 function farmPrice(id) {
   const r = ROWBY.get(id);
   if (!r) return null;
   const p = r.avg7 ?? r.ask;
   return p == null ? null : p * 0.95;
 }
-function worldTxt(w) {
+function worldTxt(w, verb = "掉") {
   const zones = w[3].map(([pl, k]) => `${placeTxt(pl, true)} ${Math.round(k / 10)}%`).join("、");
-  return `等級 ${w[1]}–${w[2]} 的怪都可能掉（${w[0].toLocaleString()} 種怪）${zones ? `，最常出現在 ${zones}` : ""}。平均大約每 ${w[4].toLocaleString()} 隻掉一件`;
+  return `等級 ${w[1]}–${w[2]} 的怪都可能${verb}（${w[0].toLocaleString()} 種怪）${zones ? `，最常出現在 ${zones}` : ""}。平均大約每 ${w[4].toLocaleString()} 隻${verb}到一件`;
 }
 function dropShort(id) {
   const { m: named = [], w } = DROPS.items[id];
@@ -989,78 +1033,136 @@ function dropShort(id) {
   return w ? `世界掉落・Lv ${w[1]}–${w[2]}${w[3][0] ? `・最常在${placeTxt(w[3][0][0], true)}` : ""}` : "—";
 }
 const DROP_NOTE = "掉落率來自 60 版開源伺服器資料（CMaNGOS），永恆有改過的會不準；永恆新加的副本還查不到。";
+const reportLink = (id, what) => `<a class="report" href="https://github.com/coomySF/coomySF.github.io/issues/new?title=${encodeURIComponent(`資料回報：${(META[id] || [])[0] || id}（#${id}）${what}`)}&body=${encodeURIComponent("哪裡怪怪的？（不用留個人資料）\n\n")}" target="_blank" rel="noopener">這裡怪怪的？回報</a>`;
 const QTW = ["粗糙", "普通", "優秀", "精良", "史詩"], QCLS = ["POOR", "COMMON", "UNCOMMON", "RARE", "EPIC"];
 const zonesTxt = (pl) => pl.map(([k, x]) => `${placeTxt(k, true)} ${Math.round(x / 10)}%`).join("、");
-function mobTable(list, price, gear) {
-  return `<div class="tscroll"><table class="ptab"><thead><tr><th>怪物</th><th>等級</th><th class="lt">在哪</th><th>${gear ? "掉率" : "每隻掉"}</th>${price != null ? "<th>每打一次值</th>" : ""}</tr></thead><tbody>
-    ${list.map(([m, pm]) => `<tr><td>${mobCell(m)}</td><td class="num">${mobLv(m)}</td><td class="lt">${placeTxt(DROPS.mobs[m][4])}${DROPS.mobs[m][5] > 1 ? `<span class="mut sm">・${DROPS.mobs[m][5]} 隻</span>` : ""}</td><td class="num">${dropPct(pm)}${gear ? `<div class="mut sm">約 ${killsFor(pm)} 次一件</div>` : ""}</td>${price != null ? `<td>${money(price * pm / 1000)}</td>` : ""}</tr>`).join("")}
+// 剝皮要幾點：10 級以下 1、20 級以下 (等級−10)×10、再上去 等級×5
+const skinNeed = (lv) => (lv <= 10 ? 1 : lv <= 20 ? (lv - 10) * 10 : lv * 5);
+function needChip(skill, need) {
+  if (need == null) return "";
+  const mine = ME[skill], name = REC_PROF_NAME[skill];
+  const cls = mine == null ? "c-gy" : mine >= need ? "c-gr" : "c-no";
+  return ` <span class="chip ${cls}" title="${mine == null ? "在上方「我的專業」填等級會幫你標夠不夠" : mine >= need ? "你的等級夠" : `你 ${mine}，還差 ${need - mine}`}">需要${name} ${need}${mine != null ? (mine >= need ? " ✓" : "") : ""}</span>`;
+}
+const REC_PROF_NAME = { 186: "採礦", 182: "草藥學", 393: "剝皮" };
+// 可疑：史詩裝備在野外被一般怪高機率掉
+const suspicious = (id, m, pm) => (META[id]?.[1] === "EPIC" && pm >= 100 && !String(DROPS.mobs[m][4]).startsWith("m"));
+const SUS = '<span class="chip c-ye" title="掉率高得不尋常，可能是 60 版後期事件的資料，永恆不一定有">資料待確認</span>';
+function mobTable(list, price, gear, id, skin) {
+  return `<div class="tscroll"><table class="ptab"><thead><tr><th>怪物</th><th>等級</th><th class="lt">在哪</th><th>${gear ? "掉率" : skin ? "每隻剝到" : "每隻掉"}</th>${price != null ? "<th>每打一次值</th>" : ""}</tr></thead><tbody>
+    ${list.map(([m, pm]) => `<tr><td>${mobCell(m)}${gear && suspicious(id, m, pm) ? " " + SUS : ""}${skin ? needChip(393, skinNeed(DROPS.mobs[m][3])) : ""}</td><td class="num">${mobLv(m)}</td><td class="lt">${placeTxt(DROPS.mobs[m][4])}${DROPS.mobs[m][5] > 1 ? `<span class="mut sm">・${DROPS.mobs[m][5]} 隻</span>` : ""}</td><td class="num">${dropPct(pm)}${gear ? `<div class="mut sm">約 ${killsFor(pm)} 次一件</div>` : ""}</td>${price != null ? `<td>${money(price * pm / 1000)}</td>` : ""}</tr>`).join("")}
     </tbody></table></div>`;
 }
+const nodeSkill = (label) => (/礦脈$|礦床$/.test(label) ? 186 : 182);
 
 async function dropCards(id, r) {
   const box = $("#dropBox");
   if (!box) return;
   try { await loadDrops(); } catch (e) { return; }
   const src = DROPS.items[id];
+  gearInfo(id);
   if ($("#dropBox") !== box || !src) return;
   const gear = r.cls === "武器" || r.cls === "護甲" || r.cls === "配方";
-  const price = farmPrice(id), ask = ahPrice(id);
-  const parts = [], heads = [];
+  const price = farmPrice(id), ask = r.ask;
+  const parts = [], heads = [];   // heads: [優先序, 句子]，小的先講
   const sec = (k, html) => parts.push(`<div class="src"><div class="src-k">${k}</div><div class="src-v">${html}</div></div>`);
 
   if (src.v) {
     const [n, unit, pick] = src.v, unl = pick.some((x) => !x[1]);
-    heads.push(`<b>商店就有賣</b>，每個 ${money(unit)}${ask != null ? (unit < ask ? `，比拍賣場現價 ${money(ask)} <b class="good">便宜</b>` : `，拍賣場現價 ${money(ask)} 比較便宜`) : ""}`);
-    sec("商店", `每個 ${money(unit)}・${n} 個商人有賣${unl ? "" : "（全部限量，賣完要等補貨）"}
-      <ul>${pick.map(([m, lim]) => `<li><b>${esc(mobName(m))}</b>・${placeTxt(DROPS.mobs[m][4])}${lim ? '<span class="mut sm">・限量</span>' : ""}</li>`).join("")}</ul>`);
+    const cheaper = ask == null || unit < ask;
+    heads.push([cheaper ? 0 : 5, `<b>商店就有賣</b>，每個 ${money(unit)}${ask != null ? (cheaper ? `，比拍賣場現價 ${money(ask)} <b class="good">便宜</b>` : `（拍賣場現價 ${money(ask)} 比較便宜）`) : ""}`]);
+    sec("商店", `每個 ${money(unit)}・${n} 個聯盟或中立商人有賣${unl ? "" : "（全部限量，賣完要等補貨）"}
+      <ul>${pick.map(([m, lim]) => `<li>${mobCell(m)}・${placeTxt(DROPS.mobs[m][4])}${lim ? '<span class="mut sm">・限量</span>' : ""}</li>`).join("")}</ul>`);
   }
   if (src.g) {
     const g = src.g[0];
-    heads.push(`<b>採集</b>：${esc(g[0])}，最常在 ${zonesTxt(g[3].slice(0, 2))}`);
-    sec("採集", `<ul>${src.g.map(([lbl, pm, n, pl]) => `<li><b>${esc(lbl)}</b>${pm < 1000 ? `<span class="mut sm">・每採一次 ${dropPct(pm)}</span>` : ""}<span class="mut sm">・全世界約 ${n} 個點</span><div class="sm">${zonesTxt(pl)}</div></li>`).join("")}</ul>`);
+    heads.push([1, `<b>採集</b>：${esc(g[0])}${g[4] ? `（${REC_PROF_NAME[nodeSkill(g[0])]} ${g[4]}）` : ""}，最常在 ${zonesTxt(g[3].slice(0, 2))}`]);
+    sec("採集", `<ul>${src.g.map(([lbl, pm, n, pl, need]) => `<li><b>${esc(lbl)}</b>${needChip(nodeSkill(lbl), need)}${pm < 1000 ? `<span class="mut sm">・每採一次 ${dropPct(pm)}</span>` : ""}<span class="mut sm">・全世界約 ${n} 個點</span><div class="sm">${zonesTxt(pl)}</div></li>`).join("")}</ul>`);
+  }
+  if (src.km || src.kw) {
+    const lo = src.kw ? src.kw[1] : DROPS.mobs[src.km[0][0]][2];
+    heads.push([1, `<b>剝皮</b>：${src.kw ? `等級 ${src.kw[1]}–${src.kw[2]} 的野獸，最常在 ${placeTxt(src.kw[3][0]?.[0], true)}` : `${esc(mobName(src.km[0][0]))}（${placeTxt(DROPS.mobs[src.km[0][0]][4], true)}）`}（剝皮 ${skinNeed(lo)} 起）`]);
+    sec("剝皮", `${src.kw ? `<p class="sm">${worldTxt(src.kw, "剝")}。${needChip(393, skinNeed(src.kw[1]))}</p>` : ""}${src.km ? mobTable(src.km, null, false, id, true) : ""}`);
   }
   if (src.f) {
-    heads.push(`<b>釣魚</b>：${placeTxt(src.f[0][0], true)}`);
+    heads.push([2, `<b>釣魚</b>：${placeTxt(src.f[0][0], true)}`]);
     sec("釣魚", src.f.map(([k, pm]) => `${placeTxt(k, true)} <span class="mut sm">${dropPct(pm)}</span>`).join("、"));
   }
   if (src.d) {
-    const [q, lo, hi, pm] = src.d[0];
-    heads.push(`<b>分解</b>${QTW[q]}裝備（物品等級 ${lo}–${hi}）`);
+    const [q, lo, hi] = src.d[0];
+    heads.push([2, `<b>分解</b>${QTW[q]}裝備（物品等級 ${lo}–${hi}）`]);
     sec("分解", `<ul>${src.d.map(([q, lo, hi, pm]) => `<li>分解 <b class="q-${QCLS[q]}">${QTW[q]}</b>裝備・物品等級 ${lo}–${hi}<span class="mut sm">・${dropPct(pm)} 拿到</span></li>`).join("")}</ul><p class="mut sm">要學附魔才能分解；這一段的${QTW[src.d[0][0]]}裝備在拍賣場便宜時可以買來分。</p>`);
   }
   if (src.m) {
-    const [m, pm] = src.m[0];
-    heads.push(gear ? `<b>最好打</b>：${esc(mobName(m))}（${placeTxt(DROPS.mobs[m][4])}），掉率 ${dropPct(pm)}，大約打 ${killsFor(pm)} 次掉一件${price != null ? `，每打一次平均值 <b>${money(price * pm / 1000)}</b>` : ""}`
-      : `<b>打怪</b>：${esc(mobName(m))}（${placeTxt(DROPS.mobs[m][4], true)}）每隻 ${dropPct(pm)}`);
-    sec(gear ? "打怪" : "掉最多的怪", mobTable(src.m, gear ? price : null, gear));
+    const [m, pm] = src.m[0], pl = DROPS.mobs[m][4];
+    const rank = gear ? 1 : pl.startsWith("m") ? (isRaid(pl) ? 6 : 4) : 3;
+    if (gear || pm >= 50) heads.push([rank, gear
+      ? `<b>最好打</b>：${esc(mobName(m))}（${placeTxt(pl)}），掉率 ${dropPct(pm)}，大約打 ${killsFor(pm)} 次掉一件${price != null ? `，每打一次平均值 <b>${money(price * pm / 1000)}</b>` : ""}`
+      : `<b>打怪</b>：${esc(mobName(m))}（${placeTxt(pl, true)}）每隻 ${dropPct(pm)}`]);
+    sec(gear ? "打怪" : "最值得打的怪", `${gear ? "" : '<p class="mut sm">照「掉率 × 數量」排，好刷的在前。</p>'}${mobTable(src.m, gear ? price : null, gear, id)}`);
   }
   if (src.w) {
-    if (!src.m) heads.push(`<b>世界掉落</b>：等級 ${src.w[1]}–${src.w[2]} 的怪，最常在 ${placeTxt(src.w[3][0]?.[0], true)}`);
+    heads.push([gear && !src.m ? 1 : 7, `<b>世界掉落</b>：等級 ${src.w[1]}–${src.w[2]} 的怪，最常在 ${placeTxt(src.w[3][0]?.[0], true)}`]);
     sec("世界掉落", `${worldTxt(src.w)}${gear ? "，適合邊練等邊撿" : ""}。`);
   }
-  if (src.km || src.kw) {
-    if (src.km) heads.push(`<b>剝皮</b>：${esc(mobName(src.km[0][0]))}（${placeTxt(DROPS.mobs[src.km[0][0]][4], true)}）`);
-    sec("剝皮", `${src.kw ? `<p class="sm">${worldTxt(src.kw).replace("掉一件", "剝到一件").replace("都可能掉", "剝得到")}。</p>` : ""}${src.km ? mobTable(src.km, null, false) : ""}`);
-  }
+  heads.sort((a, b) => a[0] - b[0]);
   const made = typeof REC !== "undefined" && REC && REC.made.get(id);
   box.innerHTML = `<div class="card"><h3>${gear ? "去哪裡打" : "哪裡取得"}</h3>
-    <p class="desc">${heads.slice(0, 3).join("；")}。${made ? "也可以自己做，見上面的「怎麼做出來」。" : ""}</p>
+    <p class="desc">${heads.slice(0, 2).map((h) => h[1]).join("；")}。${made ? "也可以自己做，見上面的「怎麼做出來」。" : ""}</p>
     <div class="srcs">${parts.join("")}</div>
-    <p class="mut sm">${DROP_NOTE}</p></div>`;
+    <p class="mut sm">${DROP_NOTE} ${reportLink(id, gear ? "掉落" : "取得方式")}</p></div>`;
 }
 
-const fstate = { sort: "value", cls: "", shown: 50 };
+// 裝備：需求等級、類型、誰能用（60 版職業武器／護甲熟練）
+const CLASSES = ["戰士", "聖騎士", "獵人", "盜賊", "牧師", "薩滿", "法師", "術士", "德魯伊"];
+const WEAP = { 戰士: [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 13, 15, 16, 18], 聖騎士: [0, 1, 4, 5, 6, 7, 8], 獵人: [0, 1, 2, 3, 6, 7, 8, 10, 13, 15, 18], 盜賊: [2, 3, 4, 7, 13, 15, 16, 18], 牧師: [4, 10, 15, 19], 薩滿: [0, 1, 4, 5, 10, 13, 15], 法師: [7, 10, 15, 19], 術士: [7, 10, 15, 19], 德魯伊: [4, 5, 10, 13, 15] };
+const ARM = { 戰士: [0, 1, 2, 3, 4, 6], 聖騎士: [0, 1, 2, 3, 4, 6, 7], 獵人: [0, 1, 2, 3], 盜賊: [0, 1, 2], 牧師: [0, 1], 薩滿: [0, 1, 2, 3, 6, 9], 法師: [0, 1], 術士: [0, 1], 德魯伊: [0, 1, 2, 8] };
+const WSUB = { 0: "單手斧", 1: "雙手斧", 2: "弓", 3: "槍械", 4: "單手錘", 5: "雙手錘", 6: "長柄武器", 7: "單手劍", 8: "雙手劍", 10: "法杖", 13: "拳套", 14: "雜項", 15: "匕首", 16: "投擲武器", 18: "弩", 19: "魔杖", 20: "魚竿" };
+const ASUB = { 0: "", 1: "布甲", 2: "皮甲", 3: "鎖甲", 4: "鎧甲", 6: "盾牌", 7: "聖契", 8: "塑像", 9: "圖騰" };
+const SLOT = { 1: "頭部", 2: "頸部", 3: "肩部", 4: "襯衣", 5: "胸部", 6: "腰部", 7: "腿部", 8: "腳", 9: "手腕", 10: "手", 11: "手指", 12: "飾品", 13: "單手", 14: "副手", 15: "遠程", 16: "背部", 17: "雙手", 19: "外袍", 20: "胸部", 21: "主手", 22: "副手", 23: "副手", 25: "投擲", 26: "遠程", 28: "聖物" };
+const usable = (g, cls) => (g[1] === 2 ? WEAP[cls].includes(g[2]) || g[2] === 14 || g[2] === 20 : ARM[cls].includes(g[2]));
+function gearKind(g) { return g[1] === 2 ? WSUB[g[2]] || "武器" : [SLOT[g[3]], ASUB[g[2]]].filter(Boolean).join("・"); }
+function gearInfo(id) {
+  const el = $("#gearInfo"), g = DROPS?.gear?.[id];
+  if (!el || !g) return;
+  const who = CLASSES.filter((c) => usable(g, c));
+  el.innerHTML = `${g[0] > 1 ? `需求等級 <b>${g[0]}</b>・` : ""}${esc(gearKind(g))}・${who.length === CLASSES.length ? "所有職業可用" : `${who.join("、")}可用`}`;
+  el.hidden = false;
+}
+
+// 我的角色（只存本機）：打寶頁用來篩打得到的副本、能用的裝備
+let CHAR = { lv: null, cls: "" };
+try { Object.assign(CHAR, JSON.parse(localStorage.getItem("wowah.char") || "{}")); } catch (e) {}
+const saveChar = () => { try { localStorage.setItem("wowah.char", JSON.stringify(CHAR)); } catch (e) {} };
+// 打得到嗎：副本看建議等級下限、團隊要 58 級以上；野外看怪的等級
+function reachPlace(pl, lv) {
+  if (lv == null) return true;
+  const p = DROPS.places[pl];
+  if (!p || !p[1]) return true;
+  return isRaid(pl) ? lv >= 58 : (p[2] || 0) <= lv + 2;
+}
+function reachItem(id, lv) {
+  if (lv == null) return true;
+  const { m: named = [], w } = DROPS.items[id] || {};
+  if (named.some(([m]) => { const x = DROPS.mobs[m]; return String(x[4]).startsWith("m") ? reachPlace(x[4], lv) : x[2] <= lv + 3; })) return true;
+  return !!w && w[1] <= lv + 3;
+}
+
+const fstate = { sort: "value", cls: "", kind: "", reach: true, mine: false, shown: 50 };
 async function showFarm() {
   $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true;
   const view = $("#farmView");
   view.hidden = false;
-  view.innerHTML = '<p class="mut">讀取掉落資料…</p>';
+  if (!DROPS) view.innerHTML = '<div class="skel"><i></i><i></i><i></i></div>';
   window.scrollTo(0, 0);
   try { await loadDrops(); } catch (e) { view.innerHTML = "<p>掉落資料讀取失敗。</p>"; return; }
   document.title = "打寶賺錢｜魔獸世界：永恆 台服副本掉落與拍賣場價格";
   track("ah_farm");
-
-  // 副本：每趟清一次，指定掉落（不含世界掉落）的拍賣場價值加總
+  renderFarm(view);
+}
+function renderFarm(view) {
+  const lv = CHAR.lv;
+  // 副本：清一趟，指定掉落（不含世界掉落）的拍賣場價值加總，再除以隊伍人數
   const inst = new Map();
   for (const [k, { m: named = [] }] of Object.entries(DROPS.items)) {
     const id = +k, r = ROWBY.get(id), v = farmPrice(id);
@@ -1078,39 +1180,58 @@ async function showFarm() {
       inst.set(pl, e);
     }
   }
-  const insts = [...inst.values()].sort((a, b) => b.ev - a.ev);
+  const insts = [...inst.values()].map((e) => ({ ...e, players: DROPS.places[e.pl][1], each: e.ev / DROPS.places[e.pl][1] }))
+    .filter((e) => (!fstate.kind || (fstate.kind === "raid") === isRaid(e.pl)) && (!fstate.reach || reachPlace(e.pl, lv)))
+    .sort((a, b) => b.each - a.each);
   const best = insts[0];
 
-  const gear = ROWS.filter((r) => (DROPS.items[r.id]?.m || DROPS.items[r.id]?.w) && (r.cls === "武器" || r.cls === "護甲" || r.cls === "配方") && r.vol7 > 0 && (!fstate.cls || r.cls === fstate.cls));
+  const gear = ROWS.filter((r) => (DROPS.items[r.id]?.m || DROPS.items[r.id]?.w) && (r.cls === "武器" || r.cls === "護甲" || r.cls === "配方") && r.vol7 > 0
+    && (!fstate.cls || r.cls === fstate.cls) && (!fstate.reach || reachItem(r.id, lv))
+    && (!fstate.mine || !CHAR.cls || !DROPS.gear[r.id] || usable(DROPS.gear[r.id], CHAR.cls)));
   const key = fstate.sort === "price" ? (r) => r.avg7 ?? r.ask ?? 0 : (r) => (r.avg7 ?? r.ask ?? 0) * r.vol7;
   gear.sort((a, b) => key(b) - key(a));
   const top = gear[0];
+  const who = lv ? `以你 ${lv} 級${CHAR.cls ? CHAR.cls : ""}` : "";
 
   view.innerHTML = `<div class="card"><h3>打寶賺錢</h3>
-    <p class="desc">哪些裝備、配方在台服拍賣場賣得又貴又多，去哪裡打得到；哪個副本清一趟掉的東西最值錢。只算<b>沒綁定、拍賣場 7 天內有成交</b>的東西，價格用 7 日均扣 5% 手續費。</p>
-    ${best ? `<p class="headline">現在最值得刷：<b>${placeTxt(best.pl)}</b>，清一趟平均掉 <b>${money(best.ev)}</b> 的可賣裝備${top ? `；拍賣場最好賣的可打裝備是 ${gearLink(top.id)}（7 天賣掉 ${fmtN(top.vol7)} 件，均價 ${money(top.avg7 ?? top.ask)}）` : ""}。</p>` : ""}
+    <p class="desc">哪些裝備、配方在台服拍賣場賣得又貴又多，去哪裡打得到；哪個副本清一趟、每個人分到的掉落最值錢。只算<b>沒綁定、拍賣場 7 天內有成交</b>的東西，價格用平均價（7 日）扣 5% 手續費。</p>
+    <div class="filters pfilters charbar">
+      <label>我的等級 <input type="number" id="cLv" min="1" max="60" inputmode="numeric" class="numin" value="${lv ?? ""}" placeholder="例如 40"></label>
+      <label>職業 <select id="cCls"><option value="">不指定</option>${CLASSES.map((c) => `<option${c === CHAR.cls ? " selected" : ""}>${c}</option>`).join("")}</select></label>
+      <label><input type="checkbox" id="fReach" ${fstate.reach ? "checked" : ""} ${lv ? "" : "disabled"}> 只看我打得到的</label>
+      <span class="mut sm">只存在這台裝置。</span>
+    </div>
+    ${best ? `<p class="headline">${who ? who + "，" : ""}現在最值得刷：<b>${placeTxt(best.pl)}</b>，清一趟平均掉 ${money(best.ev)} 的可賣掉落${best.players > 1 ? `，${best.players} 人分每人約 <b>${money(best.each)}</b>` : ""}${top ? `；拍賣場最好賣的${lv && fstate.reach ? "打得到的" : "可打"}裝備是 ${gearLink(top.id)}（7 天賣掉 ${fmtN(top.vol7)} 件，平均價 ${money(top.avg7 ?? top.ask)}）` : ""}。</p>` : `<p class="headline">${lv ? `以你 ${lv} 級，目前沒有打得到、又在拍賣場有成交的副本掉落。` : "目前拍賣場上沒有副本掉落的成交。"}</p>`}
     <p class="mut sm">${DROP_NOTE}</p></div>
 
-    <div class="card"><h3>哪個副本最值得刷</h3><p class="desc">每趟期望值＝每隻怪的掉率 × 怪的數量 × 拍賣場價格，加總整個副本。只算指定掉落，世界掉落（每隻萬分之幾的那種）沒算進去，所以實際會再多一點。</p>
-    <div class="tscroll"><table class="ptab"><thead><tr><th>副本・每趟期望值</th><th class="lt">最值錢的掉落</th></tr></thead><tbody>
+    <div class="card"><h3>哪個副本最值得刷</h3><p class="desc">每趟期望值＝每隻怪的掉率 × 怪的數量 × 拍賣場價格，加總整個副本，再除以隊伍人數＝每人分到多少。只算指定掉落，世界掉落沒算進去，實際會再多一點。</p>
+    <div class="seg" id="fKind" role="group" aria-label="副本類型"><button data-v="" aria-pressed="${!fstate.kind}">全部</button><button data-v="party" aria-pressed="${fstate.kind === "party"}">5 人副本</button><button data-v="raid" aria-pressed="${fstate.kind === "raid"}">團隊副本</button></div>
+    <div class="tscroll"><table class="ptab"><thead><tr><th>副本</th><th>每人每趟</th><th class="lt">最值錢的掉落</th></tr></thead><tbody>
     ${insts.map((e) => { const its = [...e.items.values()].sort((a, b) => b.ev - a.ev).slice(0, 3);
-      return `<tr><td><b>${placeTxt(e.pl)}</b><div class="num">每趟 ${money(e.ev)}</div></td><td class="lt drops">${its.map((it) => `<div>${gearLink(it.id)} <span class="mut sm">${esc(mobName(it.m))} ${dropPct(it.pm)}・${money(farmPrice(it.id), true)}</span></div>`).join("")}</td></tr>`; }).join("") || '<tr><td colspan="2" class="mut">目前拍賣場上沒有副本掉落的成交。</td></tr>'}
+      return `<tr><td><b>${placeTxt(e.pl)}</b></td><td class="num">${money(e.each)}<div class="mut sm">整趟 ${money(e.ev, true)}</div></td><td class="lt drops">${its.map((it) => `<div>${gearLink(it.id)} <span class="mut sm">${esc(mobName(it.m))} ${dropPct(it.pm)}・${money(farmPrice(it.id), true)}</span></div>`).join("")}</td></tr>`; }).join("") || `<tr><td colspan="3" class="mut">${lv && fstate.reach ? `以你 ${lv} 級打得到的副本，目前拍賣場上沒有它們掉落的成交。取消「只看我打得到的」可以看全部。` : "目前拍賣場上沒有副本掉落的成交。"}</td></tr>`}
     </tbody></table></div></div>
 
     <div class="card"><h3>拍賣場上最值錢的可打裝備</h3>
       <div class="filters pfilters">
         <div class="seg" id="fSort" role="group" aria-label="排序"><button data-v="value" aria-pressed="${fstate.sort === "value"}">7 天成交金額</button><button data-v="price" aria-pressed="${fstate.sort === "price"}">單價最高</button></div>
         <div class="seg" id="fCls" role="group" aria-label="類別"><button data-v="" aria-pressed="${!fstate.cls}">全部</button><button data-v="武器" aria-pressed="${fstate.cls === "武器"}">武器</button><button data-v="護甲" aria-pressed="${fstate.cls === "護甲"}">護甲</button><button data-v="配方" aria-pressed="${fstate.cls === "配方"}">配方</button></div>
+        <label${CHAR.cls ? "" : " hidden"}><input type="checkbox" id="fMine" ${fstate.mine ? "checked" : ""}> 只看${esc(CHAR.cls)}能用的</label>
       </div>
-      <div class="tscroll"><table class="ptab"><thead><tr><th>裝備</th><th>7 日均</th><th>7 天成交</th><th class="lt">去哪打</th></tr></thead><tbody>
-      ${gear.slice(0, fstate.shown).map((r) => `<tr><td>${gearLink(r.id)}</td><td>${money(r.avg7 ?? r.ask)}</td><td class="num">${fmtN(r.vol7)}</td><td class="lt sm">${dropShort(r.id)}</td></tr>`).join("") || '<tr><td colspan="4" class="mut">沒有符合的裝備。</td></tr>'}
+      <div class="tscroll"><table class="ptab"><thead><tr><th>裝備</th><th>需求</th><th>平均價（7 日）</th><th>7 天成交</th><th class="lt">去哪打</th></tr></thead><tbody>
+      ${gear.slice(0, fstate.shown).map((r) => { const g = DROPS.gear[r.id];
+        return `<tr><td>${gearLink(r.id)}${CHAR.cls && g && usable(g, CHAR.cls) ? ` <span class="chip c-gr">${esc(CHAR.cls)}可用</span>` : ""}</td><td class="sm">${g ? `${g[0] > 1 ? `Lv ${g[0]}・` : ""}${esc(gearKind(g))}` : '<span class="mut">—</span>'}</td><td>${money(r.avg7 ?? r.ask)}</td><td class="num">${fmtN(r.vol7)}</td><td class="lt sm">${dropShort(r.id)}</td></tr>`; }).join("") || '<tr><td colspan="5" class="mut">沒有符合的裝備。</td></tr>'}
       </tbody></table></div>
       ${gear.length > fstate.shown ? `<button class="more" id="fMore">顯示更多（還有 ${gear.length - fstate.shown} 件）</button>` : ""}
     </div>`;
-  const seg = (sel, k) => $(sel).querySelectorAll("button").forEach((b) => (b.onclick = () => { fstate[k] = b.dataset.v; fstate.shown = 50; showFarm(); }));
-  seg("#fSort", "sort"); seg("#fCls", "cls");
+  const rer = () => renderFarm(view);
+  const seg = (sel, k) => $(sel).querySelectorAll("button").forEach((b) => (b.onclick = () => { fstate[k] = b.dataset.v; fstate.shown = 50; rer(); }));
+  seg("#fSort", "sort"); seg("#fCls", "cls"); seg("#fKind", "kind");
+  $("#cLv").onchange = (e) => { const v = Math.round(+e.target.value); CHAR.lv = v >= 1 && v <= 60 ? v : null; saveChar(); rer(); };
+  $("#cCls").onchange = (e) => { CHAR.cls = e.target.value; saveChar(); rer(); };
+  $("#fReach").onchange = (e) => { fstate.reach = e.target.checked; rer(); };
+  const fm = $("#fMine"); if (fm) fm.onchange = (e) => { fstate.mine = e.target.checked; rer(); };
   const more = $("#fMore");
-  if (more) more.onclick = () => { fstate.shown += 50; showFarm(); };
+  if (more) more.onclick = () => { fstate.shown += 50; rer(); };
 }
 function gearLink(id) {
   const m = META[id] || [];
@@ -1146,12 +1267,12 @@ async function craftCards(id, r) {
     }).sort((a, b) => (a.unit ?? Infinity) - (b.unit ?? Infinity));
     const best = rows[0];
     const head = best.unit != null && ask != null
-      ? (best.unit < ask ? `自己用<b>${esc(pname(best.rc))}</b>做，每個成本 ${money(best.unit)}，比拍賣場現價 ${money(ask)} <b class="good">省 ${pct(1 - best.unit / ask).replace("+", "")}</b>。`
-        : `拍賣場直接買（${money(ask)}）比自己做（${money(best.unit)}）便宜。`)
+      ? (best.unit < ask ? `自己用<b>${esc(pname(best.rc))}</b>做，每個成本 ${money(best.unit)}，比拍賣場${basisName()} ${money(ask)} <b class="good">省 ${pct(1 - best.unit / ask).replace("+", "")}</b>。`
+        : `拍賣場直接買（${basisName()} ${money(ask)}）比自己做（${money(best.unit)}）便宜。`)
       : "";
     html += `<div class="card"><h3>怎麼做出來</h3><p class="desc">${made.length > 1 ? `有 ${new Set(made.map((x) => x[1])).size} 個專業做得出來。` : ""}${head}材料成本用「${BASIS_LABEL[pstate.basis] || "7 日均"}」算，能自己做的中間材料會挑便宜的方式。</p>
       <div class="tscroll"><table class="ptab"><thead><tr><th>專業</th><th>材料</th><th>每個成本</th><th>學習／升級</th></tr></thead><tbody>
-      ${rows.map((x) => `<tr><td><a href="#/prof/${x.rc[1]}"><b>${esc(pname(x.rc))}</b></a>${myColor(x.rc) ? `<div>${myColor(x.rc)}</div>` : ""}${x.rc[2] && x.rc[2] !== r.name ? `<div class="mut sm">${esc(x.rc[2])}</div>` : ""}${x.rc[9] > 1 ? `<div class="mut sm">一次做 ${x.rc[9]} 個</div>` : ""}</td>
+      ${rows.map((x) => `<tr><td><a href="#/prof/${x.rc[1]}"><b>${esc(pname(x.rc))}</b></a>${foreverChip(x.rc)}${myColor(x.rc) ? `<div>${myColor(x.rc)}</div>` : ""}${x.rc[2] && x.rc[2] !== r.name ? `<div class="mut sm">${esc(x.rc[2])}</div>` : ""}${x.rc[9] > 1 ? `<div class="mut sm">一次做 ${x.rc[9]} 個</div>` : ""}</td>
         <td class="mats">${matsHtml(x.rc)}</td><td>${money(x.unit)}</td><td class="sm">${colors(x.rc)}<div class="mut">${srcTxt(x.rc)}</div></td></tr>`).join("")}
       </tbody></table></div></div>`;
   }
@@ -1173,22 +1294,49 @@ async function craftCards(id, r) {
     const mineTop = rows.find((x) => x.per != null && x.vol > 0 && !x.rc[12] && ME[x.rc[1]] != null && ME[x.rc[1]] >= (x.rc[3] || x.rc[4]));
     const warn = (x) => (x.vol != null && x.vol < 3 ? ` <span class="warn">⚠ 24h 只賣掉 ${x.vol} 個，量小</span>` : "");
     if (top && sellNow != null) {
+      const first = rows.find((x) => x.per != null);
+      const why = first && first !== top && first.per > top.per
+        ? `（表格第一名${esc(REC.items[first.rc[8]]?.[0] || "")}${first.rc[12] ? `有冷卻，一天做不了幾個` : first.vol === 0 ? "24h 沒有成交" : "賣不掉"}，所以不推薦）`
+        : "";
       head = top.per > sellNow
-        ? `直接賣每個約 ${money(sellNow)}；拿去做<b>${esc(REC.items[top.rc[8]]?.[0] || "")}</b>（${esc(pname(top.rc))}），每個材料等於賣到 ${money(top.per)}，<b class="good">${more(top.per, sellNow)}</b>。${warn(top)}`
-        : `直接賣（每個約 ${money(sellNow)}）比拿去做任何東西都划算。`;
+        ? `直接掛拍賣每個約 ${money(sellNow)}（${basisName()}扣 5%）；拿去做<b>${esc(REC.items[top.rc[8]]?.[0] || "")}</b>（${esc(pname(top.rc))}），每個材料等於賣到 ${money(top.per)}，<b class="good">${more(top.per, sellNow)}</b>${why}。${warn(top)}`
+        : `直接賣（每個約 ${money(sellNow)}，${basisName()}扣 5%）比拿去做任何東西都划算。`;
       if (mineTop && mineTop !== top) head += `<br>用你會的專業：做<b>${esc(REC.items[mineTop.rc[8]]?.[0] || "")}</b>（${esc(pname(mineTop.rc))}），每個材料值 ${money(mineTop.per)}${mineTop.per > sellNow ? `，<b class="good">${more(mineTop.per, sellNow)}</b>` : "，不如直接賣"}${myColor(mineTop.rc) ? "　" + myColor(mineTop.rc) : ""}。${warn(mineTop)}`;
     }
-    html += `<div class="card"><h3>可以做成什麼</h3><p class="desc">${head ? head + "<br>" : ""}「每個材料值」＝（產物賣價 − 其他材料）÷ 需要幾個這個材料，比直接賣高就代表做了比較賺。24h 成交看產物賣不賣得掉。</p>
-      <div class="tscroll"><table class="ptab uses"><thead><tr><th>產物</th><th>每個材料值</th><th>24h 成交</th><th>專業</th><th>需要</th><th>其他材料</th><th>產物賣價</th></tr></thead><tbody>
-      ${rows.slice(0, 30).map((x) => `<tr><td>${recItem(x.rc[8])}${x.rc[9] > 1 ? ` <span class="mut sm">×${x.rc[9]}</span>` : ""}${x.rc[12] ? `<div class="mut sm">冷卻 ${x.rc[12] >= 24 ? Math.round(x.rc[12] / 2.4) / 10 + " 天" : x.rc[12] + " 小時"}，一天做不了幾個</div>` : ""}</td>
-        <td>${x.per == null ? '<span class="mut">缺價格</span>' : `<span class="${sellNow != null && x.per > sellNow ? "good" : "neg"}">${money(x.per)}</span>`}</td>
-        <td class="num">${fmtN(x.vol)}${x.vol != null && x.vol < 3 ? ' <span class="warn">量小</span>' : ""}</td>
-        <td><a href="#/prof/${x.rc[1]}">${esc(pname(x.rc))}</a><div>${myColor(x.rc) || colors(x.rc)}</div></td><td class="num">${x.own}</td>
-        <td class="mats">${matsHtml(x.rc, id)}<div class="mut sm">${x.other ? money(x.other, true) : ""}</div></td>
-        <td>${money(x.ov.v)}<div class="mut sm">${x.ov.via}</div></td></tr>`).join("")}
-      </tbody></table></div>${rows.length > 30 ? `<p class="mut sm">只列前 30 個，共 ${rows.length} 個配方用到它。</p>` : ""}</div>`;
+    html += `<div class="card"><h3>可以做成什麼</h3><p class="desc">${head ? head + "<br>" : ""}「每個材料值」＝（產物賣價 − 其他材料）÷ 需要幾個這個材料，比直接賣高就代表做了比較賺。價格都用${basisName()}。24h 成交看產物賣不賣得掉。</p>
+      <div class="seg" id="uTabs" role="group" aria-label="專業"></div><div id="uBody"></div></div>`;
+    usesState = { rows, sellNow, id, tab: null, open: new Set() };
   }
   box.innerHTML = html;
+  if (usesState && usesState.id === id && $("#uTabs")) drawUses();
+}
+// 可以做成什麼：分專業分頁，有設「我的專業」時先看自己的；每組先列 5 個
+let usesState = null;
+function drawUses() {
+  const { rows, sellNow, id } = usesState;
+  const profsIn = [...new Set(rows.map((x) => x.rc[1]))];
+  const mine = profsIn.filter((k) => ME[k] != null);
+  if (usesState.tab == null) usesState.tab = mine.length ? "mine" : "all";
+  const tabs = [...(mine.length ? [["mine", `我的專業（${mine.map((k) => REC.profs[k][0]).join("、")}）`]] : []), ["all", "全部"], ...profsIn.map((k) => [String(k), REC.profs[k][0]])];
+  $("#uTabs").innerHTML = tabs.map(([k, n]) => `<button data-v="${k}" aria-pressed="${usesState.tab === k}">${esc(n)}</button>`).join("");
+  $("#uTabs").querySelectorAll("button").forEach((b) => (b.onclick = () => { usesState.tab = b.dataset.v; drawUses(); }));
+  const pick = usesState.tab === "all" ? profsIn : usesState.tab === "mine" ? mine : [+usesState.tab];
+  const cantLearn = (x) => ME[x.rc[1]] != null && ME[x.rc[1]] < (x.rc[3] || x.rc[4]);
+  const pname = (rc) => REC.profs[rc[1]][0];
+  const colors = (rc) => `<span class="mut sm">${rc[3] ? rc[3] + " 學・" : ""}${rc[4]} 黃・${Math.floor((rc[4] + rc[5]) / 2)} 綠・${rc[5]} 灰</span>`;
+  const matsHtml = (rc) => rc[10].filter(([m]) => m !== id).map(([m, n]) => `<span>${recItem(m, 16)}×${n}</span>`).join("") || '<span class="mut">—</span>';
+  const row = (x) => `<tr><td>${recItem(x.rc[8])}${x.rc[9] > 1 ? ` <span class="mut sm">×${x.rc[9]}</span>` : ""}${foreverChip(x.rc)}${x.rc[12] ? `<div class="mut sm">冷卻 ${x.rc[12] >= 24 ? Math.round(x.rc[12] / 2.4) / 10 + " 天" : x.rc[12] + " 小時"}，一天做不了幾個</div>` : ""}</td>
+    <td>${x.per == null ? '<span class="mut">缺價格</span>' : `<span class="${sellNow != null && x.per > sellNow ? "good" : "neg"}">${money(x.per)}</span>`}</td>
+    <td class="num">${fmtN(x.vol)}${x.vol != null && x.vol < 3 ? ' <span class="warn">量小</span>' : ""}</td>
+    <td><a href="#/prof/${x.rc[1]}">${esc(pname(x.rc))}</a><div>${cantLearn(x) ? `<span class="chip c-no">還差 ${(x.rc[3] || x.rc[4]) - ME[x.rc[1]]} 級</span>` : myColor(x.rc) || colors(x.rc)}</div></td><td class="num">${x.own}</td>
+    <td class="mats">${matsHtml(x.rc)}<div class="mut sm">${x.other ? money(x.other, true) : ""}</div></td>
+    <td>${money(x.ov.v)}<div class="mut sm">${x.ov.via}</div></td></tr>`;
+  const groups = pick.map((k) => { const g = rows.filter((x) => x.rc[1] === k); return [k, [...g.filter((x) => !cantLearn(x)), ...g.filter(cantLearn)]]; }).filter(([, g]) => g.length);
+  $("#uBody").innerHTML = groups.map(([k, g]) => { const open = usesState.open.has(k), show = open ? g : g.slice(0, 5);
+    return `<h4 class="ugrp">${esc(REC.profs[k][0])}<span class="mut sm">・${g.length} 個配方</span></h4>
+    <div class="tscroll"><table class="ptab uses"><thead><tr><th>產物</th><th>每個材料值</th><th>24h 成交</th><th>專業</th><th>需要</th><th>其他材料</th><th>產物賣價</th></tr></thead><tbody>${show.map(row).join("")}</tbody></table></div>
+    ${g.length > 5 ? `<button class="clr" data-more="${k}">${open ? "收起" : `顯示全部 ${g.length} 個`}</button>` : ""}`; }).join("") || '<p class="mut">這個分類沒有配方。</p>';
+  $("#uBody").querySelectorAll("[data-more]").forEach((b) => (b.onclick = () => { const k = +b.dataset.more; usesState.open.has(k) ? usesState.open.delete(k) : usesState.open.add(k); drawUses(); }));
 }
 
 /* ---------------- 我的專業 ---------------- */
@@ -1272,27 +1420,51 @@ function startWatcher() {
     } catch (e) {}
   }, 10 * 60 * 1000);
 }
+// 金銀銅：「1g20s」「40s」「40 銀」「1金20銀5銅」「1.5」（沒寫單位＝金）都看得懂；看不懂回 NaN
+function parseMoney(t) {
+  t = String(t).trim().toLowerCase().replace(/\s+/g, "").replace(/金/g, "g").replace(/銀/g, "s").replace(/銅/g, "c");
+  if (!t) return null;
+  if (/^\d+(\.\d+)?$/.test(t)) return Math.round(+t * 10000);
+  const m = t.match(/^(?:(\d+(?:\.\d+)?)g)?(?:(\d+(?:\.\d+)?)s)?(?:(\d+)c)?$/);
+  if (!m || !(m[1] || m[2] || m[3])) return NaN;
+  return Math.round((+m[1] || 0) * 10000 + (+m[2] || 0) * 100 + (+m[3] || 0));
+}
+const moneyTxt = (c) => { if (c == null) return ""; const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cc = c % 100; return `${g ? g + "g" : ""}${s ? s + "s" : ""}${cc || (!g && !s) ? cc + "c" : ""}`; };
+const alertGap = (target, ask) => (ask ? pct(target / ask - 1) : "—");
+function alertState(id) {
+  const a = ALERTS[id], r = ROWBY.get(+id);
+  if (!a) return "";
+  const hit = alertHit(id), parts = [];
+  if (a.hi != null) parts.push(`賣 ≥ ${money(a.hi, true)}${r?.ask ? `（${hit?.kind === "sell" ? "到價了" : "還差 " + alertGap(a.hi, r.ask)}）` : ""}`);
+  if (a.lo != null) parts.push(`買 ≤ ${money(a.lo, true)}${r?.ask ? `（${hit?.kind === "buy" ? "到價了" : "還差 " + alertGap(a.lo, r.ask)}）` : ""}`);
+  return parts.join("・");
+}
 function alertBox(id, r) {
   const a = ALERTS[id] || {};
-  const g = (c) => (c == null ? "" : +(c / 10000).toFixed(4));
-  return `<div class="alertset"><b>🔔 價格提醒</b>
-    <label>漲到 <input type="number" step="0.01" min="0" id="aHi" value="${g(a.hi)}" placeholder="${r.ask ? g(Math.round(r.ask * 1.2)) : ""}"> g 以上通知我賣</label>
-    <label>跌到 <input type="number" step="0.01" min="0" id="aLo" value="${g(a.lo)}" placeholder="${r.ask ? g(Math.round(r.ask * 0.8)) : ""}"> g 以下通知我買</label>
-    <span class="mut sm">單位是金（0.25 = 25 銀）。存在這台裝置，回到列表最上面會亮燈。</span></div>`;
+  const ph = (k) => (r.ask ? moneyTxt(Math.round(r.ask * k)) : "");
+  return `<div class="alertset" id="aBox"><b>🔔 價格提醒</b>
+    <label>漲到 <input type="text" inputmode="text" id="aHi" value="${moneyTxt(a.hi)}" placeholder="例如 ${ph(1.1)}"> 以上通知我賣</label>
+    <label>跌到 <input type="text" inputmode="text" id="aLo" value="${moneyTxt(a.lo)}" placeholder="例如 ${ph(0.9)}"> 以下通知我買</label>
+    <span class="mut sm">照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>都可以。存在這台裝置，到價時列表最上面會亮燈。</span>
+    <div class="astate" id="aState" aria-live="polite">${ALERTS[id] ? `✓ 已設定：${alertState(id)} <button class="clr" id="aDel">取消提醒</button>` : ""}</div></div>`;
 }
 function bindAlertBox(id) {
   const upd = () => {
-    const hi = $("#aHi").value.trim(), lo = $("#aLo").value.trim();
-    const a = { hi: hi === "" ? null : Math.round(+hi * 10000), lo: lo === "" ? null : Math.round(+lo * 10000) };
-    if (a.hi == null && a.lo == null) delete ALERTS[id]; else { ALERTS[id] = a; watch.add(id); saveWatch(); }
+    const hi = parseMoney($("#aHi").value), lo = parseMoney($("#aLo").value);
+    if (Number.isNaN(hi) || Number.isNaN(lo)) { $("#aState").innerHTML = '<span class="warn">看不懂這個價格，請寫成 1g20s、40s 或 40 銀。</span>'; return; }
+    if (hi == null && lo == null) delete ALERTS[id]; else { ALERTS[id] = { hi, lo }; watch.add(id); saveWatch(); }
     saveAlerts(); renderAlerts(); track("ah_alert", { item_id: id });
+    $("#aState").innerHTML = ALERTS[id] ? `✓ 已設定：${alertState(id)} <button class="clr" id="aDel">取消提醒</button>` : "已取消提醒。";
+    bindDel();
   };
+  const bindDel = () => { const d = $("#aDel"); if (d) d.onclick = () => { $("#aHi").value = ""; $("#aLo").value = ""; upd(); }; };
   $("#aHi").onchange = upd; $("#aLo").onchange = upd;
+  bindDel();
 }
 
-function clearFilters() {
-  Object.assign(state, { q: "", cls: "", sub: "", sig: "", shown: 100 });
-  $("#q").value = ""; $("#cls").value = ""; fillSubs();
+function clearFilters() {   // 搜尋字留著：玩家剛打的字不該被清掉
+  Object.assign(state, { cls: "", sub: "", sig: "", shown: 100 });
+  $("#cls").value = ""; fillSubs();
   $("#sig").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === "")));
   saveFilters(); renderList();
 }
@@ -1312,6 +1484,9 @@ const QN = ["POOR", "COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"];
 const CAPS = [75, 150, 225, 300], RANKS = ["學徒", "熟手", "專家", "大師"];
 const AH_CUT = 0.95;
 const BASIS_LABEL = { avg7: "7 日均", ask: "現價", median: "掛單中位數" };
+// 句子裡的價格名稱：「現價」只指最低一口，其他基準照實寫
+const BASIS_NAME = { avg7: "平均價（7 日）", ask: "現價（最低一口）", median: "掛單中位數" };
+const basisName = () => BASIS_NAME[pstate.basis] || BASIS_NAME.avg7;
 const OUT_LABEL = { vendor: "賣商店", ah: "掛拍賣扣 5%", none: "不賣" };
 const pstate = { from: 1, to: 300, basis: "avg7", out: "vendor" };
 try { Object.assign(pstate, JSON.parse(localStorage.getItem("wowah.prof") || "{}")); } catch (e) {}
@@ -1356,10 +1531,19 @@ const obtainable = (rc) => rc[6] === "t" || rc[6] === "a" || (typeof rc[6] === "
 const recipeFee = (rc) => (typeof rc[6] === "string" ? rc[7] : buyPrice(rc[6]) || 0);
 const chance = (rc, s) => (s < rc[4] ? 1 : rc[5] > rc[4] ? (rc[5] - s) / (rc[5] - rc[4]) : 0);
 
+// 我會的採集專業採得到的原料（勾「自己採的不算錢」時成本當 0）
+const GATHER_PROFS = [186, 182, 393];
+const myGatherProfs = () => GATHER_PROFS.filter((k) => ME[k] != null);
+function ownSet() {
+  const set = new Set();
+  if (pstate.own) for (const k of myGatherProfs()) for (const id of REC.gather[k] || []) set.add(id);
+  return set;
+}
 // 材料成本：買比較便宜就買，自己做（同專業、技能夠）比較便宜就做，最多往下拆三層
-function coster(skill, s) {
-  const memo = new Map(), byOut = REC.byOut[skill] || new Map();
+function coster(skill, s, useOwn = false) {   // useOwn：只有練等路線、賺錢配方會算「自己採的不算錢」，商品頁照市價
+  const memo = new Map(), byOut = REC.byOut[skill] || new Map(), own = useOwn ? ownSet() : new Set();
   function unit(id, depth) {
+    if (own.has(id)) return { c: REC.items[id]?.[2] || 0, via: null, own: true };   // 自己採的：只算商店收購價（本來至少能賣這麼多）
     if (memo.has(id)) return memo.get(id);
     memo.set(id, null);
     const b = buyPrice(id);
@@ -1390,7 +1574,7 @@ function rankFees(skill, from, to) {
 function planLevel(skill, from, to) {
   const list = REC.byProf[skill] || [];
   const costers = [];
-  for (let s = from; s < to; s++) costers[s] = coster(skill, s);
+  for (let s = from; s < to; s++) costers[s] = coster(skill, s, true);
   let used = new Map(), plan;
   for (let pass = 0; pass < 3; pass++) {
     plan = [];
@@ -1437,7 +1621,7 @@ function planLevel(skill, from, to) {
 
 // 滿級後的賺錢配方：產物掛拍賣（扣 5%）− 材料，乘上 24h 成交量估市場每天的利潤池
 function profitTable(skill, at) {
-  const C = coster(skill, at), out = [];
+  const C = coster(skill, at, true), out = [];
   for (const rc of REC.byProf[skill] || []) {
     if (!rc[8] || rc[3] > at || !obtainable(rc)) continue;
     const r = ROWBY.get(rc[8]), a = ahPrice(rc[8]);
@@ -1462,6 +1646,8 @@ function recItem(id, sz = 22) {
   const link = ROWBY.has(id) ? ` href="#/item/${id}"` : "";
   return `<a class="it pit"${link}>${img}<span class="nm q-${esc(q)}">${esc(name)}</span></a>`;
 }
+const FOREVER_MIN = 1240000;   // 法術 id 124 萬以上＝永恆新加或改過的配方
+const foreverChip = (rc) => (rc[0] >= FOREVER_MIN ? ' <span class="chip c-ye" title="《魔獸世界：永恆》新加或改過的配方，跟 60 版不一樣（例如治療藥水改成急救做）">永恆改版</span>' : "");
 const srcTxt = (rc) => rc[6] === "n" ? "永恆新配方・學法未查到" : rc[6] === "t" ? `訓練師 ${money(rc[7], true)}` : rc[6] === "a" ? "學專業就會" : `配方 ${REC.items[rc[6]]?.[0] ? "「" + esc(REC.items[rc[6]][0]) + "」" : ""} ${vendorBuy(rc[6]) ? "商店" : "拍賣場"} ${money(buyPrice(rc[6]), true)}`;
 
 // 採集原料：可採技能、我採得到嗎、礦石熔成錠划不划算
@@ -1474,24 +1660,49 @@ function smeltInfo(id) {
   const own = rc[10].find(([m]) => m === id)[1], C = coster(186, 300);
   let other = 0;
   for (const [m, n] of rc[10]) if (m !== id) { const u = C.unit(m, 0); if (!u) return null; other += u.c * n; }
-  const bar = ahPrice(rc[8]);
+  const bar = ROWBY.get(rc[8])?.ask;   // 跟礦石一樣用現價（最低一口）比，免得一邊現價一邊均價
   if (bar == null) return null;
-  return { rc, per: (bar * AH_CUT * rc[9] - other) / own };
+  const per = (bar * AH_CUT * rc[9] - other) / own;
+  return { rc, per, bar, tip: `${REC.items[rc[8]]?.[0] || "錠"}現價 ${money(bar, true)} × 0.95${rc[9] > 1 ? ` × ${rc[9]}` : ""}${other ? ` − 其他材料 ${money(other, true)}` : ""}${own > 1 ? ` ÷ ${own}` : ""} = 每個礦值 ${money(per, true)}` };
+}
+// 採集點要幾級：掉落資料的採集點技能（主要產物那個點），查不到再用 60 版表、熔煉學習等級
+function gatherNeed(id) {
+  const g = DROPS?.items[id]?.g?.filter((x) => x[1] >= 500 && x[4] != null);
+  if (g?.length) return Math.min(...g.map((x) => x[4]));
+  return GATHER_SKILL[id] ?? (REC.made.get(id) || []).find((x) => x[1] === 186)?.[3] ?? null;
+}
+function gatherZones(id, skill) {
+  const it = DROPS?.items[id];
+  const pl = skill === 393 ? it?.kw?.[3] : it?.g?.[0]?.[3];
+  return pl?.length ? zonesTxt(pl.slice(0, 2)) : "";
 }
 function gatherCard(skill, rows) {
-  const mine = ME[skill];
-  const sk = (r) => GATHER_SKILL[r.id] ?? (REC.made.get(r.id) || []).find((x) => x[1] === 186)?.[3] ?? null;
-  const shown = mine != null && gatherMineOnly ? rows.filter((r) => (sk(r) ?? 0) <= mine) : rows;
-  const best = rows.filter((r) => sk(r) != null && (mine == null || sk(r) <= mine) && r.value24)[0];   // 推薦一定是我採得到的
-  return `<div class="card"><h3>原料行情</h3><p class="desc">照 24 小時成交額排序（市場越大越好賣）。偏離＝現價對比 7 日均，▲ 代表現在賣比平常貴。${skill === 186 ? "「熔成錠」＝礦石熔了再賣，每個礦值多少。" : ""}</p>
-    ${mine != null ? `<p class="mine-hint">你的${esc(REC.profs[skill][0])}是 <b>${mine}</b>${best ? `：採得到的裡面，<b>${recItem(best.id, 18)}</b> 一天成交 ${money(best.value24, true)} 最好賣，現價 ${money(best.ask, true)}。` : "。"}
-      <label class="sm"><input type="checkbox" id="gMine" ${gatherMineOnly ? "checked" : ""}> 只看我採得到的</label></p>` : `<p class="mine-hint mut">在上方「我的專業」填${esc(REC.profs[skill][0])}等級，會幫你篩出採得到的、推薦先採哪個。</p>`}
-    <div class="tscroll"><table class="ptab"><thead><tr><th>原料</th><th>可採技能</th><th>現價</th><th>24h 成交額</th>${skill === 186 ? "<th>熔成錠</th>" : ""}<th>24h 成交</th><th>7 日均</th><th>偏離</th><th>掛單量</th></tr></thead><tbody>
-    ${shown.map((r) => { const k = sk(r), sm = skill === 186 ? smeltInfo(r.id) : null, sell = r.ask != null ? r.ask * AH_CUT : null;
-      return `<tr class="${mine != null && k != null && k > mine ? "dim" : ""}"><td>${recItem(r.id)}</td><td class="num">${k ?? "—"}</td><td>${money(r.ask)}</td><td>${money(r.value24)}</td>
-      ${skill === 186 ? `<td>${sm ? `${money(sm.per, true)} ${sell != null ? (sm.per > sell ? `<span class="chip c-up">熔了 ${pct(sm.per / sell - 1)}</span>` : '<span class="chip c-gy">直接賣</span>') : ""}` : '<span class="mut">—</span>'}</td>` : ""}
-      <td class="num">${fmtN(r.vol24)}</td><td>${money(r.avg7)}</td><td>${devCell(r)}</td><td class="num">${fmtN(r.listed)}</td></tr>`; }).join("")}
-    </tbody></table></div></div>`;
+  const mine = ME[skill], pn = REC.profs[skill][0];
+  const isOre = (r) => skill === 186 && !!smeltInfo(r.id);
+  const main = skill === 186 ? rows.filter(isOre) : rows, rest = skill === 186 ? rows.filter((r) => !isOre(r)) : [];
+  const ok = (r) => { const k = skill === 393 ? null : gatherNeed(r.id); return skill === 393 || (k != null && (mine == null || k <= mine)); };
+  const shown = mine != null && gatherMineOnly ? main.filter(ok) : main, hiddenN = main.length - shown.length;
+  // 推薦：我採得到、24h 有成交的裡面，每個能換最多錢（直接賣或熔了賣取高）× 成交量最大的
+  const unitVal = (r) => { const sm = skill === 186 ? smeltInfo(r.id) : null, sell = r.ask != null ? r.ask * AH_CUT : 0; return Math.max(sell, sm?.per || 0); };
+  const best = main.filter((r) => ok(r) && (r.vol24 || 0) > 0).sort((a, b) => (b.value24 || 0) - (a.value24 || 0))[0];
+  let rec = "";
+  if (best) {
+    const sm = skill === 186 ? smeltInfo(best.id) : null, sell = best.ask != null ? best.ask * AH_CUT : null, z = gatherZones(best.id, skill);
+    rec = `${mine != null ? `以你 ${pn} ${mine}，` : ""}${skill === 393 ? "剝" : skill === 186 ? "去挖" : "去採"} <b>${recItem(best.id, 18)}</b>${z ? `（最常在 ${z}）` : ""}：一天成交 ${money(best.value24, true)}，直接賣每個約 ${money(sell, true)}`
+      + (sm ? `；熔成${esc(REC.items[sm.rc[8]]?.[0] || "錠")}每個礦值 ${money(sm.per, true)} → <b>${sm.per > sell ? `建議熔了賣（多賺 ${pct(sm.per / sell - 1).replace("+", "")}）` : "建議直接賣"}</b>` : "") + "。";
+  }
+  const tr = (r, dim) => { const k = skill === 393 ? null : gatherNeed(r.id), sm = skill === 186 ? smeltInfo(r.id) : null, sell = r.ask != null ? r.ask * AH_CUT : null;
+    return `<tr class="${dim || (mine != null && k != null && k > mine) ? "dim" : ""}"><td>${recItem(r.id)}</td>${skill === 393 ? "" : `<td class="num">${k ?? "—"}</td>`}<td>${money(r.ask)}</td>
+      ${skill === 186 ? `<td>${sm ? `<span title="${esc(sm.tip)}">${money(sm.per, true)} ⓘ</span> ${sell != null ? (sm.per > sell ? `<span class="chip c-up">熔了 ${pct(sm.per / sell - 1)}</span>` : '<span class="chip c-gy">直接賣</span>') : ""}` : '<span class="mut">—</span>'}</td>` : ""}
+      <td>${money(r.value24)}</td><td class="lt sm">${gatherZones(r.id, skill) || '<span class="mut">—</span>'}</td><td class="num">${fmtN(r.listed)}</td></tr>`; };
+  const head = `<thead><tr><th>${skill === 186 ? "礦石" : "原料"}</th>${skill === 393 ? "" : "<th>需要技能</th>"}<th>現價</th>${skill === 186 ? "<th>熔成錠（每個礦值）</th>" : ""}<th>24h 成交額</th><th class="lt">最常在</th><th>掛單量</th></tr></thead>`;
+  return `<div class="card"><h3>${skill === 186 ? "該挖哪種礦" : "原料行情"}</h3>
+    ${rec ? `<p class="headline">${rec}</p>` : ""}
+    <p class="desc">照 24 小時成交額排序（市場越大越好賣）。價格都是現價（最低一口）${skill === 186 ? "；「熔成錠」＝礦熔了以後用錠的現價賣，每個礦等於賣多少，滑到數字上看算式" : ""}。</p>
+    ${mine != null ? `<p class="mine-hint"><label class="sm"><input type="checkbox" id="gMine" ${gatherMineOnly ? "checked" : ""}> 只看我採得到的（${pn} ${mine}）</label>${hiddenN && gatherMineOnly ? `<span class="mut sm">・另有 ${hiddenN} 種還採不到或不知道要幾級</span>` : ""}</p>` : `<p class="mine-hint mut">在上方「我的專業」填${esc(pn)}等級，會幫你篩出採得到的、推薦先採哪個。</p>`}
+    <div class="tscroll"><table class="ptab">${head}<tbody>${shown.map((r) => tr(r)).join("") || `<tr><td colspan="7" class="mut">沒有符合的原料。</td></tr>`}</tbody></table></div>
+    ${rest.length ? `<details class="more-d"><summary>其他採礦相關：錠、石頭、煤（${rest.length}）</summary><div class="tscroll"><table class="ptab">${head.replace("礦石", "原料")}<tbody>${rest.map((r) => tr(r)).join("")}</tbody></table></div></details>` : ""}
+  </div>`;
 }
 function bindGather(view, skill) {
   const c = $("#gMine");
@@ -1504,11 +1715,14 @@ function profControls(gather, skill) {
     <label>練到 <select id="pTo">${CAPS.map((v) => `<option value="${v}">${v}</option>`).join("")}</select></label>
     <label${gather ? " hidden" : ""}>材料價 <select id="pBasis"><option value="avg7">7 日均</option><option value="ask">現價最低一口</option><option value="median">掛單中位數</option></select></label>
     <label${gather ? " hidden" : ""}>做出來的東西 <select id="pOut"><option value="vendor">賣商店</option><option value="ah">掛拍賣（扣 5%）</option><option value="none">不賣，丟掉</option></select></label>
+    ${!gather && myGatherProfs().length ? `<label title="勾了以後，你會的採集專業拿得到的原料（礦、錠、草藥、皮）不用去拍賣場買，成本只算商店收購價——也就是你本來至少能賣到的錢"><input type="checkbox" id="pOwn" ${pstate.own ? "checked" : ""}> 原料我自己採（${myGatherProfs().map((k) => REC.profs[k][0]).join("、")}）</label>` : ""}
   </div>`;
 }
 function bindProfControls(rerender, skill) {
   const set = (sel, k, num) => { const el = $(sel); el.value = String(pstate[k]); el.onchange = () => { pstate[k] = num ? +el.value : el.value; if (pstate.from >= pstate.to) pstate.from = 1; savePS(); rerender(); }; };
   set("#pTo", "to", 1); set("#pBasis", "basis"); set("#pOut", "out");
+  const own = $("#pOwn");
+  if (own) own.onchange = () => { pstate.own = own.checked; savePS(); rerender(); };
   const f = $("#pFrom");
   f.value = String(skill ? fromFor(skill) : pstate.from);
   f.onchange = () => {
@@ -1527,6 +1741,7 @@ async function showProf(skill) {
   window.scrollTo(0, 0);
   try { await loadRec(); } catch (e) { view.innerHTML = "<p>配方資料讀取失敗。</p>"; return; }
   if (skill && !REC.profs[skill]) skill = null;
+  if (skill && REC.profs[skill][1] === "gather") await loadDrops().catch(() => null);   // 採集頁要地區、技能
   track("ah_prof", { skill: skill || "all" });
   const render = () => (skill ? profDetail(view, skill) : profOverview(view));
   render();
@@ -1585,9 +1800,10 @@ function profDetail(view, skill) {
     return;
   }
   const plan = planLevel(skill, from, to), prof = profitTable(skill, to);   // from 已經是「我現在」
-  const C300 = coster(skill, to);
+  const C300 = coster(skill, to, true);
   const selfMade = (id) => { const best = (REC.byOut[skill]?.get(id) || []).filter((rc) => rc[3] < to && obtainable(rc)).map((rc) => C300.mats(rc) / rc[9]).filter((c) => c != null && !isNaN(c)); return best.length ? Math.min(...best) : null; };
-  const shop = [...plan.shop].map(([id, q]) => ({ id, q: Math.ceil(q - 1e-6), u: buyPrice(id), v: vendorBuy(id), r: ROWBY.get(id), self: selfMade(id) })).sort((a, b) => b.q * (b.u || 0) - a.q * (a.u || 0));
+  const owned = ownSet();
+  const shop = [...plan.shop].map(([id, q]) => ({ id, q: Math.ceil(q - 1e-6), own: owned.has(id), u: owned.has(id) ? REC.items[id]?.[2] || 0 : buyPrice(id), v: vendorBuy(id), r: ROWBY.get(id), self: selfMade(id) })).sort((a, b) => (a.own - b.own) || b.q * (b.u || 0) - a.q * (a.u || 0));
   const segMax = Math.max(1, ...plan.segs.map((g) => g.mats - g.salv));
   view.innerHTML = `${back}<div class="ihead"><div><h2>${esc(p[0])}</h2><div class="cl">製作專業・從 ${from} 練到 ${to}</div></div></div>${profControls(false, skill)}
     <div class="tiles">
@@ -1596,6 +1812,7 @@ function profDetail(view, skill) {
       <div class="tile"><div class="k">做出來的東西回收</div><div class="v">${money(plan.salv)}</div><div class="x">${OUT_LABEL[pstate.out]}</div></div>
       <div class="tile"><div class="k">學費＋配方</div><div class="v">${money(plan.fees)}</div><div class="x">${plan.ranks.map((f) => `${f[0]} ${money(f[1], true)}`).join("・")}</div></div>
     </div>
+    ${earnCard(skill)}
     <div class="card"><h3>練等路線</h3><p class="desc">橘、黃色配方每做一次必升一級；綠色要多做幾次，「次數」已經照機率算進去。點材料可以看它的拍賣場走勢。</p>
       <div class="tscroll"><table class="ptab route"><thead><tr><th>技能</th><th>做什麼</th><th>次數</th><th>這段花費</th><th></th><th>材料（每次）</th><th>怎麼學</th></tr></thead><tbody>
       ${plan.segs.map((g) => { const net = g.mats - g.salv; return `<tr><td class="num">${g.from}→${g.to}</td>
@@ -1607,17 +1824,28 @@ function profDetail(view, skill) {
       </tbody></table></div></div>
     <div class="card"><h3>購物清單</h3><p class="desc">整條路線要準備的原料（自己能做的中間材料已經拆開${plan.made.size ? `：${[...plan.made].map(([id, q]) => `${esc(REC.items[id]?.[0] || id)} ${Math.ceil(q)} 個`).join("、")}` : ""}）。拍賣場掛單不夠的會標出來。</p>
       <div class="tscroll"><table class="ptab"><thead><tr><th>材料</th><th>數量</th><th>單價</th><th>小計</th><th>哪裡買</th><th>拍賣場掛單</th></tr></thead><tbody>
-      ${shop.map((s) => `<tr><td>${recItem(s.id)}</td><td class="num">${fmtN(s.q)}</td><td>${money(s.u)}</td><td>${money(s.u * s.q)}</td><td class="sm">${s.v && s.u === s.v ? "商店" : "拍賣場"}</td>
-        <td class="num">${s.v && s.u === s.v ? '<span class="mut">—</span>' : `${fmtN(s.r?.listed)}${(s.r?.listed || 0) < s.q ? ` <span class="warn">不夠</span>${s.self != null ? `<div class="mut sm">自己做每個 ${money(s.self, true)}</div>` : ""}` : ""}`}</td></tr>`).join("")}
+      ${shop.map((s) => `<tr><td>${recItem(s.id)}</td><td class="num">${fmtN(s.q)}</td><td>${s.own ? `<span class="mut sm">自己採・以商店價 ${money(REC.items[s.id]?.[2] || 0, true)} 計</span>` : money(s.u)}</td><td>${s.own ? money((REC.items[s.id]?.[2] || 0) * s.q) : money(s.u * s.q)}</td><td class="sm">${s.own ? "<b>自己採</b>" : s.v && s.u === s.v ? "商店" : "拍賣場"}</td>
+        <td class="num">${s.own || (s.v && s.u === s.v) ? '<span class="mut">—</span>' : `${fmtN(s.r?.listed)}${(s.r?.listed || 0) < s.q ? ` <span class="warn">不夠</span>${s.self != null ? `<div class="mut sm">自己做每個 ${money(s.self, true)}</div>` : ""}` : ""}`}</td></tr>`).join("")}
       </tbody></table></div></div>
     <div class="card"><h3>練到 ${to} 後的賺錢配方</h3><p class="desc">產物掛拍賣扣 5% − 材料成本。「每天利潤池」＝每次利潤 × 24h 成交量（有冷卻的再以一天能做幾次為上限），越大代表越值得做（要跟其他賣家分）。${skill === 333 ? "附魔大多是賣服務、沒有產物，這裡只列得出棒子、油、魔杖這類東西。" : ""}</p>
-      <div class="tscroll"><table class="ptab"><thead><tr><th>產物</th><th>學習</th><th>材料成本</th><th>賣價</th><th>每次利潤</th><th>利潤率</th><th>24h 成交</th><th>每天利潤池</th></tr></thead><tbody>
-      ${prof.slice(0, 40).map((x) => `<tr><td>${recItem(x.rc[8])}${x.rc[9] > 1 ? ` <span class="mut sm">×${x.rc[9]}</span>` : ""}${x.rc[12] ? `<div class="mut sm">冷卻 ${x.rc[12] >= 24 ? Math.round(x.rc[12] / 24 * 10) / 10 + " 天" : x.rc[12] + " 小時"}</div>` : ""}</td><td class="num">${x.rc[3]}</td><td>${money(x.cost)}</td><td>${money(x.sell)}</td>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>產物</th><th>對你</th><th>材料成本</th><th>賣價</th><th>每次利潤</th><th>利潤率</th><th>24h 成交</th><th>每天利潤池</th></tr></thead><tbody>
+      ${prof.slice(0, 40).map((x) => `<tr><td>${recItem(x.rc[8])}${x.rc[9] > 1 ? ` <span class="mut sm">×${x.rc[9]}</span>` : ""}${foreverChip(x.rc)}${x.rc[12] ? `<div class="mut sm">冷卻 ${x.rc[12] >= 24 ? Math.round(x.rc[12] / 24 * 10) / 10 + " 天" : x.rc[12] + " 小時"}</div>` : ""}</td><td>${myColor(x.rc) || `<span class="mut sm">${x.rc[3]} 學</span>`}</td><td>${money(x.cost)}</td><td>${money(x.sell)}</td>
         <td><span class="${x.profit > 0 ? "pos" : "neg"}">${money(x.profit)}</span></td><td class="num">${x.margin == null ? "—" : pct(x.margin)}</td><td class="num">${fmtN(x.r.vol24)}</td><td>${x.pool ? money(x.pool) : '<span class="mut">—</span>'}</td></tr>`).join("") || '<tr><td colspan="8" class="mut">還沒有產物在台服拍賣場上架。</td></tr>'}
       </tbody></table></div></div>${profFoot()}`;
   bindProfControls(() => profDetail(view, skill), skill);
 }
 
+// 邊練邊賺：以我現在的等級，做了還會升級、而且掛拍賣有賺的配方
+function earnCard(skill) {
+  const s0 = ME[skill];
+  if (s0 == null) return `<div class="card earn"><h3>邊練邊賺</h3><p class="desc mut">在上方「我的專業」填${esc(REC.profs[skill][0])}等級，會列出你現在做了會升級、又能賺錢的配方。</p></div>`;
+  const list = profitTable(skill, s0).filter((x) => x.profit > 0 && s0 < x.rc[5] && (x.r.vol24 || 0) > 0 && !x.rc[12])
+    .map((x) => ({ ...x, p: chance(x.rc, s0) })).sort((a, b) => b.p * b.profit * Math.min(b.r.vol24, 20) - a.p * a.profit * Math.min(a.r.vol24, 20)).slice(0, 5);
+  return `<div class="card earn"><h3>邊練邊賺（你 ${s0}）</h3><p class="desc">${list.length ? "這些配方你現在做還會升級，做出來掛拍賣（扣 5%）比材料貴。照「升級機率 × 每次利潤 × 賣得掉的量」排。" : `目前沒有：你 ${s0} 會升級的配方，做出來掛拍賣都不賺，或 24 小時沒有成交。照下面的練等路線走成本最低。`}</p>
+    ${list.length ? `<div class="tscroll"><table class="ptab"><thead><tr><th>產物</th><th>對你</th><th>每次利潤</th><th>24h 成交</th><th>材料</th></tr></thead><tbody>
+    ${list.map((x) => `<tr><td>${recItem(x.rc[8])}</td><td>${myColor(x.rc)}</td><td><span class="pos">${money(x.profit)}</span></td><td class="num">${fmtN(x.r.vol24)}</td><td class="mats">${x.rc[10].map(([id, n]) => `<span>${recItem(id, 16)}×${n}</span>`).join("")}</td></tr>`).join("")}
+    </tbody></table></div>` : ""}</div>`;
+}
 const profFoot = () => `<p class="foot">配方的材料、產物、變黃／變灰等級取自《魔獸世界：永恆》client 資料（版本 ${esc(REC.build)}）。學習等級、訓練師學費借用 60 版伺服器資料（CMaNGOS），永恆若有改動會不準；查不到來源的新配方先不列。綠色配方的升級機率＝(變灰 − 目前技能) ÷ (變灰 − 變黃)。價格是台服 PvP 聯盟拍賣場。</p>`;
 
 boot();

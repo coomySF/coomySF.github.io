@@ -22,6 +22,8 @@
     f  釣魚 [[區域, 機率‰], ...]
     v  商店 [賣的商人數, 單價（銅）, [[商人, 限量 1/0], ...]]   不同地點各挑一個，不限量的優先
     d  分解 [[品質, 物品等級下限, 上限, 機率‰], ...]
+  gear {物品: [需求等級, 類別 2 武器／4 護甲, 子類, 部位]}   沒綁定的武器、護甲，商品頁顯示「誰能用」
+  副本的 places 多兩欄：[中文名, 人數, 怪物等級下限, 上限]；採集點 g 多一欄：需要的採集技能（查不到是 null）
 """
 import argparse
 import collections
@@ -39,6 +41,8 @@ MAT_CLASS = {"5", "7"}         # 施法材料、商品
 BOP = "1"
 
 
+# 副本人數：client 的 MaxPlayers 是 60 版上限（5 人副本多寫 10），改照實際編制
+PLAYERS = {229: 10, 249: 40, 309: 20, 409: 40, 469: 40, 509: 20, 531: 40, 533: 40}
 CITIES = {"z1453", "z1454", "z1455", "z1456", "z1457", "z1458"}   # 暴風城、奧格瑪、鐵爐堡、雷霆崖、達納蘇斯、幽暗城
 NODE_PREFIX = {"Ooze Covered ": "軟泥覆蓋的", "Rich ": "富", "Small ": "小", "Lesser ": "次級"}
 
@@ -116,8 +120,8 @@ def main():
 
     mobs = {}
     for r in sql_rows(dump, "creature_template"):
-        # [英文名, 階級, 最低等級, 最高等級, 掉落表, 剝皮表, 商店模板]
-        mobs[int(r[0])] = [r[1], int(r[33]), int(r[3]), int(r[4]), int(r[56] or 0), int(r[58] or 0), int(r[76] or 0)]
+        # [英文名, 階級, 最低等級, 最高等級, 掉落表, 剝皮表, 商店模板, 陣營模板]
+        mobs[int(r[0])] = [r[1], int(r[33]), int(r[3]), int(r[4]), int(r[56] or 0), int(r[58] or 0), int(r[76] or 0), int(r[9] or 0)]
 
     # ---- 出生位置 → 副本或野外地區 ----
     maps = {r["ID"]: r for r in db2(a.cache, B, "Map", "zhTW")}
@@ -138,7 +142,7 @@ def main():
             return []                          # 戰場（奧特蘭克山谷的苦工會掉符文布，但不是刷的地方）
         if m and m["InstanceType"] in ("1", "2"):
             key = "m" + map_id
-            places.setdefault(key, [m["MapName_lang"], int(m["MaxPlayers"] or 5) or 5])
+            places.setdefault(key, [m["MapName_lang"], PLAYERS.get(int(map_id), 5)])
             return [key]
         return ["z" + u for mid, x0, y0, x1, y1, u in zones if mid == map_id and x0 <= x <= x1 and y0 <= y <= y1]
 
@@ -165,17 +169,27 @@ def main():
         spawn[mob][pl] += 1
     for u in uimap:
         places.setdefault("z" + u, [uimap[u], 0])   # 用不到的最後會濾掉
+    # 副本的建議等級：裡面怪的等級（取 10%–90% 分位，排掉少數高等首領／低等小動物）
+    inst_lv = collections.defaultdict(list)
+    for mob, c in raw:
+        if len(c) == 1 and c[0].startswith("m") and mob in mobs and mobs[mob][1] >= 1:   # 只看精英以上（排掉老鼠）
+            inst_lv[c[0]].append(mobs[mob][3])
+    for k, v in inst_lv.items():
+        v.sort()
+        places[k] += [v[len(v) // 10], v[len(v) * 9 // 10]]
 
     # ---- 哪些物品要列 ----
     # 裝備、配方：沒綁定的綠色以上。材料：商品、施法材料，加上「練專業」頁用到的所有物品
     # client 的 ItemSparse 只收了一半的舊物品，分類、綁定、商店價改看 60 版的 item_template
     here = os.path.dirname(os.path.abspath(__file__))
     rec_items = set(json.load(open(os.path.join(here, "recipe-items.json"))))
-    gear, mats, en_item, buy, de_of = set(), set(), {}, {}, collections.defaultdict(list)
+    gear, mats, en_item, buy, de_of, gear_info = set(), set(), {}, {}, collections.defaultdict(list), {}
     for r in sql_rows(dump, "item_template"):
         i, cls, q = int(r[0]), r[1], int(r[5])
         en_item[i] = r[3]
         buy[i] = int(r[8]) // max(1, int(r[7] or 1))
+        if cls in ("2", "4") and r[105] != BOP:
+            gear_info[i] = [int(r[14]), int(cls), int(r[2]), int(r[10])]   # 需求等級、類別、子類、部位
         if cls in GEAR_CLASS and r[105] != BOP and q >= 2:
             gear.add(i)
         elif cls in MAT_CLASS or i in rec_items:
@@ -238,10 +252,16 @@ def main():
     add_mobs("skinning_loot_template", 5, "km", "kw")
 
     # ---- 採集點、寶箱（gameobject）----
+    # 鎖：類型 2（技能鎖）的 Index 是哪種技能（2 草藥學、3 採礦），Skill 是需要幾點
+    lock_skill = {}
+    for r in db2(a.cache, B, "Lock"):
+        for i in range(8):
+            if r[f"Type_{i}"] == "2" and r[f"_Index_{i}"] in ("2", "3"):
+                lock_skill[int(r["ID"])] = int(r[f"Skill_{i}"])
     go = {}
     for r in sql_rows(dump, "gameobject_template"):
-        if r[1] == "3" and int(r[9] or 0):          # 類型 3 = 可以開的（礦脈、草藥、箱子），data1 = 掉落表
-            go[int(r[0])] = (r[3], int(r[9]))
+        if r[1] == "3" and int(r[9] or 0):          # 類型 3 = 可以開的（礦脈、草藥、箱子），data0 = 鎖、data1 = 掉落表
+            go[int(r[0])] = (r[3], int(r[9]), lock_skill.get(int(r[8] or 0)))
     go_rows = table("gameobject_loot_template")
     go_spawn = collections.defaultdict(collections.Counter)
     for r in sql_rows(dump, "gameobject"):
@@ -249,7 +269,7 @@ def main():
         if gid in go:
             c = candidates(r[2], float(r[4]), float(r[5]))
             go_spawn[gid][c[0] if len(c) == 1 else (pick_central(r[2], float(r[4]), float(r[5]), c) if c else "")] += 1
-    for gid, (name, loot) in go.items():
+    for gid, (name, loot, need) in go.items():
         if not go_spawn[gid] or loot not in go_rows:
             continue
         drops = expand(go_rows[loot])
@@ -261,11 +281,11 @@ def main():
         for it, p in drops.items():
             if it in want and p >= 0.01:
                 pl = [[k, round(v / n * 1000)] for k, v in go_spawn[gid].most_common(4) if k and v / n >= 0.05]
-                items[it].setdefault("g", []).append([label, max(1, round(p * 1000)), n, pl])
+                items[it].setdefault("g", []).append([label, max(1, round(p * 1000)), n, pl, need])
     for v in items.values():
         if "g" in v:   # 同名的點合併（各地的錫礦脈是不同 id），出現最多的排前面
             merged = {}
-            for label, pm, n, pl in v["g"]:
+            for label, pm, n, pl, need in v["g"]:
                 if label in merged:
                     m = merged[label]
                     cnt = collections.Counter({k: s * m[2] for k, s in m[3]}) + collections.Counter({k: s * n for k, s in pl})
@@ -273,7 +293,7 @@ def main():
                     m[2] += n
                     m[3] = [[k, round(c / m[2])] for k, c in cnt.most_common(4)]
                 else:
-                    merged[label] = [label, pm, n, pl]
+                    merged[label] = [label, pm, n, pl, need]
             v["g"] = sorted(merged.values(), key=lambda x: -x[1] * x[2])[:4]
 
     # ---- 釣魚（掉落表的 key 是區域 id）----
@@ -289,6 +309,9 @@ def main():
             v["f"] = sorted(v["f"], key=lambda x: -x[1])[:5]
 
     # ---- 商店 ----
+    # 這是聯盟拍賣場：部落陣營的商人不列（FactionGroup 4 = 部落，EnemyGroup 2 = 跟聯盟敵對）
+    horde_ft = {int(r["ID"]) for r in db2(a.cache, B, "FactionTemplate")
+                if int(r["FactionGroup"]) & 4 or int(r["EnemyGroup"]) & 2}
     sellers = collections.defaultdict(list)            # 物品 → [(商人, 限量?)]
     vt = collections.defaultdict(list)
     for r in sql_rows(dump, "npc_vendor_template"):
@@ -301,7 +324,7 @@ def main():
             if it in want:
                 sellers[it].append((mob, lim))
     for it, ss in sellers.items():
-        ss = [(m, lim) for m, lim in ss if spawn[m]]
+        ss = [(m, lim) for m, lim in ss if spawn[m] and mobs[m][7] not in horde_ft]
         if not ss:
             continue
         ss.sort(key=lambda x: x[1])                     # 不限量的優先
@@ -345,7 +368,7 @@ def main():
                 used_places |= {pl for pl, _ in v[k][3]}
         used_places |= {pl for g in v.get("g", []) for pl, _ in g[3]} | {pl for pl, _ in v.get("f", [])}
     out = {"build": B, "places": {k: v for k, v in places.items() if k in used_places},
-           "mobs": out_mobs, "items": {k: v for k, v in sorted(items.items()) if v}}
+           "mobs": out_mobs, "items": {k: v for k, v in sorted(items.items()) if v}, "gear": gear_info}
     with open(a.out, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
     # 給收集器補怪物中文名

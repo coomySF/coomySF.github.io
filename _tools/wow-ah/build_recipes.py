@@ -199,13 +199,37 @@ def main():
         if isinstance(src, int):
             used.add(src)
 
+    # 採集原料：採集點、剝皮實際拿得到的東西（60 版伺服器掉落表）＋熔煉的錠＋永恆新加的同類原料
+    # 只看物品分類會混進「Deprecated」舊錠、鹽這些不是採集來的東西
+    def loot_items(table, entries=None):
+        ref = collections.defaultdict(set)
+        for r in sql_rows(dump, "reference_loot_template"):
+            ref[r[0]].add(int(r[1]))
+        got = set()
+        for r in sql_rows(dump, table):
+            if entries is None or r[0] in entries:
+                got |= ref.get(str(-int(r[4])), set()) if int(r[4]) < 0 else {int(r[1])}
+        return got
+    lock_type = {}
+    for r in db2(a.cache, B, "Lock"):
+        for i in range(8):
+            if r[f"Type_{i}"] == "2" and r[f"_Index_{i}"] in ("2", "3"):
+                lock_type[r["ID"]] = {"2": 182, "3": 186}[r[f"_Index_{i}"]]
+    node_loot = collections.defaultdict(set)      # 採集技能 → 掉落表 id
+    for r in sql_rows(dump, "gameobject_template"):
+        if r[1] == "3" and r[8] in lock_type:
+            node_loot[lock_type[r[8]]].add(r[9])
+    from_src = {182: loot_items("gameobject_loot_template", node_loot[182]),
+                186: loot_items("gameobject_loot_template", node_loot[186]),
+                393: loot_items("skinning_loot_template")}
+    smelt = [rc for rc in recipes if rc[1] == 186 and rc[2].startswith("熔煉")]
+    from_src[186] |= {rc[8] for rc in smelt} | {m for rc in smelt for m, _ in rc[10]}
+    crafted = {rc[8] for rc in recipes if rc[8] and rc[1] != 186}
     gather = {}
     for skill, subs in GATHER_SUB.items():
-        crafted = {rc[8] for rc in recipes if rc[8] and rc[1] != 186}
         ids = [int(i) for i, c in icls.items() if c[0] == "7" and c[1] in subs and i in sparse
-               and int(i) not in crafted and sparse[i]["Display_lang"]]
-        if skill == 186:
-            ids += [rc[8] for rc in recipes if rc[1] == 186 and rc[8]]   # 熔煉出來的錠也算採礦
+               and sparse[i]["Display_lang"] and not sparse[i]["Display_lang"].startswith("Deprecated")
+               and (int(i) in from_src[skill] or (int(i) >= 200000 and int(i) not in crafted))]
         gather[skill] = sorted(set(ids))
         used.update(gather[skill])
 
