@@ -7,6 +7,7 @@
 輸出（--data 指向 ah-data 分支的工作目錄）：
   status.json                  每個拍賣場最後一次快照的摘要
   meta/items.json              商品名稱、品質、分類、圖示
+  meta/creatures.json          怪物中文名（「去哪裡打」用，名單來自 build_drops.py 的 drop-creatures.json）
   {house}/overview.json        總覽：每個商品的現價、7 日均價、24 小時量
   {house}/h/{shard}.json       每小時明細（最近 7 天）＋星期×小時熱圖累積
   {house}/d/{shard}.json       日 K（台北時間切日，永久保留）
@@ -383,6 +384,28 @@ def fetch_meta(token, ids, meta, misses, now_ms):
     return got
 
 
+def fetch_creatures(token, ids, names, misses, now_ms):
+    """怪物中文名：client 沒有，只能問暴雪 API。查不到的一週後再試。"""
+    todo = [i for i in ids if str(i) not in names and misses.get(f"c{i}", 0) < now_ms][:META_PER_RUN]
+
+    def one(cid):
+        for ns in STATIC_NS:
+            status, c, _ = api(token, f"/data/wow/creature/{cid}", ns)
+            if status == 200 and c.get("name"):
+                return cid, c["name"]
+        return cid, None
+
+    got = 0
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        for cid, name in ex.map(one, todo):
+            if name:
+                names[str(cid)] = name
+                got += 1
+            else:
+                misses[f"c{cid}"] = now_ms + META_RETRY_MS
+    return got
+
+
 # ---------- Discord 通知 ----------
 
 def gold(c):
@@ -663,14 +686,25 @@ def main():
     got = fetch_meta(token, sorted(seen) + [i for i in extra if i not in seen], meta, misses, now_ms)
     if got:
         print(f"meta: +{got} items ({len(meta)} total, {len(misses)} missing)")
-    if changed or got:
+    cre_path = os.path.join(args.data, "meta", "creatures.json")
+    cre = read_json(cre_path, {})
+    cids = read_json(os.path.join(os.path.dirname(__file__), "drop-creatures.json"), [])
+    try:
+        got_c = fetch_creatures(token, cids, cre, misses, now_ms)
+    except Exception as e:  # 怪物名稱是附加功能，失敗不擋行情
+        print(f"::warning::creatures: {e}")
+        got_c = 0
+    if got_c:
+        print(f"creatures: +{got_c} ({len(cre)} total)")
+        write_json(cre_path, cre)
+    if changed or got or got_c:
         write_json(meta_path, meta)
         write_json(os.path.join(args.data, "state", "meta-misses.json"), misses)
         status["meta"] = len(meta)
         status["updated"] = now_ms
         write_json(os.path.join(args.data, "status.json"), status)
     # 給 workflow 判斷要不要 commit
-    print(f"::notice::changed={changed} meta+={got}")
+    print(f"::notice::changed={changed} meta+={got} creatures+={got_c}")
 
 
 if __name__ == "__main__":

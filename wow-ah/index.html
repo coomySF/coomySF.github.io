@@ -13,7 +13,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>台灣拍賣場行情｜魔獸世界：永恆 台服物價查詢・價格走勢</title>
 <meta name="description" content="魔獸世界：永恆（WoW Forever）台灣伺服器拍賣場物價查詢：台服 PvP 聯盟每小時價格走勢、現價對比 7 日均價、成交量、星期×小時的便宜時段，以及練專業技能划算嗎：各專業衝到 300 的成本、練等路線與賺錢配方。資料來自暴雪官方台灣 API，每小時更新，免費、非官方。">
-<meta name="keywords" content="魔獸世界 永恆, 魔獸永恆, WoW Forever, 台服, 台灣伺服器, 拍賣場, 拍賣行, 物價, 價格查詢, 價格走勢, 金價, 幣商, 打金, 專業技能, 練專業, 衝專業, 專業衝等, 裁縫, 鍛造, 鍊金術, 附魔, 工程學, 製皮, 採礦, 草藥學, 剝皮, PvP 聯盟">
+<meta name="keywords" content="魔獸世界 永恆, 魔獸永恆, WoW Forever, 台服, 台灣伺服器, 拍賣場, 拍賣行, 物價, 價格查詢, 價格走勢, 金價, 幣商, 打金, 專業技能, 練專業, 衝專業, 專業衝等, 打寶, 掉落, 副本掉落, 刷副本賺錢, 裁縫, 鍛造, 鍊金術, 附魔, 工程學, 製皮, 採礦, 草藥學, 剝皮, PvP 聯盟">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:site_name" content="Coomy">
 <meta property="og:locale" content="zh_TW">
@@ -199,6 +199,10 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .vtabs a[aria-current=true] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 700; }
   .pfilters { position: static; border: 0; padding: 12px 0 2px; }
   #profView .tiles { margin-top: 10px; }
+  .ptab .lt { text-align: left; white-space: normal; min-width: 140px; }
+  .ptab .drops div { margin-bottom: 3px; }
+  @media (max-width: 600px) { .ptab .lt { min-width: 190px; } .ptab td:first-child { white-space: normal; min-width: 96px; } }
+  .headline { font-size: 15px; line-height: 1.6; margin: 8px 0; }
   .pfilters label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
   .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table.ptab { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -273,7 +277,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
     <p class="sub">魔獸世界：永恆・台服 PvP 聯盟拍賣場物價・每小時更新</p>
     <div class="status" id="status">讀取中…</div>
     <p class="notice" id="notice" hidden></p>
-    <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a></nav>
+    <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a><a href="#/farm" data-t="farm">打寶賺錢</a></nav>
     <div class="mebar" id="meBar"></div>
     <div class="alertbar" id="alertBar" hidden></div>
   </header>
@@ -329,6 +333,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
 
   <section id="profView" hidden></section>
 
+  <section id="farmView" hidden></section>
+
   <section class="about" id="about" aria-labelledby="aboutH">
     <h2 id="aboutH">魔獸世界：永恆 台服拍賣場物價查詢</h2>
     <p>這是給台灣玩家用的《魔獸世界：永恆》（WoW Forever）拍賣場物價工具。國外的拍賣場網站只收歐美伺服器，查不到台服，所以這一頁直接讀暴雪官方台灣 API，每小時記錄 <b>台灣 PvP 聯盟</b>拍賣場的每一樣商品：布料、草藥、礦石、皮革、藥水、附魔材料、裝備都在裡面。</p>
@@ -340,6 +346,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
       <li><b>滯銷</b>：取消和過期遠多於成交，別囤。</li>
       <li>點進商品看<b>星期×小時熱圖</b>，找出一週裡台服最便宜、最好賣的時段。</li>
     </ul>
+    <h3>打什麼裝備最賺</h3>
+    <p>切到「<a href="#/farm">打寶賺錢</a>」：列出台服拍賣場上賣得又貴又多的裝備、配方，每一件是哪隻怪、在哪個副本或地區掉、掉率多少；也算出每個副本清一趟平均能掉多少錢的可賣裝備。商品頁也會顯示「去哪裡打」。</p>
     <h3>練哪個專業划算</h3>
     <p>切到「<a href="#/prof">練專業划算嗎</a>」：用台服拍賣場現在的材料價，算裁縫、鍛造、鍊金術、附魔、工程學、製皮、烹飪、急救從 1 練到 300 要花多少、每一級做什麼、要買哪些材料；練完以後哪些配方每天最賺。草藥學、採礦、剝皮則看原料在台服一天賣掉多少錢。</p>
     <h3>常見問題</h3>
@@ -604,17 +612,19 @@ function renderList() {
 const LIST_TITLE = document.title;
 function route() {
   const h = location.hash;
-  document.querySelectorAll(".vtabs a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.t === (h.startsWith("#/prof") ? "prof" : "ah"))));
+  const tab = h.startsWith("#/prof") ? "prof" : h.startsWith("#/farm") ? "farm" : "ah";
+  document.querySelectorAll(".vtabs a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.t === tab)));
   let m;
   if ((m = h.match(/^#\/item\/(\d+)/))) { showItem(+m[1]); return; }
   if ((m = h.match(/^#\/prof(?:\/(\d+))?/))) { showProf(m[1] ? +m[1] : null); return; }
-  $("#itemView").hidden = true; $("#profView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
+  if (h.startsWith("#/farm")) { showFarm(); return; }
+  $("#itemView").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
   document.title = LIST_TITLE;
   renderList();
 }
 
 async function showItem(id) {
-  $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true;
+  $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true;
   const view = $("#itemView");
   view.hidden = false;
   view.innerHTML = '<button class="back" id="back">← 回列表</button><p class="mut">讀取中…</p>';
@@ -642,6 +652,7 @@ async function showItem(id) {
     </div>
     ${alertBox(id, r)}
     <div id="craftBox"></div>
+    <div id="dropBox"></div>
     <div class="card"><h3>價格走勢</h3><p class="desc">最近 7 天每小時的最低價，灰線是 7 日均。直線是每週重置。</p>
       <div class="legend"><span><i style="background:var(--s1)"></i>每小時最低價</span><span><i style="background:var(--ref)"></i>7 日均</span></div>
       <div class="chart" id="cPrice"></div></div>
@@ -670,6 +681,7 @@ async function showItem(id) {
   draw();
   bindAlertBox(id);
   craftCards(id, r);
+  dropCards(id, r);
   $("#hmTabs").querySelectorAll("button").forEach((b) => b.onclick = () => { $("#hmTabs").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); heatMode = b.dataset.v; rec && heatmap(rec.hm); });
   let rt; window.onresize = () => { clearTimeout(rt); rt = setTimeout(() => { if (!$("#itemView").hidden) draw(); }, 150); };
 }
@@ -921,6 +933,142 @@ function renderIndex() {
     $("#filters").scrollIntoView({ behavior: "smooth", block: "start" });
     track("ah_index", { cat: r.key });
   });
+}
+
+/* ---------------- 去哪裡打：掉落來源、打寶賺錢 ---------------- */
+// drops.json 由 _tools/wow-ah/build_drops.py 產生（60 版開源伺服器的掉落表）；怪物中文名由收集器補在 meta/creatures.json
+let DROPS = null, CRE = {};
+async function loadDrops() {
+  if (DROPS) return DROPS;
+  const [d, c] = await Promise.all([
+    fetch(new URL("drops.json", location.href)).then((r) => { if (!r.ok) throw new Error("drops.json " + r.status); return r.json(); }),
+    getJSON("meta/creatures.json").catch(() => ({})),
+  ]);
+  CRE = c; DROPS = d;
+  return d;
+}
+const RANK = ["", "精英", "稀有精英", "首領", "稀有"];
+const mobName = (m) => CRE[m] || DROPS.mobs[m]?.[0] || `#${m}`;
+const mobLv = (m) => { const x = DROPS.mobs[m]; return x[2] === x[3] ? `${x[2]}` : `${x[2]}–${x[3]}`; };
+const dropPct = (pm) => (pm >= 100 ? `${Math.round(pm / 10)}%` : `${(pm / 10).toFixed(1)}%`);   // ‰ → %
+const killsFor = (pm) => Math.max(1, Math.round(1000 / pm));
+function placeTxt(pl, short) {
+  const p = DROPS.places[pl];
+  if (!p) return '<span class="mut">召喚／事件怪</span>';
+  if (!p[1]) return esc(p[0]);
+  return `${esc(p[0])}${short ? "" : `<span class="mut sm">・${p[1] >= 20 ? `${p[1]} 人團隊` : ""}副本</span>`}`;
+}
+function mobCell(m) {
+  const x = DROPS.mobs[m], rk = RANK[x[1]];
+  const en = CRE[m] && x[0] !== CRE[m] ? `<div class="mut sm">${esc(x[0])}</div>` : "";
+  return `<b>${esc(mobName(m))}</b>${rk ? ` <span class="chip ${x[1] === 3 ? "c-or" : x[1] === 2 || x[1] === 4 ? "c-ye" : "c-gy"}">${rk}</span>` : ""}${en}`;
+}
+// 打一隻平均值多少：拍賣場 7 日均（沒有就現價）扣 5%，只算有人在買的
+function farmPrice(id) {
+  const r = ROWBY.get(id);
+  if (!r) return null;
+  const p = r.avg7 ?? r.ask;
+  return p == null ? null : p * 0.95;
+}
+function worldTxt(w) {
+  const zones = w[3].map(([pl, k]) => `${placeTxt(pl, true)} ${Math.round(k / 10)}%`).join("、");
+  return `等級 ${w[1]}–${w[2]} 的怪都可能掉（${w[0].toLocaleString()} 種怪）${zones ? `，最常出現在 ${zones}` : ""}。平均大約每 ${w[4].toLocaleString()} 隻掉一件`;
+}
+function dropShort(id) {
+  const [named, w] = DROPS.items[id];
+  if (named.length) { const [m, pm] = named[0]; return `${esc(mobName(m))}・${placeTxt(DROPS.mobs[m][4], true)}・${dropPct(pm)}${named.length > 1 ? `<span class="mut">（另 ${named.length - 1} 隻）</span>` : ""}`; }
+  return `世界掉落・Lv ${w[1]}–${w[2]}${w[3][0] ? `・最常在${placeTxt(w[3][0][0], true)}` : ""}`;
+}
+const DROP_NOTE = "掉落率來自 60 版開源伺服器資料（CMaNGOS），永恆有改過的會不準；永恆新加的副本還查不到。";
+
+async function dropCards(id, r) {
+  const box = $("#dropBox");
+  if (!box) return;
+  try { await loadDrops(); } catch (e) { return; }
+  if ($("#dropBox") !== box || !DROPS.items[id]) return;
+  const [named, w] = DROPS.items[id], price = farmPrice(id);
+  let head;
+  if (named.length) {
+    const [m, pm] = named[0];
+    head = `最好打：<b>${esc(mobName(m))}</b>（${placeTxt(DROPS.mobs[m][4])}），掉率 ${dropPct(pm)}，大約打 ${killsFor(pm)} 次掉一件${price != null ? `，每打一次平均值 <b>${money(price * pm / 1000)}</b>` : ""}。`;
+  } else {
+    head = `世界掉落：${worldTxt(w)}，適合邊練等邊撿。`;
+  }
+  box.innerHTML = `<div class="card"><h3>去哪裡打</h3><p class="desc">${head}</p>
+    ${named.length ? `<div class="tscroll"><table class="ptab"><thead><tr><th>怪物</th><th>等級</th><th class="lt">在哪</th><th>掉率</th><th>每打一次值</th></tr></thead><tbody>
+      ${named.map(([m, pm]) => `<tr><td>${mobCell(m)}</td><td class="num">${mobLv(m)}</td><td class="lt">${placeTxt(DROPS.mobs[m][4])}</td><td class="num">${dropPct(pm)}<div class="mut sm">約 ${killsFor(pm)} 次一件</div></td><td>${price != null ? money(price * pm / 1000) : "—"}</td></tr>`).join("")}
+      </tbody></table></div>` : ""}
+    ${named.length && w ? `<p class="desc">其他：世界掉落，${worldTxt(w)}。</p>` : ""}
+    <p class="mut sm">${DROP_NOTE}</p></div>`;
+}
+
+const fstate = { sort: "value", cls: "", shown: 50 };
+async function showFarm() {
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true;
+  const view = $("#farmView");
+  view.hidden = false;
+  view.innerHTML = '<p class="mut">讀取掉落資料…</p>';
+  window.scrollTo(0, 0);
+  try { await loadDrops(); } catch (e) { view.innerHTML = "<p>掉落資料讀取失敗。</p>"; return; }
+  document.title = "打寶賺錢｜魔獸世界：永恆 台服副本掉落與拍賣場價格";
+  track("ah_farm");
+
+  // 副本：每趟清一次，指定掉落（不含世界掉落）的拍賣場價值加總
+  const inst = new Map();
+  for (const [k, [named]] of Object.entries(DROPS.items)) {
+    const id = +k, r = ROWBY.get(id), v = farmPrice(id);
+    if (v == null || !(r.vol7 > 0)) continue;
+    for (const [m, pm] of named) {
+      const mob = DROPS.mobs[m], pl = mob[4];
+      if (!pl.startsWith("m")) continue;
+      const ev = v * pm / 1000 * Math.max(1, mob[5]);
+      const e = inst.get(pl) || { pl, ev: 0, items: new Map() };
+      e.ev += ev;
+      const it = e.items.get(id) || { id, ev: 0, m, pm };
+      it.ev += ev;
+      if (pm > it.pm) Object.assign(it, { m, pm });
+      e.items.set(id, it);
+      inst.set(pl, e);
+    }
+  }
+  const insts = [...inst.values()].sort((a, b) => b.ev - a.ev);
+  const best = insts[0];
+
+  const gear = ROWS.filter((r) => DROPS.items[r.id] && (r.cls === "武器" || r.cls === "護甲" || r.cls === "配方") && r.vol7 > 0 && (!fstate.cls || r.cls === fstate.cls));
+  const key = fstate.sort === "price" ? (r) => r.avg7 ?? r.ask ?? 0 : (r) => (r.avg7 ?? r.ask ?? 0) * r.vol7;
+  gear.sort((a, b) => key(b) - key(a));
+  const top = gear[0];
+
+  view.innerHTML = `<div class="card"><h3>打寶賺錢</h3>
+    <p class="desc">哪些裝備、配方在台服拍賣場賣得又貴又多，去哪裡打得到；哪個副本清一趟掉的東西最值錢。只算<b>沒綁定、拍賣場 7 天內有成交</b>的東西，價格用 7 日均扣 5% 手續費。</p>
+    ${best ? `<p class="headline">現在最值得刷：<b>${placeTxt(best.pl)}</b>，清一趟平均掉 <b>${money(best.ev)}</b> 的可賣裝備${top ? `；拍賣場最好賣的可打裝備是 ${gearLink(top.id)}（7 天賣掉 ${fmtN(top.vol7)} 件，均價 ${money(top.avg7 ?? top.ask)}）` : ""}。</p>` : ""}
+    <p class="mut sm">${DROP_NOTE}</p></div>
+
+    <div class="card"><h3>哪個副本最值得刷</h3><p class="desc">每趟期望值＝每隻怪的掉率 × 怪的數量 × 拍賣場價格，加總整個副本。只算指定掉落，世界掉落（每隻萬分之幾的那種）沒算進去，所以實際會再多一點。</p>
+    <div class="tscroll"><table class="ptab"><thead><tr><th>副本・每趟期望值</th><th class="lt">最值錢的掉落</th></tr></thead><tbody>
+    ${insts.map((e) => { const its = [...e.items.values()].sort((a, b) => b.ev - a.ev).slice(0, 3);
+      return `<tr><td><b>${placeTxt(e.pl)}</b><div class="num">每趟 ${money(e.ev)}</div></td><td class="lt drops">${its.map((it) => `<div>${gearLink(it.id)} <span class="mut sm">${esc(mobName(it.m))} ${dropPct(it.pm)}・${money(farmPrice(it.id), true)}</span></div>`).join("")}</td></tr>`; }).join("") || '<tr><td colspan="2" class="mut">目前拍賣場上沒有副本掉落的成交。</td></tr>'}
+    </tbody></table></div></div>
+
+    <div class="card"><h3>拍賣場上最值錢的可打裝備</h3>
+      <div class="filters pfilters">
+        <div class="seg" id="fSort" role="group" aria-label="排序"><button data-v="value" aria-pressed="${fstate.sort === "value"}">7 天成交金額</button><button data-v="price" aria-pressed="${fstate.sort === "price"}">單價最高</button></div>
+        <div class="seg" id="fCls" role="group" aria-label="類別"><button data-v="" aria-pressed="${!fstate.cls}">全部</button><button data-v="武器" aria-pressed="${fstate.cls === "武器"}">武器</button><button data-v="護甲" aria-pressed="${fstate.cls === "護甲"}">護甲</button><button data-v="配方" aria-pressed="${fstate.cls === "配方"}">配方</button></div>
+      </div>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>裝備</th><th>7 日均</th><th>7 天成交</th><th class="lt">去哪打</th></tr></thead><tbody>
+      ${gear.slice(0, fstate.shown).map((r) => `<tr><td>${gearLink(r.id)}</td><td>${money(r.avg7 ?? r.ask)}</td><td class="num">${fmtN(r.vol7)}</td><td class="lt sm">${dropShort(r.id)}</td></tr>`).join("") || '<tr><td colspan="4" class="mut">沒有符合的裝備。</td></tr>'}
+      </tbody></table></div>
+      ${gear.length > fstate.shown ? `<button class="more" id="fMore">顯示更多（還有 ${gear.length - fstate.shown} 件）</button>` : ""}
+    </div>`;
+  const seg = (sel, k) => $(sel).querySelectorAll("button").forEach((b) => (b.onclick = () => { fstate[k] = b.dataset.v; fstate.shown = 50; showFarm(); }));
+  seg("#fSort", "sort"); seg("#fCls", "cls");
+  const more = $("#fMore");
+  if (more) more.onclick = () => { fstate.shown += 50; showFarm(); };
+}
+function gearLink(id) {
+  const m = META[id] || [];
+  const img = m[7] ? `<img src="${esc(m[7])}" alt="" loading="lazy" width="20" height="20">` : '<span class="noimg"></span>';
+  return `<a class="it pit" href="#/item/${id}">${img}<span class="nm q-${esc(m[1] || "COMMON")}">${esc(m[0] || `#${id}`)}</span></a>`;
 }
 
 /* ---------------- 商品頁：怎麼做出來／可以做成什麼 ---------------- */
@@ -1320,7 +1468,7 @@ function bindProfControls(rerender, skill) {
 const fromFor = (skill) => Math.max(1, ME[skill] ?? pstate.from);
 
 async function showProf(skill) {
-  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true;
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#farmView").hidden = true;
   const view = $("#profView");
   view.hidden = false;
   view.innerHTML = '<p class="mut">讀取配方…</p>';
