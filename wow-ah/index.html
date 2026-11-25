@@ -326,6 +326,21 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .push-step input.mail { flex: 1 1 220px; } .push-step input.otp { width: 140px; flex: 0 0 auto; letter-spacing: .2em; font-family: var(--font-num, monospace); }
   .code { font-family: var(--font-num, monospace); letter-spacing: .1em; }
   .ap-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
+  .support-card { border-color: var(--gold-line, var(--line)); background: radial-gradient(120% 80% at 0% 0%, var(--gold-soft, transparent), transparent 60%), var(--surface); }
+  .support-copy { max-width: 620px; line-height: 1.75; color: var(--ink-2); }
+  .support-copy p { margin: 0 0 10px; } .support-copy .sign { color: var(--ink); text-align: right; font-family: var(--font-title, inherit); }
+  .tiers { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 14px 0 12px; }
+  .tier { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 10px 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; text-align: left; position: relative; }
+  .tier b { font-size: 17px; font-family: var(--font-num, inherit); }
+  .tier .tl { font-size: 13px; font-weight: 700; } .tier .ts { font-size: 11px; color: var(--muted); line-height: 1.4; } .tier .tu { font-size: 11px; color: var(--muted); font-family: var(--font-num, inherit); margin-top: auto; }
+  .tier .rec { font-style: normal; font-size: 10px; margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--gold, var(--ink)); color: #1a1405; vertical-align: 1px; }
+  .tier.on { border-color: var(--gold, var(--ink)); box-shadow: 0 0 0 1px var(--gold, var(--ink)) inset; background: var(--gold-soft, var(--surface-2)); }
+  .support-go { display: inline-flex; align-items: center; text-decoration: none; height: 42px; padding: 0 20px; font-size: 15px; }
+  .support-go[disabled] { opacity: .55; cursor: not-allowed; }
+  .support-how { margin-top: 10px; color: var(--ink-2); max-width: 680px; }
+  .support-done { color: var(--ink); font-weight: 700; }
+  .ab-thanks { color: var(--muted); }
+  @media (max-width: 600px) { .tiers { grid-template-columns: 1fr 1fr; } .tier:last-child { grid-column: 1 / -1; } }
   .ap-add { position: relative; margin: 6px 0 12px; }
   .ap-add input { width: 100%; max-width: 420px; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field, var(--bg)); color: var(--ink); }
   .ap-hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -517,6 +532,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   </section>
 
   <p class="foot">
+    <span id="footSupport"></span>
     資料來自暴雪官方 Battle.net API 每小時的拍賣場快照，非官方工具，與暴雪娛樂無關。<br>
     快照只看得到「掛著什麼」，成交是推算的：可能是時間到而下架的單一律不算成交，所以成交量是下限。推算規則參考 <a href="https://auctionhouse.tk.gg/data/" target="_blank" rel="noopener">auctionhouse.tk.gg</a>。<br>
     「7 日均」是最近 7 天每小時最低價的平均；「偏離」是現價相對 7 日均；「量比」是 24 小時成交 ÷ 新上架。時間一律是台北時間。
@@ -1518,6 +1534,15 @@ let DISMISS = new Set();
 try { DISMISS = new Set(JSON.parse(sessionStorage.getItem("wowah.dismiss") || "[]")); } catch (e) {}
 const hitKey = (h) => `${h.r.id}:${h.kind}:${OV?.t}`;
 const saveDismiss = () => { try { sessionStorage.setItem("wowah.dismiss", JSON.stringify([...DISMISS])); } catch (e) {} };
+// 「支持一下」連結：到提醒頁並捲到贊助區塊
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-go=support]");
+  if (!a) return;
+  e.preventDefault();
+  track("ah_support_link", { from: a.closest(".foot") ? "foot" : "banner" });
+  const go = () => setTimeout(() => $("#support")?.scrollIntoView({ behavior: "smooth" }), 300);
+  if (location.hash.startsWith("#/alerts")) go(); else { location.hash = "#/alerts"; go(); }
+});
 function renderBadge() {
   const b = $("#tBadge"), n = Object.keys(ALERTS).length, hits = Object.keys(ALERTS).filter((id) => alertHit(id)).length;
   if (!b) return;
@@ -1535,6 +1560,7 @@ function renderAlerts() {
   bar.innerHTML = `${hits.length ? hits.map((h) => `<div class="hit ${h.kind}"><a href="#/item/${h.r.id}">🔔 <b>${esc(h.r.name)}</b> 現價 ${money(h.r.ask, true)}，${h.kind === "sell" ? `漲到你設的 ${money(h.a.hi, true)} 以上：<b>可以掛賣了</b>` : `跌到你設的 ${money(h.a.lo, true)} 以下：<b>可以進貨了</b>`}</a>
       <span class="hit-act"><button class="clr" data-off="${h.r.id}" title="刪掉這個商品的價格提醒">取消提醒</button><button class="hit-x" data-hide="${hitKey(h)}" aria-label="先收起，有新價格再提醒" title="先收起，有新價格再提醒">×</button></span></div>`).join("")
       : `<span class="mut">🔔 你設了 ${n} 個價格提醒，目前都沒有新的到價。</span>`}
+    ${hits.length && PUSH_ON ? '<span class="sm ab-thanks">這次有幫到你嗎？<a href="#/alerts" data-go="support">請 Coomy 喝杯麥酒</a> ☕</span>' : ""}
     <div class="ab-acts"><a class="clr" href="#/alerts">管理提醒（${n}）</a>${hits.length > 1 ? '<button class="clr" id="hideAll">全部收起</button>' : ""}
     ${perm === "default" ? '<button class="clr" id="notifOn">開啟桌面通知</button>' : perm === "granted" ? '<span class="mut sm">桌面通知已開（這個分頁開著時會提醒）</span>' : ""}</div>`;
   const b = $("#notifOn");
@@ -1779,8 +1805,8 @@ function pushCardHtml() {
     <div class="sm acct">${!PUSH.email && !PEMAIL ? "" : PEMAIL ? `已用 <b>${esc(PEMAIL)}</b> 登入，換裝置用同一個信箱登入就是同一套設定。<button class="clr" id="pushOut">登出</button>` : `目前只存在這台裝置。${emailForm("<b>綁定信箱</b>，換手機、電腦也能用：")}`}</div>
     <div class="push-step"><label>Discord webhook 網址 <input type="url" id="pushHook" placeholder="https://discord.com/api/webhooks/…" value="${esc(PSUB.webhook || "")}" autocomplete="off"></label><button class="clr" id="pushHookSave">儲存並傳測試訊息</button><span class="sm" id="pushHookMsg" aria-live="polite"></span>
       <details class="sm"><summary>怎麼拿 webhook 網址？（1 分鐘）</summary><ol><li>在 Discord 左邊按「＋」建立一個只有你自己的伺服器（或用你管理的伺服器）。</li><li>對想收通知的頻道按 ⚙️ 編輯頻道 →「整合」→「Webhook」→「新 Webhook」。</li><li>按「複製 Webhook 網址」，貼到上面。手機裝 Discord 就會跳通知。</li></ol><p class="mut">這個網址只有你和推播程式看得到，別貼給別人。</p></details></div>
-    <p class="sm">下面表格的「推播」打勾的商品，到價就傳到 Discord（每小時檢查）。已用 <b>${PUSHED.size}／${pushCap()}</b>${isSupporter() ? `・贊助者到 ${until}，謝謝你！` : ""}</p>
-    ${isSupporter() ? "" : `<div class="support">想推播更多商品？<b>贊助這個網站</b>就解鎖 30 個，並讓網站繼續每小時更新台服行情。${PUSH.kofi ? `<a class="promo-cta sm" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener">☕ 到 Ko-fi 贊助</a>` : ""}<div class="sm">${PEMAIL ? `用 <b>${esc(PEMAIL)}</b> 在 Ko-fi 贊助就會自動對上；用別的信箱的話，` : ""}贊助時在留言貼上你的支持者代碼 <b class="code">${esc(PSUB.code)}</b>。每 1 美元解鎖 30 天，幾分鐘內自動生效。</div></div>`}
+    <p class="sm">下面表格的「推播」打勾的商品，到價就傳到 Discord（每小時檢查）。已用 <b>${PUSHED.size}／${pushCap()}</b>${isSupporter() ? ' <span class="chip c-ye">☕ 旅店常客・30 個</span>' : ""}</p>
+    ${isSupporter() ? "" : `<div class="support">${PUSHED.size >= pushCap() ? "免費的 1 個已經在用囉。" : "免費的 1 個先拿去盯你最在意的那個材料。"}支持一次（NT$30 起），就能永久追 30 個。<a href="#support" class="go-support">看怎麼支持 →</a></div>`}
   </div>`;
 }
 function bindPushCard(view) {
@@ -1803,11 +1829,41 @@ function bindPushCard(view) {
     const id = +cb.closest("tr").dataset.id;
     if (cb.checked && !ALERTS[id]) { cb.checked = false; return; }
     const r = await pushToggle(id, cb.checked);
-    if (r === "limit") { cb.checked = false; alert0(`推播已經用滿 ${pushCap()} 個。贊助這個網站就能推播 30 個商品。`); }
+    if (r === "limit") { cb.checked = false; alert0(pushCap() >= 30 ? "30 個推播都用滿了，先取消一個再勾。" : "免費的 1 個已經在用囉。支持一次（NT$30 起），就能永久追 30 個——下面有說明。"); }
     else if (r === "error") { cb.checked = false; alert0("設定失敗，稍後再試。"); }
     rer();
   }));
 }
+/* ---------------- 支持 Coomy（贊助） ---------------- */
+// 捐過一次（任何金額）就永久把 Discord 推播從 1 個開到 30 個；Ko-fi 以美元結帳，按鈕標約略美元
+const TIERS = [[30, "旅店一杯麥酒", "一杯手搖，請我喝一杯", 1], [50, "補一組藥水", "一份雞排，熬夜寫 code 有力氣", 1.5], [100, "出團修裝費", "一碗牛肉麵，讓網站穩穩跑下去", 3], [150, "一整晚的合劑", "一張電影票，幫我顧好主機和推播", 5], [300, "矽谷旅費的一塊磚", "認真幫我湊旅費，這份我會記很久", 10]];
+let tierPick = 100;
+function supportHtml() {
+  const t = TIERS.find((x) => x[0] === tierPick);
+  const code = PSUB?.code;
+  return `<div class="card support-card" id="support">
+    <div class="promo-k">☕ 支持 Coomy</div>
+    <h3 class="promo-h">喜歡這個拍賣場小工具嗎？</h3>
+    <div class="support-copy">
+      <p>嗨，我是 Coomy，玩魔獸很多年的老玩家，這個網站是我用 <a href="/">AllWill</a> 做的。</p>
+      <p>我很喜歡 WoW，也正在創業，準備去矽谷闖一闖。希望這個網站能幫大家少花一點冤枉金幣，也順便幫我湊一點旅費。</p>
+      <p>網站每小時抓資料、主機、推播，都有一點費用。你的一點點支持，會讓我更有動力把它顧好。</p>
+      <p>網站會一直免費、沒有廣告。支持是心意，不勉強。</p>
+      <p class="sign">—— Coomy</p>
+    </div>
+    <div class="tiers" role="radiogroup" aria-label="贊助金額">${TIERS.map(([n, lab, sub, usd]) => `<button class="tier${n === tierPick ? " on" : ""}" role="radio" aria-checked="${n === tierPick}" data-n="${n}"><b>NT$${n}</b><span class="tl">${lab}${n === 100 ? '<i class="rec">推薦</i>' : ""}</span><span class="ts">${sub}</span><span class="tu">約 US$${usd}</span></button>`).join("")}</div>
+    ${isSupporter() ? '<p class="support-done">✓ 你已經是支持者（旅店常客），推播已開到 30 個。想再請我喝一杯也非常歡迎，謝謝你！</p>' : ""}
+    ${PUSH.kofi ? `<a class="promo-cta support-go" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener" id="kofiGo">用 Ko-fi 贊助 NT$${t[0]}（約 US$${t[3]}）</a>` : '<button class="promo-cta support-go" disabled>贊助即將開放</button>'}
+    <p class="sm support-how">捐任何金額一次，Discord 推播就從 1 個永久變成 30 個——不管捐 30 還是 300 都一樣，不用比誰捐得多。付款時填你登入這裡的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面開啟 Discord 推播）"}，幾分鐘內自動解鎖。Ko-fi 以美元結帳，金額選最接近的就好。只要網站還在，就一直有效。</p>
+  </div>`;
+}
+function bindSupport(view) {
+  view.querySelectorAll(".tier").forEach((b) => (b.onclick = () => { tierPick = +b.dataset.n; renderAlertPage(view); $("#support")?.scrollIntoView({ block: "nearest" }); }));
+  const k = $("#kofiGo");
+  if (k) k.onclick = () => track("ah_support_click", { amount: tierPick });
+}
+const SUPPORT_LINE = "台灣拍賣場行情由 Coomy 用 AllWill 做、自己維護，免費、沒有廣告。喜歡的話，歡迎<a href=\"#/alerts\" data-go=\"support\">支持一下</a>。";
+
 // 頁面上的小提示（不用瀏覽器 alert 對話框）
 function alert0(msg) { const m = $("#pushHookMsg") || $("#apMsg"); if (m) m.textContent = msg; }
 
@@ -1845,7 +1901,7 @@ function renderAlertPage(view) {
     </tbody></table></div>
     <button class="clr ap-wipe" id="apWipe">${alertWipe ? "確定要刪除全部？再按一次" : "全部刪除"}</button>`
     : '<p class="mut">還沒有任何提醒。用上面的搜尋加一個，或在商品頁設定。</p>'}
-  </div>`;
+  </div>${PUSH_ON ? supportHtml() : ""}`;
   const q = $("#apQ"), hitsBox = $("#apHits");
   q.oninput = () => {
     const t = q.value.trim().toLowerCase();
@@ -1867,6 +1923,8 @@ function renderAlertPage(view) {
   const w = $("#apWipe");
   if (w) w.onclick = () => { if (!alertWipe) { alertWipe = true; renderAlertPage(view); setTimeout(() => { alertWipe = false; }, 5000); return; } ALERTS = {}; alertAdd.clear(); alertWipe = false; saveAlerts(); renderAlerts(); renderAlertPage(view); };
   bindPushCard(view);
+  bindSupport(view);
+  view.querySelectorAll(".go-support").forEach((a) => (a.onclick = (e) => { e.preventDefault(); $("#support")?.scrollIntoView({ behavior: "smooth" }); }));
   const nb = $("#apNotif");
   if (nb) nb.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} renderAlerts(); renderAlertPage(view); };
 }
@@ -2257,6 +2315,7 @@ function earnCard(skill) {
 }
 const profFoot = () => `<p class="foot">配方的材料、產物、變黃／變灰等級取自《魔獸世界：永恆》client 資料（版本 ${esc(REC.build)}）。學習等級、訓練師學費借用 60 版伺服器資料（CMaNGOS），永恆若有改動會不準；查不到來源的新配方先不列。綠色配方的升級機率＝(變灰 − 目前技能) ÷ (變灰 − 變黃)。價格是台服 PvP 聯盟拍賣場。</p>`;
 
+if (PUSH_ON) { const fs = $("#footSupport"); if (fs) fs.innerHTML = SUPPORT_LINE + "<br>"; }
 boot();
 </script>
 </body>
