@@ -266,8 +266,10 @@ function ago(ms) {
 }
 const tpeParts = (ms) => { const d = new Date(ms + 8 * 3600e3); return { wd: d.getUTCDay(), h: d.getUTCHours(), md: `${d.getUTCMonth() + 1}/${d.getUTCDate()}` }; };
 
+// raw.githubusercontent 會快取 5 分鐘：status 用時間戳打穿，其他檔案跟著 status 的更新時間走，確保同一版
+let VER = Math.floor(Date.now() / 60000);
 async function getJSON(path) {
-  const r = await fetch(`${DATA}/${path}`, { cache: "no-cache" });
+  const r = await fetch(`${DATA}/${path}?v=${VER}`);
   if (!r.ok) throw new Error(`${path} ${r.status}`);
   return r.json();
 }
@@ -282,7 +284,9 @@ const saveFilters = () => { try { const { q, shown, ...rest } = state; localStor
 
 async function boot() {
   try {
-    [OV, META, STATUS] = await Promise.all([getJSON(`${HOUSE}/overview.json`), getJSON("meta/items.json"), getJSON("status.json").catch(() => null)]);
+    STATUS = await getJSON("status.json").catch(() => null);
+    if (STATUS?.updated) VER = STATUS.updated;
+    [OV, META] = await Promise.all([getJSON(`${HOUSE}/overview.json`), getJSON("meta/items.json")]);
   } catch (e) {
     $("#status").textContent = "資料讀取失敗，稍後再試一次。";
     return;
@@ -630,6 +634,7 @@ function flowChart(el, T, sold, added, f) {
     <g class="axis">${yAxis(F, ticks, Y, (v) => v.toLocaleString())}${xAxis(F, t0, t1, X)}</g>
     ${bars}
     <path d="${d}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/>
+    ${T.length <= 48 ? T.map((t, i) => added[i] == null ? "" : `<circle cx="${X(t).toFixed(1)}" cy="${Y(added[i]).toFixed(1)}" r="3" fill="var(--s2)" stroke="var(--surface)" stroke-width="1.5"/>`).join("") : ""}
     <line class="guide" y1="${PAD.t}" y2="${PAD.t + F.ih}" stroke="var(--ink-2)" stroke-width="1" style="display:none"/>
     <rect x="${PAD.l}" y="0" width="${F.iw}" height="${F.h}" fill="transparent"/>
   </svg>`;
