@@ -1,7 +1,7 @@
 -- 台服拍賣場 Discord 推播（/wow-ah/#/alerts）
 -- 每個瀏覽器用 Supabase「匿名登入」拿到一個 uid，推播設定和提醒存在這裡；
 -- GitHub Actions 的收集器每小時用 service role 讀出來、到價就打玩家自己的 Discord webhook。
--- 免費 3 個推播提醒，贊助者 30 個（Ko-fi webhook → functions/wowah-kofi 延長 supporter_until）。
+-- 免費 3 個推播提醒，贊助者 30 個（Ko-fi webhook → functions/wowah-kofi 把 supporter_until 設成永久）。
 -- 部落格共用的 Supabase 專案（戰鬥陀螺）；表都加 wowah_ 前綴。
 
 create table if not exists public.wowah_subs (

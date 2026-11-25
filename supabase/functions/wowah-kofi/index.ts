@@ -1,4 +1,4 @@
-// Ko-fi 贊助 webhook：用留言裡的 6 碼支持者代碼、或贊助者信箱找到玩家，延長贊助期限（每 1 美元 30 天，至少 30 天）
+// Ko-fi 贊助 webhook：用留言裡的 6 碼支持者代碼、或贊助者信箱找到玩家，標成永久支持者（推播上限 3 → 30）
 // 部署：supabase functions deploy wowah-kofi（config.toml 已設 verify_jwt = false）
 // 密鑰：supabase secrets set KOFI_TOKEN=<Ko-fi 後台 API 頁的 Verification Token>
 Deno.serve(async (req) => {
@@ -25,10 +25,8 @@ Deno.serve(async (req) => {
     }
   }
   if (!sub) return new Response("no match");               // 對不到人的純贊助，照收
-  const usd = Math.max(0, parseFloat(String(data.amount ?? "0")) || 0);
-  const days = Math.max(30, Math.round(usd * 30));
-  const base = Math.max(Date.now(), sub.supporter_until ? Date.parse(sub.supporter_until) : 0);
-  const until = new Date(base + days * 86400000).toISOString();
+  // 捐過一次（任何金額）就永久解鎖：期限設到很遠的未來，之後再捐也維持永久
+  const until = "2999-12-31T00:00:00Z";
   await fetch(`${url}/rest/v1/wowah_subs?uid=eq.${sub.uid}`, { method: "PATCH", headers: h, body: JSON.stringify({ supporter_until: until }) });
   return new Response("ok");
 });

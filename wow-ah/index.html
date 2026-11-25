@@ -1728,7 +1728,7 @@ async function pushStart() {
   track("ah_push_start");
 }
 const isSupporter = () => PSUB?.supporter_until && Date.parse(PSUB.supporter_until) > Date.now();
-const pushCap = () => (isSupporter() ? 30 : 3);
+const pushCap = () => (isSupporter() ? 30 : 1);
 // 本機提醒有改時，同步到推播（有開推播的才同步）
 async function pushSync(id) {
   if (!PUSH_ON || !PUSHED.has(+id)) return;
@@ -1771,7 +1771,7 @@ function pushCardHtml() {
   const emailForm = (lead) => OTP_TO
     ? `<div class="push-step"><span class="sm">驗證碼已寄到 <b>${esc(OTP_TO)}</b>（看一下垃圾信）</span><input type="text" id="pushOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="6 位數驗證碼" class="otp"><button class="promo-cta sm" id="pushOtpGo">登入</button><button class="clr" id="pushOtpBack">換信箱</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`
     : `<div class="push-step">${lead}<input type="email" id="pushMail" autocomplete="email" placeholder="你的信箱" class="mail"><button class="promo-cta sm" id="pushMailGo">寄驗證碼</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`;
-  if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價時直接傳到你的 Discord，手機也會跳通知。免費 3 個商品，贊助者 30 個。</p>
+  if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價時直接傳到你的 Discord，手機也會跳通知。免費 1 個商品，支持者 30 個。</p>
     ${PUSH.email ? `${emailForm('<span class="sm"><b>用信箱登入（建議）</b>：手機、電腦都是同一套推播和贊助。</span>')}
     <p class="sm mut">不想留信箱？<button class="clr" id="pushStart">先不登入，只在這台裝置開啟</button></p>` : '<button class="promo-cta sm" id="pushStart">開啟 Discord 推播</button>'}</div>`;
   const until = isSupporter() ? new Date(PSUB.supporter_until).toLocaleDateString("zh-TW") : "";
