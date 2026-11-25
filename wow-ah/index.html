@@ -825,6 +825,7 @@ let REC = null, ROWBY = new Map();
 const QN = ["POOR", "COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"];
 const CAPS = [75, 150, 225, 300], RANKS = ["學徒", "熟手", "專家", "大師"];
 const AH_CUT = 0.95;
+const OUT_LABEL = { vendor: "賣商店", ah: "掛拍賣扣 5%", none: "不賣" };
 const pstate = { from: 1, to: 300, basis: "avg7", out: "vendor" };
 try { Object.assign(pstate, JSON.parse(localStorage.getItem("wowah.prof") || "{}")); } catch (e) {}
 const savePS = () => { try { localStorage.setItem("wowah.prof", JSON.stringify(pstate)); } catch (e) {} };
@@ -1063,7 +1064,7 @@ function profDetail(view, skill) {
     <div class="tiles">
       <div class="tile"><div class="k">總成本</div><div class="v">${money(plan.total)}</div><div class="x">${plan.gaps ? `<span class="warn">有 ${plan.gaps} 級找不到有價格的配方，沒算進去</span>` : "材料 − 回收 ＋ 學費"}</div></div>
       <div class="tile"><div class="k">材料</div><div class="v">${money(plan.mats)}</div><div class="x">${shop.length} 種材料</div></div>
-      <div class="tile"><div class="k">做出來的東西回收</div><div class="v">${money(plan.salv)}</div><div class="x">${{ vendor: "賣商店", ah: "掛拍賣扣 5%", none: "不賣" }[pstate.out]}</div></div>
+      <div class="tile"><div class="k">做出來的東西回收</div><div class="v">${money(plan.salv)}</div><div class="x">${OUT_LABEL[pstate.out]}</div></div>
       <div class="tile"><div class="k">學費＋配方</div><div class="v">${money(plan.fees)}</div><div class="x">${plan.ranks.map((f) => `${f[0]} ${money(f[1], true)}`).join("・")}</div></div>
     </div>
     <div class="card"><h3>練等路線</h3><p class="desc">橘、黃色配方每做一次必升一級；綠色要多做幾次，「次數」已經照機率算進去。點材料可以看它的拍賣場走勢。</p>
