@@ -1,0 +1,726 @@
+---
+layout: null
+sitemap: true
+---
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<script>/* 數據：沿用全站 GTM（GTM-T277CMLJ → GA4 G-6MLTVNFYPV）。本機不送，要測加 ?track */
+(function(w,d){var loc=/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);w.AH_TRACK=!loc||/[?&]track\b/.test(location.search);if(!w.AH_TRACK)return;
+w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName('script')[0],j=d.createElement('script');j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id=GTM-T277CMLJ';f.parentNode.insertBefore(j,f);})(window,document);</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>台灣拍賣場行情｜魔獸世界：永恆 PvP 聯盟物價走勢</title>
+<meta name="description" content="魔獸世界：永恆台灣 PvP 聯盟拍賣場的每小時物價走勢：現價對比 7 日均價、成交量對比上架量、星期×小時的便宜時段。資料來自暴雪官方 API，每小時更新。非官方工具。">
+<meta property="og:title" content="台灣拍賣場行情｜魔獸世界：永恆">
+<meta property="og:description" content="台灣 PvP 聯盟拍賣場每小時物價走勢：哪些東西現在比 7 日均價便宜、哪些賣得比補得快。">
+<meta property="og:image" content="https://coomysf.github.io/assets/og-hero.jpg">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://coomysf.github.io/wow-ah/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f3ef; --surface: #fcfcfb; --surface-2: #f0efec; --line: #e2e0da; --grid: #ebe9e4;
+    --ink: #0b0b0b; --ink-2: #52514e; --muted: #8a8882;
+    --s1: #2a78d6; --s2: #eb6834; --ref: #8a8882;
+    --cheap: #2a78d6; --dear: #d03b3b; --up: #d03b3b; --down: #0ca30c;
+    --coin-g: #d7a100; --coin-s: #a7adb5; --coin-c: #b8693a;
+    --q-poor: #8a8882; --q-common: #0b0b0b; --q-uncommon: #0c8a0c; --q-rare: #1c5cab; --q-epic: #7b3fc6; --q-legendary: #c25a00;
+    --h0: #f0efec;
+    --focus: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --bg: #121211; --surface: #1a1a19; --surface-2: #242422; --line: #2f2f2c; --grid: #2a2a28;
+      --ink: #ffffff; --ink-2: #c3c2b7; --muted: #8f8e86;
+      --s1: #3987e5; --s2: #d95926; --ref: #8f8e86;
+      --cheap: #3987e5; --dear: #e66767; --up: #e66767; --down: #2fbf2f;
+      --q-poor: #9d9d9d; --q-common: #ffffff; --q-uncommon: #1eff00; --q-rare: #4a9df5; --q-epic: #b77cf0; --q-legendary: #ff9a2e;
+      --h0: #383835;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #121211; --surface: #1a1a19; --surface-2: #242422; --line: #2f2f2c; --grid: #2a2a28;
+    --ink: #ffffff; --ink-2: #c3c2b7; --muted: #8f8e86;
+    --s1: #3987e5; --s2: #d95926; --ref: #8f8e86;
+    --cheap: #3987e5; --dear: #e66767; --up: #e66767; --down: #2fbf2f;
+    --q-poor: #9d9d9d; --q-common: #ffffff; --q-uncommon: #1eff00; --q-rare: #4a9df5; --q-epic: #b77cf0; --q-legendary: #ff9a2e;
+    --h0: #383835;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.55 "Noto Sans TC", "PingFang TC", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  button, input, select { font: inherit; color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  header.top { padding: 28px 0 14px; }
+  .crumb { font-size: 12px; color: var(--muted); text-decoration: none; }
+  .crumb:hover { color: var(--ink-2); }
+  h1 { margin: 6px 0 2px; font-size: 26px; font-weight: 900; letter-spacing: .01em; }
+  .sub { margin: 0; color: var(--ink-2); }
+  .status { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); }
+  .status b { color: var(--ink); font-weight: 700; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--down); margin-right: 6px; vertical-align: 1px; }
+  .dot.stale { background: #fab219; }
+  .notice { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); color: var(--ink-2); font-size: 13px; }
+
+  /* filters */
+  .filters { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid var(--line); }
+  .filters input[type=search] { flex: 1 1 220px; min-width: 0; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+  .filters select { height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); max-width: 46vw; }
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+  .seg button { height: 32px; padding: 0 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); cursor: pointer; font-size: 13px; color: var(--ink-2); }
+  .seg button[aria-pressed=true] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .hint { width: 100%; font-size: 12px; color: var(--muted); }
+
+  /* table */
+  table.list { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .list th { position: sticky; top: var(--fh, 0px); z-index: 4; background: var(--bg); text-align: right; font-size: 12px; font-weight: 500; color: var(--muted); padding: 8px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; cursor: pointer; user-select: none; }
+  .list th:nth-child(1), .list th:nth-child(2) { text-align: left; }
+  .list th[aria-sort] { color: var(--ink); }
+  .list th[aria-sort=descending]::after { content: " ↓"; }
+  .list th[aria-sort=ascending]::after { content: " ↑"; }
+  .list td { padding: 7px 8px; border-bottom: 1px solid var(--grid); text-align: right; white-space: nowrap; }
+  .list td:nth-child(1), .list td:nth-child(2) { text-align: left; }
+  .list tbody tr { cursor: pointer; }
+  .list tbody tr:hover { background: var(--surface); }
+  .star { border: 0; background: none; cursor: pointer; font-size: 16px; color: var(--muted); padding: 0 2px; line-height: 1; }
+  .star[aria-pressed=true] { color: var(--coin-g); }
+  .it { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .it img, .it .noimg { width: 26px; height: 26px; border-radius: 5px; flex: none; background: var(--surface-2); }
+  .it .nm { overflow: hidden; text-overflow: ellipsis; max-width: 260px; font-weight: 500; }
+  .it .cl { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
+  .q-POOR { color: var(--q-poor); } .q-COMMON { color: var(--q-common); } .q-UNCOMMON { color: var(--q-uncommon); }
+  .q-RARE { color: var(--q-rare); } .q-EPIC { color: var(--q-epic); } .q-LEGENDARY { color: var(--q-legendary); }
+  .dev { display: inline-block; min-width: 64px; }
+  .dev.cheap::before { content: "▼ "; color: var(--cheap); font-size: 10px; }
+  .dev.dear::before { content: "▲ "; color: var(--dear); font-size: 10px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); margin-left: 6px; }
+  .mut { color: var(--muted); }
+  .more { display: block; margin: 16px auto 40px; height: 38px; padding: 0 20px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+  .empty { padding: 40px 0; text-align: center; color: var(--muted); }
+
+  /* coins */
+  .m { white-space: nowrap; }
+  .m i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 3px 0 1px; vertical-align: 0; }
+  .m i.g { background: var(--coin-g); } .m i.s { background: var(--coin-s); } .m i.c { background: var(--coin-c); }
+
+  svg.spark { display: block; }
+
+  /* mobile list */
+  @media (max-width: 760px) {
+    .list thead { display: none; }
+    .list, .list tbody { display: block; }
+    .list tr { display: grid; grid-template-columns: 22px 1fr auto; grid-template-areas: "s n p" "s k k"; gap: 2px 8px; padding: 10px 2px; border-bottom: 1px solid var(--grid); }
+    .list td { border: 0; padding: 0; }
+    .list td.c-star { grid-area: s; }
+    .list td.c-item { grid-area: n; min-width: 0; }
+    .list td.c-ask { grid-area: p; font-weight: 700; }
+    .list td.c-rest { grid-area: k; display: flex; flex-wrap: wrap; gap: 2px 12px; justify-content: flex-start; font-size: 12px; color: var(--ink-2); }
+    .list td.c-rest span[data-l]::before { content: attr(data-l) " "; color: var(--muted); }
+    .list td.c-desk { display: none; }
+    .it .nm { max-width: 52vw; }
+    .dev { min-width: 0; }
+  }
+  @media (min-width: 761px) { .list td.c-rest { display: none; } }
+
+  /* item view */
+  .back { margin: 16px 0 6px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+  .ihead { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; }
+  .ihead img, .ihead .noimg { width: 46px; height: 46px; border-radius: 8px; background: var(--surface-2); }
+  .ihead h2 { margin: 0; font-size: 22px; font-weight: 900; }
+  .ihead .cl { color: var(--muted); font-size: 12.5px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .tile .k { font-size: 12px; color: var(--muted); }
+  .tile .v { font-size: 19px; font-weight: 700; margin-top: 2px; }
+  .tile .x { font-size: 12px; color: var(--ink-2); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 14px 10px; margin-top: 14px; }
+  .card h3 { margin: 0; font-size: 15px; font-weight: 700; }
+  .card .desc { margin: 2px 0 8px; font-size: 12.5px; color: var(--ink-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
+  .legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: 3px; }
+  .legend i.box { height: 10px; width: 10px; vertical-align: -1px; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .axis text { fill: var(--muted); font-size: 11px; }
+  .gridl { stroke: var(--grid); stroke-width: 1; }
+  .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 12px; padding: 7px 9px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); z-index: 3; }
+  .tip .m i { box-shadow: 0 0 0 1px rgba(255,255,255,.4); }
+  .tabs { display: inline-flex; gap: 4px; margin: 6px 0 8px; }
+  .hm-scale { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .hm-scale span.bar { height: 8px; width: 140px; border-radius: 4px; }
+  .foot { margin: 28px 0 40px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .foot a { color: var(--ink-2); }
+  details.table-view { margin-top: 6px; font-size: 12px; color: var(--ink-2); }
+  details.table-view table { border-collapse: collapse; margin-top: 6px; }
+  details.table-view td, details.table-view th { padding: 2px 10px 2px 0; text-align: right; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="crumb" href="/">← Coomy</a>
+    <h1>台灣拍賣場行情</h1>
+    <p class="sub">魔獸世界：永恆・PvP 聯盟拍賣場・每小時更新</p>
+    <div class="status" id="status">讀取中…</div>
+    <p class="notice" id="notice" hidden></p>
+  </header>
+
+  <section id="listView">
+    <div class="filters" id="filters">
+      <input type="search" id="q" placeholder="搜尋商品名稱" aria-label="搜尋商品名稱" autocomplete="off">
+      <select id="cls" aria-label="類別"><option value="">所有類別</option></select>
+      <select id="sub" aria-label="子類別"><option value="">所有子類</option></select>
+      <div class="seg" id="sig" role="group" aria-label="訊號">
+        <button data-v="" aria-pressed="true">全部</button>
+        <button data-v="cheap" aria-pressed="false">可撿</button>
+        <button data-v="dear" aria-pressed="false">可出</button>
+        <button data-v="hot" aria-pressed="false">搶手</button>
+        <button data-v="slow" aria-pressed="false">滯銷</button>
+        <button data-v="watch" aria-pressed="false">★ 觀察</button>
+      </div>
+      <select id="thr" aria-label="偏離門檻">
+        <option value="0.1">偏離 ≥ 10%</option>
+        <option value="0.2" selected>偏離 ≥ 20%</option>
+        <option value="0.3">偏離 ≥ 30%</option>
+        <option value="0.5">偏離 ≥ 50%</option>
+      </select>
+      <select id="minv" aria-label="最低成交量">
+        <option value="0">24h 成交不限</option>
+        <option value="5" selected>24h 成交 ≥ 5</option>
+        <option value="20">24h 成交 ≥ 20</option>
+        <option value="100">24h 成交 ≥ 100</option>
+      </select>
+      <div class="hint" id="hint"></div>
+    </div>
+    <table class="list" id="list">
+      <thead><tr>
+        <th scope="col" data-k="star" aria-label="觀察"></th>
+        <th scope="col" data-k="name">商品</th>
+        <th scope="col" data-k="ask">現價</th>
+        <th scope="col" data-k="avg7">7 日均</th>
+        <th scope="col" data-k="dev">偏離</th>
+        <th scope="col" data-k="spark" title="最近 24 小時最低價">24h 走勢</th>
+        <th scope="col" data-k="vol24">24h 成交</th>
+        <th scope="col" data-k="ratio" title="24 小時成交 ÷ 新上架，大於 1 代表賣得比補得快">量比</th>
+        <th scope="col" data-k="listed">掛單量</th>
+        <th scope="col" data-k="last">最後成交</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden>沒有符合的商品</div>
+    <button class="more" id="more" hidden>顯示更多</button>
+  </section>
+
+  <section id="itemView" hidden></section>
+
+  <p class="foot">
+    資料來自暴雪官方 Battle.net API 每小時的拍賣場快照，非官方工具，與暴雪娛樂無關。<br>
+    快照只看得到「掛著什麼」，成交是推算的：可能是時間到而下架的單一律不算成交，所以成交量是下限。推算規則參考 <a href="https://auctionhouse.tk.gg/data/" target="_blank" rel="noopener">auctionhouse.tk.gg</a>。<br>
+    「7 日均」是最近 7 天每小時最低價的平均；「偏離」是現價相對 7 日均；「量比」是 24 小時成交 ÷ 新上架。時間一律是台北時間。
+  </p>
+</div>
+
+<script>
+const DATA = new URLSearchParams(location.search).get("data") || "https://raw.githubusercontent.com/coomySF/coomySF.github.io/ah-data";
+const HOUSE = "tw-110";
+const SHARDS = 128;
+// 走勢圖上的事件標記：每週重置與手動事件（台北時間）
+const WEEKLY_RESET = { weekday: 4, hour: 7, label: "週重置" }; // 0=週日
+const EVENTS = []; // { t: "2026-12-01T07:00:00+08:00", label: "新階段開放" }
+const WD = ["日", "一", "二", "三", "四", "五", "六"];
+
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const track = (name, p = {}) => { if (!window.AH_TRACK) return; try { window.dataLayer = window.dataLayer || []; window.gtag = window.gtag || function () { dataLayer.push(arguments); }; gtag("event", name, { send_to: "G-6MLTVNFYPV", tool: "wow_ah", ...p }); } catch (e) {} };
+
+function money(c, plain) {
+  if (c == null) return '<span class="mut">—</span>';
+  c = Math.round(c);
+  const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cp = c % 100;
+  if (plain) return g ? `${g}g${s ? s + "s" : ""}` : s ? `${s}s${cp ? cp + "c" : ""}` : `${cp}c`;
+  const p = [];
+  if (g) { p.push(`${g.toLocaleString()}<i class="g"></i>`); if (g < 100 && s) p.push(`${s}<i class="s"></i>`); }
+  else if (s) { p.push(`${s}<i class="s"></i>`); if (cp) p.push(`${cp}<i class="c"></i>`); }
+  else p.push(`${cp}<i class="c"></i>`);
+  return `<span class="m num">${p.join("")}</span>`;
+}
+const fmtN = (n) => (n == null ? "—" : n.toLocaleString());
+const pct = (x) => (x == null ? "—" : (x > 0 ? "+" : "") + Math.round(x * 100) + "%");
+const tpe = (ms, opt) => new Date(ms).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false, ...opt });
+function ago(ms) {
+  const m = Math.round((Date.now() - ms) / 60000);
+  if (m < 60) return `${m} 分鐘前`;
+  const h = Math.round(m / 60);
+  return h < 48 ? `${h} 小時前` : `${Math.round(h / 24)} 天前`;
+}
+const tpeParts = (ms) => { const d = new Date(ms + 8 * 3600e3); return { wd: d.getUTCDay(), h: d.getUTCHours(), md: `${d.getUTCMonth() + 1}/${d.getUTCDate()}` }; };
+
+async function getJSON(path) {
+  const r = await fetch(`${DATA}/${path}`, { cache: "no-cache" });
+  if (!r.ok) throw new Error(`${path} ${r.status}`);
+  return r.json();
+}
+
+let META = {}, OV = null, ROWS = [], STATUS = null;
+let watch = new Set();
+try { watch = new Set(JSON.parse(localStorage.getItem("wowah.watch") || "[]")); } catch (e) {}
+const saveWatch = () => { try { localStorage.setItem("wowah.watch", JSON.stringify([...watch])); } catch (e) {} };
+const state = { q: "", cls: "", sub: "", sig: "", thr: 0.2, minv: 5, sort: "vol24", dir: -1, shown: 100 };
+try { Object.assign(state, JSON.parse(localStorage.getItem("wowah.filters") || "{}"), { shown: 100 }); } catch (e) {}
+const saveFilters = () => { try { const { q, shown, ...rest } = state; localStorage.setItem("wowah.filters", JSON.stringify(rest)); } catch (e) {} };
+
+async function boot() {
+  try {
+    [OV, META, STATUS] = await Promise.all([getJSON(`${HOUSE}/overview.json`), getJSON("meta/items.json"), getJSON("status.json").catch(() => null)]);
+  } catch (e) {
+    $("#status").textContent = "資料讀取失敗，稍後再試一次。";
+    return;
+  }
+  const at = Object.fromEntries(OV.f.map((n, i) => [n, i]));
+  ROWS = OV.items.map((it) => {
+    const o = it.o, m = META[it.id] || [];
+    const r = { id: it.id, name: m[0] || `#${it.id}`, q: m[1] || "COMMON", cls: m[2] || "其他", sub: m[3] || "", icon: m[7], nc: !!it.nc, s: it.s, v: it.v };
+    for (const k in at) r[k] = o[at[k]];
+    r.dev = r.ask != null && r.avg7 ? r.ask / r.avg7 - 1 : null;
+    r.ratio = r.vol24 != null && r.added24 ? r.vol24 / r.added24 : r.vol24 ? Infinity : null;
+    r.key = r.name.toLowerCase();
+    return r;
+  });
+  renderStatus();
+  fillClasses();
+  bindFilters();
+  route();
+  window.addEventListener("hashchange", route);
+}
+
+function renderStatus() {
+  const h = STATUS?.houses?.[HOUSE];
+  const stale = Date.now() - OV.t > 3 * 3600e3;
+  $("#status").innerHTML = `<span><span class="dot${stale ? " stale" : ""}"></span>最新快照 <b>${tpe(OV.t, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</b>（${ago(OV.t)}）</span>
+    <span><b>${ROWS.length.toLocaleString()}</b> 種商品在架或 7 天內有成交</span>
+    ${h ? `<span>這一小時推算成交 <b>${fmtN(h.sold)}</b> 件</span>` : ""}`;
+  // 資料累積不足時提醒
+  const flowH = Math.max(0, ...ROWS.slice(0, 200).map((r) => r.flowHours || 0));
+  if (!flowH && state.sort === "vol24") state.sort = "listed"; // 還沒有成交資料時先看掛單量
+  if (flowH < 24) {
+    $("#notice").hidden = false;
+    $("#notice").textContent = `2026/11/25 才開始收集，目前只有 ${flowH} 小時的成交資料。7 日均價、量比要累積滿幾天才準；熱圖至少要 4 週。`;
+  }
+}
+
+function fillClasses() {
+  const counts = {};
+  for (const r of ROWS) counts[r.cls] = (counts[r.cls] || 0) + 1;
+  const sel = $("#cls");
+  Object.entries(counts).sort((a, b) => b[1] - a[1]).forEach(([c, n]) => sel.insertAdjacentHTML("beforeend", `<option value="${esc(c)}">${esc(c)}（${n}）</option>`));
+  sel.value = state.cls;
+  fillSubs();
+}
+function fillSubs() {
+  const subs = {};
+  for (const r of ROWS) if (!state.cls || r.cls === state.cls) if (r.sub) subs[r.sub] = (subs[r.sub] || 0) + 1;
+  const sel = $("#sub");
+  sel.innerHTML = '<option value="">所有子類</option>' + Object.entries(subs).sort((a, b) => b[1] - a[1]).map(([c, n]) => `<option value="${esc(c)}">${esc(c)}（${n}）</option>`).join("");
+  if (!subs[state.sub]) state.sub = "";
+  sel.value = state.sub;
+}
+
+function bindFilters() {
+  let t;
+  $("#q").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { state.q = e.target.value.trim().toLowerCase(); state.shown = 100; renderList(); }, 120); });
+  $("#cls").addEventListener("change", (e) => { state.cls = e.target.value; fillSubs(); state.shown = 100; saveFilters(); renderList(); });
+  $("#sub").addEventListener("change", (e) => { state.sub = e.target.value; state.shown = 100; saveFilters(); renderList(); });
+  $("#thr").value = String(state.thr);
+  $("#minv").value = String(state.minv);
+  $("#thr").addEventListener("change", (e) => { state.thr = +e.target.value; saveFilters(); renderList(); });
+  $("#minv").addEventListener("change", (e) => { state.minv = +e.target.value; saveFilters(); renderList(); });
+  $("#sig").querySelectorAll("button").forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset.v === state.sig));
+    b.addEventListener("click", () => {
+      state.sig = b.dataset.v; state.shown = 100;
+      $("#sig").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      if (state.sig === "cheap" || state.sig === "dear") { state.sort = "dev"; state.dir = state.sig === "cheap" ? 1 : -1; }
+      if (state.sig === "hot") { state.sort = "ratio"; state.dir = -1; }
+      saveFilters(); renderList(); track("ah_signal", { signal: state.sig || "all" });
+    });
+  });
+  $("#list thead").addEventListener("click", (e) => {
+    const k = e.target.closest("th")?.dataset.k;
+    if (!k || k === "star" || k === "spark") return;
+    state.dir = state.sort === k ? -state.dir : k === "name" ? 1 : -1;
+    state.sort = k; saveFilters(); renderList();
+  });
+  $("#more").addEventListener("click", () => { state.shown += 200; renderList(); });
+  $("#rows").addEventListener("click", (e) => {
+    const star = e.target.closest(".star");
+    const tr = e.target.closest("tr");
+    if (!tr) return;
+    const id = +tr.dataset.id;
+    if (star) {
+      e.stopPropagation();
+      watch.has(id) ? watch.delete(id) : watch.add(id);
+      saveWatch(); star.setAttribute("aria-pressed", String(watch.has(id)));
+      return;
+    }
+    location.hash = `#/item/${id}`;
+  });
+  const fh = () => document.documentElement.style.setProperty("--fh", $("#filters").offsetHeight + "px");
+  fh(); window.addEventListener("resize", fh);
+}
+
+function matches(r) {
+  if (state.q && !r.key.includes(state.q)) return false;
+  if (state.cls && r.cls !== state.cls) return false;
+  if (state.sub && r.sub !== state.sub) return false;
+  const vol = r.vol24 || 0;
+  switch (state.sig) {
+    case "cheap": return r.dev != null && r.dev <= -state.thr && vol >= state.minv;
+    case "dear": return r.dev != null && r.dev >= state.thr && vol >= state.minv;
+    case "hot": return vol >= Math.max(state.minv, 1) && (r.ratio ?? 0) > 1;
+    case "slow": return (r.listed || 0) > 0 && ((r.cancelled24 || 0) + (r.expired24 || 0)) > Math.max(vol, 0) * 2 && vol < Math.max(state.minv, 1) * 4;
+    case "watch": return watch.has(r.id);
+    default: return r.vol24 == null || vol >= state.minv || !!state.q;
+  }
+}
+
+function sorter() {
+  const k = state.sort, d = state.dir;
+  const val = (r) => k === "name" ? r.name : k === "last" ? r.lastSoldT : r[k];
+  return (a, b) => {
+    const x = val(a), y = val(b);
+    if (x == null && y == null) return 0;
+    if (x == null) return 1;
+    if (y == null) return -1;
+    return (typeof x === "string" ? x.localeCompare(y, "zh-Hant") : x - y) * d;
+  };
+}
+
+function spark(vals, w = 92, h = 26) {
+  const pts = vals.map((v, i) => [i, v]).filter((p) => p[1] != null);
+  if (pts.length < 2) return '<span class="mut">—</span>';
+  const ys = pts.map((p) => p[1]), lo = Math.min(...ys), hi = Math.max(...ys), n = vals.length - 1 || 1;
+  const X = (i) => 1 + (i / n) * (w - 2), Y = (v) => (hi === lo ? h / 2 : h - 3 - ((v - lo) / (hi - lo)) * (h - 6));
+  const d = pts.map((p, j) => `${j ? "L" : "M"}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join("");
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--s1)" stroke-width="1.5" stroke-linejoin="round"/><circle cx="${X(last[0])}" cy="${Y(last[1])}" r="2.2" fill="var(--s1)"/></svg>`;
+}
+
+function itemCell(r) {
+  const img = r.icon ? `<img src="${esc(r.icon)}" alt="" loading="lazy" width="26" height="26">` : '<span class="noimg"></span>';
+  return `<div class="it">${img}<span class="nm q-${esc(r.q)}">${esc(r.name)}<span class="cl">${esc(r.sub || r.cls)}</span></span></div>`;
+}
+function devCell(r) {
+  if (r.dev == null) return '<span class="mut">—</span>';
+  const c = r.dev <= -state.thr ? "cheap" : r.dev >= state.thr ? "dear" : "";
+  return `<span class="dev num ${c}">${pct(r.dev)}</span>`;
+}
+const ratioTxt = (r) => r.ratio == null ? "—" : r.ratio === Infinity ? "∞" : r.ratio.toFixed(2);
+const lastTxt = (r) => r.lastSoldT ? `${money(r.lastSoldP)} <span class="mut">${ago(r.lastSoldT)}</span>` : '<span class="mut">—</span>';
+
+function renderList() {
+  const list = ROWS.filter(matches).sort(sorter());
+  $("#list thead").querySelectorAll("th").forEach((th) => th.dataset.k === state.sort ? th.setAttribute("aria-sort", state.dir > 0 ? "ascending" : "descending") : th.removeAttribute("aria-sort"));
+  const hints = { cheap: `現價比 7 日均低 ${state.thr * 100}% 以上、24h 至少成交 ${state.minv} 件`, dear: `現價比 7 日均高 ${state.thr * 100}% 以上、24h 至少成交 ${state.minv} 件`, hot: "24 小時賣出比新上架多：貨在變少", slow: "24 小時取消＋過期遠多於成交：賣不動或有人撤單", watch: "點商品左邊的 ★ 加入，只存在這台裝置" };
+  $("#hint").textContent = `${list.length.toLocaleString()} 項${hints[state.sig] ? "・" + hints[state.sig] : ""}`;
+  const html = list.slice(0, state.shown).map((r) => `<tr data-id="${r.id}">
+    <td class="c-star"><button class="star" aria-label="加入觀察" aria-pressed="${watch.has(r.id)}">★</button></td>
+    <td class="c-item">${itemCell(r)}</td>
+    <td class="c-ask">${money(r.ask)}</td>
+    <td class="c-desk">${money(r.avg7)}</td>
+    <td class="c-desk">${devCell(r)}</td>
+    <td class="c-desk">${spark(r.s)}</td>
+    <td class="c-desk num">${fmtN(r.vol24)}</td>
+    <td class="c-desk num">${ratioTxt(r)}</td>
+    <td class="c-desk num">${fmtN(r.listed)}</td>
+    <td class="c-desk">${lastTxt(r)}</td>
+    <td class="c-rest"><span data-l="偏離">${devCell(r)}</span><span data-l="24h 成交" class="num">${fmtN(r.vol24)}</span><span data-l="量比" class="num">${ratioTxt(r)}</span><span data-l="掛單" class="num">${fmtN(r.listed)}</span></td>
+  </tr>`).join("");
+  $("#rows").innerHTML = html;
+  $("#empty").hidden = list.length > 0;
+  $("#more").hidden = list.length <= state.shown;
+  if (state.q) $("#q").value = state.q;
+}
+
+/* ---------------- 單一商品 ---------------- */
+
+function route() {
+  const m = location.hash.match(/^#\/item\/(\d+)/);
+  if (m) { showItem(+m[1]); return; }
+  $("#itemView").hidden = true; $("#listView").hidden = false;
+  renderList();
+}
+
+async function showItem(id) {
+  $("#listView").hidden = true;
+  const view = $("#itemView");
+  view.hidden = false;
+  view.innerHTML = '<button class="back" id="back">← 回列表</button><p class="mut">讀取中…</p>';
+  $("#back").onclick = () => history.length > 1 ? history.back() : (location.hash = "");
+  window.scrollTo(0, 0);
+  const shard = id % SHARDS;
+  let H, D;
+  try { [H, D] = await Promise.all([getJSON(`${HOUSE}/h/${shard}.json`), getJSON(`${HOUSE}/d/${shard}.json`).catch(() => null)]); }
+  catch (e) { view.insertAdjacentHTML("beforeend", "<p>資料讀取失敗。</p>"); return; }
+  const rec = H.items[id];
+  const r = ROWS.find((x) => x.id === id) || { id, name: (META[id] || [])[0] || `#${id}`, q: (META[id] || [])[1] || "COMMON", cls: (META[id] || [])[2] || "", sub: (META[id] || [])[3] || "", icon: (META[id] || [])[7] };
+  track("ah_item", { item_id: id });
+  document.title = `${r.name}｜台灣拍賣場行情`;
+  const img = r.icon ? `<img src="${esc(r.icon)}" alt="" width="46" height="46">` : '<span class="noimg"></span>';
+  const inWatch = watch.has(id);
+  view.innerHTML = `<button class="back" id="back">← 回列表</button>
+    <div class="ihead">${img}<div><h2 class="q-${esc(r.q)}">${esc(r.name)}</h2><div class="cl">${esc([r.cls, r.sub].filter(Boolean).join("・"))}${r.nc ? "<span class='tag'>非堆疊：成交全是估計</span>" : ""}
+      <button class="star" id="istar" aria-pressed="${inWatch}" aria-label="加入觀察">★</button></div></div></div>
+    <div class="tiles">
+      <div class="tile"><div class="k">現價（最低一口）</div><div class="v">${money(r.ask)}</div><div class="x">第二檔 ${money(r.ask2)}</div></div>
+      <div class="tile"><div class="k">7 日均</div><div class="v">${money(r.avg7)}</div><div class="x">偏離 ${devCell(r)}</div></div>
+      <div class="tile"><div class="k">24h 成交／上架</div><div class="v num">${fmtN(r.vol24)} <span class="mut">／</span> ${fmtN(r.added24)}</div><div class="x">確認成交 ${fmtN(r.sure24)}・量比 ${ratioTxt(r)}</div></div>
+      <div class="tile"><div class="k">掛單量</div><div class="v num">${fmtN(r.listed)}</div><div class="x">5% 內深度 ${fmtN(r.depth5)}・${fmtN(r.listings)} 口</div></div>
+      <div class="tile"><div class="k">24h 取消／過期</div><div class="v num">${fmtN(r.cancelled24)} <span class="mut">／</span> ${fmtN(r.expired24)}</div><div class="x">最後成交 ${lastTxt(r)}</div></div>
+    </div>
+    <div class="card"><h3>價格走勢</h3><p class="desc">最近 7 天每小時的最低價，灰線是 7 日均。直線是每週重置。</p>
+      <div class="legend"><span><i style="background:var(--s1)"></i>每小時最低價</span><span><i style="background:var(--ref)"></i>7 日均</span></div>
+      <div class="chart" id="cPrice"></div></div>
+    <div class="card"><h3>供需</h3><p class="desc">每小時推算成交 vs 新上架。成交長期高過上架＝貨在變少。</p>
+      <div class="legend"><span><i class="box" style="background:var(--s1)"></i>成交</span><span><i style="background:var(--s2)"></i>新上架</span></div>
+      <div class="chart" id="cFlow"></div></div>
+    <div class="card"><h3>日 K</h3><p class="desc">台北時間切日。紅＝收盤比開盤高，綠＝收盤比開盤低。</p><div class="chart" id="cDaily"></div></div>
+    <div class="card"><h3>什麼時候最便宜</h3><p class="desc" id="hmDesc"></p>
+      <div class="seg tabs" id="hmTabs" role="group" aria-label="熱圖"><button data-v="dev" aria-pressed="true">價格</button><button data-v="sold" aria-pressed="false">成交量</button></div>
+      <div class="chart" id="cHeat"></div><div class="hm-scale" id="hmScale"></div></div>`;
+  $("#back").onclick = () => (history.length > 1 ? history.back() : (location.hash = ""));
+  $("#istar").onclick = (e) => { watch.has(id) ? watch.delete(id) : watch.add(id); saveWatch(); e.currentTarget.setAttribute("aria-pressed", String(watch.has(id))); };
+
+  if (!rec) {
+    ["#cPrice", "#cFlow", "#cHeat"].forEach((s) => ($(s).innerHTML = '<p class="mut">這個商品最近 7 天沒有資料。</p>'));
+  }
+  const draw = () => {
+    if (rec) {
+      const f = Object.fromEntries(H.f.map((n, i) => [n, rec.h[i]]));
+      priceChart($("#cPrice"), H.t, f.ask, r.avg7);
+      flowChart($("#cFlow"), H.t, f.sold, f.added, f);
+      heatmap(rec.hm);
+    }
+    dailyChart($("#cDaily"), D && D.items[id], D && D.f);
+  };
+  draw();
+  $("#hmTabs").querySelectorAll("button").forEach((b) => b.onclick = () => { $("#hmTabs").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); heatMode = b.dataset.v; rec && heatmap(rec.hm); });
+  let rt; window.onresize = () => { clearTimeout(rt); rt = setTimeout(() => { if (!$("#itemView").hidden) draw(); }, 150); };
+}
+
+/* ---------------- 圖表 ---------------- */
+
+const PAD = { l: 58, r: 12, t: 10, b: 24 };
+function frame(el, h) {
+  const w = Math.max(280, el.clientWidth);
+  return { w, h, iw: w - PAD.l - PAD.r, ih: h - PAD.t - PAD.b };
+}
+function niceTicks(lo, hi, n = 4) {
+  if (lo === hi) { hi = lo + 1; }
+  const span = hi - lo, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((s) => s >= step0);
+  const out = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(v);
+  return out;
+}
+function timeTicks(t0, t1) {
+  const out = [];
+  const day = 86400e3;
+  let d = Math.ceil((t0 + 8 * 3600e3) / day) * day - 8 * 3600e3;
+  for (; d <= t1; d += day) out.push(d);
+  return out;
+}
+function markers(t0, t1) {
+  const out = [];
+  const day = 86400e3;
+  for (let d = Math.floor((t0 + 8 * 3600e3) / day) * day - 8 * 3600e3; d <= t1; d += day) {
+    const x = d + WEEKLY_RESET.hour * 3600e3;
+    if (tpeParts(x).wd === WEEKLY_RESET.weekday && x >= t0 && x <= t1) out.push({ t: x, label: WEEKLY_RESET.label });
+  }
+  for (const e of EVENTS) { const t = Date.parse(e.t); if (t >= t0 && t <= t1) out.push({ t, label: e.label }); }
+  return out;
+}
+
+function attachHover(el, svg, xs, fx, tipHtml, guideTop, guideBot) {
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; el.appendChild(tip);
+  const guide = svg.querySelector(".guide");
+  const move = (ev) => {
+    const box = svg.getBoundingClientRect();
+    const px = ev.clientX - box.left;
+    let best = 0, bd = Infinity;
+    xs.forEach((x, i) => { const d = Math.abs(fx(i) - px); if (d < bd) { bd = d; best = i; } });
+    const html = tipHtml(best);
+    if (!html) { tip.hidden = true; return; }
+    const x = fx(best);
+    tip.innerHTML = html; tip.hidden = false;
+    tip.style.left = Math.min(Math.max(x, 70), box.width - 70) + "px";
+    tip.style.top = PAD.t + "px";
+    if (guide) { guide.setAttribute("x1", x); guide.setAttribute("x2", x); guide.style.display = ""; }
+  };
+  const leave = () => { tip.hidden = true; if (guide) guide.style.display = "none"; };
+  svg.addEventListener("pointermove", move);
+  svg.addEventListener("pointerdown", move);
+  svg.addEventListener("pointerleave", leave);
+}
+
+function yAxis(F, ticks, Y, fmt) {
+  return ticks.map((v) => `<line class="gridl" x1="${PAD.l}" x2="${PAD.l + F.iw}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${PAD.l - 8}" y="${Y(v) + 4}" text-anchor="end">${fmt(v)}</text>`).join("");
+}
+function xAxis(F, t0, t1, X) {
+  return timeTicks(t0, t1).map((d) => { const p = tpeParts(d); return `<text x="${X(d)}" y="${F.h - 6}" text-anchor="middle">${p.md}（${WD[p.wd]}）</text>`; }).join("");
+}
+function markerLines(F, t0, t1, X) {
+  return markers(t0, t1).map((m) => `<line x1="${X(m.t)}" x2="${X(m.t)}" y1="${PAD.t}" y2="${PAD.t + F.ih}" stroke="var(--muted)" stroke-width="1" opacity=".6"/><text x="${X(m.t) + 4}" y="${PAD.t + 10}" font-size="10" fill="var(--muted)">${esc(m.label)}</text>`).join("");
+}
+
+function priceChart(el, T, ask, avg7) {
+  const F = frame(el, 220);
+  const vals = ask.filter((v) => v != null);
+  if (vals.length < 2) { el.innerHTML = '<p class="mut">資料還不夠畫走勢。</p>'; return; }
+  // 用 2%～98% 分位數定範圍，避免一筆亂掛把整張圖壓扁
+  const sorted = [...vals].sort((a, b) => a - b);
+  let lo = sorted[Math.floor(sorted.length * 0.02)], hi = sorted[Math.ceil(sorted.length * 0.98) - 1];
+  if (avg7) { lo = Math.min(lo, avg7); hi = Math.max(hi, avg7); }
+  const ticks = niceTicks(lo * 0.97, hi * 1.03);
+  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+  const t0 = T[0], t1 = T[T.length - 1];
+  const X = (t) => PAD.l + ((t - t0) / Math.max(1, t1 - t0)) * F.iw;
+  const Y = (v) => PAD.t + F.ih - ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * F.ih;
+  let d = "", pen = false;
+  T.forEach((t, i) => { const v = ask[i]; if (v == null) { pen = false; return; } d += `${pen ? "L" : "M"}${X(t).toFixed(1)},${Y(v).toFixed(1)}`; pen = true; });
+  const li = ask.map((v, i) => (v != null ? i : -1)).filter((i) => i >= 0).pop();
+  el.innerHTML = `<svg viewBox="0 0 ${F.w} ${F.h}" height="${F.h}" role="img" aria-label="價格走勢">
+    <g class="axis">${yAxis(F, ticks, Y, (v) => money(v, true))}${xAxis(F, t0, t1, X)}</g>
+    ${markerLines(F, t0, t1, X)}
+    ${avg7 ? `<line x1="${PAD.l}" x2="${PAD.l + F.iw}" y1="${Y(avg7)}" y2="${Y(avg7)}" stroke="var(--ref)" stroke-width="1.5"/>` : ""}
+    <path d="${d}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(T[li])}" cy="${Y(ask[li])}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>
+    <line class="guide" y1="${PAD.t}" y2="${PAD.t + F.ih}" stroke="var(--ink-2)" stroke-width="1" style="display:none"/>
+    <rect x="${PAD.l}" y="0" width="${F.iw}" height="${F.h}" fill="transparent"/>
+  </svg>`;
+  attachHover(el, el.querySelector("svg"), T, (i) => X(T[i]), (i) => `${tpe(T[i], { month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" })}<br>最低價 ${money(ask[i])}${avg7 && ask[i] ? `（${pct(ask[i] / avg7 - 1)}）` : ""}`);
+  tableView(el, ["時間", "最低價"], T.map((t, i) => [tpe(t, { month: "numeric", day: "numeric", hour: "2-digit" }), money(ask[i], true)]).reverse());
+}
+
+function flowChart(el, T, sold, added, f) {
+  const F = frame(el, 190);
+  const has = sold.some((v) => v != null);
+  if (!has) { el.innerHTML = '<p class="mut">要有兩份快照才能推算成交，下一小時就有。</p>'; return; }
+  const mx = Math.max(1, ...sold.filter((v) => v != null), ...added.filter((v) => v != null));
+  const ticks = niceTicks(0, mx, 3);
+  const top = ticks[ticks.length - 1];
+  const t0 = T[0], t1 = T[T.length - 1];
+  const X = (t) => PAD.l + ((t - t0) / Math.max(1, t1 - t0)) * F.iw;
+  const Y = (v) => PAD.t + F.ih - (v / top) * F.ih;
+  const bw = Math.max(1, Math.min(8, F.iw / Math.max(1, T.length) - 2));
+  const bars = T.map((t, i) => { const v = sold[i]; if (!v) return ""; const y = Y(v), h = PAD.t + F.ih - y; return `<rect x="${(X(t) - bw / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="${Math.min(2, bw / 2)}" fill="var(--s1)"/>`; }).join("");
+  let d = "", pen = false;
+  T.forEach((t, i) => { const v = added[i]; if (v == null) { pen = false; return; } d += `${pen ? "L" : "M"}${X(t).toFixed(1)},${Y(v).toFixed(1)}`; pen = true; });
+  el.innerHTML = `<svg viewBox="0 0 ${F.w} ${F.h}" height="${F.h}" role="img" aria-label="每小時成交與上架">
+    <g class="axis">${yAxis(F, ticks, Y, (v) => v.toLocaleString())}${xAxis(F, t0, t1, X)}</g>
+    ${bars}
+    <path d="${d}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/>
+    <line class="guide" y1="${PAD.t}" y2="${PAD.t + F.ih}" stroke="var(--ink-2)" stroke-width="1" style="display:none"/>
+    <rect x="${PAD.l}" y="0" width="${F.iw}" height="${F.h}" fill="transparent"/>
+  </svg>`;
+  attachHover(el, el.querySelector("svg"), T, (i) => X(T[i]), (i) => sold[i] == null ? `${tpe(T[i], { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}<br>這小時沒有可比對的快照` :
+    `${tpe(T[i], { month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" })}<br>成交 ${fmtN(sold[i])}（確認 ${fmtN(f.sure[i])}）・上架 ${fmtN(added[i])}<br>取消 ${fmtN(f.cancelled[i])}・過期 ${fmtN(f.expired[i])}・掛單 ${fmtN(f.listed[i])}`);
+}
+
+function dailyChart(el, rows, fields) {
+  if (!rows || rows.length < 2) { el.innerHTML = `<p class="mut">日 K 每天台北時間午夜收一根，${rows && rows.length === 1 ? "目前 1 根" : "還在累積第一天"}，至少要 2 天才畫得出來。</p>`; return; }
+  const at = Object.fromEntries(fields.map((n, i) => [n, i]));
+  rows = rows.slice(-90);
+  const F = frame(el, 200);
+  const lo0 = Math.min(...rows.map((r) => r[at.low] ?? r[at.close] ?? Infinity)), hi0 = Math.max(...rows.map((r) => r[at.high] ?? r[at.close] ?? 0));
+  const ticks = niceTicks(lo0 * 0.97, hi0 * 1.03);
+  const lo = Math.min(lo0, ticks[0]), hi = Math.max(hi0, ticks[ticks.length - 1]);
+  const n = rows.length, step = F.iw / n, bw = Math.max(2, Math.min(12, step - 2));
+  const X = (i) => PAD.l + step * (i + 0.5);
+  const Y = (v) => PAD.t + F.ih - ((v - lo) / (hi - lo || 1)) * F.ih;
+  const marks = rows.map((r, i) => {
+    const o = r[at.open], c = r[at.close], h = r[at.high], l = r[at.low];
+    if (o == null || c == null) return "";
+    const col = c > o ? "var(--up)" : c < o ? "var(--down)" : "var(--muted)";
+    const y1 = Y(Math.max(o, c)), y2 = Y(Math.min(o, c));
+    return `<line x1="${X(i)}" x2="${X(i)}" y1="${Y(h ?? Math.max(o, c))}" y2="${Y(l ?? Math.min(o, c))}" stroke="${col}" stroke-width="1"/><rect x="${X(i) - bw / 2}" y="${y1}" width="${bw}" height="${Math.max(1.5, y2 - y1)}" rx="1" fill="${col}"/>`;
+  }).join("");
+  const every = Math.ceil(n / 7);
+  const labels = rows.map((r, i) => i % every ? "" : `<text x="${X(i)}" y="${F.h - 6}" text-anchor="middle">${tpeParts(r[at.d]).md}</text>`).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${F.w} ${F.h}" height="${F.h}" role="img" aria-label="日 K 線"><g class="axis">${yAxis(F, ticks, Y, (v) => money(v, true))}${labels}</g>${marks}
+    <line class="guide" y1="${PAD.t}" y2="${PAD.t + F.ih}" stroke="var(--ink-2)" stroke-width="1" style="display:none"/><rect x="${PAD.l}" y="0" width="${F.iw}" height="${F.h}" fill="transparent"/></svg>`;
+  attachHover(el, el.querySelector("svg"), rows, X, (i) => { const r = rows[i]; return `${tpeParts(r[at.d]).md}（${WD[tpeParts(r[at.d]).wd]}）<br>開 ${money(r[at.open])} 收 ${money(r[at.close])}<br>高 ${money(r[at.high])} 低 ${money(r[at.low])}<br>成交 ${fmtN(r[at.vol])}`; });
+  tableView(el, ["日期", "開", "高", "低", "收", "成交"], rows.map((r) => [tpeParts(r[at.d]).md, money(r[at.open], true), money(r[at.high], true), money(r[at.low], true), money(r[at.close], true), fmtN(r[at.vol])]).reverse());
+}
+
+let heatMode = "dev";
+function heatmap(hm) {
+  const el = $("#cHeat");
+  const [cnt, devSum, sCnt, sSum] = hm;
+  const totalH = cnt.reduce((a, b) => a + b, 0);
+  const weeks = (totalH / 168).toFixed(1);
+  $("#hmDesc").textContent = heatMode === "dev"
+    ? `每一格是那個星期幾、那個小時的最低價，平均比 7 日均高或低多少。藍＝便宜、紅＝貴。目前累積 ${totalH} 小時（約 ${weeks} 週），4 週以上才有參考價值。`
+    : `每一格是那個時段平均每小時成交幾件。顏色越深＝越好賣。目前累積 ${totalH} 小時（約 ${weeks} 週）。`;
+  const vals = cnt.map((n, i) => heatMode === "dev" ? (n ? devSum[i] / n / 10000 : null) : (sCnt[i] ? sSum[i] / sCnt[i] : null));
+  const present = vals.filter((v) => v != null);
+  const w = Math.max(280, el.clientWidth), lab = 26, cell = Math.min(24, Math.max(8, Math.floor((w - lab) / 24) - 2)), gap = 2;
+  const h = 7 * (cell + gap) + 18;
+  const ext = heatMode === "dev" ? Math.max(0.05, ...present.map((v) => Math.abs(v))) : Math.max(1, ...present);
+  const col = (v) => {
+    if (v == null) return "transparent";
+    if (heatMode === "dev") {
+      const k = Math.min(1, Math.abs(v) / ext);
+      return `color-mix(in oklab, ${v < 0 ? "var(--cheap)" : "var(--dear)"} ${Math.round(k * 100)}%, var(--h0))`;
+    }
+    return `color-mix(in oklab, var(--s1) ${Math.round(15 + (v / ext) * 85)}%, var(--h0))`;
+  };
+  // 週一開頭
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  const idx = (wd, hr) => ((wd + 6) % 7) * 24 + hr; // collector 用 weekday()：週一=0
+  let s = "";
+  order.forEach((wd, r) => {
+    s += `<text x="0" y="${r * (cell + gap) + cell / 2 + 4}" font-size="${Math.min(11, cell + 1)}" fill="var(--muted)">${WD[wd]}</text>`;
+    for (let hr = 0; hr < 24; hr++) {
+      const i = idx(wd, hr), v = vals[i];
+      s += `<rect data-i="${i}" x="${lab + hr * (cell + gap)}" y="${r * (cell + gap)}" width="${cell}" height="${cell}" rx="2" fill="${col(v)}" stroke="${v == null ? "var(--grid)" : "none"}"/>`;
+    }
+  });
+  for (let hr = 0; hr < 24; hr += 3) s += `<text x="${lab + hr * (cell + gap) + cell / 2}" y="${h - 2}" font-size="10" fill="var(--muted)" text-anchor="middle">${hr}</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${lab + 24 * (cell + gap)} ${h}" width="${lab + 24 * (cell + gap)}" height="${h}" style="width:${lab + 24 * (cell + gap)}px;max-width:100%" role="img" aria-label="星期×小時熱圖">${s}</svg>`;
+  const svg = el.querySelector("svg");
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; el.appendChild(tip);
+  svg.addEventListener("pointermove", (e) => {
+    const i = e.target.dataset?.i;
+    if (i == null) { tip.hidden = true; return; }
+    const wd = Math.floor(i / 24), hr = i % 24, v = vals[i];
+    const name = "週" + "一二三四五六日"[wd];
+    tip.innerHTML = v == null ? `${name} ${hr}:00<br>還沒有資料` : heatMode === "dev" ? `${name} ${hr}:00<br>平均比 7 日均 ${pct(v)}<br>${cnt[i]} 個小時樣本` : `${name} ${hr}:00<br>平均每小時成交 ${v.toFixed(1)} 件<br>${sCnt[i]} 個小時樣本`;
+    const b = svg.getBoundingClientRect(), rb = e.target.getBoundingClientRect();
+    tip.style.left = Math.min(Math.max(rb.left - b.left + rb.width / 2, 70), b.width - 40) + "px";
+    tip.style.top = rb.top - b.top + "px"; tip.hidden = false;
+  });
+  svg.addEventListener("pointerleave", () => (tip.hidden = true));
+  $("#hmScale").innerHTML = heatMode === "dev"
+    ? `<span>便宜 ${pct(-ext)}</span><span class="bar" style="background:linear-gradient(90deg,var(--cheap),var(--h0),var(--dear))"></span><span>貴 ${pct(ext)}</span>`
+    : `<span>少</span><span class="bar" style="background:linear-gradient(90deg,color-mix(in oklab,var(--s1) 15%,var(--h0)),var(--s1))"></span><span>${ext.toFixed(1)} 件/時</span>`;
+}
+
+function tableView(el, head, rows) {
+  el.insertAdjacentHTML("beforeend", `<details class="table-view"><summary>看數字</summary><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.slice(0, 200).map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></details>`);
+}
+
+boot();
+</script>
+</body>
+</html>
