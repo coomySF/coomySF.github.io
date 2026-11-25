@@ -5,3 +5,5 @@ _site/
 vendor/
 .agents/
 supabase/.temp/
+
+__pycache__/
