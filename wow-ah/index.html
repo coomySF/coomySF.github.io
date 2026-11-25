@@ -164,8 +164,13 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .me-why ul { margin: 4px 0 4px; padding-left: 18px; }
   .me-go { display: inline-block; margin-left: 10px; font-size: 13px; color: var(--muted); }
   .me-go a { color: var(--ink-2); }
-  .me-panel label { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 13px; }
-  .me-panel input { width: 64px; height: 32px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+  .me-grp { grid-column: 1 / -1; }
+  .me-h { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .me-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .me-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 6px 6px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); font-size: 13px; cursor: text; }
+  .me-item.on { border-color: var(--ink-2); }
+  .me-item.on span { font-weight: 700; }
+  .me-item input { width: 64px; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: right; }
   .me-done { grid-column: 1 / -1; justify-self: start; height: 32px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--ink); color: var(--surface); cursor: pointer; }
   .chip { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; margin-top: 2px; }
   .c-or { color: #e07a1f; } .c-ye { color: #b8920a; } .c-gr { color: #1f9a3e; } .c-gy, .c-no { color: var(--muted); } .c-up { color: var(--up); }
@@ -1354,10 +1359,12 @@ function renderMe() {
       <ul><li><b>練等路線從你現在的等級算起</b>：「練專業划算嗎」不會再從 1 級開始叫你買料，花費、購物清單都只算剩下的。</li>
       <li><b>每個配方標出對你是什麼顏色</b>：橘＝做了必升、黃／綠＝升級機率幾 %、灰＝不升了、還不能學＝等級不夠。</li>
       <li><b>商品頁會多一行「用你會的專業做什麼最划算」</b>；採礦、草藥學只推薦你現在採得到的。</li></ul>
-      沒學的留空。剛學的填 1。</div>${PROF_LIST.map(([k, n]) => `<label>${n}<input type="number" min="0" max="300" inputmode="numeric" data-k="${k}" value="${ME[k] ?? ""}" placeholder="沒學"></label>`).join("")}<button class="me-done" id="meDone">完成</button></div>` : ""}`;
+      在專業名稱旁邊填你現在的技能點數（1–300），沒學的留空。</div>
+      ${[["採集專業", PROF_LIST.slice(0, 3)], ["製造專業", PROF_LIST.slice(3)]].map(([h, list]) => `<div class="me-grp"><div class="me-h">${h}</div><div class="me-items">${list.map(([k, n]) => `<label class="me-item${ME[k] != null ? " on" : ""}"><span>${n}</span><input type="number" min="1" max="300" inputmode="numeric" data-k="${k}" value="${ME[k] ?? ""}" placeholder="—" aria-label="${n}技能點數"></label>`).join("")}</div></div>`).join("")}
+      <button class="me-done" id="meDone">完成</button></div>` : ""}`;
   $("#meBtn").onclick = () => { meOpen = !meOpen; renderMe(); };
   if (meOpen) {
-    bar.querySelectorAll("input").forEach((el) => el.onchange = () => { const v = el.value.trim(); if (v === "") delete ME[el.dataset.k]; else ME[el.dataset.k] = Math.max(0, Math.min(300, Math.round(+v))); saveMe(); track("ah_me", { skill: el.dataset.k }); });
+    bar.querySelectorAll("input").forEach((el) => el.onchange = () => { const v = el.value.trim(); if (v === "") delete ME[el.dataset.k]; else ME[el.dataset.k] = Math.max(1, Math.min(300, Math.round(+v))); el.closest(".me-item").classList.toggle("on", v !== ""); saveMe(); track("ah_me", { skill: el.dataset.k }); });
     $("#meDone").onclick = () => { meOpen = false; renderMe(); route(); };
   }
 }
