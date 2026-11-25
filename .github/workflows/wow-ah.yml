@@ -1,0 +1,49 @@
+name: wow-ah
+# 魔獸永恆台灣拍賣場：每 20 分鐘看一次暴雪有沒有新快照，有就推算成交、更新 ah-data 分支
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"
+  workflow_dispatch:
+concurrency:
+  group: wow-ah
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: _tools/wow-ah
+      - name: Check out ah-data
+        run: |
+          git config --global user.name "wow-ah bot"
+          git config --global user.email "actions@users.noreply.github.com"
+          url="https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}"
+          if git clone -q --depth 1 --branch ah-data "$url" data; then :; else
+            mkdir data && cd data && git init -q -b ah-data && git remote add origin "$url"
+          fi
+      - name: Collect
+        env:
+          BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
+          BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python3 _tools/wow-ah/collect.py --data data
+      - name: Push
+        working-directory: data
+        run: |
+          git add -A
+          git diff --cached --quiet && { echo "nothing new"; exit 0; }
+          n=$(cat .commits 2>/dev/null || echo 0); n=$((n + 1))
+          if [ "$n" -ge 168 ]; then
+            # 每週把歷史壓成一個 commit，分支不會越長越大
+            git checkout -q --orphan squash && echo 1 > .commits && git add -A
+            git commit -q -m "ah-data $(date -u +%FT%TZ)" && git branch -M ah-data
+            git push -q --force origin ah-data
+          else
+            echo "$n" > .commits && git add .commits
+            git commit -q -m "ah-data $(date -u +%FT%TZ)"
+            git push -q origin HEAD:ah-data
+          fi
