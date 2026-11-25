@@ -322,6 +322,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .push-step details { flex-basis: 100%; } .push-step ol { margin: 6px 0; padding-left: 20px; }
   .support { margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: var(--gold-soft, var(--surface-2)); font-size: 13px; }
   .support .promo-cta { margin: 0 0 0 8px; text-decoration: none; display: inline-flex; align-items: center; }
+  .acct { margin: 8px 0 4px; } .acct .push-step { margin: 6px 0 0; }
+  .push-step input.mail { flex: 1 1 220px; } .push-step input.otp { width: 140px; flex: 0 0 auto; letter-spacing: .2em; font-family: var(--font-num, monospace); }
   .code { font-family: var(--font-num, monospace); letter-spacing: .1em; }
   .ap-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
   .ap-add { position: relative; margin: 6px 0 12px; }
@@ -1665,9 +1667,9 @@ function renderPromo() {
 
 /* ---------------- Discord 推播（Supabase） ---------------- */
 // 公開設定：Supabase 專案網址和 anon key（本來就是給瀏覽器用的公開金鑰）、Ko-fi 頁面名稱。空的就顯示「即將開放」
-const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "" };
+const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "", email: false };   // email：接好外部寄信（SMTP）再打開
 const PUSH_ON = !!(PUSH.url && PUSH.anon);
-let SB = null, PSUB = null, PUSHED = new Map();   // PUSHED：item_id → {hi, lo}
+let SB = null, PSUB = null, PUSHED = new Map(), PEMAIL = "", OTP_TO = "";   // PUSHED：item_id → {hi, lo}；PEMAIL：登入的信箱（匿名是空的）
 async function sb() {
   if (SB) return SB;
   if (!window.supabase) await new Promise((ok, bad) => { const t = document.createElement("script"); t.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"; t.onload = ok; t.onerror = bad; document.head.appendChild(t); });
@@ -1677,10 +1679,44 @@ async function sb() {
 async function pushLoad() {
   const c = await sb();
   const { data: { session } } = await c.auth.getSession();
-  if (!session) { PSUB = null; return; }
+  if (!session) { PSUB = null; PEMAIL = ""; return; }
+  PEMAIL = session.user?.email || "";
   const [{ data: subs }, { data: rows }] = await Promise.all([c.from("wowah_subs").select("*").limit(1), c.from("wowah_push_alerts").select("item_id,hi,lo")]);
   PSUB = subs?.[0] || null;
   PUSHED = new Map((rows || []).map((r) => [r.item_id, r]));
+  // 換裝置登入：雲端的推播提醒帶回這台的提醒清單
+  let added = 0;
+  for (const r of PUSHED.values()) if (!ALERTS[r.item_id]) { ALERTS[r.item_id] = { hi: r.hi ?? null, lo: r.lo ?? null }; watch.add(r.item_id); added++; }
+  if (added) { saveAlerts(); saveWatch(); renderAlerts(); }
+}
+// Email 登入：寄 6 位數驗證碼（Supabase 信件範本要放驗證碼 Token 變數），輸入後登入同一個帳號
+async function pushSendCode(email) {
+  const c = await sb();
+  const { error } = await c.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  if (error) return /rate|limit/i.test(error.message) ? "寄太多次了，請過幾分鐘再試。" : "寄信失敗，請確認信箱是否正確。";
+  OTP_TO = email; track("ah_push_email_send");
+  return "ok";
+}
+async function pushVerify(code) {
+  const c = await sb();
+  const before = PSUB ? { webhook: PSUB.webhook, rows: [...PUSHED.values()] } : null;   // 這台原本免登入開的推播，登入後搬過去
+  const { error } = await c.auth.verifyOtp({ email: OTP_TO, token: code.trim(), type: "email" });
+  if (error) return "驗證碼不對或過期了，請再寄一次。";
+  const { error: e2 } = await c.from("wowah_subs").insert({});
+  if (e2 && e2.code !== "23505") return "登入了，但建立設定失敗，請重新整理再試。";
+  await pushLoad();
+  if (before) {
+    if (before.webhook && !PSUB.webhook) await c.from("wowah_subs").update({ webhook: before.webhook }).eq("uid", PSUB.uid);
+    for (const r of before.rows) if (!PUSHED.has(r.item_id)) await c.from("wowah_push_alerts").insert({ item_id: r.item_id, hi: r.hi ?? null, lo: r.lo ?? null });
+    await pushLoad();
+  }
+  OTP_TO = ""; track("ah_push_email_ok");
+  return "ok";
+}
+async function pushSignOut() {
+  const c = await sb();
+  await c.auth.signOut();
+  PSUB = null; PEMAIL = ""; PUSHED = new Map();
 }
 async function pushStart() {
   const c = await sb();
@@ -1732,13 +1768,19 @@ function pushCardHtml() {
     try { wanted = localStorage.getItem("wowah.pushwant") === "1"; } catch (e) {}
     return `<div class="push-want">${wanted ? "✓ 收到！想要的人夠多，就會開放「關掉網頁也收得到」的 Discord 推播。" : '<b>想要關掉網頁也收得到提醒嗎？</b>現在要開著這個網頁才會提醒。<button class="promo-cta sm" id="pushWant">我想要這個功能</button>'}</div>`;
   }
-  if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價時直接傳到你的 Discord，手機也會跳通知。免費 3 個商品，贊助者 30 個。</p><button class="promo-cta sm" id="pushStart">開啟 Discord 推播</button></div>`;
+  const emailForm = (lead) => OTP_TO
+    ? `<div class="push-step"><span class="sm">驗證碼已寄到 <b>${esc(OTP_TO)}</b>（看一下垃圾信）</span><input type="text" id="pushOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="6 位數驗證碼" class="otp"><button class="promo-cta sm" id="pushOtpGo">登入</button><button class="clr" id="pushOtpBack">換信箱</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`
+    : `<div class="push-step">${lead}<input type="email" id="pushMail" autocomplete="email" placeholder="你的信箱" class="mail"><button class="promo-cta sm" id="pushMailGo">寄驗證碼</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`;
+  if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價時直接傳到你的 Discord，手機也會跳通知。免費 3 個商品，贊助者 30 個。</p>
+    ${PUSH.email ? `${emailForm('<span class="sm"><b>用信箱登入（建議）</b>：手機、電腦都是同一套推播和贊助。</span>')}
+    <p class="sm mut">不想留信箱？<button class="clr" id="pushStart">先不登入，只在這台裝置開啟</button></p>` : '<button class="promo-cta sm" id="pushStart">開啟 Discord 推播</button>'}</div>`;
   const until = isSupporter() ? new Date(PSUB.supporter_until).toLocaleDateString("zh-TW") : "";
   return `<div class="push-box"><b>📲 Discord 推播</b>${PSUB.webhook ? ' <span class="chip c-gr">已連上</span>' : ""}
+    <div class="sm acct">${!PUSH.email && !PEMAIL ? "" : PEMAIL ? `已用 <b>${esc(PEMAIL)}</b> 登入，換裝置用同一個信箱登入就是同一套設定。<button class="clr" id="pushOut">登出</button>` : `目前只存在這台裝置。${emailForm("<b>綁定信箱</b>，換手機、電腦也能用：")}`}</div>
     <div class="push-step"><label>Discord webhook 網址 <input type="url" id="pushHook" placeholder="https://discord.com/api/webhooks/…" value="${esc(PSUB.webhook || "")}" autocomplete="off"></label><button class="clr" id="pushHookSave">儲存並傳測試訊息</button><span class="sm" id="pushHookMsg" aria-live="polite"></span>
       <details class="sm"><summary>怎麼拿 webhook 網址？（1 分鐘）</summary><ol><li>在 Discord 左邊按「＋」建立一個只有你自己的伺服器（或用你管理的伺服器）。</li><li>對想收通知的頻道按 ⚙️ 編輯頻道 →「整合」→「Webhook」→「新 Webhook」。</li><li>按「複製 Webhook 網址」，貼到上面。手機裝 Discord 就會跳通知。</li></ol><p class="mut">這個網址只有你和推播程式看得到，別貼給別人。</p></details></div>
     <p class="sm">下面表格的「推播」打勾的商品，到價就傳到 Discord（每小時檢查）。已用 <b>${PUSHED.size}／${pushCap()}</b>${isSupporter() ? `・贊助者到 ${until}，謝謝你！` : ""}</p>
-    ${isSupporter() ? "" : `<div class="support">想推播更多商品？<b>贊助這個網站</b>就解鎖 30 個，並讓網站繼續每小時更新台服行情。${PUSH.kofi ? `<a class="promo-cta sm" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener">☕ 到 Ko-fi 贊助</a>` : ""}<div class="sm">贊助時在留言貼上你的支持者代碼 <b class="code">${esc(PSUB.code)}</b>，每 1 美元解鎖 30 天，幾分鐘內自動生效。</div></div>`}
+    ${isSupporter() ? "" : `<div class="support">想推播更多商品？<b>贊助這個網站</b>就解鎖 30 個，並讓網站繼續每小時更新台服行情。${PUSH.kofi ? `<a class="promo-cta sm" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener">☕ 到 Ko-fi 贊助</a>` : ""}<div class="sm">${PEMAIL ? `用 <b>${esc(PEMAIL)}</b> 在 Ko-fi 贊助就會自動對上；用別的信箱的話，` : ""}贊助時在留言貼上你的支持者代碼 <b class="code">${esc(PSUB.code)}</b>。每 1 美元解鎖 30 天，幾分鐘內自動生效。</div></div>`}
   </div>`;
 }
 function bindPushCard(view) {
@@ -1747,6 +1789,14 @@ function bindPushCard(view) {
   if (pw) pw.onclick = () => { try { localStorage.setItem("wowah.pushwant", "1"); } catch (e) {} track("ah_push_interest"); rer(); };
   const st = $("#pushStart");
   if (st) st.onclick = async () => { st.disabled = true; st.textContent = "開啟中…"; try { await pushStart(); } catch (e) { st.textContent = "開啟失敗，稍後再試"; return; } rer(); };
+  const mg = $("#pushMailGo");
+  if (mg) mg.onclick = async () => { const e = $("#pushMail").value.trim(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { $("#pushMailMsg").textContent = "信箱格式不對。"; return; } mg.disabled = true; $("#pushMailMsg").textContent = "寄送中…"; const r = await pushSendCode(e); if (r === "ok") rer(); else { mg.disabled = false; $("#pushMailMsg").textContent = r; } };
+  const og = $("#pushOtpGo");
+  if (og) og.onclick = async () => { og.disabled = true; $("#pushMailMsg").textContent = "登入中…"; const r = await pushVerify($("#pushOtp").value); if (r === "ok") rer(); else { og.disabled = false; $("#pushMailMsg").textContent = r; } };
+  const ob = $("#pushOtpBack");
+  if (ob) ob.onclick = () => { OTP_TO = ""; rer(); };
+  const po = $("#pushOut");
+  if (po) po.onclick = async () => { await pushSignOut(); rer(); };
   const hs = $("#pushHookSave");
   if (hs) hs.onclick = async () => { $("#pushHookMsg").textContent = "儲存中…"; const r = await pushSaveHook($("#pushHook").value); if (r === "ok") { track("ah_push_hook"); rer(); setTimeout(() => { const m = $("#pushHookMsg"); if (m) m.textContent = "✓ 已儲存，Discord 應該收到一則測試訊息了。"; }, 0); } else $("#pushHookMsg").textContent = r; };
   view.querySelectorAll(".ap-push").forEach((cb) => (cb.onchange = async () => {
