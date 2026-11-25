@@ -12,7 +12,7 @@
   build                 wowf client 版本
   profs {skill: [名稱, "craft"|"gather", 學費[學徒, 熟手, 專家, 大師]]}
   recipes [[spell, skill, 名稱, 學習, 黃, 灰, 來源, 學費, 產物, 產量, [[材料, 數量], ...], 每次升幾點, 冷卻小時]]
-    來源 "t" 訓練師、"a" 學專業就會、數字 = 配方物品 id
+    來源 "t" 訓練師、"a" 學專業就會、"n" 永恆新配方（學法未知，學習等級記 0）、數字 = 配方物品 id
   items {id: [名稱, 品質, 商店收購價, 商店販售單價 or 0, 學習技能]}   材料、產物、配方物品、採集品
   gather {skill: [物品 id, ...]}  採集專業直接賣的原料
 """
@@ -34,6 +34,7 @@ GATHER = {182: "草藥學", 186: "採礦", 393: "剝皮"}
 GATHER_SUB = {182: {"9"}, 186: {"7"}, 393: {"6"}}
 RANK_SKILL = [50, 125, 200]           # 熟手、專家、大師分別要 50／125／200 才能學
 DEFAULT_FEES = [10, 500, 5000, 50000]
+SOD_MIN, FOREVER_MIN = 1_200_000, 1_240_000   # 新法術 id 區段：121–123 萬是 SoD，124 萬起是永恆
 EN_PROF = {"Blacksmithing": 164, "Leatherworking": 165, "Alchemy": 171, "Tailoring": 197, "Engineering": 202,
            "Enchanting": 333, "Cooking": 185, "First Aid": 129, "Herbalism": 182, "Mining": 186, "Skinning": 393}
 
@@ -136,8 +137,8 @@ def main():
             continue
         sp = r["Spell"]
         yellow, grey = int(r["TrivialSkillLineRankLow"]), int(r["TrivialSkillLineRankHigh"])
-        if not grey or grey <= yellow:
-            continue
+        if not grey or grey < yellow:
+            continue                  # 熔煉這類黃＝灰的（例如瑟銀 250/250）要留著
         rg = reag.get(sp)
         mats = []
         if rg:
@@ -151,6 +152,10 @@ def main():
         for e in eff.get(sp, []):
             if e["Effect"] == "24" and e["EffectItemType"] != "0":
                 out, outn = int(e["EffectItemType"]), max(1, round(float(e["EffectBasePointsF"] or 1)))
+        if r["AcquireMethod"] == "3":
+            continue                  # 永恆拿掉的舊配方（例如鍊金術的治療藥水改成急救做）
+        if FOREVER_MIN > int(sp) >= SOD_MIN:
+            continue                  # 探索賽季（SoD）的配方，client 共用但永恆沒有
         if r["AcquireMethod"] == "1":
             src, fee, learn = "a", 0, max(1, int(r["MinSkillLineRank"]))
         elif sp in trainer:
@@ -158,9 +163,11 @@ def main():
         elif sp in taught_by:
             it = taught_by[sp]
             src, fee, learn = int(it), 0, int(sparse[it]["RequiredSkillRank"] or 1)
+        elif int(sp) >= FOREVER_MIN:
+            src, fee, learn = "n", 0, 0   # 永恆新配方：client 有、但學法和學習等級查不到
         else:
-            continue                  # 來源不明（永恆新配方、或沒開放）
-        learn = max(1, min(learn, yellow))
+            continue                  # 來源不明（沒開放）
+        learn = max(1, min(learn, yellow)) if src != "n" else 0
         recipes.append([int(sp), skill, names.get(sp, ""), learn, yellow, grey, src, fee, out, outn, mats,
                         max(1, int(r["NumSkillUps"] or 1)), round(cooldown[sp] / 3_600_000, 1)])
         used.update(m[0] for m in mats)
