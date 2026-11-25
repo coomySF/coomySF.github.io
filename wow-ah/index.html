@@ -339,6 +339,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .support-go[disabled] { opacity: .55; cursor: not-allowed; }
   .support-how { margin-top: 10px; color: var(--ink-2); max-width: 680px; }
   .support-done { color: var(--ink); font-weight: 700; }
+  .discord-go { background: #5865f2; color: #fff; height: 40px; margin-right: 10px; }
   .ab-thanks { color: var(--muted); }
   @media (max-width: 600px) { .tiers { grid-template-columns: 1fr 1fr; } .tier:last-child { grid-column: 1 / -1; } }
   .ap-add { position: relative; margin: 6px 0 12px; }
@@ -1693,20 +1694,21 @@ function renderPromo() {
 
 /* ---------------- Discord 推播（Supabase） ---------------- */
 // 公開設定：Supabase 專案網址和 anon key（本來就是給瀏覽器用的公開金鑰）、Ko-fi 頁面名稱。空的就顯示「即將開放」
-const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "", email: true };   // email：信箱驗證碼登入（Supabase 已接 Gmail SMTP）
+const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "", email: false, discord: false };   // discord：Discord 登入（Supabase 後台接好 Discord provider 再打開）；email：信箱驗證碼（已改用 Discord，保留程式備用）
 const PUSH_ON = !!(PUSH.url && PUSH.anon);
-let SB = null, PSUB = null, PUSHED = new Map(), PEMAIL = "", OTP_TO = "";   // PUSHED：item_id → {hi, lo}；PEMAIL：登入的信箱（匿名是空的）
+let SB = null, PSUB = null, PUSHED = new Map(), PEMAIL = "", PNAME = "", OTP_TO = "";   // PUSHED：item_id → {hi, lo}；PEMAIL：登入的信箱（匿名是空的）
 async function sb() {
   if (SB) return SB;
   if (!window.supabase) await new Promise((ok, bad) => { const t = document.createElement("script"); t.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"; t.onload = ok; t.onerror = bad; document.head.appendChild(t); });
-  SB = window.supabase.createClient(PUSH.url, PUSH.anon, { auth: { persistSession: true, storageKey: "wowah.push" } });
+  SB = window.supabase.createClient(PUSH.url, PUSH.anon, { auth: { persistSession: true, storageKey: "wowah.push", flowType: "pkce", detectSessionInUrl: true } });
   return SB;
 }
 async function pushLoad() {
   const c = await sb();
   const { data: { session } } = await c.auth.getSession();
   if (!session) { PSUB = null; PEMAIL = ""; return; }
-  PEMAIL = session.user?.email || "";
+  PEMAIL = session.user?.is_anonymous ? "" : session.user?.email || "";
+  PNAME = session.user?.user_metadata?.full_name || session.user?.user_metadata?.name || "";
   const [{ data: subs }, { data: rows }] = await Promise.all([c.from("wowah_subs").select("*").limit(1), c.from("wowah_push_alerts").select("item_id,hi,lo")]);
   PSUB = subs?.[0] || null;
   PUSHED = new Map((rows || []).map((r) => [r.item_id, r]));
@@ -1738,6 +1740,35 @@ async function pushVerify(code) {
   }
   OTP_TO = ""; track("ah_push_email_ok");
   return "ok";
+}
+// Discord 登入：跳到 Discord 授權再回來。回來的網址不帶 #（?code=… 放在 query），回來後再導到提醒頁
+async function pushDiscord() {
+  const c = await sb();
+  try { sessionStorage.setItem("wowah.oauth", JSON.stringify(PSUB ? { webhook: PSUB.webhook, rows: [...PUSHED.values()] } : {})); } catch (e) {}
+  track("ah_push_discord");
+  const { error } = await c.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: location.origin + location.pathname } });
+  return error ? "沒辦法連到 Discord，稍後再試。" : "ok";
+}
+// 從 Discord 授權回來：換到登入狀態、把這台原本免登入的設定搬過去、回到提醒頁
+async function pushOAuthReturn() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has("code") && !q.has("error")) return;
+  history.replaceState(null, "", location.pathname + "#/alerts");
+  if (q.has("error")) return;
+  const c = await sb();
+  try { await c.auth.exchangeCodeForSession(q.get("code")); } catch (e) {}
+  const { data: { session } } = await c.auth.getSession();
+  if (!session) return;
+  const { error } = await c.from("wowah_subs").insert({});
+  if (error && error.code !== "23505") return;
+  await pushLoad();
+  let before = {};
+  try { before = JSON.parse(sessionStorage.getItem("wowah.oauth") || "{}"); sessionStorage.removeItem("wowah.oauth"); } catch (e) {}
+  if (before.webhook && !PSUB.webhook) await c.from("wowah_subs").update({ webhook: before.webhook }).eq("uid", PSUB.uid);
+  for (const r of before.rows || []) if (!PUSHED.has(r.item_id)) await c.from("wowah_push_alerts").insert({ item_id: r.item_id, hi: r.hi ?? null, lo: r.lo ?? null });
+  await pushLoad();
+  track("ah_push_discord_ok");
+  if (!$("#alertView").hidden) renderAlertPage($("#alertView"));
 }
 async function pushSignOut() {
   const c = await sb();
@@ -1798,11 +1829,15 @@ function pushCardHtml() {
     ? `<div class="push-step"><span class="sm">驗證碼已寄到 <b>${esc(OTP_TO)}</b>（看一下垃圾信）</span><input type="text" id="pushOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="6 位數驗證碼" class="otp"><button class="promo-cta sm" id="pushOtpGo">登入</button><button class="clr" id="pushOtpBack">換信箱</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`
     : `<div class="push-step">${lead}<input type="email" id="pushMail" autocomplete="email" placeholder="你的信箱" class="mail"><button class="promo-cta sm" id="pushMailGo">寄驗證碼</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`;
   if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價時直接傳到你的 Discord，手機也會跳通知。免費 1 個商品，支持者 30 個。</p>
-    ${PUSH.email ? `${emailForm('<span class="sm"><b>用信箱登入（建議）</b>：手機、電腦都是同一套推播和贊助。</span>')}
+    ${PUSH.discord ? `<button class="promo-cta discord-go" id="pushDiscord">用 Discord 登入開啟</button><span class="sm mut">手機、電腦按這顆都是同一套推播和贊助。</span><span class="sm" id="pushMailMsg" aria-live="polite"></span>
+    <p class="sm mut">不想登入？<button class="clr" id="pushStart">只在這台裝置開啟</button></p>`
+    : PUSH.email ? `${emailForm('<span class="sm"><b>用信箱登入（建議）</b>：手機、電腦都是同一套推播和贊助。</span>')}
     <p class="sm mut">不想留信箱？<button class="clr" id="pushStart">先不登入，只在這台裝置開啟</button></p>` : '<button class="promo-cta sm" id="pushStart">開啟 Discord 推播</button>'}</div>`;
   const until = isSupporter() ? new Date(PSUB.supporter_until).toLocaleDateString("zh-TW") : "";
   return `<div class="push-box"><b>📲 Discord 推播</b>${PSUB.webhook ? ' <span class="chip c-gr">已連上</span>' : ""}
-    <div class="sm acct">${!PUSH.email && !PEMAIL ? "" : PEMAIL ? `已用 <b>${esc(PEMAIL)}</b> 登入，換裝置用同一個信箱登入就是同一套設定。<button class="clr" id="pushOut">登出</button>` : `目前只存在這台裝置。${emailForm("<b>綁定信箱</b>，換手機、電腦也能用：")}`}</div>
+    <div class="sm acct">${PEMAIL ? `已用 <b>${esc(PNAME ? "Discord：" + PNAME : PEMAIL)}</b> 登入，換裝置一樣登入就是同一套設定。<button class="clr" id="pushOut">登出</button>`
+      : PUSH.discord ? `目前只存在這台裝置。<button class="clr" id="pushDiscord">用 Discord 登入</button>，換手機、電腦也能用。<span class="sm" id="pushMailMsg" aria-live="polite"></span>`
+      : PUSH.email ? `目前只存在這台裝置。${emailForm("<b>綁定信箱</b>，換手機、電腦也能用：")}` : ""}</div>
     <div class="push-step"><label>Discord webhook 網址 <input type="url" id="pushHook" placeholder="https://discord.com/api/webhooks/…" value="${esc(PSUB.webhook || "")}" autocomplete="off"></label><button class="clr" id="pushHookSave">儲存並傳測試訊息</button><span class="sm" id="pushHookMsg" aria-live="polite"></span>
       <details class="sm"><summary>怎麼拿 webhook 網址？（1 分鐘）</summary><ol><li>在 Discord 左邊按「＋」建立一個只有你自己的伺服器（或用你管理的伺服器）。</li><li>對想收通知的頻道按 ⚙️ 編輯頻道 →「整合」→「Webhook」→「新 Webhook」。</li><li>按「複製 Webhook 網址」，貼到上面。手機裝 Discord 就會跳通知。</li></ol><p class="mut">這個網址只有你和推播程式看得到，別貼給別人。</p></details></div>
     <p class="sm">下面表格的「推播」打勾的商品，到價就傳到 Discord（每小時檢查）。已用 <b>${PUSHED.size}／${pushCap()}</b>${isSupporter() ? ' <span class="chip c-ye">☕ 旅店常客・30 個</span>' : ""}</p>
@@ -1821,6 +1856,8 @@ function bindPushCard(view) {
   if (og) og.onclick = async () => { og.disabled = true; $("#pushMailMsg").textContent = "登入中…"; const r = await pushVerify($("#pushOtp").value); if (r === "ok") rer(); else { og.disabled = false; $("#pushMailMsg").textContent = r; } };
   const ob = $("#pushOtpBack");
   if (ob) ob.onclick = () => { OTP_TO = ""; rer(); };
+  const dg = $("#pushDiscord");
+  if (dg) dg.onclick = async () => { dg.disabled = true; const r = await pushDiscord(); if (r !== "ok") { dg.disabled = false; const m = $("#pushMailMsg"); if (m) m.textContent = r; } };
   const po = $("#pushOut");
   if (po) po.onclick = async () => { await pushSignOut(); rer(); };
   const hs = $("#pushHookSave");
@@ -1848,13 +1885,13 @@ function supportHtml() {
       <p>嗨，我是 Coomy，玩魔獸很多年的老玩家，這個網站是我用 <a href="/">AllWill</a> 做的。</p>
       <p>我很喜歡 WoW，也正在創業，準備去矽谷闖一闖。希望這個網站能幫大家少花一點冤枉金幣，也順便幫我湊一點旅費。</p>
       <p>網站每小時抓資料、主機、推播，都有一點費用。你的一點點支持，會讓我更有動力把它顧好。</p>
-      <p>網站會一直免費、沒有廣告。支持是心意，不勉強。</p>
+      <p>網站會一直免費、沒有廣告，你用得順手我就很開心了！哪天在拍賣場賺到一筆，順手請我喝杯麥酒，我會開心到在鐵爐堡門口跳舞 🍻</p>
       <p class="sign">—— Coomy</p>
     </div>
     <div class="tiers" role="radiogroup" aria-label="贊助金額">${TIERS.map(([n, lab, sub, usd]) => `<button class="tier${n === tierPick ? " on" : ""}" role="radio" aria-checked="${n === tierPick}" data-n="${n}"><b>NT$${n}</b><span class="tl">${lab}${n === 100 ? '<i class="rec">推薦</i>' : ""}</span><span class="ts">${sub}</span><span class="tu">約 US$${usd}</span></button>`).join("")}</div>
     ${isSupporter() ? '<p class="support-done">✓ 你已經是支持者（旅店常客），推播已開到 30 個。想再請我喝一杯也非常歡迎，謝謝你！</p>' : ""}
     ${PUSH.kofi ? `<a class="promo-cta support-go" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener" id="kofiGo">用 Ko-fi 贊助 NT$${t[0]}（約 US$${t[3]}）</a>` : '<button class="promo-cta support-go" disabled>贊助即將開放</button>'}
-    <p class="sm support-how">捐任何金額一次，Discord 推播就從 1 個永久變成 30 個——不管捐 30 還是 300 都一樣，不用比誰捐得多。付款時填你登入這裡的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面開啟 Discord 推播）"}，幾分鐘內自動解鎖。Ko-fi 以美元結帳，金額選最接近的就好。只要網站還在，就一直有效。</p>
+    <p class="sm support-how">捐任何金額一次，Discord 推播就從 1 個永久變成 30 個——不管捐 30 還是 300 都一樣，不用比誰捐得多。付款時用你 Discord 帳號的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面開啟 Discord 推播）"}，幾分鐘內自動解鎖。Ko-fi 以美元結帳，金額選最接近的就好。只要網站還在，就一直有效。</p>
   </div>`;
 }
 function bindSupport(view) {
@@ -2315,6 +2352,7 @@ function earnCard(skill) {
 }
 const profFoot = () => `<p class="foot">配方的材料、產物、變黃／變灰等級取自《魔獸世界：永恆》client 資料（版本 ${esc(REC.build)}）。學習等級、訓練師學費借用 60 版伺服器資料（CMaNGOS），永恆若有改動會不準；查不到來源的新配方先不列。綠色配方的升級機率＝(變灰 − 目前技能) ÷ (變灰 − 變黃)。價格是台服 PvP 聯盟拍賣場。</p>`;
 
+if (PUSH_ON && PUSH.discord) pushOAuthReturn().catch(() => {});
 if (PUSH_ON) { const fs = $("#footSupport"); if (fs) fs.innerHTML = SUPPORT_LINE + "<br>"; }
 boot();
 </script>
