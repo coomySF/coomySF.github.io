@@ -481,7 +481,7 @@ def push_user_alerts(overview_rows, meta, house):
         return
     h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     try:
-        _, body, _ = http(f"{url}/rest/v1/push_alerts?select=uid,item_id,hi,lo,last_kind,subs(webhook)", h)
+        _, body, _ = http(f"{url}/rest/v1/wowah_push_alerts?select=uid,item_id,hi,lo,last_kind,wowah_subs(webhook)", h)
         rules = json.loads(body)
     except Exception as e:
         print(f"::warning::push alerts: {e}")
@@ -499,7 +499,7 @@ def push_user_alerts(overview_rows, meta, house):
         if kind == r["last_kind"]:
             continue
         changes.append((r["uid"], r["item_id"], kind))
-        hook = (r.get("subs") or {}).get("webhook")
+        hook = (r.get("wowah_subs") or {}).get("webhook")
         if kind and hook:
             name = (meta.get(str(r["item_id"])) or [None])[0] or f"#{r['item_id']}"
             out[hook].append(f"{'📈' if kind == 'sell' else '📉'} **{name}** 現價 {gold(ask)}，"
@@ -516,7 +516,7 @@ def push_user_alerts(overview_rows, meta, house):
             print(f"push failed: {type(e).__name__}")
     for uid, item_id, kind in changes:
         try:
-            http(f"{url}/rest/v1/push_alerts?uid=eq.{uid}&item_id=eq.{item_id}",
+            http(f"{url}/rest/v1/wowah_push_alerts?uid=eq.{uid}&item_id=eq.{item_id}",
                  {**h, "Prefer": "return=minimal"}, json.dumps({"last_kind": kind}).encode(), method="PATCH")
         except Exception as e:
             print(f"::warning::push state: {type(e).__name__}")

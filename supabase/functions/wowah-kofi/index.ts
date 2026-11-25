@@ -1,5 +1,5 @@
 // Ko-fi 贊助 webhook：留言裡有 6 碼支持者代碼，就延長那個人的贊助期限（每 1 美元 30 天，至少 30 天）
-// 部署：supabase functions deploy kofi --no-verify-jwt
+// 部署：supabase functions deploy wowah-kofi（config.toml 已設 verify_jwt = false）
 // 密鑰：supabase secrets set KOFI_TOKEN=<Ko-fi 後台 API 頁的 Verification Token>
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
@@ -15,11 +15,11 @@ Deno.serve(async (req) => {
   const days = Math.max(30, Math.round(usd * 30));
   const url = Deno.env.get("SUPABASE_URL")!, key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const h = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
-  const r = await fetch(`${url}/rest/v1/subs?code=eq.${code}&select=uid,supporter_until`, { headers: h });
+  const r = await fetch(`${url}/rest/v1/wowah_subs?code=eq.${code}&select=uid,supporter_until`, { headers: h });
   const [sub] = await r.json();
   if (!sub) return new Response("unknown code");
   const base = Math.max(Date.now(), sub.supporter_until ? Date.parse(sub.supporter_until) : 0);
   const until = new Date(base + days * 86400000).toISOString();
-  await fetch(`${url}/rest/v1/subs?uid=eq.${sub.uid}`, { method: "PATCH", headers: h, body: JSON.stringify({ supporter_until: until }) });
+  await fetch(`${url}/rest/v1/wowah_subs?uid=eq.${sub.uid}`, { method: "PATCH", headers: h, body: JSON.stringify({ supporter_until: until }) });
   return new Response("ok");
 });
