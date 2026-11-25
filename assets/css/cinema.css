@@ -520,3 +520,32 @@ html.film-static .film-ui { position: static; }
 html.film-static .film-title { position: static; transform: none; margin: 0 auto; padding: 22vh 24px 18vh; }
 html.film-static .scroll-hint, html.film-static .planet-label, html.film-static .sf-word,
 html.film-static .letterbox, html.film-static .fin-mark, html.film-static .film-teaser { display: none; }
+
+/* 台服拍賣場物價指數 — 首頁小卡，資料即時讀 ah-data 分支 */
+.home-ah { position: relative; z-index: 2; padding: 0 0 20px; }
+.ah-card {
+  display: block; max-width: 640px; margin: 0 auto; padding: 18px 20px 14px;
+  border: 1px solid var(--film-line); border-radius: 14px; text-decoration: none; color: var(--film-ink);
+  background: linear-gradient(165deg, rgba(28, 35, 31, .78), rgba(13, 18, 16, .62));
+  transition: border-color .35s ease, box-shadow .45s ease;
+}
+.ah-card:hover { border-color: rgba(220, 148, 124, .4); box-shadow: 0 16px 44px rgba(0, 0, 0, .5), 0 0 30px rgba(220, 148, 124, .1); }
+.ah-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.ah-ico { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; border: 1px solid rgba(220, 148, 124, .35); color: var(--film-clay); }
+.ah-title { font-family: var(--display); font-weight: 700; font-size: 20px; }
+.ah-meta { font-size: 13px; color: var(--film-muted); font-variant-numeric: tabular-nums; }
+.ah-go { margin-left: auto; font-size: 14px; color: var(--film-clay); transition: transform .45s var(--ease); }
+.ah-card:hover .ah-go { transform: translateX(4px); }
+.ah-row { display: grid; grid-template-columns: 1fr 112px 64px 64px; gap: 14px; align-items: center; padding: 9px 0; border-top: 1px solid var(--film-line); }
+.ah-n { font-family: var(--display); font-weight: 600; font-size: 15.5px; }
+.ah-s svg { display: block; }
+.ah-v, .ah-c { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
+.ah-empty { margin: 10px 0; color: var(--film-muted); font-size: 13px; }
+.ah-foot { margin: 8px 0 0; font-size: 11.5px; color: var(--film-muted); opacity: .8; }
+@media (max-width: 480px) {
+  .ah-card { padding: 16px 14px 12px; }
+  .ah-row { grid-template-columns: 1fr 80px 50px 56px; gap: 8px; }
+  .ah-s svg { width: 80px; }
+  .ah-n { font-size: 14px; }
+  .ah-v, .ah-c { font-size: 13.5px; }
+}
