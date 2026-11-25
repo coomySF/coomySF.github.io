@@ -391,13 +391,13 @@ CRE_BUDGET_S = 90
 def fetch_creatures(token, ids, names, misses, now_ms):
     """怪物中文名：client 沒有，只能問暴雪 API。查不到的一週後再試。
     每次最多 400 隻、90 秒，超過就留到下一輪，不拖慢行情。"""
-    todo = [i for i in ids if str(i) not in names and misses.get(f"c{i}", 0) < now_ms][:CRE_PER_RUN]
+    todo = [i for i in ids if str(i) not in names and misses.get(f"k{i}", 0) < now_ms][:CRE_PER_RUN]   # k：2026-11-25 改版前的 c 記錄作廢重查
     deadline = time.time() + CRE_BUDGET_S
 
     def one(cid):
         if time.time() > deadline:
             return cid, False                 # 沒時間了，下一輪再查
-        for ns in STATIC_NS[:2]:
+        for ns in STATIC_NS:
             try:
                 status, c, _ = api(token, f"/data/wow/creature/{cid}", ns, quick=True)   # 10 秒、不重試
             except Exception:
@@ -413,7 +413,7 @@ def fetch_creatures(token, ids, names, misses, now_ms):
                 names[str(cid)] = name
                 got += 1
             elif name is None:
-                misses[f"c{cid}"] = now_ms + META_RETRY_MS
+                misses[f"k{cid}"] = now_ms + META_RETRY_MS
     return got
 
 
