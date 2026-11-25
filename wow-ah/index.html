@@ -284,6 +284,20 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   #uTabs { margin-top: 6px; flex-wrap: wrap; }
   .more-d { margin-top: 10px; } .more-d summary { cursor: pointer; color: var(--ink-2); font-size: 13px; }
   .more-d summary:hover { color: var(--gold-ink); }
+  .ab-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .ab-acts .clr { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }
+  .alertbar.on-page { display: none; }
+  .ap-add { position: relative; margin: 6px 0 12px; }
+  .ap-add input { width: 100%; max-width: 420px; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field, var(--bg)); color: var(--ink); }
+  .ap-hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .ap-pick { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--ink); cursor: pointer; font-size: 13px; }
+  .ap-pick:hover { border-color: var(--gold-line, var(--ink-2)); }
+  .ap-in { width: 110px; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--field, var(--bg)); color: var(--ink); text-align: right; }
+  .ap-in.bad { border-color: var(--up); }
+  .ptab.ap tr.ap-hit.sell td:first-child { box-shadow: inset 3px 0 0 var(--up); }
+  .ptab.ap tr.ap-hit.buy td:first-child { box-shadow: inset 3px 0 0 var(--down); }
+  .neg-d { color: var(--down); }
+  .ap-wipe { margin-top: 12px; }
   .report { margin-left: 6px; color: var(--muted); }
   .charbar { padding-top: 4px; }
   #fKind { margin: 4px 0 8px; }
@@ -433,6 +447,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   <section id="profView" hidden></section>
 
   <section id="farmView" hidden></section>
+
+  <section id="alertView" hidden></section>
 
   <section class="about" id="about" aria-labelledby="aboutH">
     <h2 id="aboutH">魔獸世界：永恆 台服拍賣場物價查詢</h2>
@@ -728,19 +744,21 @@ new MutationObserver(labelTables).observe(document.body, { childList: true, subt
 const LIST_TITLE = document.title;
 function route() {
   const h = location.hash;
-  const tab = h.startsWith("#/prof") ? "prof" : h.startsWith("#/farm") ? "farm" : "ah";
+  const tab = h.startsWith("#/prof") ? "prof" : h.startsWith("#/farm") ? "farm" : h.startsWith("#/alerts") ? "alerts" : "ah";
+  $("#alertBar").classList.toggle("on-page", tab === "alerts");   // 提醒管理頁本身就列了，上面的橫幅收起來
   document.querySelectorAll(".vtabs a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.t === tab)));
   let m;
   if ((m = h.match(/^#\/item\/(\d+)/))) { showItem(+m[1]); return; }
   if ((m = h.match(/^#\/prof(?:\/(\d+))?/))) { showProf(m[1] ? +m[1] : null); return; }
   if (h.startsWith("#/farm")) { showFarm(); return; }
-  $("#itemView").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
+  if (h.startsWith("#/alerts")) { showAlerts(); return; }
+  $("#itemView").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
   document.title = LIST_TITLE;
   renderList();
 }
 
 async function showItem(id) {
-  $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true;
+  $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true;
   const view = $("#itemView");
   view.hidden = false;
   view.innerHTML = '<button class="back" id="back">← 回列表</button><div class="skel"><i style="height:64px"></i><i style="height:96px"></i><i></i><i></i></div>';
@@ -1216,7 +1234,7 @@ function reachItem(id, lv) {
 
 const fstate = { sort: "value", cls: "", kind: "", reach: true, mine: false, shown: 50 };
 async function showFarm() {
-  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true;
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#alertView").hidden = true;
   const view = $("#farmView");
   view.hidden = false;
   if (!DROPS) view.innerHTML = '<div class="skel"><i></i><i></i><i></i></div>';
@@ -1465,8 +1483,9 @@ function renderAlerts() {
   const perm = "Notification" in window ? Notification.permission : "unsupported";
   bar.innerHTML = `${hits.length ? hits.map((h) => `<div class="hit ${h.kind}"><a href="#/item/${h.r.id}">🔔 <b>${esc(h.r.name)}</b> 現價 ${money(h.r.ask, true)}，${h.kind === "sell" ? `漲到你設的 ${money(h.a.hi, true)} 以上：<b>可以掛賣了</b>` : `跌到你設的 ${money(h.a.lo, true)} 以下：<b>可以進貨了</b>`}</a>
       <span class="hit-act"><button class="clr" data-off="${h.r.id}" title="刪掉這個商品的價格提醒">取消提醒</button><button class="hit-x" data-hide="${hitKey(h)}" aria-label="先收起，有新價格再提醒" title="先收起，有新價格再提醒">×</button></span></div>`).join("")
-      + (hits.length > 1 ? '<button class="clr" id="hideAll">全部收起</button>' : "") : `<span class="mut">🔔 你設了 ${n} 個價格提醒，目前都沒有新的到價。</span>`}
-    ${perm === "default" ? '<button class="clr" id="notifOn">開啟桌面通知</button>' : perm === "granted" ? '<span class="mut sm">桌面通知已開（這個分頁開著時會提醒）</span>' : ""}`;
+      : `<span class="mut">🔔 你設了 ${n} 個價格提醒，目前都沒有新的到價。</span>`}
+    <div class="ab-acts"><a class="clr" href="#/alerts">管理提醒（${n}）</a>${hits.length > 1 ? '<button class="clr" id="hideAll">全部收起</button>' : ""}
+    ${perm === "default" ? '<button class="clr" id="notifOn">開啟桌面通知</button>' : perm === "granted" ? '<span class="mut sm">桌面通知已開（這個分頁開著時會提醒）</span>' : ""}</div>`;
   const b = $("#notifOn");
   if (b) b.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} renderAlerts(); };
   bar.querySelectorAll("[data-hide]").forEach((x) => (x.onclick = () => { DISMISS.add(x.dataset.hide); saveDismiss(); renderAlerts(); }));
@@ -1524,7 +1543,7 @@ function alertBox(id, r) {
   return `<div class="alertset" id="aBox"><b>🔔 價格提醒</b>
     <label>漲到 <input type="text" inputmode="text" id="aHi" value="${moneyTxt(a.hi)}" placeholder="例如 ${ph(1.1)}"> 以上通知我賣</label>
     <label>跌到 <input type="text" inputmode="text" id="aLo" value="${moneyTxt(a.lo)}" placeholder="例如 ${ph(0.9)}"> 以下通知我買</label>
-    <span class="mut sm">照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>都可以。存在這台裝置，到價時列表最上面會亮燈。</span>
+    <span class="mut sm">照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>都可以。存在這台裝置，到價時列表最上面會亮燈。<a href="#/alerts">看我所有的提醒 →</a></span>
     <div class="astate" id="aState" aria-live="polite">${ALERTS[id] ? `✓ 已設定：${alertState(id)} <button class="clr" id="aDel">取消提醒</button>` : ""}</div></div>`;
 }
 function bindAlertBox(id) {
@@ -1539,6 +1558,60 @@ function bindAlertBox(id) {
   const bindDel = () => { const d = $("#aDel"); if (d) d.onclick = () => { $("#aHi").value = ""; $("#aLo").value = ""; upd(); }; };
   $("#aHi").onchange = upd; $("#aLo").onchange = upd;
   bindDel();
+}
+
+/* ---------------- 提醒管理 ---------------- */
+let alertAdd = new Set(), alertWipe = false;   // alertAdd：剛加進來、還沒填門檻的商品
+function showAlerts() {
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true;
+  const view = $("#alertView");
+  view.hidden = false;
+  document.title = "價格提醒管理｜魔獸世界：永恆 台服拍賣場";
+  window.scrollTo(0, 0);
+  track("ah_alerts");
+  renderAlertPage(view);
+}
+function renderAlertPage(view) {
+  const ids = [...new Set([...Object.keys(ALERTS).map(Number), ...alertAdd])];
+  const rows = ids.map((id) => ({ id, r: ROWBY.get(id), a: ALERTS[id] || {}, hit: alertHit(id) }))
+    .sort((x, y) => (!!y.hit - !!x.hit) || (x.r?.name || "").localeCompare(y.r?.name || "", "zh-Hant"));
+  const perm = "Notification" in window ? Notification.permission : "unsupported";
+  const gap = (t, r) => (t == null || !r?.ask ? "" : `<div class="mut sm">${pct(t / r.ask - 1)}</div>`);
+  view.innerHTML = `<div class="card"><h3>價格提醒</h3>
+    <p class="desc">漲到門檻以上提醒你賣、跌到門檻以下提醒你買。照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>；清空兩格就是刪除。提醒存在這台裝置，網頁開著時每 10 分鐘檢查一次新價格${perm === "granted" ? "，桌面通知已開" : perm === "default" ? '。<button class="clr" id="apNotif">開啟桌面通知</button>' : ""}。</p>
+    <div class="ap-add"><input type="search" id="apQ" placeholder="搜尋商品加提醒，例如 瑟銀錠" autocomplete="off" aria-label="搜尋商品加提醒"><div id="apHits" class="ap-hits"></div></div>
+    ${rows.length ? `<div class="tscroll"><table class="ptab ap"><thead><tr><th>商品</th><th>現價</th><th>漲到（提醒賣）</th><th>跌到（提醒買）</th><th>狀態</th><th></th></tr></thead><tbody>
+    ${rows.map(({ id, r, a, hit }) => `<tr class="${hit ? "ap-hit " + hit.kind : ""}" data-id="${id}"><td>${gearLink(id)}</td><td>${money(r?.ask)}</td>
+      <td><input type="text" class="ap-in" data-k="hi" value="${moneyTxt(a.hi)}" placeholder="${r?.ask ? "例如 " + moneyTxt(Math.round(r.ask * 1.1)) : ""}" aria-label="漲到多少提醒賣">${gap(a.hi, r)}</td>
+      <td><input type="text" class="ap-in" data-k="lo" value="${moneyTxt(a.lo)}" placeholder="${r?.ask ? "例如 " + moneyTxt(Math.round(r.ask * 0.9)) : ""}" aria-label="跌到多少提醒買">${gap(a.lo, r)}</td>
+      <td>${hit ? `<b class="${hit.kind === "sell" ? "pos" : "neg-d"}">${hit.kind === "sell" ? "可以掛賣了" : "可以進貨了"}</b>` : ALERTS[id] ? '<span class="mut">還沒到價</span>' : '<span class="mut">填一個門檻</span>'}</td>
+      <td><button class="clr ap-del">刪除</button></td></tr>`).join("")}
+    </tbody></table></div>
+    <button class="clr ap-wipe" id="apWipe">${alertWipe ? "確定要刪除全部？再按一次" : "全部刪除"}</button>`
+    : '<p class="mut">還沒有任何提醒。用上面的搜尋加一個，或在商品頁設定。</p>'}
+  </div>`;
+  const q = $("#apQ"), hitsBox = $("#apHits");
+  q.oninput = () => {
+    const t = q.value.trim().toLowerCase();
+    const found = t ? ROWS.filter((r) => r.key.includes(t)).sort((a, b) => (b.vol24 || 0) - (a.vol24 || 0)).slice(0, 8) : [];
+    hitsBox.innerHTML = found.map((r) => `<button class="ap-pick" data-id="${r.id}">${esc(r.name)} <span class="mut sm">${money(r.ask, true)}</span></button>`).join("") || (t ? '<span class="mut sm">拍賣場上沒有這個商品。</span>' : "");
+    hitsBox.querySelectorAll(".ap-pick").forEach((b) => (b.onclick = () => { alertAdd.add(+b.dataset.id); renderAlertPage(view); view.querySelector(`tr[data-id="${b.dataset.id}"] .ap-in`)?.focus(); }));
+  };
+  view.querySelectorAll("tr[data-id]").forEach((tr) => {
+    const id = +tr.dataset.id;
+    tr.querySelectorAll(".ap-in").forEach((inp) => (inp.onchange = () => {
+      const v = parseMoney(inp.value);
+      if (Number.isNaN(v)) { inp.classList.add("bad"); inp.title = "看不懂這個價格，請寫成 1g20s、40s 或 40 銀"; return; }
+      const a = { ...(ALERTS[id] || { hi: null, lo: null }), [inp.dataset.k]: v };
+      if (a.hi == null && a.lo == null) delete ALERTS[id]; else { ALERTS[id] = a; alertAdd.delete(id); watch.add(id); saveWatch(); }
+      saveAlerts(); renderAlerts(); track("ah_alert", { item_id: id }); renderAlertPage(view);
+    }));
+    tr.querySelector(".ap-del").onclick = () => { delete ALERTS[id]; alertAdd.delete(id); saveAlerts(); renderAlerts(); renderAlertPage(view); };
+  });
+  const w = $("#apWipe");
+  if (w) w.onclick = () => { if (!alertWipe) { alertWipe = true; renderAlertPage(view); setTimeout(() => { alertWipe = false; }, 5000); return; } ALERTS = {}; alertAdd.clear(); alertWipe = false; saveAlerts(); renderAlerts(); renderAlertPage(view); };
+  const nb = $("#apNotif");
+  if (nb) nb.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} renderAlerts(); renderAlertPage(view); };
 }
 
 function clearFilters() {   // 搜尋字留著：玩家剛打的字不該被清掉
@@ -1813,7 +1886,7 @@ function bindProfControls(rerender, skill) {
 const fromFor = (skill) => Math.max(1, ME[skill] ?? pstate.from);
 
 async function showProf(skill) {
-  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#farmView").hidden = true;
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true;
   const view = $("#profView");
   view.hidden = false;
   view.innerHTML = '<p class="mut">讀取配方…</p>';
