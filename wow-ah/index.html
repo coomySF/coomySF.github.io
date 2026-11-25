@@ -1667,7 +1667,7 @@ function renderPromo() {
 
 /* ---------------- Discord 推播（Supabase） ---------------- */
 // 公開設定：Supabase 專案網址和 anon key（本來就是給瀏覽器用的公開金鑰）、Ko-fi 頁面名稱。空的就顯示「即將開放」
-const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "", email: false };   // email：接好外部寄信（SMTP）再打開
+const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "", email: true };   // email：信箱驗證碼登入（Supabase 已接 Gmail SMTP）
 const PUSH_ON = !!(PUSH.url && PUSH.anon);
 let SB = null, PSUB = null, PUSHED = new Map(), PEMAIL = "", OTP_TO = "";   // PUSHED：item_id → {hi, lo}；PEMAIL：登入的信箱（匿名是空的）
 async function sb() {
