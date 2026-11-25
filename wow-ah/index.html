@@ -220,6 +220,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .alertbar .hit.buy { border-color: color-mix(in oklab, var(--down) 45%, var(--line)); background: linear-gradient(90deg, color-mix(in oklab, var(--down) 10%, var(--surface)), var(--surface) 50%); box-shadow: inset 3px 0 0 var(--down); }
   .alertset { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: inset 0 1px 0 var(--sheen); font-size: 13px; }
   .astate { flex-basis: 100%; }
+  .alertset input[type=text] { width: 110px; }
   .aln { display: block; font-size: 11px; color: var(--muted); font-weight: 400; } .aln.hit { color: var(--ink); font-weight: 700; }
   .alertset input, .numin { width: 80px; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); font-family: var(--font-num), "Noto Sans TC", sans-serif; }
   .alertset input:focus, .numin:focus, .me-item input:focus { border-color: var(--gold-line); }
@@ -287,6 +288,33 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .ab-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .ab-acts .clr { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }
   .alertbar.on-page { display: none; }
+  @media (max-width: 600px) { .vtabs { overflow-x: auto; scrollbar-width: none; } .vtabs::-webkit-scrollbar { display: none; } .vtabs a { white-space: nowrap; padding: 8px 7px; } .tlong { display: none; } }
+  .tbadge { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; text-align: center; background: var(--surface-2); color: var(--ink-2); font-weight: 700; }
+  .tbadge.hot { background: var(--up); color: #fff; }
+  .bellq { border: 0; background: none; cursor: pointer; font-size: 14px; padding: 4px; opacity: .35; filter: grayscale(1); }
+  .bellq:hover, .bellq[aria-pressed=true] { opacity: 1; filter: none; }
+  .promo { position: relative; border-color: var(--gold-line, var(--line)); background: linear-gradient(135deg, var(--gold-soft, transparent), transparent 60%), var(--surface); }
+  .promo-k { font-size: 12px; letter-spacing: .08em; color: var(--gold-ink, var(--ink-2)); font-weight: 700; }
+  .promo-h { font-size: 22px; margin: 4px 0 6px; }
+  .promo-p { margin: 0 0 12px; color: var(--ink-2); max-width: 640px; line-height: 1.6; }
+  .promo-cta { height: 38px; padding: 0 16px; border: 0; border-radius: 8px; background: var(--gold, var(--ink)); color: #1a1405; font-weight: 700; cursor: pointer; }
+  .promo-cta.sm { height: 32px; margin-left: 8px; }
+  .promo-more { margin-left: 12px; font-size: 13px; }
+  .promo-x { position: absolute; top: 8px; right: 8px; }
+  .push-want { margin-top: 4px; padding: 10px 12px; border: 1px dashed var(--gold-line, var(--line)); border-radius: 8px; font-size: 13px; }
+  .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 8px; }
+  .presets.inline { display: flex; flex-wrap: wrap; flex-basis: 100%; margin: 2px 0; }
+  .pre { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--ink); cursor: pointer; font-size: 13px; text-align: left; }
+  .pre span { font-size: 12px; color: var(--muted); }
+  .pre.lo:hover { border-color: var(--down); } .pre.hi:hover { border-color: var(--up); }
+  .sheet { position: fixed; inset: auto 0 0 0; z-index: 50; display: flex; justify-content: center; padding: 0 12px 12px; transform: translateY(110%); transition: transform .2s ease; }
+  .sheet.open { transform: none; }
+  .sheet-in { position: relative; width: 100%; max-width: 440px; padding: 16px; border: 1px solid var(--gold-line, var(--line)); border-radius: 14px; background: var(--surface); box-shadow: 0 -8px 40px rgba(0,0,0,.45); }
+  .sheet-h { font-size: 15px; padding-right: 36px; }
+  .sheet-x { position: absolute; top: 8px; right: 8px; }
+  .sheet-state { font-size: 13px; color: var(--ink-2); min-height: 1.4em; }
+  .sheet-foot { display: flex; justify-content: space-between; margin-top: 10px; font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
   .ap-add { position: relative; margin: 6px 0 12px; }
   .ap-add input { width: 100%; max-width: 420px; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field, var(--bg)); color: var(--ink); }
   .ap-hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -390,12 +418,13 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
     <p class="sub">魔獸世界：永恆・台服 PvP 聯盟拍賣場物價・每小時更新</p>
     <div class="status" id="status">讀取中…</div>
     <p class="notice" id="notice" hidden></p>
-    <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a><a href="#/farm" data-t="farm">打寶賺錢</a></nav>
+    <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a><a href="#/farm" data-t="farm">打寶賺錢</a><a href="#/alerts" data-t="alerts">🔔 <span class="tlong">到價</span>提醒<span class="tbadge" id="tBadge" hidden></span></a></nav>
     <div class="mebar" id="meBar"></div>
     <div class="alertbar" id="alertBar" hidden></div>
   </header>
 
   <section id="listView">
+    <div class="card promo" id="promo" hidden></div>
     <div class="card idx" id="idxCard" hidden></div>
     <div class="filters" id="filters">
       <input type="search" id="q" placeholder="搜尋商品名稱" aria-label="搜尋商品名稱" autocomplete="off">
@@ -629,6 +658,8 @@ function bindFilters() {
   });
   $("#more").addEventListener("click", () => { state.shown += 200; renderList(); });
   $("#rows").addEventListener("click", (e) => {
+    const bell = e.target.closest(".bellq");
+    if (bell) { e.stopPropagation(); openQuick(+bell.closest("tr").dataset.id); return; }
     const star = e.target.closest(".star");
     const tr = e.target.closest("tr");
     if (!tr) return;
@@ -696,6 +727,7 @@ const ratioTxt = (r) => r.ratio == null ? "—" : r.ratio === Infinity ? "∞" :
 const lastTxt = (r) => r.lastSoldT ? `${money(r.lastSoldP)} <span class="mut">${ago(r.lastSoldT)}</span>` : '<span class="mut">—</span>';
 
 function renderList() {
+  renderPromo();
   const list = ROWS.filter(matches).sort(sorter());
   // 有搜尋字時，算出被其他篩選藏起來的筆數，讓玩家一鍵看全部
   const hidden = state.q ? ROWS.filter((r) => r.key.includes(state.q)).length - list.length : 0;
@@ -703,7 +735,7 @@ function renderList() {
   const hints = { cheap: `現價比 7 日均低 ${state.thr * 100}% 以上、24h 至少成交 ${state.minv} 件`, dear: `現價比 7 日均高 ${state.thr * 100}% 以上、24h 至少成交 ${state.minv} 件`, hot: "24 小時賣出比新上架多：貨在變少", slow: "24 小時取消＋過期遠多於成交：賣不動或有人撤單", watch: "點商品左邊的 ★ 加入，只存在這台裝置" };
   $("#hint").textContent = `${list.length.toLocaleString()} 項${hints[state.sig] ? "・" + hints[state.sig] : ""}`;
   const html = list.slice(0, state.shown).map((r) => `<tr data-id="${r.id}">
-    <td class="c-star"><button class="star" aria-label="加入觀察" aria-pressed="${watch.has(r.id)}">★</button></td>
+    <td class="c-star"><button class="star" aria-label="加入觀察" aria-pressed="${watch.has(r.id)}">★</button><button class="bellq" aria-label="設定到價提醒" title="到價提醒" aria-pressed="${!!ALERTS[r.id]}">🔔</button></td>
     <td class="c-item">${itemCell(r)}</td>
     <td class="c-ask">${money(r.ask)}</td>
     <td class="c-desk">${money(r.avg7)}</td>
@@ -1475,7 +1507,15 @@ let DISMISS = new Set();
 try { DISMISS = new Set(JSON.parse(sessionStorage.getItem("wowah.dismiss") || "[]")); } catch (e) {}
 const hitKey = (h) => `${h.r.id}:${h.kind}:${OV?.t}`;
 const saveDismiss = () => { try { sessionStorage.setItem("wowah.dismiss", JSON.stringify([...DISMISS])); } catch (e) {} };
+function renderBadge() {
+  const b = $("#tBadge"), n = Object.keys(ALERTS).length, hits = Object.keys(ALERTS).filter((id) => alertHit(id)).length;
+  if (!b) return;
+  b.hidden = !n;
+  b.textContent = hits ? `${hits} 到價` : String(n);
+  b.classList.toggle("hot", !!hits);
+}
 function renderAlerts() {
+  renderBadge();
   const bar = $("#alertBar"), hits = Object.keys(ALERTS).map(alertHit).filter(Boolean).filter((h) => !DISMISS.has(hitKey(h)));
   const n = Object.keys(ALERTS).length;
   if (!n) { bar.hidden = true; return; }
@@ -1533,8 +1573,9 @@ function alertState(id) {
   const a = ALERTS[id], r = ROWBY.get(+id);
   if (!a) return "";
   const hit = alertHit(id), parts = [];
-  if (a.hi != null) parts.push(`賣 ≥ ${money(a.hi, true)}${r?.ask ? `（${hit?.kind === "sell" ? "到價了" : "還差 " + alertGap(a.hi, r.ask)}）` : ""}`);
-  if (a.lo != null) parts.push(`買 ≤ ${money(a.lo, true)}${r?.ask ? `（${hit?.kind === "buy" ? "到價了" : "還差 " + alertGap(a.lo, r.ask)}）` : ""}`);
+  const need = (t) => { const x = Math.abs(Math.round((t / r.ask - 1) * 100)); return t > r.ask ? `要再漲 ${x}%` : `要再跌 ${x}%`; };
+  if (a.hi != null) parts.push(`賣 ≥ ${money(a.hi, true)}${r?.ask ? `（${hit?.kind === "sell" ? "到價了" : need(a.hi)}）` : ""}`);
+  if (a.lo != null) parts.push(`買 ≤ ${money(a.lo, true)}${r?.ask ? `（${hit?.kind === "buy" ? "到價了" : need(a.lo)}）` : ""}`);
   return parts.join("・");
 }
 function alertBox(id, r) {
@@ -1543,7 +1584,8 @@ function alertBox(id, r) {
   return `<div class="alertset" id="aBox"><b>🔔 價格提醒</b>
     <label>漲到 <input type="text" inputmode="text" id="aHi" value="${moneyTxt(a.hi)}" placeholder="例如 ${ph(1.1)}"> 以上通知我賣</label>
     <label>跌到 <input type="text" inputmode="text" id="aLo" value="${moneyTxt(a.lo)}" placeholder="例如 ${ph(0.9)}"> 以下通知我買</label>
-    <span class="mut sm">照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>都可以。存在這台裝置，到價時列表最上面會亮燈。<a href="#/alerts">看我所有的提醒 →</a></span>
+    ${r.ask ? `<div class="presets inline">${PRESETS.map(([k, m, t]) => `<button class="pre ${k}" data-k="${k}" data-v="${niceC(r.ask * m)}">${t}<span>${money(niceC(r.ask * m), true)}</span></button>`).join("")}</div>` : ""}
+    <span class="mut sm">點上面一鍵設，或照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>。存在這台裝置，到價時列表最上面會亮燈。<a href="#/alerts">看我所有的提醒 →</a></span>
     <div class="astate" id="aState" aria-live="polite">${ALERTS[id] ? `✓ 已設定：${alertState(id)} <button class="clr" id="aDel">取消提醒</button>` : ""}</div></div>`;
 }
 function bindAlertBox(id) {
@@ -1558,6 +1600,58 @@ function bindAlertBox(id) {
   const bindDel = () => { const d = $("#aDel"); if (d) d.onclick = () => { $("#aHi").value = ""; $("#aLo").value = ""; upd(); }; };
   $("#aHi").onchange = upd; $("#aLo").onchange = upd;
   bindDel();
+  document.querySelectorAll("#aBox .pre").forEach((b) => (b.onclick = () => { $(b.dataset.k === "hi" ? "#aHi" : "#aLo").value = moneyTxt(+b.dataset.v); upd(); }));
+}
+
+/* ---------------- 一鍵設提醒 ---------------- */
+// 預設門檻取整：1 金以上取到銀，以下取到銅
+const niceC = (c) => (c >= 10000 ? Math.round(c / 100) * 100 : Math.max(1, Math.round(c)));
+const PRESETS = [["lo", 0.9, "跌 10% 提醒我買"], ["lo", 0.8, "跌 20% 提醒我買"], ["hi", 1.1, "漲 10% 提醒我賣"], ["hi", 1.2, "漲 20% 提醒我賣"]];
+function setAlert(id, k, v, src) {
+  ALERTS[id] = { ...(ALERTS[id] || { hi: null, lo: null }), [k]: v };
+  watch.add(id); saveWatch(); saveAlerts(); renderAlerts();
+  track("ah_alert", { item_id: id, via: src });
+}
+function openQuick(id) {
+  const r = ROWBY.get(id);
+  if (!r) return;
+  let sh = $("#qa");
+  if (!sh) { sh = document.createElement("div"); sh.id = "qa"; sh.className = "sheet"; sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", "設定到價提醒"); document.body.appendChild(sh); }
+  const draw = (msg) => {
+    sh.innerHTML = `<div class="sheet-in"><button class="hit-x sheet-x" aria-label="關閉">×</button>
+      <div class="sheet-h">🔔 <b>${esc(r.name)}</b> 到價提醒</div>
+      <div class="mut sm">現價 ${money(r.ask, true)}${r.avg7 ? `・平均價（7 日）${money(r.avg7, true)}` : ""}</div>
+      <div class="presets">${r.ask ? PRESETS.map(([k, m, t]) => `<button class="pre ${k}" data-k="${k}" data-v="${niceC(r.ask * m)}">${t}<span>${k === "lo" ? "≤" : "≥"} ${money(niceC(r.ask * m), true)}</span></button>`).join("") : '<span class="mut">這個商品目前沒有掛單，請到商品頁自己填價格。</span>'}</div>
+      <div class="sheet-state" aria-live="polite">${msg || (ALERTS[id] ? `目前：${alertState(id)}` : "點一下就設好，到價時列表最上面會亮燈。")}</div>
+      <div class="sheet-foot"><a href="#/item/${id}">自己填價格 →</a><a href="#/alerts">管理所有提醒 →</a></div></div>`;
+    sh.querySelector(".sheet-x").onclick = closeQuick;
+    sh.querySelectorAll(".sheet-foot a").forEach((a) => (a.onclick = closeQuick));
+    sh.querySelectorAll(".pre").forEach((b) => (b.onclick = () => { setAlert(id, b.dataset.k, +b.dataset.v, "quick"); if (!$("#listView").hidden) renderList(); draw(`✓ 設好了：${alertState(id)}`); }));
+  };
+  draw();
+  sh.hidden = false;
+  requestAnimationFrame(() => sh.classList.add("open"));
+  sh.querySelector(".pre, .sheet-x").focus();
+}
+function closeQuick() { const sh = $("#qa"); if (sh) { sh.classList.remove("open"); sh.hidden = true; } }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeQuick(); });
+
+// 第一次來、還沒設過提醒：列表上方介紹卡，可以關掉
+function renderPromo() {
+  const el = $("#promo");
+  let off = false;
+  try { off = localStorage.getItem("wowah.promo") === "off"; } catch (e) {}
+  if (!el || off || Object.keys(ALERTS).length) { if (el) el.hidden = true; return; }
+  const pick = ROWS.filter((r) => r.ask && (r.vol24 || 0) >= 50 && r.cls === "商品").sort((a, b) => (b.value24 || 0) - (a.value24 || 0))[0];
+  el.hidden = false;
+  el.innerHTML = `<button class="hit-x promo-x" aria-label="不要再顯示">×</button>
+    <div class="promo-k">🔔 到價提醒</div>
+    <h3 class="promo-h">價格到了，我叫你。</h3>
+    <p class="promo-p">不用一直盯拍賣場：設「跌到多少提醒我買」「漲到多少提醒我賣」，價格一到，這裡就亮燈，也能跳桌面通知。每個商品左邊的 🔔 點一下就能設。</p>
+    ${pick ? `<button class="promo-cta" id="promoTry">試試看：${esc(pick.name)} 跌 10% 提醒我買</button>` : ""}<a class="promo-more" href="#/alerts">看提醒怎麼用 →</a>`;
+  el.querySelector(".promo-x").onclick = () => { try { localStorage.setItem("wowah.promo", "off"); } catch (e) {} el.hidden = true; track("ah_promo_close"); };
+  const t = $("#promoTry");
+  if (t) t.onclick = () => { track("ah_promo_try"); openQuick(pick.id); };
 }
 
 /* ---------------- 提醒管理 ---------------- */
@@ -1577,7 +1671,12 @@ function renderAlertPage(view) {
     .sort((x, y) => (!!y.hit - !!x.hit) || (x.r?.name || "").localeCompare(y.r?.name || "", "zh-Hant"));
   const perm = "Notification" in window ? Notification.permission : "unsupported";
   const gap = (t, r) => (t == null || !r?.ask ? "" : `<div class="mut sm">${pct(t / r.ask - 1)}</div>`);
-  view.innerHTML = `<div class="card"><h3>價格提醒</h3>
+  let wanted = false;
+  try { wanted = localStorage.getItem("wowah.pushwant") === "1"; } catch (e) {}
+  view.innerHTML = `<div class="card promo static"><div class="promo-k">🔔 到價提醒</div><h3 class="promo-h">價格到了，我叫你。</h3>
+    <p class="promo-p">低價進貨、高價出貨，不用一直盯拍賣場。列表每個商品左邊的 🔔 點一下就能設，或在下面搜尋商品。</p>
+    <div class="push-want">${wanted ? "✓ 收到！想要的人夠多，就會做「關掉網頁也收得到」的 Discord 私訊推播。" : '<b>想要關掉網頁也收得到提醒嗎？</b>現在要開著這個網頁才會提醒。<button class="promo-cta sm" id="pushWant">我想要這個功能</button>'}</div></div>
+    <div class="card"><h3>價格提醒</h3>
     <p class="desc">漲到門檻以上提醒你賣、跌到門檻以下提醒你買。照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>；清空兩格就是刪除。提醒存在這台裝置，網頁開著時每 10 分鐘檢查一次新價格${perm === "granted" ? "，桌面通知已開" : perm === "default" ? '。<button class="clr" id="apNotif">開啟桌面通知</button>' : ""}。</p>
     <div class="ap-add"><input type="search" id="apQ" placeholder="搜尋商品加提醒，例如 瑟銀錠" autocomplete="off" aria-label="搜尋商品加提醒"><div id="apHits" class="ap-hits"></div></div>
     ${rows.length ? `<div class="tscroll"><table class="ptab ap"><thead><tr><th>商品</th><th>現價</th><th>漲到（提醒賣）</th><th>跌到（提醒買）</th><th>狀態</th><th></th></tr></thead><tbody>
@@ -1610,6 +1709,8 @@ function renderAlertPage(view) {
   });
   const w = $("#apWipe");
   if (w) w.onclick = () => { if (!alertWipe) { alertWipe = true; renderAlertPage(view); setTimeout(() => { alertWipe = false; }, 5000); return; } ALERTS = {}; alertAdd.clear(); alertWipe = false; saveAlerts(); renderAlerts(); renderAlertPage(view); };
+  const pw = $("#pushWant");
+  if (pw) pw.onclick = () => { try { localStorage.setItem("wowah.pushwant", "1"); } catch (e) {} track("ah_push_interest"); renderAlertPage(view); };
   const nb = $("#apNotif");
   if (nb) nb.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} renderAlerts(); renderAlertPage(view); };
 }
