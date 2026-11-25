@@ -534,8 +534,9 @@ function niceTicks(lo, hi, n = 4) {
   const span = hi - lo, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
   const step = [1, 2, 2.5, 5, 10].map((k) => k * mag).find((s) => s >= step0);
   const out = [];
-  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(v);
-  return out;
+  const end = Math.ceil(hi / step - 1e-9) * step; // 最上面一條刻度一定蓋過最大值
+  for (let v = Math.floor(lo / step + 1e-9) * step; v <= end + 1e-9; v += step) out.push(Math.max(0, v));
+  return [...new Set(out)];
 }
 function timeTicks(t0, t1) {
   const out = [];
