@@ -176,7 +176,11 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .c-or { color: #e07a1f; } .c-ye { color: #b8920a; } .c-gr { color: #1f9a3e; } .c-gy, .c-no { color: var(--muted); } .c-up { color: var(--up); }
   .alertbar { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; font-size: 13px; }
   .alertbar .hit { align-self: stretch; }
-  .alertbar .hit { text-decoration: none; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+  .alertbar .hit { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+  .alertbar .hit a { flex: 1; text-decoration: none; min-width: 0; }
+  .hit-act { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .hit-x { width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); font-size: 20px; line-height: 1; cursor: pointer; }
+  .hit-x:hover { background: var(--surface-2); color: var(--ink); }
   .alertbar .hit.sell { border-color: color-mix(in oklab, var(--up) 50%, var(--line)); }
   .alertbar .hit.buy { border-color: color-mix(in oklab, var(--down) 50%, var(--line)); }
   .alertset { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 13px; }
@@ -1391,16 +1395,27 @@ function alertHit(id) {
   if (a.lo != null && r.ask <= a.lo) return { kind: "buy", r, a };
   return null;
 }
+// 收起的到價橫幅：記「商品:買或賣:快照時間」，同一個快照不再顯示，有新快照還到價才再亮
+let DISMISS = new Set();
+try { DISMISS = new Set(JSON.parse(sessionStorage.getItem("wowah.dismiss") || "[]")); } catch (e) {}
+const hitKey = (h) => `${h.r.id}:${h.kind}:${OV?.t}`;
+const saveDismiss = () => { try { sessionStorage.setItem("wowah.dismiss", JSON.stringify([...DISMISS])); } catch (e) {} };
 function renderAlerts() {
-  const bar = $("#alertBar"), hits = Object.keys(ALERTS).map(alertHit).filter(Boolean);
+  const bar = $("#alertBar"), hits = Object.keys(ALERTS).map(alertHit).filter(Boolean).filter((h) => !DISMISS.has(hitKey(h)));
   const n = Object.keys(ALERTS).length;
   if (!n) { bar.hidden = true; return; }
   bar.hidden = false;
   const perm = "Notification" in window ? Notification.permission : "unsupported";
-  bar.innerHTML = `${hits.length ? hits.map((h) => `<a class="hit ${h.kind}" href="#/item/${h.r.id}">🔔 <b>${esc(h.r.name)}</b> 現價 ${money(h.r.ask, true)}，${h.kind === "sell" ? `漲到你設的 ${money(h.a.hi, true)} 以上：<b>可以掛賣了</b>` : `跌到你設的 ${money(h.a.lo, true)} 以下：<b>可以進貨了</b>`}</a>`).join("") : `<span class="mut">🔔 你設了 ${n} 個價格提醒，目前都還沒到價。</span>`}
+  bar.innerHTML = `${hits.length ? hits.map((h) => `<div class="hit ${h.kind}"><a href="#/item/${h.r.id}">🔔 <b>${esc(h.r.name)}</b> 現價 ${money(h.r.ask, true)}，${h.kind === "sell" ? `漲到你設的 ${money(h.a.hi, true)} 以上：<b>可以掛賣了</b>` : `跌到你設的 ${money(h.a.lo, true)} 以下：<b>可以進貨了</b>`}</a>
+      <span class="hit-act"><button class="clr" data-off="${h.r.id}" title="刪掉這個商品的價格提醒">取消提醒</button><button class="hit-x" data-hide="${hitKey(h)}" aria-label="先收起，有新價格再提醒" title="先收起，有新價格再提醒">×</button></span></div>`).join("")
+      + (hits.length > 1 ? '<button class="clr" id="hideAll">全部收起</button>' : "") : `<span class="mut">🔔 你設了 ${n} 個價格提醒，目前都沒有新的到價。</span>`}
     ${perm === "default" ? '<button class="clr" id="notifOn">開啟桌面通知</button>' : perm === "granted" ? '<span class="mut sm">桌面通知已開（這個分頁開著時會提醒）</span>' : ""}`;
   const b = $("#notifOn");
   if (b) b.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} renderAlerts(); };
+  bar.querySelectorAll("[data-hide]").forEach((x) => (x.onclick = () => { DISMISS.add(x.dataset.hide); saveDismiss(); renderAlerts(); }));
+  bar.querySelectorAll("[data-off]").forEach((x) => (x.onclick = () => { delete ALERTS[x.dataset.off]; saveAlerts(); renderAlerts(); if (!$("#listView").hidden) renderList(); }));
+  const all = $("#hideAll");
+  if (all) all.onclick = () => { hits.forEach((h) => DISMISS.add(hitKey(h))); saveDismiss(); renderAlerts(); };
 }
 const notified = new Set();
 function notifyHits() {
