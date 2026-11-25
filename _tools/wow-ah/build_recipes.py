@@ -55,14 +55,37 @@ def db2(cache, build, table, locale=""):
 
 
 def sql_rows(path, table):
+    """mysqldump 的 INSERT 拆成一列一列（看引號，註解裡的括號、逗號不會拆錯）"""
     pre = f"INSERT INTO `{table}` VALUES "
-    tup = re.compile(r"\((.*?)\)(?=,\(|;\s*$)", re.S)
-    val = re.compile(r"'(?:[^'\\]|\\.)*'|[^,]+")
     with gzip.open(path, "rt", encoding="utf-8", errors="replace") as f:
         for line in f:
-            if line.startswith(pre):
-                for m in tup.finditer(line[len(pre):].rstrip()):
-                    yield [v.strip("'") for v in val.findall(m.group(1))]
+            if not line.startswith(pre):
+                continue
+            row, cur, q, esc, depth = [], [], False, False, 0
+            for ch in line[len(pre):]:
+                if q:
+                    if esc:
+                        cur.append(ch)
+                        esc = False
+                    elif ch == "\\":
+                        esc = True
+                    elif ch == "'":
+                        q = False
+                    else:
+                        cur.append(ch)
+                elif ch == "'":
+                    q = True
+                elif ch == "(" and depth == 0:
+                    depth, row, cur = 1, [], []
+                elif ch == "," and depth:
+                    row.append("".join(cur).strip())
+                    cur = []
+                elif ch == ")" and depth:
+                    row.append("".join(cur).strip())
+                    depth = 0
+                    yield row
+                elif depth:
+                    cur.append(ch)
 
 
 def main():

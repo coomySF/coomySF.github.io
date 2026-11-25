@@ -206,6 +206,11 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .ptab .lt { text-align: left; white-space: normal; min-width: 140px; }
   .ptab .drops div { margin-bottom: 3px; }
   @media (max-width: 600px) { .ptab .lt { min-width: 190px; } .ptab td:first-child { white-space: normal; min-width: 96px; } }
+  .srcs { display: grid; gap: 0; margin-top: 6px; }
+  .src { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--grid); font-size: 13px; }
+  .src-k { font-weight: 700; color: var(--ink-2); }
+  .src-v ul { margin: 0; padding-left: 16px; } .src-v li { margin: 2px 0; } .src-v p { margin: 0 0 6px; }
+  @media (max-width: 600px) { .src { grid-template-columns: 1fr; gap: 4px; } }
   .headline { font-size: 15px; line-height: 1.6; margin: 8px 0; }
   .pfilters label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
   .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -979,30 +984,68 @@ function worldTxt(w) {
   return `等級 ${w[1]}–${w[2]} 的怪都可能掉（${w[0].toLocaleString()} 種怪）${zones ? `，最常出現在 ${zones}` : ""}。平均大約每 ${w[4].toLocaleString()} 隻掉一件`;
 }
 function dropShort(id) {
-  const [named, w] = DROPS.items[id];
+  const { m: named = [], w } = DROPS.items[id];
   if (named.length) { const [m, pm] = named[0]; return `${esc(mobName(m))}・${placeTxt(DROPS.mobs[m][4], true)}・${dropPct(pm)}${named.length > 1 ? `<span class="mut">（另 ${named.length - 1} 隻）</span>` : ""}`; }
-  return `世界掉落・Lv ${w[1]}–${w[2]}${w[3][0] ? `・最常在${placeTxt(w[3][0][0], true)}` : ""}`;
+  return w ? `世界掉落・Lv ${w[1]}–${w[2]}${w[3][0] ? `・最常在${placeTxt(w[3][0][0], true)}` : ""}` : "—";
 }
 const DROP_NOTE = "掉落率來自 60 版開源伺服器資料（CMaNGOS），永恆有改過的會不準；永恆新加的副本還查不到。";
+const QTW = ["粗糙", "普通", "優秀", "精良", "史詩"], QCLS = ["POOR", "COMMON", "UNCOMMON", "RARE", "EPIC"];
+const zonesTxt = (pl) => pl.map(([k, x]) => `${placeTxt(k, true)} ${Math.round(x / 10)}%`).join("、");
+function mobTable(list, price, gear) {
+  return `<div class="tscroll"><table class="ptab"><thead><tr><th>怪物</th><th>等級</th><th class="lt">在哪</th><th>${gear ? "掉率" : "每隻掉"}</th>${price != null ? "<th>每打一次值</th>" : ""}</tr></thead><tbody>
+    ${list.map(([m, pm]) => `<tr><td>${mobCell(m)}</td><td class="num">${mobLv(m)}</td><td class="lt">${placeTxt(DROPS.mobs[m][4])}${DROPS.mobs[m][5] > 1 ? `<span class="mut sm">・${DROPS.mobs[m][5]} 隻</span>` : ""}</td><td class="num">${dropPct(pm)}${gear ? `<div class="mut sm">約 ${killsFor(pm)} 次一件</div>` : ""}</td>${price != null ? `<td>${money(price * pm / 1000)}</td>` : ""}</tr>`).join("")}
+    </tbody></table></div>`;
+}
 
 async function dropCards(id, r) {
   const box = $("#dropBox");
   if (!box) return;
   try { await loadDrops(); } catch (e) { return; }
-  if ($("#dropBox") !== box || !DROPS.items[id]) return;
-  const [named, w] = DROPS.items[id], price = farmPrice(id);
-  let head;
-  if (named.length) {
-    const [m, pm] = named[0];
-    head = `最好打：<b>${esc(mobName(m))}</b>（${placeTxt(DROPS.mobs[m][4])}），掉率 ${dropPct(pm)}，大約打 ${killsFor(pm)} 次掉一件${price != null ? `，每打一次平均值 <b>${money(price * pm / 1000)}</b>` : ""}。`;
-  } else {
-    head = `世界掉落：${worldTxt(w)}，適合邊練等邊撿。`;
+  const src = DROPS.items[id];
+  if ($("#dropBox") !== box || !src) return;
+  const gear = r.cls === "武器" || r.cls === "護甲" || r.cls === "配方";
+  const price = farmPrice(id), ask = ahPrice(id);
+  const parts = [], heads = [];
+  const sec = (k, html) => parts.push(`<div class="src"><div class="src-k">${k}</div><div class="src-v">${html}</div></div>`);
+
+  if (src.v) {
+    const [n, unit, pick] = src.v, unl = pick.some((x) => !x[1]);
+    heads.push(`<b>商店就有賣</b>，每個 ${money(unit)}${ask != null ? (unit < ask ? `，比拍賣場現價 ${money(ask)} <b class="good">便宜</b>` : `，拍賣場現價 ${money(ask)} 比較便宜`) : ""}`);
+    sec("商店", `每個 ${money(unit)}・${n} 個商人有賣${unl ? "" : "（全部限量，賣完要等補貨）"}
+      <ul>${pick.map(([m, lim]) => `<li><b>${esc(mobName(m))}</b>・${placeTxt(DROPS.mobs[m][4])}${lim ? '<span class="mut sm">・限量</span>' : ""}</li>`).join("")}</ul>`);
   }
-  box.innerHTML = `<div class="card"><h3>去哪裡打</h3><p class="desc">${head}</p>
-    ${named.length ? `<div class="tscroll"><table class="ptab"><thead><tr><th>怪物</th><th>等級</th><th class="lt">在哪</th><th>掉率</th><th>每打一次值</th></tr></thead><tbody>
-      ${named.map(([m, pm]) => `<tr><td>${mobCell(m)}</td><td class="num">${mobLv(m)}</td><td class="lt">${placeTxt(DROPS.mobs[m][4])}</td><td class="num">${dropPct(pm)}<div class="mut sm">約 ${killsFor(pm)} 次一件</div></td><td>${price != null ? money(price * pm / 1000) : "—"}</td></tr>`).join("")}
-      </tbody></table></div>` : ""}
-    ${named.length && w ? `<p class="desc">其他：世界掉落，${worldTxt(w)}。</p>` : ""}
+  if (src.g) {
+    const g = src.g[0];
+    heads.push(`<b>採集</b>：${esc(g[0])}，最常在 ${zonesTxt(g[3].slice(0, 2))}`);
+    sec("採集", `<ul>${src.g.map(([lbl, pm, n, pl]) => `<li><b>${esc(lbl)}</b>${pm < 1000 ? `<span class="mut sm">・每採一次 ${dropPct(pm)}</span>` : ""}<span class="mut sm">・全世界約 ${n} 個點</span><div class="sm">${zonesTxt(pl)}</div></li>`).join("")}</ul>`);
+  }
+  if (src.f) {
+    heads.push(`<b>釣魚</b>：${placeTxt(src.f[0][0], true)}`);
+    sec("釣魚", src.f.map(([k, pm]) => `${placeTxt(k, true)} <span class="mut sm">${dropPct(pm)}</span>`).join("、"));
+  }
+  if (src.d) {
+    const [q, lo, hi, pm] = src.d[0];
+    heads.push(`<b>分解</b>${QTW[q]}裝備（物品等級 ${lo}–${hi}）`);
+    sec("分解", `<ul>${src.d.map(([q, lo, hi, pm]) => `<li>分解 <b class="q-${QCLS[q]}">${QTW[q]}</b>裝備・物品等級 ${lo}–${hi}<span class="mut sm">・${dropPct(pm)} 拿到</span></li>`).join("")}</ul><p class="mut sm">要學附魔才能分解；這一段的${QTW[src.d[0][0]]}裝備在拍賣場便宜時可以買來分。</p>`);
+  }
+  if (src.m) {
+    const [m, pm] = src.m[0];
+    heads.push(gear ? `<b>最好打</b>：${esc(mobName(m))}（${placeTxt(DROPS.mobs[m][4])}），掉率 ${dropPct(pm)}，大約打 ${killsFor(pm)} 次掉一件${price != null ? `，每打一次平均值 <b>${money(price * pm / 1000)}</b>` : ""}`
+      : `<b>打怪</b>：${esc(mobName(m))}（${placeTxt(DROPS.mobs[m][4], true)}）每隻 ${dropPct(pm)}`);
+    sec(gear ? "打怪" : "掉最多的怪", mobTable(src.m, gear ? price : null, gear));
+  }
+  if (src.w) {
+    if (!src.m) heads.push(`<b>世界掉落</b>：等級 ${src.w[1]}–${src.w[2]} 的怪，最常在 ${placeTxt(src.w[3][0]?.[0], true)}`);
+    sec("世界掉落", `${worldTxt(src.w)}${gear ? "，適合邊練等邊撿" : ""}。`);
+  }
+  if (src.km || src.kw) {
+    if (src.km) heads.push(`<b>剝皮</b>：${esc(mobName(src.km[0][0]))}（${placeTxt(DROPS.mobs[src.km[0][0]][4], true)}）`);
+    sec("剝皮", `${src.kw ? `<p class="sm">${worldTxt(src.kw).replace("掉一件", "剝到一件").replace("都可能掉", "剝得到")}。</p>` : ""}${src.km ? mobTable(src.km, null, false) : ""}`);
+  }
+  const made = typeof REC !== "undefined" && REC && REC.made.get(id);
+  box.innerHTML = `<div class="card"><h3>${gear ? "去哪裡打" : "哪裡取得"}</h3>
+    <p class="desc">${heads.slice(0, 3).join("；")}。${made ? "也可以自己做，見上面的「怎麼做出來」。" : ""}</p>
+    <div class="srcs">${parts.join("")}</div>
     <p class="mut sm">${DROP_NOTE}</p></div>`;
 }
 
@@ -1019,7 +1062,7 @@ async function showFarm() {
 
   // 副本：每趟清一次，指定掉落（不含世界掉落）的拍賣場價值加總
   const inst = new Map();
-  for (const [k, [named]] of Object.entries(DROPS.items)) {
+  for (const [k, { m: named = [] }] of Object.entries(DROPS.items)) {
     const id = +k, r = ROWBY.get(id), v = farmPrice(id);
     if (v == null || !(r.vol7 > 0)) continue;
     for (const [m, pm] of named) {
@@ -1038,7 +1081,7 @@ async function showFarm() {
   const insts = [...inst.values()].sort((a, b) => b.ev - a.ev);
   const best = insts[0];
 
-  const gear = ROWS.filter((r) => DROPS.items[r.id] && (r.cls === "武器" || r.cls === "護甲" || r.cls === "配方") && r.vol7 > 0 && (!fstate.cls || r.cls === fstate.cls));
+  const gear = ROWS.filter((r) => (DROPS.items[r.id]?.m || DROPS.items[r.id]?.w) && (r.cls === "武器" || r.cls === "護甲" || r.cls === "配方") && r.vol7 > 0 && (!fstate.cls || r.cls === fstate.cls));
   const key = fstate.sort === "price" ? (r) => r.avg7 ?? r.ask ?? 0 : (r) => (r.avg7 ?? r.ask ?? 0) * r.vol7;
   gear.sort((a, b) => key(b) - key(a));
   const top = gear[0];
