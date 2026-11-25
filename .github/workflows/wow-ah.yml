@@ -2,7 +2,7 @@ name: wow-ah
 # 魔獸永恆台灣拍賣場：每 20 分鐘看一次暴雪有沒有新快照，有就推算成交、更新 ah-data 分支
 on:
   schedule:
-    - cron: "7,27,47 * * * *"
+    - cron: "12,32,52 * * * *"
   workflow_dispatch:
 concurrency:
   group: wow-ah

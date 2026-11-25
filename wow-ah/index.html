@@ -11,8 +11,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>台灣拍賣場行情｜魔獸世界：永恆 台服物價查詢・價格走勢</title>
-<meta name="description" content="魔獸世界：永恆（WoW Forever）台灣伺服器拍賣場物價查詢：台服 PvP 聯盟每小時價格走勢、現價對比 7 日均價、成交量、星期×小時的便宜時段。資料來自暴雪官方台灣 API，每小時更新，免費、非官方。">
-<meta name="keywords" content="魔獸世界 永恆, 魔獸永恆, WoW Forever, 台服, 台灣伺服器, 拍賣場, 拍賣行, 物價, 價格查詢, 價格走勢, 金價, 幣商, 打金, 專業技能, PvP 聯盟">
+<meta name="description" content="魔獸世界：永恆（WoW Forever）台灣伺服器拍賣場物價查詢：台服 PvP 聯盟每小時價格走勢、現價對比 7 日均價、成交量、星期×小時的便宜時段，以及練專業技能划算嗎：各專業衝到 300 的成本、練等路線與賺錢配方。資料來自暴雪官方台灣 API，每小時更新，免費、非官方。">
+<meta name="keywords" content="魔獸世界 永恆, 魔獸永恆, WoW Forever, 台服, 台灣伺服器, 拍賣場, 拍賣行, 物價, 價格查詢, 價格走勢, 金價, 幣商, 打金, 專業技能, 練專業, 衝專業, 專業衝等, 裁縫, 鍛造, 鍊金術, 附魔, 工程學, 製皮, 採礦, 草藥學, 剝皮, PvP 聯盟">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta property="og:site_name" content="Coomy">
 <meta property="og:locale" content="zh_TW">
@@ -32,6 +32,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
 {"@type":"Question","name":"魔獸世界：永恆的台服拍賣場物價要去哪裡查？","acceptedAnswer":{"@type":"Answer","text":"這一頁每小時抓暴雪官方台灣 API 的拍賣場快照，列出台服 PvP 聯盟每一樣商品的現價、7 日均價、偏離、24 小時成交與掛單量，可以用名稱搜尋，也能依類別篩選。"}},
 {"@type":"Question","name":"國外的 WoW Forever 拍賣場網站為什麼查不到台灣？","acceptedAnswer":{"@type":"Answer","text":"auctionhouse.tk.gg 這類網站只收歐洲與美洲伺服器。這一頁直接讀暴雪台灣區（tw.api.blizzard.com）的資料，所以只做台灣。"}},
 {"@type":"Question","name":"怎麼判斷現在是買低還是賣高的時機？","acceptedAnswer":{"@type":"Answer","text":"看「偏離」：現價比 7 日均價低超過門檻就標「可撿」，高超過門檻就標「可出」。再看「量比」（24 小時成交 ÷ 新上架）：大於 1 代表賣得比補得快。單一商品頁的星期×小時熱圖會告訴你一週裡哪個時段最便宜。"}},
+{"@type":"Question","name":"魔獸世界：永恆練哪個專業最划算？","acceptedAnswer":{"@type":"Answer","text":"「練專業划算嗎」分頁用台服拍賣場的即時材料價，算出每個製作專業從 1 練到 300 的成本（材料、產物回收、訓練師學費、配方）和逐級練等路線，再列出練完後每天利潤最大的配方；採集專業則看原料在台服一天賣掉多少錢。"}},
 {"@type":"Question","name":"多久更新一次？","acceptedAnswer":{"@type":"Answer","text":"暴雪台灣大約每小時的 26 分產出一份新快照，這一頁每 20 分鐘檢查一次，有新的就更新。時間一律是台北時間。"}}
 ]}]}
 </script>
@@ -152,6 +153,38 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   }
   @media (min-width: 761px) { .list td.c-rest { display: none; } }
 
+
+  /* 練專業 */
+  .vtabs { display: flex; gap: 4px; margin-top: 14px; border-bottom: 1px solid var(--line); }
+  .vtabs a { padding: 8px 14px; text-decoration: none; color: var(--ink-2); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .vtabs a[aria-current=true] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 700; }
+  .pfilters { position: static; border: 0; padding: 12px 0 2px; }
+  #profView .tiles { margin-top: 10px; }
+  .pfilters label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+  .tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.ptab { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ptab th { text-align: right; font-size: 12px; font-weight: 500; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .ptab td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; white-space: nowrap; }
+  .ptab th:first-child, .ptab td:first-child, .ptab td.mats, .ptab.route th:nth-child(2) { text-align: left; }
+  .ptab.route td:nth-child(2), .ptab.route th:nth-child(6), .ptab.route td:last-child, .ptab.route th:last-child { text-align: left; }
+  .ptab tr[data-skill] { cursor: pointer; }
+  .ptab tr[data-skill]:hover { background: var(--surface-2); }
+  .ptab a { text-decoration: none; }
+  .pit { display: inline-flex; vertical-align: middle; }
+  .pit img, .pit .noimg { width: 22px; height: 22px; }
+  .mats span { display: inline-flex; align-items: center; margin: 0 10px 2px 0; }
+  .mats .pit img, .mats .pit .noimg { width: 16px; height: 16px; border-radius: 3px; }
+  .mats .pit .nm { max-width: 120px; font-weight: 400; }
+  .sm { font-size: 11.5px; }
+  .warn { color: var(--dear); font-size: 11.5px; }
+  .pos { color: var(--ink); font-weight: 700; } .neg { color: var(--muted); }
+  .bcell { width: 120px; padding-left: 0 !important; vertical-align: middle !important; }
+  .dbar { display: block; width: 110px; height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+  .dbar i { display: block; height: 100%; border-radius: 4px; background: var(--s1); }
+  .dbar.cost i { background: var(--s2); }
+  .gtop { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+  @media (max-width: 760px) { .bcell { display: none; } }
+
   /* item view */
   .back { margin: 16px 0 6px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
   .ihead { display: flex; align-items: center; gap: 12px; margin: 6px 0 14px; }
@@ -200,6 +233,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
     <p class="sub">魔獸世界：永恆・台服 PvP 聯盟拍賣場物價・每小時更新</p>
     <div class="status" id="status">讀取中…</div>
     <p class="notice" id="notice" hidden></p>
+    <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a></nav>
   </header>
 
   <section id="listView">
@@ -250,6 +284,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
 
   <section id="itemView" hidden></section>
 
+  <section id="profView" hidden></section>
+
   <section class="about" id="about" aria-labelledby="aboutH">
     <h2 id="aboutH">魔獸世界：永恆 台服拍賣場物價查詢</h2>
     <p>這是給台灣玩家用的《魔獸世界：永恆》（WoW Forever）拍賣場物價工具。國外的拍賣場網站只收歐美伺服器，查不到台服，所以這一頁直接讀暴雪官方台灣 API，每小時記錄 <b>台灣 PvP 聯盟</b>拍賣場的每一樣商品：布料、草藥、礦石、皮革、藥水、附魔材料、裝備都在裡面。</p>
@@ -261,6 +297,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
       <li><b>滯銷</b>：取消和過期遠多於成交，別囤。</li>
       <li>點進商品看<b>星期×小時熱圖</b>，找出一週裡台服最便宜、最好賣的時段。</li>
     </ul>
+    <h3>練哪個專業划算</h3>
+    <p>切到「<a href="#/prof">練專業划算嗎</a>」：用台服拍賣場現在的材料價，算裁縫、鍛造、鍊金術、附魔、工程學、製皮、烹飪、急救從 1 練到 300 要花多少、每一級做什麼、要買哪些材料；練完以後哪些配方每天最賺。草藥學、採礦、剝皮則看原料在台服一天賣掉多少錢。</p>
     <h3>常見問題</h3>
     <dl>
       <dt>為什麼國外網站查不到台灣拍賣場？</dt>
@@ -295,6 +333,7 @@ const track = (name, p = {}) => { if (!window.AH_TRACK) return; try { window.dat
 function money(c, plain) {
   if (c == null) return '<span class="mut">—</span>';
   c = Math.round(c);
+  if (c < 0) return (plain ? "−" : '<span class="num">−</span>') + money(-c, plain);
   const g = Math.floor(c / 10000), s = Math.floor(c / 100) % 100, cp = c % 100;
   if (plain) return g ? `${g}g${s ? s + "s" : ""}` : s ? `${s}s${cp ? cp + "c" : ""}` : `${cp}c`;
   const p = [];
@@ -349,6 +388,7 @@ async function boot() {
     r.key = r.name.toLowerCase();
     return r;
   });
+  ROWBY = new Map(ROWS.map((r) => [r.id, r]));
   renderStatus();
   fillClasses();
   bindFilters();
@@ -508,15 +548,18 @@ function renderList() {
 
 const LIST_TITLE = document.title;
 function route() {
-  const m = location.hash.match(/^#\/item\/(\d+)/);
-  if (m) { showItem(+m[1]); return; }
-  $("#itemView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
+  const h = location.hash;
+  document.querySelectorAll(".vtabs a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.t === (h.startsWith("#/prof") ? "prof" : "ah"))));
+  let m;
+  if ((m = h.match(/^#\/item\/(\d+)/))) { showItem(+m[1]); return; }
+  if ((m = h.match(/^#\/prof(?:\/(\d+))?/))) { showProf(m[1] ? +m[1] : null); return; }
+  $("#itemView").hidden = true; $("#profView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
   document.title = LIST_TITLE;
   renderList();
 }
 
 async function showItem(id) {
-  $("#listView").hidden = true; $("#about").hidden = true;
+  $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true;
   const view = $("#itemView");
   view.hidden = false;
   view.innerHTML = '<button class="back" id="back">← 回列表</button><p class="mut">讀取中…</p>';
@@ -775,6 +818,277 @@ function heatmap(hm) {
 function tableView(el, head, rows) {
   el.insertAdjacentHTML("beforeend", `<details class="table-view"><summary>看數字</summary><table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.slice(0, 200).map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></details>`);
 }
+
+/* ---------------- 練專業划算嗎 ---------------- */
+// 配方資料：_tools/wow-ah/build_recipes.py 產生（永恆 client 的材料與黃／灰門檻 + 60 版伺服器的學習等級與學費）
+let REC = null, ROWBY = new Map();
+const QN = ["POOR", "COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"];
+const CAPS = [75, 150, 225, 300], RANKS = ["學徒", "熟手", "專家", "大師"];
+const AH_CUT = 0.95;
+const pstate = { from: 1, to: 300, basis: "avg7", out: "vendor" };
+try { Object.assign(pstate, JSON.parse(localStorage.getItem("wowah.prof") || "{}")); } catch (e) {}
+const savePS = () => { try { localStorage.setItem("wowah.prof", JSON.stringify(pstate)); } catch (e) {} };
+
+async function loadRec() {
+  if (REC) return REC;
+  const r = await fetch(new URL("recipes.json", location.href));
+  if (!r.ok) throw new Error("recipes.json " + r.status);
+  REC = await r.json();
+  REC.byProf = {}; REC.byOut = {};
+  for (const rc of REC.recipes) {
+    (REC.byProf[rc[1]] ||= []).push(rc);
+    if (!rc[8]) continue;
+    const m = (REC.byOut[rc[1]] ||= new Map());
+    if (!m.has(rc[8])) m.set(rc[8], []);
+    m.get(rc[8]).push(rc);
+  }
+  return REC;
+}
+
+function ahPrice(id) {
+  const r = ROWBY.get(id);
+  if (!r || r.ask == null) return null;
+  return pstate.basis === "ask" ? r.ask : pstate.basis === "median" ? (r.median ?? r.ask) : (r.avg7 ?? r.ask);
+}
+const vendorBuy = (id) => { const it = REC.items[id]; return it && it[3] > 0 ? it[3] : null; };
+function buyPrice(id) {
+  const a = ahPrice(id), v = vendorBuy(id);
+  return a == null ? v : v == null ? a : Math.min(a, v);
+}
+function sellPrice(id) {
+  if (pstate.out === "none") return 0;
+  const vend = REC.items[id]?.[2] || 0;
+  if (pstate.out === "vendor") return vend;
+  const r = ROWBY.get(id), a = ahPrice(id);
+  return Math.max(vend, a != null && (r.vol24 == null || r.vol24 > 0) ? a * AH_CUT : 0);
+}
+const obtainable = (rc) => typeof rc[6] === "string" || buyPrice(rc[6]) != null;
+const recipeFee = (rc) => (typeof rc[6] === "string" ? rc[7] : buyPrice(rc[6]) || 0);
+const chance = (rc, s) => (s < rc[4] ? 1 : (rc[5] - s) / (rc[5] - rc[4]));
+
+// 材料成本：買比較便宜就買，自己做（同專業、技能夠）比較便宜就做，最多往下拆三層
+function coster(skill, s) {
+  const memo = new Map(), byOut = REC.byOut[skill] || new Map();
+  function unit(id, depth) {
+    if (memo.has(id)) return memo.get(id);
+    memo.set(id, null);
+    const b = buyPrice(id);
+    let best = b == null ? null : { c: b, via: null };
+    if (depth < 3) for (const rc of byOut.get(id) || []) {
+      if (rc[3] > s || !obtainable(rc)) continue;
+      const m = mats(rc, depth + 1);
+      if (m != null && (!best || m / rc[9] < best.c)) best = { c: m / rc[9], via: rc };
+    }
+    memo.set(id, best);
+    return best;
+  }
+  function mats(rc, depth = 0) {
+    let t = 0;
+    for (const [id, n] of rc[10]) { const u = unit(id, depth); if (!u) return null; t += u.c * n; }
+    return t;
+  }
+  return { unit, mats };
+}
+
+function rankFees(skill, from, to) {
+  const fees = REC.profs[skill][2], out = [];
+  CAPS.forEach((cap, i) => { const prev = i ? CAPS[i - 1] : 0; if (to > prev && from <= Math.max(prev, 1)) out.push([RANKS[i], fees[i]]); });
+  return out;
+}
+
+// 衝技能路線：每一級挑「期望成本 = (材料 − 產物回收) ÷ 升級機率」最低的配方；學費攤到用它的級數上，迭代三次讓攤提穩定
+function planLevel(skill, from, to) {
+  const list = REC.byProf[skill] || [];
+  const costers = [];
+  for (let s = from; s < to; s++) costers[s] = coster(skill, s);
+  let used = new Map(), plan;
+  for (let pass = 0; pass < 3; pass++) {
+    plan = [];
+    for (let s = from; s < to; s++) {
+      let best = null;
+      for (const rc of list) {
+        if (rc[3] > s || s >= rc[5] || rc[12] || !obtainable(rc)) continue;   // 有冷卻的不能拿來連續衝
+        const m = costers[s].mats(rc);
+        if (m == null) continue;
+        const p = chance(rc, s), crafts = 1 / (p * rc[11]);
+        const salv = rc[8] ? sellPrice(rc[8]) * rc[9] : 0;
+        const span = used.get(rc[0]) || Math.max(1, Math.min(rc[5], to) - Math.max(rc[3], from));
+        const score = (m - salv) * crafts + recipeFee(rc) / span;
+        if (!best || score < best.score) best = { rc, p, crafts, m, salv, score };
+      }
+      plan.push({ s, ...(best || { rc: null }) });
+    }
+    used = new Map();
+    for (const x of plan) if (x.rc) used.set(x.rc[0], (used.get(x.rc[0]) || 0) + 1);
+  }
+  // 合併成區段、展開購物清單
+  const segs = [], shop = new Map(), made = new Map();
+  let gaps = 0;
+  const addShop = (C, id, qty, depth = 0) => {
+    const u = C.unit(id, 0);
+    if (u?.via && depth < 3) {
+      made.set(id, (made.get(id) || 0) + qty);
+      for (const [mid, n] of u.via[10]) addShop(C, mid, (qty / u.via[9]) * n, depth + 1);
+    } else shop.set(id, (shop.get(id) || 0) + qty);
+  };
+  for (const x of plan) {
+    if (!x.rc) { gaps++; continue; }
+    const last = segs[segs.length - 1];
+    if (last && last.rc === x.rc && last.to === x.s) { last.to++; last.crafts += x.crafts; last.mats += x.m * x.crafts; last.salv += x.salv * x.crafts; }
+    else segs.push({ rc: x.rc, from: x.s, to: x.s + 1, crafts: x.crafts, mats: x.m * x.crafts, salv: x.salv * x.crafts });
+    for (const [id, n] of x.rc[10]) addShop(costers[x.s], id, n * x.crafts);
+  }
+  const recipeFees = [...new Map(segs.map((g) => [g.rc[0], g.rc])).values()].map((rc) => [rc, recipeFee(rc)]).filter((f) => f[1] > 0);
+  const ranks = rankFees(skill, from, to);
+  const mats = segs.reduce((a, g) => a + g.mats, 0), salv = segs.reduce((a, g) => a + g.salv, 0);
+  const fees = recipeFees.reduce((a, f) => a + f[1], 0) + ranks.reduce((a, f) => a + f[1], 0);
+  return { segs, shop, made, gaps, recipeFees, ranks, mats, salv, fees, total: mats - salv + fees };
+}
+
+// 滿級後的賺錢配方：產物掛拍賣（扣 5%）− 材料，乘上 24h 成交量估市場每天的利潤池
+function profitTable(skill, at) {
+  const C = coster(skill, at), out = [];
+  for (const rc of REC.byProf[skill] || []) {
+    if (!rc[8] || rc[3] > at || !obtainable(rc)) continue;
+    const r = ROWBY.get(rc[8]), a = ahPrice(rc[8]);
+    if (!r || a == null) continue;
+    const cost = C.mats(rc);
+    if (cost == null) continue;
+    const sell = a * AH_CUT * rc[9], profit = sell - cost;
+    const perDay = Math.min((r.vol24 || 0) / rc[9], rc[12] ? 24 / rc[12] : Infinity);   // 有冷卻的一天最多做幾次
+    out.push({ rc, r, cost, sell, profit, margin: cost ? profit / cost : null, pool: profit > 0 ? profit * perDay : 0 });
+  }
+  return out.sort((a, b) => b.pool - a.pool || b.profit - a.profit);
+}
+
+function gatherTable(skill) {
+  return (REC.gather[skill] || []).map((id) => ROWBY.get(id)).filter(Boolean).sort((a, b) => (b.value24 || 0) - (a.value24 || 0) || (b.listed || 0) - (a.listed || 0));
+}
+
+function recItem(id, sz = 22) {
+  const it = REC.items[id] || [], m = META[id] || [];
+  const name = it[0] || m[0] || `#${id}`, q = m[1] || QN[it[1] ?? 1] || "COMMON";
+  const img = m[7] ? `<img src="${esc(m[7])}" alt="" loading="lazy" width="${sz}" height="${sz}">` : '<span class="noimg"></span>';
+  const link = ROWBY.has(id) ? ` href="#/item/${id}"` : "";
+  return `<a class="it pit"${link}>${img}<span class="nm q-${esc(q)}">${esc(name)}</span></a>`;
+}
+const srcTxt = (rc) => rc[6] === "t" ? `訓練師 ${money(rc[7], true)}` : rc[6] === "a" ? "學專業就會" : `配方 ${REC.items[rc[6]]?.[0] ? "「" + esc(REC.items[rc[6]][0]) + "」" : ""} ${vendorBuy(rc[6]) ? "商店" : "拍賣場"} ${money(buyPrice(rc[6]), true)}`;
+
+function profControls(gather) {
+  return `<div class="filters pfilters" id="pfilters">
+    <label>從 <select id="pFrom">${[1, 75, 150, 225].map((v) => `<option value="${v}">${v}</option>`).join("")}</select></label>
+    <label>練到 <select id="pTo">${CAPS.map((v) => `<option value="${v}">${v}</option>`).join("")}</select></label>
+    <label${gather ? " hidden" : ""}>材料價 <select id="pBasis"><option value="avg7">7 日均</option><option value="ask">現價最低一口</option><option value="median">掛單中位數</option></select></label>
+    <label${gather ? " hidden" : ""}>做出來的東西 <select id="pOut"><option value="vendor">賣商店</option><option value="ah">掛拍賣（扣 5%）</option><option value="none">不賣，丟掉</option></select></label>
+  </div>`;
+}
+function bindProfControls(rerender) {
+  const set = (sel, k, num) => { const el = $(sel); el.value = String(pstate[k]); el.onchange = () => { pstate[k] = num ? +el.value : el.value; if (pstate.from >= pstate.to) pstate.from = 1; savePS(); rerender(); }; };
+  set("#pFrom", "from", 1); set("#pTo", "to", 1); set("#pBasis", "basis"); set("#pOut", "out");
+}
+
+async function showProf(skill) {
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true;
+  const view = $("#profView");
+  view.hidden = false;
+  view.innerHTML = '<p class="mut">讀取配方…</p>';
+  window.scrollTo(0, 0);
+  try { await loadRec(); } catch (e) { view.innerHTML = "<p>配方資料讀取失敗。</p>"; return; }
+  if (skill && !REC.profs[skill]) skill = null;
+  track("ah_prof", { skill: skill || "all" });
+  const render = () => (skill ? profDetail(view, skill) : profOverview(view));
+  render();
+}
+
+function profOverview(view) {
+  document.title = "練專業划算嗎｜魔獸世界：永恆 台服專業技能成本與利潤";
+  const { from, to } = pstate;
+  const crafts = [], gathers = [];
+  for (const [k, p] of Object.entries(REC.profs)) {
+    const skill = +k;
+    if (p[1] === "craft") {
+      const plan = planLevel(skill, from, to), prof = profitTable(skill, to).filter((x) => x.profit > 0);
+      crafts.push({ skill, name: p[0], plan, top: prof[0], pool: prof.slice(0, 10).reduce((a, x) => a + x.pool, 0) });
+    } else {
+      const rows = gatherTable(skill);
+      gathers.push({ skill, name: p[0], fees: rankFees(skill, from, to).reduce((a, f) => a + f[1], 0), value: rows.reduce((a, r) => a + (r.value24 || 0), 0), top: rows.slice(0, 3) });
+    }
+  }
+  crafts.sort((a, b) => (a.plan.gaps - b.plan.gaps) || a.plan.total - b.plan.total);
+  gathers.sort((a, b) => b.value - a.value);
+  const maxCost = Math.max(1, ...crafts.map((c) => c.plan.total)), maxPool = Math.max(1, ...crafts.map((c) => c.pool)), maxVal = Math.max(1, ...gathers.map((g) => g.value));
+  const bar = (v, max, cls = "") => `<span class="dbar ${cls}"><i style="width:${Math.max(0, Math.min(100, (v / max) * 100)).toFixed(1)}%"></i></span>`;
+  view.innerHTML = `${profControls()}
+    <div class="card"><h3>製作專業：從 ${from} 練到 ${to} 要花多少、練完能賺多少</h3>
+      <p class="desc">成本＝材料（照「材料價」）− 做出來的東西回收 ＋ 訓練師學費 ＋ 配方。每一級都挑期望成本最低的配方，黃色、綠色配方會照升級機率多做幾次。「每天利潤池」＝滿級後利潤最高的 10 個配方 × 拍賣場 24 小時成交量，代表這個市場一天大概有多少錢可以賺（要跟其他賣家分）。</p>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>專業</th><th>衝等成本</th><th></th><th>每天利潤池</th><th></th><th>練完最賺</th></tr></thead><tbody>
+      ${crafts.map((c) => `<tr data-skill="${c.skill}"><td><a href="#/prof/${c.skill}"><b>${esc(c.name)}</b></a></td>
+        <td>${money(c.plan.total)}${c.plan.gaps ? `<div class="warn">${c.plan.gaps} 級找不到有價格的配方</div>` : ""}</td><td class="bcell">${bar(c.plan.total, maxCost, "cost")}</td>
+        <td>${c.pool ? money(c.pool) : '<span class="mut">—</span>'}</td><td class="bcell">${bar(c.pool, maxPool)}</td>
+        <td>${c.top ? `${recItem(c.top.rc[8], 18)}<div class="mut sm">每次賺 ${money(c.top.profit, true)}・24h 成交 ${fmtN(c.top.r.vol24)}</div>` : '<span class="mut">—</span>'}</td></tr>`).join("")}
+      </tbody></table></div></div>
+    <div class="card"><h3>採集專業：原料直接賣</h3>
+      <p class="desc">採集練等只要付訓練師學費。「原料 24h 成交額」＝這個專業採得到的原料，在台服拍賣場一天推算賣掉多少錢，代表市場有多大。</p>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>專業</th><th>練等學費</th><th>原料 24h 成交額</th><th></th><th>賣最多的原料</th></tr></thead><tbody>
+      ${gathers.map((g) => `<tr><td><a href="#/prof/${g.skill}"><b>${esc(g.name)}</b></a></td><td>${money(g.fees)}</td><td>${money(g.value)}</td><td class="bcell">${bar(g.value, maxVal)}</td>
+        <td>${g.top.map((r) => `<div class="gtop">${recItem(r.id, 18)} <span class="mut sm">${money(r.ask, true)}</span></div>`).join("")}</td></tr>`).join("")}
+      </tbody></table></div></div>
+    ${profFoot()}`;
+  bindProfControls(() => profOverview(view));
+  view.querySelectorAll("tr[data-skill]").forEach((tr) => tr.onclick = (e) => { if (!e.target.closest("a")) location.hash = `#/prof/${tr.dataset.skill}`; });
+}
+
+function profDetail(view, skill) {
+  const p = REC.profs[skill], { from, to } = pstate;
+  document.title = `${p[0]}練等成本與賺錢配方｜魔獸世界：永恆 台服`;
+  const back = '<button class="back" onclick="location.hash=\'#/prof\'">← 所有專業</button>';
+  if (p[1] === "gather") {
+    const rows = gatherTable(skill), fees = rankFees(skill, from, to);
+    view.innerHTML = `${back}<div class="ihead"><div><h2>${esc(p[0])}</h2><div class="cl">採集專業・原料直接賣</div></div></div>${profControls(true)}
+      <div class="tiles"><div class="tile"><div class="k">練到 ${to} 的學費</div><div class="v">${money(fees.reduce((a, f) => a + f[1], 0))}</div><div class="x">${fees.map((f) => `${f[0]} ${money(f[1], true)}`).join("・")}</div></div>
+      <div class="tile"><div class="k">原料 24h 成交額</div><div class="v">${money(rows.reduce((a, r) => a + (r.value24 || 0), 0))}</div><div class="x">${rows.length} 種原料在台服拍賣場有掛單或成交</div></div></div>
+      <div class="card"><h3>原料行情</h3><p class="desc">照 24 小時成交額排序。偏離＝現價對比 7 日均，紅色▲代表現在賣比平常貴。</p>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>原料</th><th>現價</th><th>7 日均</th><th>偏離</th><th>24h 成交</th><th>24h 成交額</th><th>掛單量</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr><td>${recItem(r.id)}</td><td>${money(r.ask)}</td><td>${money(r.avg7)}</td><td>${devCell(r)}</td><td class="num">${fmtN(r.vol24)}</td><td>${money(r.value24)}</td><td class="num">${fmtN(r.listed)}</td></tr>`).join("")}
+      </tbody></table></div></div>${profFoot()}`;
+    bindProfControls(() => profDetail(view, skill));
+    return;
+  }
+  const plan = planLevel(skill, from, to), prof = profitTable(skill, to);
+  const C300 = coster(skill, to);
+  const selfMade = (id) => { const best = (REC.byOut[skill]?.get(id) || []).filter((rc) => rc[3] < to && obtainable(rc)).map((rc) => C300.mats(rc) / rc[9]).filter((c) => c != null && !isNaN(c)); return best.length ? Math.min(...best) : null; };
+  const shop = [...plan.shop].map(([id, q]) => ({ id, q: Math.ceil(q - 1e-6), u: buyPrice(id), v: vendorBuy(id), r: ROWBY.get(id), self: selfMade(id) })).sort((a, b) => b.q * (b.u || 0) - a.q * (a.u || 0));
+  const segMax = Math.max(1, ...plan.segs.map((g) => g.mats - g.salv));
+  view.innerHTML = `${back}<div class="ihead"><div><h2>${esc(p[0])}</h2><div class="cl">製作專業・從 ${from} 練到 ${to}</div></div></div>${profControls()}
+    <div class="tiles">
+      <div class="tile"><div class="k">總成本</div><div class="v">${money(plan.total)}</div><div class="x">${plan.gaps ? `<span class="warn">有 ${plan.gaps} 級找不到有價格的配方，沒算進去</span>` : "材料 − 回收 ＋ 學費"}</div></div>
+      <div class="tile"><div class="k">材料</div><div class="v">${money(plan.mats)}</div><div class="x">${shop.length} 種材料</div></div>
+      <div class="tile"><div class="k">做出來的東西回收</div><div class="v">${money(plan.salv)}</div><div class="x">${{ vendor: "賣商店", ah: "掛拍賣扣 5%", none: "不賣" }[pstate.out]}</div></div>
+      <div class="tile"><div class="k">學費＋配方</div><div class="v">${money(plan.fees)}</div><div class="x">${plan.ranks.map((f) => `${f[0]} ${money(f[1], true)}`).join("・")}</div></div>
+    </div>
+    <div class="card"><h3>練等路線</h3><p class="desc">橘、黃色配方每做一次必升一級；綠色要多做幾次，「次數」已經照機率算進去。點材料可以看它的拍賣場走勢。</p>
+      <div class="tscroll"><table class="ptab route"><thead><tr><th>技能</th><th>做什麼</th><th>次數</th><th>這段花費</th><th></th><th>材料（每次）</th><th>怎麼學</th></tr></thead><tbody>
+      ${plan.segs.map((g) => { const net = g.mats - g.salv; return `<tr><td class="num">${g.from}→${g.to}</td>
+        <td>${g.rc[8] ? recItem(g.rc[8]) : `<span class="nm">${esc(g.rc[2])}</span>`}${g.rc[2] && g.rc[8] && REC.items[g.rc[8]]?.[0] !== g.rc[2] ? `<div class="mut sm">${esc(g.rc[2])}</div>` : ""}</td>
+        <td class="num">${Math.ceil(g.crafts - 1e-6)}</td>
+        <td>${money(net)}${g.salv ? `<div class="mut sm">回收 ${money(g.salv, true)}</div>` : ""}</td><td class="bcell">${net > 0 ? `<span class="dbar cost"><i style="width:${((net / segMax) * 100).toFixed(1)}%"></i></span>` : ""}</td>
+        <td class="mats">${g.rc[10].map(([id, n]) => `<span>${recItem(id, 16)}×${n}</span>`).join("")}</td>
+        <td class="sm">${srcTxt(g.rc)}<div class="mut">${g.rc[3]} 學・${g.rc[4]} 變黃・${Math.floor((g.rc[4] + g.rc[5]) / 2)} 變綠・${g.rc[5]} 變灰</div></td></tr>`; }).join("")}
+      </tbody></table></div></div>
+    <div class="card"><h3>購物清單</h3><p class="desc">整條路線要準備的原料（自己能做的中間材料已經拆開${plan.made.size ? `：${[...plan.made].map(([id, q]) => `${esc(REC.items[id]?.[0] || id)} ${Math.ceil(q)} 個`).join("、")}` : ""}）。拍賣場掛單不夠的會標出來。</p>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>材料</th><th>數量</th><th>單價</th><th>小計</th><th>哪裡買</th><th>拍賣場掛單</th></tr></thead><tbody>
+      ${shop.map((s) => `<tr><td>${recItem(s.id)}</td><td class="num">${fmtN(s.q)}</td><td>${money(s.u)}</td><td>${money(s.u * s.q)}</td><td class="sm">${s.v && s.u === s.v ? "商店" : "拍賣場"}</td>
+        <td class="num">${s.v && s.u === s.v ? '<span class="mut">—</span>' : `${fmtN(s.r?.listed)}${(s.r?.listed || 0) < s.q ? ` <span class="warn">不夠</span>${s.self != null ? `<div class="mut sm">自己做每個 ${money(s.self, true)}</div>` : ""}` : ""}`}</td></tr>`).join("")}
+      </tbody></table></div></div>
+    <div class="card"><h3>練到 ${to} 後的賺錢配方</h3><p class="desc">產物掛拍賣扣 5% − 材料成本。「每天利潤池」＝每次利潤 × 24h 成交量（有冷卻的再以一天能做幾次為上限），越大代表越值得做（要跟其他賣家分）。${skill === 333 ? "附魔大多是賣服務、沒有產物，這裡只列得出棒子、油、魔杖這類東西。" : ""}</p>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>產物</th><th>學習</th><th>材料成本</th><th>賣價</th><th>每次利潤</th><th>利潤率</th><th>24h 成交</th><th>每天利潤池</th></tr></thead><tbody>
+      ${prof.slice(0, 40).map((x) => `<tr><td>${recItem(x.rc[8])}${x.rc[9] > 1 ? ` <span class="mut sm">×${x.rc[9]}</span>` : ""}${x.rc[12] ? `<div class="mut sm">冷卻 ${x.rc[12] >= 24 ? Math.round(x.rc[12] / 24 * 10) / 10 + " 天" : x.rc[12] + " 小時"}</div>` : ""}</td><td class="num">${x.rc[3]}</td><td>${money(x.cost)}</td><td>${money(x.sell)}</td>
+        <td><span class="${x.profit > 0 ? "pos" : "neg"}">${money(x.profit)}</span></td><td class="num">${x.margin == null ? "—" : pct(x.margin)}</td><td class="num">${fmtN(x.r.vol24)}</td><td>${x.pool ? money(x.pool) : '<span class="mut">—</span>'}</td></tr>`).join("") || '<tr><td colspan="8" class="mut">還沒有產物在台服拍賣場上架。</td></tr>'}
+      </tbody></table></div></div>${profFoot()}`;
+  bindProfControls(() => profDetail(view, skill));
+}
+
+const profFoot = () => `<p class="foot">配方的材料、產物、變黃／變灰等級取自《魔獸世界：永恆》client 資料（版本 ${esc(REC.build)}）。學習等級、訓練師學費借用 60 版伺服器資料（CMaNGOS），永恆若有改動會不準；查不到來源的新配方先不列。綠色配方的升級機率＝(變灰 − 目前技能) ÷ (變灰 − 變黃)。價格是台服 PvP 聯盟拍賣場。</p>`;
 
 boot();
 </script>

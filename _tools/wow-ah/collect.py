@@ -566,7 +566,9 @@ def main():
         for key in HOUSES:
             ov = read_json(os.path.join(args.data, key, "overview.json"), {"items": []})
             seen |= {it["id"] for it in ov["items"]}
-    got = fetch_meta(token, sorted(seen), meta, misses, now_ms)
+    # 拍賣場上的商品優先，再補「練專業」頁用到的材料、產物（build_recipes.py 產生）
+    extra = read_json(os.path.join(os.path.dirname(__file__), "recipe-items.json"), [])
+    got = fetch_meta(token, sorted(seen) + [i for i in extra if i not in seen], meta, misses, now_ms)
     if got:
         print(f"meta: +{got} items ({len(meta)} total, {len(misses)} missing)")
     if changed or got:
