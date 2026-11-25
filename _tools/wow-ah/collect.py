@@ -75,11 +75,11 @@ TL_MIN_LEFT = {"SHORT": 0, "MEDIUM": 0.5, "LONG": 2, "VERY_LONG": 12}
 
 # ---------- HTTP ----------
 
-def http(url, headers=None, data=None, retries=3):
+def http(url, headers=None, data=None, retries=3, timeout=60):
     for attempt in range(retries):
         req = urllib.request.Request(url, headers=headers or {}, data=data)
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.status, r.read(), r.headers
         except urllib.error.HTTPError as e:
             if e.code in (304, 404):
@@ -104,12 +104,12 @@ def get_token():
     return json.loads(body)["access_token"]
 
 
-def api(token, path, ns, since_ms=None):
+def api(token, path, ns, since_ms=None, quick=False):
     q = urllib.parse.urlencode({"namespace": ns, "locale": LOCALE})
     h = {"Authorization": f"Bearer {token}"}
     if since_ms:
         h["If-Modified-Since"] = email.utils.formatdate(since_ms / 1000, usegmt=True)
-    status, body, headers = http(f"{API}{path}?{q}", h)
+    status, body, headers = http(f"{API}{path}?{q}", h, retries=1 if quick else 3, timeout=10 if quick else 60)
     lm = headers.get("Last-Modified") if headers else None
     lm_ms = int(email.utils.parsedate_to_datetime(lm).timestamp() * 1000) if lm else None
     return status, (json.loads(body) if status == 200 else None), lm_ms
@@ -398,7 +398,10 @@ def fetch_creatures(token, ids, names, misses, now_ms):
         if time.time() > deadline:
             return cid, False                 # 沒時間了，下一輪再查
         for ns in STATIC_NS[:2]:
-            status, c, _ = api(token, f"/data/wow/creature/{cid}", ns)
+            try:
+                status, c, _ = api(token, f"/data/wow/creature/{cid}", ns, quick=True)   # 10 秒、不重試
+            except Exception:
+                return cid, False
             if status == 200 and c.get("name"):
                 return cid, c["name"]
         return cid, None
