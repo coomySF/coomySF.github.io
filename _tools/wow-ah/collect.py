@@ -109,7 +109,7 @@ def api(token, path, ns, since_ms=None, quick=False):
     h = {"Authorization": f"Bearer {token}"}
     if since_ms:
         h["If-Modified-Since"] = email.utils.formatdate(since_ms / 1000, usegmt=True)
-    status, body, headers = http(f"{API}{path}?{q}", h, retries=1 if quick else 3, timeout=10 if quick else 60)
+    status, body, headers = http(f"{API}{path}?{q}", h, retries=1 if quick else 3, timeout=30 if quick else 60)
     lm = headers.get("Last-Modified") if headers else None
     lm_ms = int(email.utils.parsedate_to_datetime(lm).timestamp() * 1000) if lm else None
     return status, (json.loads(body) if status == 200 else None), lm_ms
@@ -385,12 +385,12 @@ def fetch_meta(token, ids, meta, misses, now_ms):
 
 
 CRE_PER_RUN = 400
-CRE_BUDGET_S = 90
+CRE_BUDGET_S = 240
 
 
 def fetch_creatures(token, ids, names, misses, now_ms):
     """怪物中文名：client 沒有，只能問暴雪 API。查不到的一週後再試。
-    每次最多 400 隻、90 秒，超過就留到下一輪，不拖慢行情。"""
+    這個 API 很慢（一次幾秒、常常逾時），每次最多 400 隻、4 分鐘，剩下的留到下一輪。"""
     todo = [i for i in ids if str(i) not in names and misses.get(f"k{i}", 0) < now_ms][:CRE_PER_RUN]   # k：2026-11-25 改版前的 c 記錄作廢重查
     deadline = time.time() + CRE_BUDGET_S
 
@@ -399,7 +399,7 @@ def fetch_creatures(token, ids, names, misses, now_ms):
             return cid, False                 # 沒時間了，下一輪再查
         for ns in STATIC_NS:
             try:
-                status, c, _ = api(token, f"/data/wow/creature/{cid}", ns, quick=True)   # 10 秒、不重試
+                status, c, _ = api(token, f"/data/wow/creature/{cid}", ns, quick=True)   # 30 秒、不重試
             except Exception:
                 return cid, False
             if status == 200 and c.get("name"):
@@ -407,7 +407,7 @@ def fetch_creatures(token, ids, names, misses, now_ms):
         return cid, None
 
     got = 0
-    with ThreadPoolExecutor(max_workers=16) as ex:
+    with ThreadPoolExecutor(max_workers=24) as ex:
         for cid, name in ex.map(one, todo):
             if name:
                 names[str(cid)] = name
