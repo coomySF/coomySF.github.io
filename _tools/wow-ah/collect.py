@@ -10,13 +10,16 @@
   {house}/overview.json        總覽：每個商品的現價、7 日均價、24 小時量
   {house}/h/{shard}.json       每小時明細（最近 7 天）＋星期×小時熱圖累積
   {house}/d/{shard}.json       日 K（台北時間切日，永久保留）
+  {house}/index.json           類別物價指數（草藥、礦石、布料…，開始收集那一小時 = 100）
   state/{house}/prev.json      上一份快照的掛單，用來比對
   state/{house}/misc.json      今日 K 線、參考成交價、最後成交、通知狀態
 """
 import argparse
 import base64
+import collections
 import email.utils
 import json
+import math
 import os
 import sys
 import time
@@ -50,6 +53,21 @@ OF = ["ask", "ask2", "listed", "listings", "depth5", "median", "open24", "avg7",
       "lastSoldT", "lastSoldP"]
 # 日 K 欄位
 DF = ["d", "open", "high", "low", "close", "vol", "value", "listed", "hours", "sure"]
+# 物價指數的類別：[代號, 名稱, 篩選用類別, 子類們]
+INDEX_CATS = [
+    ["herb", "草藥", "商品", ["草藥"]],
+    ["metal", "礦石和金屬錠", "商品", ["金屬與石頭"]],
+    ["cloth", "布料", "商品", ["布料"]],
+    ["leather", "皮革", "商品", ["皮革"]],
+    ["ench", "附魔材料", "商品", ["附魔"]],
+    ["elem", "元素材料", "商品", ["元素材料"]],
+    ["potion", "藥水", "消耗品", ["藥水", "藥劑"]],
+]
+INDEX_KEEP_MS = 30 * DAY
+INDEX_MIN_SOLD = 5        # 7 天內至少推算成交這麼多件才放進籃子，避免冷門貨亂跳
+INDEX_CLIP = (0.5, 2.0)   # 單一商品一小時的漲跌幅上限，擋掉惡意掛價
+INDEX_MAX_SHARE = 0.2     # 單一商品最多佔類別權重 20%，指數才代表整個類別
+
 # 剩餘時間區間的下限（小時）：間隔超過下限就「可能已過期」
 TL_MIN_LEFT = {"SHORT": 0, "MEDIUM": 0.5, "LONG": 2, "VERY_LONG": 12}
 
@@ -259,6 +277,78 @@ def heat_idx(ms):
     return d.weekday() * 24 + d.hour
 
 
+# ---------- 類別物價指數 ----------
+
+def update_index(hdir, hist, meta, cur_t):
+    """鏈式指數：每一小時跟上一小時比，用成交金額加權的幾何平均，接在前一個值後面。
+
+    權重＝商品 7 天平均價 × (7 天推算成交量 + 1)，每小時重算；籃子只放 7 天內有一定成交的商品。
+    第一次執行時用手上的 7 天明細往回補。
+    """
+    path = os.path.join(hdir, "index.json")
+    idx = read_json(path) or {"cats": [[c[0], c[1], c[2], c[3]] for c in INDEX_CATS], "base": None, "t": [], "v": {}, "d": {}}
+    keys = [c[0] for c in INDEX_CATS] + ["all"]
+    cat_of = {}
+    for c in INDEX_CATS:
+        for sub in c[3]:
+            cat_of[(c[2], sub)] = c[0]
+    basket = {}
+    for iid, cols in hist["items"].items():
+        m = meta.get(iid)
+        cat = m and cat_of.get((m[2], m[3]))
+        if not cat:
+            continue
+        asks = [a for a in cols[0] if a]
+        sold = sum(x for x in cols[3] if x)
+        if asks and sold >= INDEX_MIN_SOLD:
+            basket[iid] = (cat, cols[0], (sum(asks) / len(asks)) * (sold + 1))
+    tot = collections.Counter()
+    for cat, _, w in basket.values():
+        tot[cat] += w
+    basket = {i: (cat, a, min(w, tot[cat] * INDEX_MAX_SHARE)) for i, (cat, a, w) in basket.items()}
+    T = hist["t"]
+    last_t = idx["t"][-1] if idx["t"] else None
+    if last_t is None and T:
+        idx["base"] = T[0]
+        idx["t"] = [T[0]]
+        for k in keys:
+            idx["v"][k] = [100.0]
+        last_t = T[0]
+    for j in range(1, len(T)):
+        if T[j] <= last_t:
+            continue
+        acc = {k: [0.0, 0.0] for k in keys}
+        for cat, asks, w in basket.values():
+            a0, a1 = asks[j - 1], asks[j]
+            if not a0 or not a1:
+                continue
+            r = math.log(min(INDEX_CLIP[1], max(INDEX_CLIP[0], a1 / a0)))
+            for k in (cat, "all"):
+                acc[k][0] += w * r
+                acc[k][1] += w
+        idx["t"].append(T[j])
+        for k in keys:
+            prev = idx["v"].setdefault(k, [100.0] * (len(idx["t"]) - 1))[-1]
+            step = math.exp(acc[k][0] / acc[k][1]) if acc[k][1] else 1.0
+            idx["v"][k].append(round(prev * step, 2))
+        last_t = T[j]
+    # 只留 30 天小時值；日收盤（台北時間）永久留
+    cut = next((i for i, t in enumerate(idx["t"]) if t >= cur_t - INDEX_KEEP_MS), 0)
+    if cut:
+        idx["t"] = idx["t"][cut:]
+        for k in keys:
+            idx["v"][k] = idx["v"][k][cut:]
+    day = tpe_day(cur_t)
+    for k in keys:
+        d = idx["d"].setdefault(k, [])
+        if d and d[-1][0] == day:
+            d[-1][1] = idx["v"][k][-1]
+        else:
+            d.append([day, idx["v"][k][-1]])
+    idx["n"] = {k: sum(1 for b in basket.values() if b[0] == k or k == "all") for k in keys}
+    write_json(path, idx)
+
+
 # ---------- 商品資料 ----------
 
 def fetch_meta(token, ids, meta, misses, now_ms):
@@ -466,6 +556,8 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
         shards.setdefault(shard_of(iid), {})[iid] = {"h": cols, "hm": hist["hm"][iid]}
     for s in range(SHARDS):
         write_json(os.path.join(hdir, "h", f"{s}.json"), {"t": T, "f": HF, "items": shards.get(s, {})})
+
+    update_index(hdir, hist, meta, cur_t)
 
     # --- 總覽 ---
     daily_closes = read_daily_closes(hdir)
