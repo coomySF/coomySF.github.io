@@ -75,9 +75,9 @@ TL_MIN_LEFT = {"SHORT": 0, "MEDIUM": 0.5, "LONG": 2, "VERY_LONG": 12}
 
 # ---------- HTTP ----------
 
-def http(url, headers=None, data=None, retries=3, timeout=60):
+def http(url, headers=None, data=None, retries=3, timeout=60, method=None):
     for attempt in range(retries):
-        req = urllib.request.Request(url, headers=headers or {}, data=data)
+        req = urllib.request.Request(url, headers=headers or {}, data=data, method=method)
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return r.status, r.read(), r.headers
@@ -470,6 +470,59 @@ def check_alerts(watch, overview_rows, meta, misc, house):
         print("alert:", m)
 
 
+SITE = "https://coomysf.github.io/wow-ah/"
+
+
+def push_user_alerts(overview_rows, meta, house):
+    """玩家自己設的 Discord 推播（存在 Supabase，網頁 #/alerts 設定）。沒設 SUPABASE_* 就略過。
+    同一個方向只通知一次，價格離開門檻後才會再通知。"""
+    url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY")
+    if not url or not key or house != "tw-110":
+        return
+    h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    try:
+        _, body, _ = http(f"{url}/rest/v1/push_alerts?select=uid,item_id,hi,lo,last_kind,subs(webhook)", h)
+        rules = json.loads(body)
+    except Exception as e:
+        print(f"::warning::push alerts: {e}")
+        return
+    out = collections.defaultdict(list)      # webhook → 訊息
+    changes = []
+    for r in rules:
+        row = overview_rows.get(str(r["item_id"]))
+        ask = row[0] if row else None
+        kind = None
+        if ask is not None and r["hi"] is not None and ask >= r["hi"]:
+            kind = "sell"
+        elif ask is not None and r["lo"] is not None and ask <= r["lo"]:
+            kind = "buy"
+        if kind == r["last_kind"]:
+            continue
+        changes.append((r["uid"], r["item_id"], kind))
+        hook = (r.get("subs") or {}).get("webhook")
+        if kind and hook:
+            name = (meta.get(str(r["item_id"])) or [None])[0] or f"#{r['item_id']}"
+            out[hook].append(f"{'📈' if kind == 'sell' else '📉'} **{name}** 現價 {gold(ask)}，"
+                             f"{'漲到你設的 ' + gold(r['hi']) + ' 以上：可以掛賣了' if kind == 'sell' else '跌到你設的 ' + gold(r['lo']) + ' 以下：可以進貨了'}"
+                             f"\n{SITE}#/item/{r['item_id']}")
+    sent = 0
+    for hook, msgs in out.items():
+        payload = json.dumps({"username": "台灣拍賣場到價提醒", "content": "\n".join(msgs)[:1900],
+                              "allowed_mentions": {"parse": []}}).encode()
+        try:
+            http(hook, {"Content-Type": "application/json", "User-Agent": "coomysf-wow-ah"}, payload, retries=2, timeout=15)
+            sent += 1
+        except Exception as e:   # 單一玩家的 webhook 壞掉不影響別人
+            print(f"push failed: {type(e).__name__}")
+    for uid, item_id, kind in changes:
+        try:
+            http(f"{url}/rest/v1/push_alerts?uid=eq.{uid}&item_id=eq.{item_id}",
+                 {**h, "Prefer": "return=minimal"}, json.dumps({"last_kind": kind}).encode(), method="PATCH")
+        except Exception as e:
+            print(f"::warning::push state: {type(e).__name__}")
+    print(f"push: {len(rules)} rules, {len(changes)} changed, {sent} webhooks sent")
+
+
 # ---------- 主流程 ----------
 
 def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
@@ -630,6 +683,7 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
                {"house": key, "t": cur_t, "hours": len(w24), "f": OF, "items": out_items})
 
     check_alerts(watch, rows, meta, misc, key)
+    push_user_alerts(rows, meta, key)
 
     write_json(os.path.join(sdir, "prev.json"), {"t": cur_t, "auctions": cur})
     write_json(os.path.join(sdir, "misc.json"), misc)

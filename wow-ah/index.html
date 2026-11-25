@@ -315,6 +315,15 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .sheet-state { font-size: 13px; color: var(--ink-2); min-height: 1.4em; }
   .sheet-foot { display: flex; justify-content: space-between; margin-top: 10px; font-size: 13px; }
   @media (prefers-reduced-motion: reduce) { .sheet { transition: none; } }
+  .push-box { margin-top: 6px; padding: 12px 14px; border: 1px solid var(--gold-line, var(--line)); border-radius: 10px; }
+  .push-step { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+  .push-step label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 320px; font-size: 13px; }
+  .push-step input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field, var(--bg)); color: var(--ink); }
+  .push-step details { flex-basis: 100%; } .push-step ol { margin: 6px 0; padding-left: 20px; }
+  .support { margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: var(--gold-soft, var(--surface-2)); font-size: 13px; }
+  .support .promo-cta { margin: 0 0 0 8px; text-decoration: none; display: inline-flex; align-items: center; }
+  .code { font-family: var(--font-num, monospace); letter-spacing: .1em; }
+  .ap-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
   .ap-add { position: relative; margin: 6px 0 12px; }
   .ap-add input { width: 100%; max-width: 420px; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field, var(--bg)); color: var(--ink); }
   .ap-hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -1593,7 +1602,7 @@ function bindAlertBox(id) {
     const hi = parseMoney($("#aHi").value), lo = parseMoney($("#aLo").value);
     if (Number.isNaN(hi) || Number.isNaN(lo)) { $("#aState").innerHTML = '<span class="warn">看不懂這個價格，請寫成 1g20s、40s 或 40 銀。</span>'; return; }
     if (hi == null && lo == null) delete ALERTS[id]; else { ALERTS[id] = { hi, lo }; watch.add(id); saveWatch(); }
-    saveAlerts(); renderAlerts(); track("ah_alert", { item_id: id });
+    saveAlerts(); renderAlerts(); pushSync(id); track("ah_alert", { item_id: id });
     $("#aState").innerHTML = ALERTS[id] ? `✓ 已設定：${alertState(id)} <button class="clr" id="aDel">取消提醒</button>` : "已取消提醒。";
     bindDel();
   };
@@ -1609,7 +1618,7 @@ const niceC = (c) => (c >= 10000 ? Math.round(c / 100) * 100 : Math.max(1, Math.
 const PRESETS = [["lo", 0.9, "跌 10% 提醒我買"], ["lo", 0.8, "跌 20% 提醒我買"], ["hi", 1.1, "漲 10% 提醒我賣"], ["hi", 1.2, "漲 20% 提醒我賣"]];
 function setAlert(id, k, v, src) {
   ALERTS[id] = { ...(ALERTS[id] || { hi: null, lo: null }), [k]: v };
-  watch.add(id); saveWatch(); saveAlerts(); renderAlerts();
+  watch.add(id); saveWatch(); saveAlerts(); renderAlerts(); pushSync(id);
   track("ah_alert", { item_id: id, via: src });
 }
 function openQuick(id) {
@@ -1654,6 +1663,104 @@ function renderPromo() {
   if (t) t.onclick = () => { track("ah_promo_try"); openQuick(pick.id); };
 }
 
+/* ---------------- Discord 推播（Supabase） ---------------- */
+// 公開設定：Supabase 專案網址和 anon key（本來就是給瀏覽器用的公開金鑰）、Ko-fi 頁面名稱。空的就顯示「即將開放」
+const PUSH = { url: "", anon: "", kofi: "" };
+const PUSH_ON = !!(PUSH.url && PUSH.anon);
+let SB = null, PSUB = null, PUSHED = new Map();   // PUSHED：item_id → {hi, lo}
+async function sb() {
+  if (SB) return SB;
+  if (!window.supabase) await new Promise((ok, bad) => { const t = document.createElement("script"); t.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"; t.onload = ok; t.onerror = bad; document.head.appendChild(t); });
+  SB = window.supabase.createClient(PUSH.url, PUSH.anon, { auth: { persistSession: true, storageKey: "wowah.push" } });
+  return SB;
+}
+async function pushLoad() {
+  const c = await sb();
+  const { data: { session } } = await c.auth.getSession();
+  if (!session) { PSUB = null; return; }
+  const [{ data: subs }, { data: rows }] = await Promise.all([c.from("subs").select("*").limit(1), c.from("push_alerts").select("item_id,hi,lo")]);
+  PSUB = subs?.[0] || null;
+  PUSHED = new Map((rows || []).map((r) => [r.item_id, r]));
+}
+async function pushStart() {
+  const c = await sb();
+  const { error } = await c.auth.signInAnonymously();
+  if (error) throw error;
+  const { error: e2 } = await c.from("subs").insert({});
+  if (e2 && e2.code !== "23505") throw e2;
+  await pushLoad();
+  track("ah_push_start");
+}
+const isSupporter = () => PSUB?.supporter_until && Date.parse(PSUB.supporter_until) > Date.now();
+const pushCap = () => (isSupporter() ? 30 : 3);
+// 本機提醒有改時，同步到推播（有開推播的才同步）
+async function pushSync(id) {
+  if (!PUSH_ON || !PUSHED.has(+id)) return;
+  const c = await sb(), a = ALERTS[id];
+  if (!a || (a.hi == null && a.lo == null)) { await c.from("push_alerts").delete().eq("item_id", +id); PUSHED.delete(+id); return; }
+  await c.from("push_alerts").update({ hi: a.hi, lo: a.lo }).eq("item_id", +id);
+  PUSHED.set(+id, { item_id: +id, hi: a.hi, lo: a.lo });
+}
+async function pushToggle(id, on) {
+  const c = await sb(), a = ALERTS[id];
+  if (on) {
+    const { error } = await c.from("push_alerts").insert({ item_id: +id, hi: a?.hi ?? null, lo: a?.lo ?? null });
+    if (error) return String(error.message || "").startsWith("push_limit") ? "limit" : "error";
+    PUSHED.set(+id, { item_id: +id, hi: a?.hi, lo: a?.lo });
+    track("ah_push_on", { item_id: +id });
+  } else {
+    await c.from("push_alerts").delete().eq("item_id", +id);
+    PUSHED.delete(+id);
+  }
+  return "ok";
+}
+async function pushSaveHook(url) {
+  const ok = /^https:\/\/(ptb\.|canary\.)?(discord|discordapp)\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(url.trim());
+  if (!ok) return "格式不對：要是 https://discord.com/api/webhooks/… 開頭的網址。";
+  const c = await sb();
+  const { error } = await c.from("subs").update({ webhook: url.trim() }).eq("uid", PSUB.uid);
+  if (error) return "儲存失敗，稍後再試。";
+  PSUB.webhook = url.trim();
+  try {
+    await fetch(url.trim(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: "台灣拍賣場到價提醒", content: "✅ 測試成功！之後你設的商品到價，會傳到這個頻道。" }) });
+    return "ok";
+  } catch (e) { return "已儲存，但測試訊息沒送出去，請確認網址是不是對的。"; }
+}
+function pushCardHtml() {
+  if (!PUSH_ON) {
+    let wanted = false;
+    try { wanted = localStorage.getItem("wowah.pushwant") === "1"; } catch (e) {}
+    return `<div class="push-want">${wanted ? "✓ 收到！想要的人夠多，就會開放「關掉網頁也收得到」的 Discord 推播。" : '<b>想要關掉網頁也收得到提醒嗎？</b>現在要開著這個網頁才會提醒。<button class="promo-cta sm" id="pushWant">我想要這個功能</button>'}</div>`;
+  }
+  if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價時直接傳到你的 Discord，手機也會跳通知。免費 3 個商品，贊助者 30 個。</p><button class="promo-cta sm" id="pushStart">開啟 Discord 推播</button></div>`;
+  const until = isSupporter() ? new Date(PSUB.supporter_until).toLocaleDateString("zh-TW") : "";
+  return `<div class="push-box"><b>📲 Discord 推播</b>${PSUB.webhook ? ' <span class="chip c-gr">已連上</span>' : ""}
+    <div class="push-step"><label>Discord webhook 網址 <input type="url" id="pushHook" placeholder="https://discord.com/api/webhooks/…" value="${esc(PSUB.webhook || "")}" autocomplete="off"></label><button class="clr" id="pushHookSave">儲存並傳測試訊息</button><span class="sm" id="pushHookMsg" aria-live="polite"></span>
+      <details class="sm"><summary>怎麼拿 webhook 網址？（1 分鐘）</summary><ol><li>在 Discord 左邊按「＋」建立一個只有你自己的伺服器（或用你管理的伺服器）。</li><li>對想收通知的頻道按 ⚙️ 編輯頻道 →「整合」→「Webhook」→「新 Webhook」。</li><li>按「複製 Webhook 網址」，貼到上面。手機裝 Discord 就會跳通知。</li></ol><p class="mut">這個網址只有你和推播程式看得到，別貼給別人。</p></details></div>
+    <p class="sm">下面表格的「推播」打勾的商品，到價就傳到 Discord（每小時檢查）。已用 <b>${PUSHED.size}／${pushCap()}</b>${isSupporter() ? `・贊助者到 ${until}，謝謝你！` : ""}</p>
+    ${isSupporter() ? "" : `<div class="support">想推播更多商品？<b>贊助這個網站</b>就解鎖 30 個，並讓網站繼續每小時更新台服行情。${PUSH.kofi ? `<a class="promo-cta sm" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener">☕ 到 Ko-fi 贊助</a>` : ""}<div class="sm">贊助時在留言貼上你的支持者代碼 <b class="code">${esc(PSUB.code)}</b>，每 1 美元解鎖 30 天，幾分鐘內自動生效。</div></div>`}
+  </div>`;
+}
+function bindPushCard(view) {
+  const rer = () => renderAlertPage(view);
+  const pw = $("#pushWant");
+  if (pw) pw.onclick = () => { try { localStorage.setItem("wowah.pushwant", "1"); } catch (e) {} track("ah_push_interest"); rer(); };
+  const st = $("#pushStart");
+  if (st) st.onclick = async () => { st.disabled = true; st.textContent = "開啟中…"; try { await pushStart(); } catch (e) { st.textContent = "開啟失敗，稍後再試"; return; } rer(); };
+  const hs = $("#pushHookSave");
+  if (hs) hs.onclick = async () => { $("#pushHookMsg").textContent = "儲存中…"; const r = await pushSaveHook($("#pushHook").value); if (r === "ok") { track("ah_push_hook"); rer(); setTimeout(() => { const m = $("#pushHookMsg"); if (m) m.textContent = "✓ 已儲存，Discord 應該收到一則測試訊息了。"; }, 0); } else $("#pushHookMsg").textContent = r; };
+  view.querySelectorAll(".ap-push").forEach((cb) => (cb.onchange = async () => {
+    const id = +cb.closest("tr").dataset.id;
+    if (cb.checked && !ALERTS[id]) { cb.checked = false; return; }
+    const r = await pushToggle(id, cb.checked);
+    if (r === "limit") { cb.checked = false; alert0(`推播已經用滿 ${pushCap()} 個。贊助這個網站就能推播 30 個商品。`); }
+    else if (r === "error") { cb.checked = false; alert0("設定失敗，稍後再試。"); }
+    rer();
+  }));
+}
+// 頁面上的小提示（不用瀏覽器 alert 對話框）
+function alert0(msg) { const m = $("#pushHookMsg") || $("#apMsg"); if (m) m.textContent = msg; }
+
 /* ---------------- 提醒管理 ---------------- */
 let alertAdd = new Set(), alertWipe = false;   // alertAdd：剛加進來、還沒填門檻的商品
 function showAlerts() {
@@ -1664,6 +1771,7 @@ function showAlerts() {
   window.scrollTo(0, 0);
   track("ah_alerts");
   renderAlertPage(view);
+  if (PUSH_ON) pushLoad().then(() => { if (!$("#alertView").hidden) renderAlertPage(view); }).catch(() => {});
 }
 function renderAlertPage(view) {
   const ids = [...new Set([...Object.keys(ALERTS).map(Number), ...alertAdd])];
@@ -1671,19 +1779,18 @@ function renderAlertPage(view) {
     .sort((x, y) => (!!y.hit - !!x.hit) || (x.r?.name || "").localeCompare(y.r?.name || "", "zh-Hant"));
   const perm = "Notification" in window ? Notification.permission : "unsupported";
   const gap = (t, r) => (t == null || !r?.ask ? "" : `<div class="mut sm">${pct(t / r.ask - 1)}</div>`);
-  let wanted = false;
-  try { wanted = localStorage.getItem("wowah.pushwant") === "1"; } catch (e) {}
   view.innerHTML = `<div class="card promo static"><div class="promo-k">🔔 到價提醒</div><h3 class="promo-h">價格到了，我叫你。</h3>
     <p class="promo-p">低價進貨、高價出貨，不用一直盯拍賣場。列表每個商品左邊的 🔔 點一下就能設，或在下面搜尋商品。</p>
-    <div class="push-want">${wanted ? "✓ 收到！想要的人夠多，就會做「關掉網頁也收得到」的 Discord 私訊推播。" : '<b>想要關掉網頁也收得到提醒嗎？</b>現在要開著這個網頁才會提醒。<button class="promo-cta sm" id="pushWant">我想要這個功能</button>'}</div></div>
+    ${pushCardHtml()}<div class="sm" id="apMsg" aria-live="polite"></div></div>
     <div class="card"><h3>價格提醒</h3>
     <p class="desc">漲到門檻以上提醒你賣、跌到門檻以下提醒你買。照遊戲的寫法輸入：<b>1g20s</b>、<b>40s</b>、<b>40 銀</b>；清空兩格就是刪除。提醒存在這台裝置，網頁開著時每 10 分鐘檢查一次新價格${perm === "granted" ? "，桌面通知已開" : perm === "default" ? '。<button class="clr" id="apNotif">開啟桌面通知</button>' : ""}。</p>
     <div class="ap-add"><input type="search" id="apQ" placeholder="搜尋商品加提醒，例如 瑟銀錠" autocomplete="off" aria-label="搜尋商品加提醒"><div id="apHits" class="ap-hits"></div></div>
-    ${rows.length ? `<div class="tscroll"><table class="ptab ap"><thead><tr><th>商品</th><th>現價</th><th>漲到（提醒賣）</th><th>跌到（提醒買）</th><th>狀態</th><th></th></tr></thead><tbody>
+    ${rows.length ? `<div class="tscroll"><table class="ptab ap"><thead><tr><th>商品</th><th>現價</th><th>漲到（提醒賣）</th><th>跌到（提醒買）</th><th>狀態</th>${PUSH_ON && PSUB ? "<th>推播</th>" : ""}<th></th></tr></thead><tbody>
     ${rows.map(({ id, r, a, hit }) => `<tr class="${hit ? "ap-hit " + hit.kind : ""}" data-id="${id}"><td>${gearLink(id)}</td><td>${money(r?.ask)}</td>
       <td><input type="text" class="ap-in" data-k="hi" value="${moneyTxt(a.hi)}" placeholder="${r?.ask ? "例如 " + moneyTxt(Math.round(r.ask * 1.1)) : ""}" aria-label="漲到多少提醒賣">${gap(a.hi, r)}</td>
       <td><input type="text" class="ap-in" data-k="lo" value="${moneyTxt(a.lo)}" placeholder="${r?.ask ? "例如 " + moneyTxt(Math.round(r.ask * 0.9)) : ""}" aria-label="跌到多少提醒買">${gap(a.lo, r)}</td>
       <td>${hit ? `<b class="${hit.kind === "sell" ? "pos" : "neg-d"}">${hit.kind === "sell" ? "可以掛賣了" : "可以進貨了"}</b>` : ALERTS[id] ? '<span class="mut">還沒到價</span>' : '<span class="mut">填一個門檻</span>'}</td>
+      ${PUSH_ON && PSUB ? `<td><label class="ap-pl"><input type="checkbox" class="ap-push" ${PUSHED.has(id) ? "checked" : ""} ${ALERTS[id] ? "" : "disabled"}> Discord</label></td>` : ""}
       <td><button class="clr ap-del">刪除</button></td></tr>`).join("")}
     </tbody></table></div>
     <button class="clr ap-wipe" id="apWipe">${alertWipe ? "確定要刪除全部？再按一次" : "全部刪除"}</button>`
@@ -1703,14 +1810,13 @@ function renderAlertPage(view) {
       if (Number.isNaN(v)) { inp.classList.add("bad"); inp.title = "看不懂這個價格，請寫成 1g20s、40s 或 40 銀"; return; }
       const a = { ...(ALERTS[id] || { hi: null, lo: null }), [inp.dataset.k]: v };
       if (a.hi == null && a.lo == null) delete ALERTS[id]; else { ALERTS[id] = a; alertAdd.delete(id); watch.add(id); saveWatch(); }
-      saveAlerts(); renderAlerts(); track("ah_alert", { item_id: id }); renderAlertPage(view);
+      saveAlerts(); renderAlerts(); pushSync(id); track("ah_alert", { item_id: id }); renderAlertPage(view);
     }));
-    tr.querySelector(".ap-del").onclick = () => { delete ALERTS[id]; alertAdd.delete(id); saveAlerts(); renderAlerts(); renderAlertPage(view); };
+    tr.querySelector(".ap-del").onclick = () => { delete ALERTS[id]; alertAdd.delete(id); saveAlerts(); renderAlerts(); pushSync(id); renderAlertPage(view); };
   });
   const w = $("#apWipe");
   if (w) w.onclick = () => { if (!alertWipe) { alertWipe = true; renderAlertPage(view); setTimeout(() => { alertWipe = false; }, 5000); return; } ALERTS = {}; alertAdd.clear(); alertWipe = false; saveAlerts(); renderAlerts(); renderAlertPage(view); };
-  const pw = $("#pushWant");
-  if (pw) pw.onclick = () => { try { localStorage.setItem("wowah.pushwant", "1"); } catch (e) {} track("ah_push_interest"); renderAlertPage(view); };
+  bindPushCard(view);
   const nb = $("#apNotif");
   if (nb) nb.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} renderAlerts(); renderAlertPage(view); };
 }
