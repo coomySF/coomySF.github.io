@@ -160,6 +160,10 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .me-btn { border: 1px dashed var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: 13px; color: var(--ink-2); }
   .me-btn b { color: var(--ink); font-weight: 700; }
   .me-panel { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .me-why { grid-column: 1 / -1; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
+  .me-why ul { margin: 4px 0 4px; padding-left: 18px; }
+  .me-go { display: inline-block; margin-left: 10px; font-size: 13px; color: var(--muted); }
+  .me-go a { color: var(--ink-2); }
   .me-panel label { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 13px; }
   .me-panel input { width: 64px; height: 32px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
   .me-done { grid-column: 1 / -1; justify-self: start; height: 32px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--ink); color: var(--surface); cursor: pointer; }
@@ -1154,7 +1158,12 @@ let meOpen = false;
 function renderMe() {
   const bar = $("#meBar"), mine = PROF_LIST.filter(([k]) => ME[k] != null);
   bar.innerHTML = `<button class="me-btn" id="meBtn" aria-expanded="${meOpen}">${mine.length ? `我的專業：${mine.map(([k, n]) => `<b>${n} ${ME[k]}</b>`).join("・")} <span class="mut">✎</span>` : "＋ 設定我的專業和等級：配方會標出你現在做了會不會升級"}</button>
-    ${meOpen ? `<div class="me-panel">${PROF_LIST.map(([k, n]) => `<label>${n}<input type="number" min="0" max="300" inputmode="numeric" data-k="${k}" value="${ME[k] ?? ""}" placeholder="沒學"></label>`).join("")}<button class="me-done" id="meDone">完成</button></div>` : ""}`;
+    ${!meOpen && mine.length ? `<span class="me-go">看我的練等路線：${mine.map(([k, n]) => `<a href="#/prof/${k}">${n}</a>`).join("・")}</span>` : ""}
+    ${meOpen ? `<div class="me-panel"><div class="me-why"><b>填了以後會怎樣？</b>（只存在這台裝置，不會上傳）
+      <ul><li><b>練等路線從你現在的等級算起</b>：「練專業划算嗎」不會再從 1 級開始叫你買料，花費、購物清單都只算剩下的。</li>
+      <li><b>每個配方標出對你是什麼顏色</b>：橘＝做了必升、黃／綠＝升級機率幾 %、灰＝不升了、還不能學＝等級不夠。</li>
+      <li><b>商品頁會多一行「用你會的專業做什麼最划算」</b>；採礦、草藥學只推薦你現在採得到的。</li></ul>
+      沒學的留空。剛學的填 1。</div>${PROF_LIST.map(([k, n]) => `<label>${n}<input type="number" min="0" max="300" inputmode="numeric" data-k="${k}" value="${ME[k] ?? ""}" placeholder="沒學"></label>`).join("")}<button class="me-done" id="meDone">完成</button></div>` : ""}`;
   $("#meBtn").onclick = () => { meOpen = !meOpen; renderMe(); };
   if (meOpen) {
     bar.querySelectorAll("input").forEach((el) => el.onchange = () => { const v = el.value.trim(); if (v === "") delete ME[el.dataset.k]; else ME[el.dataset.k] = Math.max(0, Math.min(300, Math.round(+v))); saveMe(); track("ah_me", { skill: el.dataset.k }); });
