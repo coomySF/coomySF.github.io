@@ -109,7 +109,7 @@ def api(token, path, ns, since_ms=None, quick=False):
     h = {"Authorization": f"Bearer {token}"}
     if since_ms:
         h["If-Modified-Since"] = email.utils.formatdate(since_ms / 1000, usegmt=True)
-    status, body, headers = http(f"{API}{path}?{q}", h, retries=1 if quick else 3, timeout=30 if quick else 60)
+    status, body, headers = http(f"{API}{path}?{q}", h, timeout=30 if quick else 60)
     lm = headers.get("Last-Modified") if headers else None
     lm_ms = int(email.utils.parsedate_to_datetime(lm).timestamp() * 1000) if lm else None
     return status, (json.loads(body) if status == 200 else None), lm_ms
@@ -394,26 +394,34 @@ def fetch_creatures(token, ids, names, misses, now_ms):
     todo = [i for i in ids if str(i) not in names and misses.get(f"k{i}", 0) < now_ms][:CRE_PER_RUN]   # k：2026-11-25 改版前的 c 記錄作廢重查
     deadline = time.time() + CRE_BUDGET_S
 
+    errs = collections.Counter()
+
     def one(cid):
         if time.time() > deadline:
             return cid, False                 # 沒時間了，下一輪再查
         for ns in STATIC_NS:
             try:
-                status, c, _ = api(token, f"/data/wow/creature/{cid}", ns, quick=True)   # 30 秒、不重試
-            except Exception:
+                status, c, _ = api(token, f"/data/wow/creature/{cid}", ns, quick=True)
+            except urllib.error.HTTPError as e:
+                errs[f"http{e.code}"] += 1
                 return cid, False
+            except Exception as e:
+                errs[type(e).__name__] += 1
+                return cid, False
+            errs[f"s{status}"] += 1
             if status == 200 and c.get("name"):
                 return cid, c["name"]
         return cid, None
 
     got = 0
-    with ThreadPoolExecutor(max_workers=24) as ex:
+    with ThreadPoolExecutor(max_workers=6) as ex:   # 開太多會被 429 擋
         for cid, name in ex.map(one, todo):
             if name:
                 names[str(cid)] = name
                 got += 1
             elif name is None:
                 misses[f"k{cid}"] = now_ms + META_RETRY_MS
+    print(f"creatures: tried {len(todo)}, results {dict(errs)}")
     return got
 
 
