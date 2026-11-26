@@ -340,6 +340,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .goal { margin: 2px 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0, 0, 0, .25); }
   .goal-h { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 13px; } .goal-h b { color: var(--gold); font-family: var(--font-num, inherit); font-size: 15px; } .goal-h span { color: var(--muted); }
   .goal-bar { height: 8px; margin: 8px 0; border-radius: 999px; background: var(--surface-2); overflow: hidden; } .goal-bar i { display: block; height: 100%; min-width: 2px; background: linear-gradient(90deg, #b8871a, #e9c25a); }
+  .goal-note { margin: 0; font-size: 12px; color: var(--ink-2); }
   .goal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px; color: var(--ink-2); }
   .goal-list span { display: inline-block; min-width: 84px; color: var(--muted); font-family: var(--font-num, inherit); } .goal-list li.ok { color: var(--gold); }
   .tn b.q6 { color: #e6cc80; }
@@ -2016,10 +2017,10 @@ const TIERS = [
   [100, "出團修裝費", "一碗牛肉麵", 3, "anvil", "q3", "幫 Coomy 付這次修裝費"],
   [150, "一整晚的合劑", "一張電影票", 5, "flask", "q4", "送 Coomy 一整晚的合劑"],
   [300, "矽谷旅費的一塊磚", "這塊磚我會帶去矽谷", 10, "brick", "q5", "幫 Coomy 疊一塊矽谷磚"],
-  [1500, "公會補給箱", "推播 100 個＋同時推到公會頻道", 50, "chest", "q6", "幫公會開一個補給箱"],
+  [600, "公會補給箱", "推播 100 個＋同時推到公會頻道", 20, "chest", "q6", "幫公會開一個補給箱"],
 ];
-// 本月補給的目標與達標後要做的功能（Coomy 決定；達標就做）
-const GOALS = [[3000, "怪物、商人名稱全部中文化"], [8000, "價格走勢延長到 30 天"], [15000, "手機 App 推播"]];
+// 本月補給目標（只是目標，不綁功能承諾；下一個新功能交給支持者許願投票）
+const MONTH_GOAL = 3000;
 let MSTAT = null;   // 本月補給 {n, twd}，只有筆數和總額
 async function loadMonthStats() {
   try {
@@ -2065,12 +2066,12 @@ function supportHtml() {
       <div class="sup-shop">
         <div class="loot top${sup ? " got" : ""}" aria-label="贊助回饋">
           ${sup ? '<span class="looted">已拾取</span>' : ""}
-          ${lootHtml(tierPick === 1500)}
+          ${lootHtml(tierPick === 600)}
         </div>
         <div class="shop-h">選一份補給（NT$30–300 都拿到同一件）</div>
         <div class="tiers" role="radiogroup" aria-label="補給金額">${TIERS.map(([n, name, life, usd, ic, q]) => `<button class="tier${n === tierPick ? " on" : ""}" role="radio" aria-checked="${n === tierPick}" data-n="${n}">
           <span class="slot ${q}">${icon(ic)}</span>
-          <span class="tn"><b class="${q}">${name}</b>${n === 1500 ? `<small>${life}</small>` : ""}</span>
+          <span class="tn"><b class="${q}">${name}</b>${n === 600 ? `<small>${life}</small>` : ""}</span>
           <span class="tp"><b>NT$${n.toLocaleString()}</b><small>約 US$${usd}</small></span></button>`).join("")}</div>
         ${sup ? `<p class="support-done">✓ 戰利品已拾取：推播 ${isGuild() ? "100 個＋公會頻道" : "30 個"}已開通。你是這趟遠征的旅店常客，謝謝你！想再請一杯，也非常歡迎。</p>` : ""}
         ${PUSH.kofi ? `<a class="support-go" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener" id="kofiGo">${sup ? "再請 Coomy 喝一杯" : t[6]} →</a>
@@ -2096,14 +2097,14 @@ function lootHtml(guild) {
           <div class="lu">使用：同時盯 30 個商品，價格一到，直接傳到你的手機。</div>
           <div class="lq">「NT$30 和 NT$300 掉的是同一件，不用比誰捐得多。」</div>`;
 }
-// 本月補給進度：只用真實的筆數與總額（Ko-fi 每筆記錄），目標和達標功能寫在 GOALS
+// 本月補給進度：只用真實的筆數與總額（Ko-fi 每筆記錄），目標在 MONTH_GOAL
 function goalHtml() {
   if (!MSTAT) return "";
-  const twd = MSTAT.twd || 0, next = GOALS.find((g) => twd < g[0]) || GOALS[GOALS.length - 1], pctv = Math.min(100, (twd / next[0]) * 100);
+  const twd = MSTAT.twd || 0, pctv = Math.min(100, (twd / MONTH_GOAL) * 100);
   return `<div class="goal" aria-label="本月補給進度">
-    <div class="goal-h"><b>本月補給 NT$${Math.round(twd).toLocaleString()}</b><span>${MSTAT.n} 份補給・下一個目標 NT$${next[0].toLocaleString()}</span></div>
+    <div class="goal-h"><b>本月補給 NT$${Math.round(twd).toLocaleString()}</b><span>${MSTAT.n} 份補給・本月目標 NT$${MONTH_GOAL.toLocaleString()}</span></div>
     <div class="goal-bar"><i style="width:${pctv.toFixed(1)}%"></i></div>
-    <ul class="goal-list">${GOALS.map(([n, f]) => `<li class="${twd >= n ? "ok" : ""}"><span>NT$${n.toLocaleString()}</span>${twd >= n ? "✓ " : ""}${esc(f)}</li>`).join("")}</ul>
+    <p class="goal-note">下一個新功能做什麼，由大家決定：到 <a href="https://discord.gg/p7XjaXQay" target="_blank" rel="noopener" data-track="discord-community">Discord</a> 或 <a href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">Threads</a> 許願，支持者投票。</p>
   </div>`;
 }
 function payStepsHtml(code, t) {
@@ -2122,7 +2123,7 @@ function bindSupport(view) {
     box.querySelectorAll(".tier").forEach((x) => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-checked", String(on)); });
     const go = $("#kofiGo"); if (go) go.textContent = `${isSupporter() ? "再請 Coomy 喝一杯" : t[6]} →`;
     if (go) box.querySelector(".go-sub").textContent = `NT$${t[0].toLocaleString()}・約 US$${t[3]}・用 Ko-fi 安全結帳`;
-    const loot = box.querySelector(".loot"); if (loot && !isSupporter()) loot.innerHTML = lootHtml(tierPick === 1500);
+    const loot = box.querySelector(".loot"); if (loot && !isSupporter()) loot.innerHTML = lootHtml(tierPick === 600);
     const pu = $("#payUsd"); if (pu) pu.textContent = `US$${t[3]}`;
   }));
   const cp = $("#copyCode");

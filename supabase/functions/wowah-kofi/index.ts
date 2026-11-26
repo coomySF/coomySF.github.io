@@ -11,10 +11,10 @@ Deno.serve(async (req) => {
   }
   const url = Deno.env.get("SUPABASE_URL")!, key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const h = { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
-  // 公會方案：約 NT$1,500（US$45 以上）
+  // 公會方案：約 NT$600（US$18 以上）
   const amount = Math.max(0, parseFloat(String(data.amount ?? "0")) || 0);
   const currency = String(data.currency || "USD").toUpperCase();
-  const guild = currency === "TWD" ? amount >= 1400 : amount >= 45;
+  const guild = currency === "TWD" ? amount >= 550 : amount >= 18;
   // 先看留言裡的 6 碼支持者代碼，沒有就用贊助者信箱對應「用同一個信箱登入」的帳號
   const code = String(data.message ?? "").toUpperCase().match(/\b[0-9A-F]{6}\b/)?.[0];
   let sub: { uid: string; supporter_until: string | null } | undefined;
