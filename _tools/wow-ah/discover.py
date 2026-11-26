@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
-"""一次性：找出哪組拍賣場是 PvP、哪組是 PvE。只印名稱、id、價格。"""
+"""一次性：在 classic1x 的伺服器清單裡找編號含 92／94 的伺服器，和它們的拍賣場 id。"""
 import json
 import collect as c
 
 t = c.get_token()
-for ns in ["dynamic-forever-tw", "dynamic-classic1x-tw", "dynamic-classic-tw"]:
-    for path in ["/data/wow/realm/index", "/data/wow/connected-realm/index", "/data/wow/realm/tw"]:
+for ns in ["dynamic-classic1x-tw", "dynamic-classic-tw"]:
+    st, d, _ = c.api(t, "/data/wow/connected-realm/index", ns)
+    cids = [x["href"].split("/connected-realm/")[1].split("?")[0] for x in (d or {}).get("connected_realms", [])]
+    print(f"## {ns}: {len(cids)} connected realms")
+    for cid in cids:
         try:
-            st, d, _ = c.api(t, path, ns)
+            st, cr, _ = c.api(t, f"/data/wow/connected-realm/{cid}", ns)
+            rs = [(r.get("id"), r.get("name"), (r.get("type") or {}).get("type"), r.get("category")) for r in (cr or {}).get("realms", [])]
+            st2, ai, _ = c.api(t, f"/data/wow/connected-realm/{cid}/auctions/index", ns)
+            houses = [(a.get("id"), a.get("name")) for a in (ai or {}).get("auctions", [])]
         except Exception as e:
-            st, d = getattr(e, "code", e), None
-        txt = json.dumps(d, ensure_ascii=False) if d else ""
-        print(f"## {ns} {path} {st} {txt[:700]}")
-items = {14047: "符文布", 10620: "瑟銀礦石", 12359: "瑟銀錠", 13468: "黑蓮花", 8831: "紫蓮花", 2772: "鐵礦石"}
-for hid in (110, 111, 113, 114, 116, 117):
-    st, cm, _ = c.api(t, f"/data/wow/ruleset/2/auctions/{hid}/commodities", c.DYN_NS)
-    low = {}
-    for a in (cm or {}).get("auctions", []):
-        i = a["item"]["id"]
-        if i in items:
-            p = a.get("unit_price") or a.get("buyout")
-            if p and (i not in low or p < low[i]):
-                low[i] = p
-    print(f"## house {hid}: " + "  ".join(f"{items[i]} {c.gold(low.get(i))}" for i in items))
+            rs, houses = str(e), []
+        print(f"   cr {cid}: {rs} houses={houses}")
