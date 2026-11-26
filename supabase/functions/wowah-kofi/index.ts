@@ -29,15 +29,20 @@ Deno.serve(async (req) => {
   const until = "2999-12-31T00:00:00Z";
   const first = !sub.supporter_until;
   await fetch(`${url}/rest/v1/wowah_subs?uid=eq.${sub.uid}`, { method: "PATCH", headers: h, body: JSON.stringify({ supporter_until: until }) });
-  // 第一次解鎖：在玩家自己的 Discord 送一則感謝（順便確認推播是通的）
+  // 第一次解鎖：在 Discord 送一則感謝（有 Discord 登入就由機器人私訊，否則送到他自己的 webhook）
   if (first) {
-    const [row] = await (await fetch(`${url}/rest/v1/wowah_subs?uid=eq.${sub.uid}&select=webhook`, { headers: h })).json();
-    if (row?.webhook) {
-      await fetch(row.webhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-        username: "台灣拍賣場到價提醒", allowed_mentions: { parse: [] },
-        content: "☕ 收到你的支持了，真的謝謝你！30 個推播已經幫你開好。下次在拍賣場搶到好價，記得回來跟我說一聲。—— Coomy",
-      }) }).catch(() => {});
-    }
+    const [row] = await (await fetch(`${url}/rest/v1/wowah_subs?uid=eq.${sub.uid}&select=webhook,discord_id`, { headers: h })).json();
+    const content = "☕ 收到你的支持了，真的謝謝你！30 個推播已經幫你開好。下次在拍賣場搶到好價，記得回來跟我說一聲。—— Coomy";
+    const bot = Deno.env.get("DISCORD_BOT_TOKEN");
+    try {
+      if (row?.discord_id && bot) {
+        const bh = { Authorization: `Bot ${bot}`, "Content-Type": "application/json" };
+        const ch = await fetch("https://discord.com/api/v10/users/@me/channels", { method: "POST", headers: bh, body: JSON.stringify({ recipient_id: row.discord_id }) });
+        if (ch.ok) await fetch(`https://discord.com/api/v10/channels/${(await ch.json()).id}/messages`, { method: "POST", headers: bh, body: JSON.stringify({ content, allowed_mentions: { parse: [] } }) });
+      } else if (row?.webhook) {
+        await fetch(row.webhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: "台灣拍賣場到價提醒", content, allowed_mentions: { parse: [] } }) });
+      }
+    } catch { /* 感謝訊息送不出去不影響解鎖 */ }
   }
   return new Response("ok");
 });
