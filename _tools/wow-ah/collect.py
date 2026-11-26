@@ -678,6 +678,15 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
         if ix and {c[0] for c in INDEX_CATS} - set(ix.get("v", {})) and prev_t:
             update_index(hdir, load_hist(hdir), meta, prev_t)
             print(f"{key}: index categories backfilled")
+        # 搶標清單還沒有這份快照的版本：用最近一份快照的競標補產生（不動成交推算）
+        if (read_json(os.path.join(hdir, "ending.json")) or {}).get("t") != prev_t and prev_t:
+            st_h, house, _ = api(token, base, DYN_NS)
+            ov = read_json(os.path.join(hdir, "overview.json"))
+            if st_h == 200 and ov:
+                rows = {str(it["id"]): it["o"] for it in ov["items"]}
+                snipe_notify(write_ending(hdir, house, rows, prev_t), meta, misc, key)
+                write_json(os.path.join(sdir, "misc.json"), misc)
+                print(f"{key}: ending list written from current snapshot")
         return None
     st_h, house, lm_h = api(token, base, DYN_NS)
     if st_c != 200 or st_h != 200:

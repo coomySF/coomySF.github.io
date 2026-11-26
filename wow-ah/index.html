@@ -2211,8 +2211,9 @@ async function endTeaser() {
   if (!el) return;
   await loadEnding();
   const n = (ENDING?.items || []).filter((x) => x[4] === "MEDIUM").length;
-  el.hidden = !n;
-  el.innerHTML = `⏳ <b>${n} 筆快結束的便宜競標</b>，目前出價比行情低 25% 以上，有空就去搶 →`;
+  el.hidden = false;
+  el.innerHTML = n ? `⏳ <b>${n} 筆快結束的便宜競標</b>，目前出價比行情低 25% 以上，有空就去搶 →`
+    : `⏳ <b>搶標快訊</b>：快結束、出價比行情低的競標，現在沒有，開通知等它出現 →`;
 }
 async function showEnding() {
   ["listView", "itemView", "about", "profView", "farmView", "alertView"].forEach((k) => ($("#" + k).hidden = true));
