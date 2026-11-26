@@ -2022,8 +2022,15 @@ const TIERS = [
   [300, "矽谷旅費的一塊磚", "這塊磚我會帶去矽谷", 10, "brick", "q5", "幫 Coomy 疊一塊矽谷磚"],
   [600, "公會補給箱", "推播 100 個＋同時推到公會頻道", 20, "chest", "q6", "開一箱公會補給"],
 ];
-// 本月補給目標（只是目標，不綁功能承諾；下一個新功能交給支持者許願投票）
-const MONTH_GOAL = 3000;
+// 本月補給目標：闖關式，達標就換下一關（不綁功能承諾；下一個新功能交給支持者許願投票）
+const MONTH_GOALS = [3000, 6000, 10000, 15000, 20000, 30000];
+// 關卡序列：表裡的關卡，之後每 NT$10,000 一關，一直排到超過目前金額
+function goalSteps(twd) {
+  const seq = [...MONTH_GOALS];
+  while (seq[seq.length - 1] <= twd) seq.push(seq[seq.length - 1] + 10000);
+  const done = seq.filter((g) => g <= twd);
+  return { goal: seq.find((g) => g > twd), prev: done[done.length - 1] || 0, cleared: done.length };
+}
 let MSTAT = null;   // 本月補給 {n, twd}，只有筆數和總額
 async function loadMonthStats() {
   try {
@@ -2100,13 +2107,15 @@ function lootHtml(guild) {
           <div class="lu">使用：同時盯 30 個商品，到價 Discord 私訊你。</div>
           <div class="lq">「NT$30 和 NT$300 掉的是同一件，不用比誰捐得多。」</div>`;
 }
-// 本月補給進度：只用真實的筆數與總額（Ko-fi 每筆記錄），目標在 MONTH_GOAL
+// 本月補給進度：只用真實的筆數與總額（Ko-fi 每筆記錄），關卡在 MONTH_GOALS
 function goalHtml() {
   if (!MSTAT) return "";
-  const twd = MSTAT.twd || 0, pctv = Math.min(100, (twd / MONTH_GOAL) * 100);
+  const twd = MSTAT.twd || 0, { goal, prev, cleared } = goalSteps(twd);
+  const pctv = Math.min(100, ((twd - prev) / (goal - prev)) * 100);
   return `<div class="goal" aria-label="本月補給進度">
-    <div class="goal-h"><b>本月補給 NT$${Math.round(twd).toLocaleString()}</b><span>${MSTAT.n} 份補給・本月目標 NT$${MONTH_GOAL.toLocaleString()}</span></div>
+    <div class="goal-h"><b>本月補給 NT$${Math.round(twd).toLocaleString()}</b><span>${MSTAT.n} 份補給・${cleared ? `已破 ${cleared} 關 🎉・` : ""}第 ${cleared + 1} 關 NT$${goal.toLocaleString()}</span></div>
     <div class="goal-bar"><i style="width:${pctv.toFixed(1)}%"></i></div>
+    ${cleared ? `<p class="goal-note">第 ${cleared} 關 NT$${prev.toLocaleString()} 破了，謝謝大家！下一關衝 NT$${goal.toLocaleString()}。</p>` : ""}
     <p class="goal-note">下一個功能做什麼你們說了算：到 <a href="https://discord.gg/p7XjaXQay" target="_blank" rel="noopener" data-track="discord-community">Discord</a> 或 <a href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">Threads</a> 許願，支持者投票。</p>
   </div>`;
 }
