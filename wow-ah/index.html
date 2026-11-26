@@ -354,6 +354,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .end-teaser { display: block; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--gold-line, var(--line)); border-left: 3px solid var(--gold); border-radius: 10px; background: rgba(226, 189, 98, .07); color: var(--ink); text-decoration: none; font-size: 14px; }
   .end-teaser:hover { background: rgba(226, 189, 98, .12); }
   .snipe-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 10px 0 4px; padding: 10px 12px; border: 1px dashed var(--gold-line, var(--line)); border-radius: 10px; font-size: 13px; }
+  .bw-list { flex-direction: column; align-items: stretch; }
+  .bw-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
   .snipe-box.on { border-style: solid; background: rgba(226, 189, 98, .06); }
   .snipe-box select { height: 28px; border-radius: 6px; border: 1px solid var(--line); background: var(--field, var(--bg)); color: var(--ink); }
   .ab-thanks { color: var(--muted); }
@@ -2232,7 +2234,7 @@ async function showEnding() {
   track("ah_ending");
   if (!ENDING) { view.innerHTML = '<div class="skel"><i></i><i></i></div>'; await loadEnding(); }
   if (PUSH_ON && !PSUB) await pushLoad().catch(() => {});
-  if (PUSH_ON && PSUB) await loadSnipe();
+  if (PUSH_ON && PSUB) await Promise.all([loadSnipe(), loadBidWatch()]);
   renderEnding(view);
 }
 let SNIPE = null;
@@ -2256,14 +2258,15 @@ function renderEnding(view) {
     .sort((a, b) => (a[4] === "SHORT") - (b[4] === "SHORT") || b[5] * b[1] - b[2] - (a[5] * a[1] - a[2]));
   const seg = (id, opts, cur) => `<div class="seg" id="${id}">${opts.map(([v, t]) => `<button data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
   view.innerHTML = `<div class="card"><h3>⏳ 快結束的便宜競標</h3>
-    <p class="desc">只能競標（或直購很貴）的裝備、配方，剩不到 2 小時、目前出價比 7 日均低 25% 以上。去拍賣場搜尋名稱，出價比目前高一點就有機會搶到。想盯某件裝備，到它的商品頁設「🎯 出價低於多少就私訊我」。<br>
+    <p class="desc">只能競標（或直購很貴）的裝備、配方，剩不到 2 小時、目前出價比 7 日均低 25% 以上。去拍賣場搜尋名稱，出價比目前高一點就有機會搶到。想盯某件裝備：下面搜尋名稱，就能設「🎯 出價低於多少就私訊我」，清單裡的也可以直接按「🎯 盯這件」。<br>
     <span class="mut sm">${ENDING ? `快照 ${tpe(ENDING.t, { hour: "2-digit", minute: "2-digit" })}（${age} 分鐘前）` : "還沒有資料"}・暴雪的剩餘時間只給區間，快照大約晚半小時，「30 分內」的多半已經結束了。</span></p>
     ${snipeBox()}
     <div class="filters pfilters"><input type="search" id="enQ" placeholder="搜尋商品，例如 克羅之刃" value="${esc(estate.q)}" autocomplete="off"><label class="sm">出價上限 <input type="text" id="enMax" class="numin" placeholder="例如 10g" value="${estate.max ? moneyTxt(estate.max) : ""}"></label>${seg("enCls", [["", "全部"], ["武器", "武器"], ["護甲", "護甲"], ["配方", "配方"], ["其他", "其他"]], estate.cls)}${seg("enOff", [[0.25, "便宜 25%+"], [0.4, "40%+"], [0.6, "60%+"]], estate.off)}</div>
-    <div class="tscroll"><table class="ptab"><thead><tr><th>商品</th><th>目前出價</th><th>行情（7 日均）</th><th>便宜</th><th>結束</th><th>直購</th></tr></thead><tbody>
+    <div id="watchBox">${watchBox()}</div>
+    <div class="tscroll"><table class="ptab"><thead><tr><th>商品</th><th>目前出價</th><th>行情（7 日均）</th><th>便宜</th><th>結束</th><th>直購</th><th></th></tr></thead><tbody>
     ${rows.map(([iid, qty, bid, buyout, left, ref, off, aid, lo, hi]) => `<tr class="${left === "SHORT" ? "dim" : ""}"><td>${gearLink(iid)}${qty > 1 ? ` <span class="mut sm">×${qty}</span>` : ""}</td>
-      <td>${money(bid)}</td><td>${money(ref * qty)}</td><td><b class="good">${Math.round(off * 100)}%</b></td><td class="sm">${endTxt(lo, hi, left)}${left === "SHORT" ? '<div class="mut">多半已結束</div>' : ""}</td><td>${buyout ? money(buyout) : '<span class="mut sm">只能競標</span>'}</td></tr>`).join("")
-      || `<tr><td colspan="6" class="mut">這個小時沒有符合條件的競標。${HLABEL}拍賣場換個條件看看，或開「有好康就私訊我」等它出現。</td></tr>`}
+      <td>${money(bid)}</td><td>${money(ref * qty)}</td><td><b class="good">${Math.round(off * 100)}%</b></td><td class="sm">${endTxt(lo, hi, left)}${left === "SHORT" ? '<div class="mut">多半已結束</div>' : ""}</td><td>${buyout ? money(buyout) : '<span class="mut sm">只能競標</span>'}</td><td>${BWATCH?.[iid] ? '<span class="sm good">🎯 盯著</span>' : `<button class="clr" data-bwq="${iid}" title="出價低於多少就私訊我">🎯 盯這件</button>`}</td></tr>`).join("")
+      || `<tr><td colspan="7" class="mut">這個小時沒有符合條件的競標。${HLABEL}拍賣場換個條件看看，或開「有好康就私訊我」等它出現。</td></tr>`}
     </tbody></table></div></div>`;
   view.querySelectorAll("#enCls button").forEach((b) => (b.onclick = () => { estate.cls = b.dataset.v; renderEnding(view); }));
   view.querySelectorAll("#enOff button").forEach((b) => (b.onclick = () => { estate.off = +b.dataset.v; renderEnding(view); }));
@@ -2283,6 +2286,43 @@ function renderEnding(view) {
     $("#snMsg").textContent = "✓ 開著：每小時檢查，同一筆只通知一次。";
   };
   ["#snOn", "#snOff", "#snCls"].forEach((id) => { const el = $(id); if (el) el.onchange = save; });
+  view.querySelectorAll("[data-bwq]").forEach((b) => (b.onclick = () => { estate.q = (META[b.dataset.bwq][0] || "").toLowerCase(); renderEnding(view); $("#watchBox").scrollIntoView({ block: "center", behavior: "smooth" }); const i = view.querySelector(`[data-bw="${b.dataset.bwq}"]`); if (i) i.focus(); }));
+  view.querySelectorAll("[data-bwset]").forEach((b) => (b.onclick = async () => {
+    const id = +b.dataset.bwset, v = parseMoney(view.querySelector(`[data-bw="${id}"]`).value);
+    if (!v || Number.isNaN(v)) { $("#bwMsg2").textContent = "出價上限寫成 10g、9g50s 這樣。"; return; }
+    const err = await setBidWatch(id, v);
+    if (err) { $("#bwMsg2").innerHTML = err; return; }
+    if (!BWATCH?.[id]) PUSH_TOTAL++;
+    BWATCH = { ...BWATCH, [id]: v }; renderEnding(view); $("#bwMsg2").textContent = "✓ 設好了：有出價低於上限的競標就私訊你。";
+  }));
+  view.querySelectorAll("[data-bwdel]").forEach((b) => (b.onclick = async () => {
+    const id = +b.dataset.bwdel, c = await sb();
+    await c.from("wowah_bidwatch").delete().eq("house", HOUSE).eq("item_id", id);
+    delete BWATCH[id]; PUSH_TOTAL = Math.max(0, PUSH_TOTAL - 1); renderEnding(view);
+  }));
+}
+
+// 單品搶標提醒（商品頁、搶標頁共用）：回傳錯誤訊息 HTML，成功回 ""
+async function setBidWatch(id, max) {
+  const c = await sb();
+  const { error } = await c.from("wowah_bidwatch").upsert({ house: HOUSE, item_id: id, max_bid: max }, { onConflict: "uid,house,item_id" });
+  if (!error) { track("ah_bidwatch", { item_id: id }); return ""; }
+  return String(error.message || "").startsWith("push_limit") ? `推播額度用完了（${pushCap()} 個）。${pushCap() < 30 ? '隨便贊助一次（NT$30 起）就開到 30 個，<a href="#/alerts" data-go="support">怎麼支持 →</a>' : "先關掉一個再設。"}` : "設定失敗，稍後再試。";
+}
+let BWATCH = null;   // 這個拍賣場已設的單品搶標提醒 {item_id: max_bid}
+async function loadBidWatch() {
+  try { const c = await sb(); const { data } = await c.from("wowah_bidwatch").select("item_id,max_bid").eq("house", HOUSE); BWATCH = Object.fromEntries((data || []).map((x) => [x.item_id, x.max_bid])); } catch (e) { BWATCH = {}; }
+}
+// 搶標頁：搜尋到的商品可以直接「盯」
+function watchBox() {
+  if (!estate.q) return "";
+  const ids = Object.keys(META).filter((k) => (META[k][0] || "").toLowerCase().includes(estate.q) && ["武器", "護甲", "配方"].includes(META[k][2]));
+  const exact = ids.find((k) => (META[k][0] || "").toLowerCase() === estate.q);
+  const pick = exact ? [exact] : ids.slice(0, 5);
+  if (!pick.length) return "";
+  if (!PUSH_ON || !PSUB) return `<div class="snipe-box"><span>🎯 <b>想盯「${esc(META[pick[0]][0])}」？</b>用 Discord 登入，就能設「出價低於多少就私訊我」（免費就能開 1 個）。</span><a class="clr" href="#/alerts">去登入 →</a></div>`;
+  return `<div class="snipe-box on bw-list">${pick.map((k) => { const w = BWATCH?.[k]; return `<div class="bw-row">🎯 <b>${esc(META[k][0])}</b>：出價低於 <input type="text" class="numin" data-bw="${k}" placeholder="例如 10g" value="${w ? moneyTxt(w) : estate.max ? moneyTxt(estate.max) : ""}"> 就私訊我 <button class="clr" data-bwset="${k}">${w ? "更新" : "設定"}</button>${w ? ` <button class="clr" data-bwdel="${k}">取消</button> <span class="sm good">✓ 盯著中</span>` : ""}</div>`; }).join("")}
+    <span class="sm" id="bwMsg2" aria-live="polite">${ids.length > pick.length ? `還有 ${ids.length - pick.length} 件符合，打完整名稱比較準。` : "有新的競標符合就私訊你，附預估結束時間；算 1 個推播。"}</span></div>`;
 }
 
 // 商品頁：這件現在的競標（出價、直購、預估結束），以及「出價低於多少就私訊我」
@@ -2306,10 +2346,9 @@ async function bidCards(id, r) {
   const save = async () => {
     const v = parseMoney($("#bwMax").value);
     if (!v || Number.isNaN(v)) { $("#bwMsg").textContent = "寫成 10g、9g50s 這樣。"; return; }
-    const c = await sb();
-    const { error } = await c.from("wowah_bidwatch").upsert({ house: HOUSE, item_id: id, max_bid: v }, { onConflict: "uid,house,item_id" });
-    if (error) { $("#bwMsg").innerHTML = String(error.message || "").startsWith("push_limit") ? `推播額度用完了（${pushCap()} 個）。${pushCap() < 30 ? '隨便贊助一次（NT$30 起）就開到 30 個，<a href="#/alerts" data-go="support">怎麼支持 →</a>' : "先關掉一個再設。"}` : "設定失敗，稍後再試。"; return; }
-    track("ah_bidwatch", { item_id: id }); bidCards(id, r);
+    const err = await setBidWatch(id, v);
+    if (err) { $("#bwMsg").innerHTML = err; return; }
+    bidCards(id, r);
   };
   const sv = $("#bwSave"); if (sv) sv.onclick = save;
   const bm = $("#bwMax"); if (bm && watch) bm.onchange = save;
