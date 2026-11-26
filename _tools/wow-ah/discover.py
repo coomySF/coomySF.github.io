@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""一次性：永恆台服的伺服器（PvP／PvE）各對應哪幾個拍賣場 id。只印名稱和 id。"""
+"""一次性：找出哪組拍賣場是 PvP、哪組是 PvE。只印名稱、id、價格。"""
 import json
 import collect as c
 
 t = c.get_token()
-st, d, _ = c.api(t, "/data/wow/realm/index", c.DYN_NS)
-print("## realms", st, [(r.get("id"), r.get("name"), r.get("slug")) for r in (d or {}).get("realms", [])])
-st, d, _ = c.api(t, "/data/wow/connected-realm/index", c.DYN_NS)
-cids = [x["href"].split("/connected-realm/")[1].split("?")[0] for x in (d or {}).get("connected_realms", [])]
-print("## connected", st, cids)
-for cid in cids:
-    st, cr, _ = c.api(t, f"/data/wow/connected-realm/{cid}", c.DYN_NS)
-    rs = [(r.get("name"), (r.get("type") or {}).get("type"), (r.get("type") or {}).get("name"), (r.get("category"))) for r in (cr or {}).get("realms", [])]
-    print(f"## cr {cid} pop={((cr or {}).get('population') or {}).get('name')} realms={rs}")
-    st, ai, _ = c.api(t, f"/data/wow/connected-realm/{cid}/auctions/index", c.DYN_NS)
-    print("   auctions", st, [(a.get("id"), a.get("name")) for a in (ai or {}).get("auctions", [])])
+for ns in ["dynamic-forever-tw", "dynamic-classic1x-tw", "dynamic-classic-tw"]:
+    for path in ["/data/wow/realm/index", "/data/wow/connected-realm/index", "/data/wow/search/realm?_page=1"]:
+        st, d, _ = c.api(t, path, ns)
+        txt = json.dumps(d, ensure_ascii=False) if d else ""
+        print(f"## {ns} {path} {st} {txt[:700]}")
+items = {14047: "符文布", 10620: "瑟銀礦石", 12359: "瑟銀錠", 13468: "黑蓮花", 8831: "紫蓮花", 2772: "鐵礦石"}
+for hid in (110, 111, 113, 114, 116, 117):
+    st, cm, _ = c.api(t, f"/data/wow/ruleset/2/auctions/{hid}/commodities", c.DYN_NS)
+    low = {}
+    for a in (cm or {}).get("auctions", []):
+        i = a["item"]["id"]
+        if i in items:
+            p = a.get("unit_price") or a.get("buyout")
+            if p and (i not in low or p < low[i]):
+                low[i] = p
+    print(f"## house {hid}: " + "  ".join(f"{items[i]} {c.gold(low.get(i))}" for i in items))
