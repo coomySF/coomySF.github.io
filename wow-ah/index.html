@@ -248,6 +248,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .idx-n { font-weight: 700; }
   .idx-s svg { display: block; }
   .idx-v, .idx-c { text-align: right; font-weight: 700; font-family: var(--font-num), sans-serif; font-variant-numeric: tabular-nums; font-size: 13.5px; }
+  .idx-weekly { margin-left: auto; padding: 3px 10px; border: 1px solid var(--gold-line, var(--line)); border-radius: 999px; font-size: 12px; color: var(--gold); text-decoration: none; white-space: nowrap; }
+  .idx-weekly:hover { background: rgba(226, 189, 98, .1); }
   .idx-note { margin: 6px 0 2px; font-size: 11.5px; color: var(--muted); }
   @media (max-width: 420px) { .idx-row { grid-template-columns: 1fr 84px 52px 58px; gap: 8px; font-size: 13.5px; } .idx-v, .idx-c { font-size: 12.5px; } .idx-s svg { width: 84px; } }
 
@@ -1229,7 +1231,7 @@ function renderIndex() {
   const all = IDX.v.all || [];
   const col = (x) => (Math.abs(x) < 0.0005 ? "var(--muted)" : x > 0 ? "var(--up)" : "var(--down)");
   card.hidden = false;
-  card.innerHTML = `<div class="idx-h"><h3>拍賣場物價指數</h3><span class="mut">${tpeParts(T[last]).md}・整體 <b class="num">${all.length ? all[all.length - 1].toFixed(1) : "—"}</b></span><span class="idx-since">${since}</span></div>
+  card.innerHTML = `<div class="idx-h"><h3>拍賣場物價指數</h3><span class="mut">${tpeParts(T[last]).md}・整體 <b class="num">${all.length ? all[all.length - 1].toFixed(1) : "—"}</b></span><span class="idx-since">${since}</span><a class="idx-weekly" href="weekly/" data-track="weekly">📰 本週週報 →</a></div>
     ${rows.map((r) => `<button class="idx-row" data-k="${r.key}" title="${esc(r.name)}：籃子裡 ${r.n} 種商品，點一下看清單">
       <span class="idx-n">${esc(r.name)}</span><span class="idx-s">${idxSpark(r.v, col(r.chg))}</span>
       <span class="idx-v num">${r.val.toFixed(1)}</span><span class="idx-c num" style="color:${col(r.chg)}">${idxPct(r.chg)}</span></button>`).join("")}
@@ -1662,6 +1664,7 @@ document.addEventListener("click", (e) => {
   const go = () => setTimeout(() => $("#support")?.scrollIntoView({ behavior: "smooth" }), 300);
   if (location.hash.startsWith("#/alerts")) go(); else { location.hash = "#/alerts"; go(); }
 });
+document.addEventListener("click", (e) => { const w = e.target.closest("[data-track=weekly]"); if (w) track("ah_weekly"); });
 document.addEventListener("click", (e) => { const a = e.target.closest("[data-track=threads]"); if (a) track("ah_threads", { from: a.closest(".foot") ? "foot" : "support" }); });
 document.addEventListener("click", (e) => { const a = e.target.closest('[data-track="discord-community"]'); if (a) track("ah_community_join", { from: a.closest(".foot") ? "foot" : "header", page: location.hash || "#/" }); });
 function renderBadge() {
