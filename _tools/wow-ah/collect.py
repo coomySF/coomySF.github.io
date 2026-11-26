@@ -424,7 +424,8 @@ def write_ending(hdir, house_json, rows, cur_t):
 
 
 def snipe_notify(items, meta, misc, house):
-    """搶標快訊：剩 30 分–2 小時、符合玩家門檻（便宜幾成、類別）的競標，機器人私訊支持者。同一筆拍賣只通知一次。"""
+    """搶標快訊：剩 30 分–2 小時、符合玩家門檻（便宜幾成、類別）的競標，機器人私訊。同一筆拍賣只通知一次。
+    跟到價推播共用額度（一個拍賣場的搶標快訊算 1 個推播），額度由資料庫觸發器限制。"""
     url, key, bot = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY"), os.environ.get("DISCORD_BOT_TOKEN")
     cands = [x for x in items if x[4] == "MEDIUM"]
     if not (url and key and bot and cands):
@@ -442,8 +443,8 @@ def snipe_notify(items, meta, misc, house):
     n_msg = 0
     for sub in subs:
         info = sub.get("wowah_subs") or {}
-        if not info.get("discord_id") or not (info.get("supporter_until") or "") > now_iso:
-            continue   # 支持者功能
+        if not info.get("discord_id"):
+            continue   # 要 Discord 登入才私訊得到（額度在資料庫的觸發器管：免費 1、支持者 30）
         done = set(sent_ids.get(sub["uid"], []))
         lines = []
         for iid, qty, bid, buyout, left, ref, off, aid in cands:

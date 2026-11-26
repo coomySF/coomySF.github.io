@@ -1849,7 +1849,10 @@ async function pushLoad() {
   const [{ data: subs }, { data: rows }] = await Promise.all([c.from("wowah_subs").select("*").limit(1), c.from("wowah_push_alerts").select("item_id,hi,lo").eq("house", HOUSE)]);
   PSUB = subs?.[0] || null;
   PUSHED = new Map((rows || []).map((r) => [r.item_id, r]));
-  try { const { count } = await c.from("wowah_push_alerts").select("item_id", { count: "exact", head: true }); PUSH_TOTAL = count ?? PUSHED.size; } catch (e) { PUSH_TOTAL = PUSHED.size; }
+  try {   // 額度＝到價推播＋搶標快訊（所有拍賣場合計）
+    const [a1, a2] = await Promise.all([c.from("wowah_push_alerts").select("item_id", { count: "exact", head: true }), c.from("wowah_snipe").select("house", { count: "exact", head: true })]);
+    PUSH_TOTAL = (a1.count ?? PUSHED.size) + (a2.count ?? 0);
+  } catch (e) { PUSH_TOTAL = PUSHED.size; }
   // 換裝置登入：雲端的推播提醒帶回這台的提醒清單
   let added = 0;
   for (const r of PUSHED.values()) if (!ALERTS[r.item_id]) { ALERTS[r.item_id] = { hi: r.hi ?? null, lo: r.lo ?? null }; watch.add(r.item_id); added++; }
@@ -2229,14 +2232,13 @@ async function loadSnipe() {
 }
 function snipeBox() {
   if (!PUSH_ON) return "";
-  if (!PSUB) return `<div class="snipe-box"><span>🔔 <b>有好康就私訊你</b>：用 Discord 登入，符合條件的競標一出現，機器人直接私訊你（支持者功能）。</span><a class="clr" href="#/alerts">去登入 →</a></div>`;
-  if (!isSupporter()) return `<div class="snipe-box"><span>🔔 <b>有好康就私訊你</b>：這是支持者功能，隨便贊助一次（NT$30 起）就解鎖，順便推播開到 30 個。</span><a class="clr" href="#/alerts" data-go="support">怎麼支持 →</a></div>`;
+  if (!PSUB) return `<div class="snipe-box"><span>🔔 <b>有好康就私訊你</b>：用 Discord 登入，符合條件的競標一出現，機器人直接私訊你（算 1 個推播，免費就能開 1 個）。</span><a class="clr" href="#/alerts">去登入 →</a></div>`;
   const on = !!SNIPE, off = SNIPE ? +SNIPE.min_off : 0.4, cls = SNIPE?.cls || "";
   return `<div class="snipe-box on">
     <label><input type="checkbox" id="snOn" ${on ? "checked" : ""}> 🔔 <b>有好康就私訊我</b>（${HLABEL}拍賣場）</label>
     <label>便宜 <select id="snOff">${[0.25, 0.4, 0.6].map((v) => `<option value="${v}"${Math.abs(v - off) < 0.01 ? " selected" : ""}>${v * 100}%</option>`).join("")}</select> 以上</label>
     <label>只看 <select id="snCls"><option value="">全部</option>${["武器", "護甲", "配方"].map((c) => `<option${c === cls ? " selected" : ""}>${c}</option>`).join("")}</select></label>
-    <span class="sm" id="snMsg" aria-live="polite">${on ? "✓ 開著：每小時檢查，同一筆只通知一次。" : ""}</span></div>`;
+    <span class="sm" id="snMsg" aria-live="polite">${on ? "✓ 開著：每小時檢查，同一筆只通知一次。" : `算 1 個推播（目前已用 ${PUSH_TOTAL}／${pushCap()}）`}</span></div>`;
 }
 function renderEnding(view) {
   const items = ENDING?.items || [];
@@ -2258,9 +2260,14 @@ function renderEnding(view) {
   view.querySelectorAll("#enOff button").forEach((b) => (b.onclick = () => { estate.off = +b.dataset.v; renderEnding(view); }));
   const save = async () => {
     const c = await sb(), on = $("#snOn").checked, off = +$("#snOff").value, cls = $("#snCls").value || null;
-    if (!on) { await c.from("wowah_snipe").delete().eq("house", HOUSE); SNIPE = null; $("#snMsg").textContent = "已關閉。"; return; }
+    if (!on) { await c.from("wowah_snipe").delete().eq("house", HOUSE); if (SNIPE) PUSH_TOTAL = Math.max(0, PUSH_TOTAL - 1); SNIPE = null; $("#snMsg").textContent = "已關閉。"; return; }
     const { error } = await c.from("wowah_snipe").upsert({ house: HOUSE, min_off: off, cls }, { onConflict: "uid,house" });
-    if (error) { $("#snMsg").textContent = "設定失敗，稍後再試。"; return; }
+    if (error) {
+      $("#snOn").checked = false;
+      $("#snMsg").innerHTML = String(error.message || "").startsWith("push_limit") ? `推播額度用完了（${pushCap()} 個）。${pushCap() < 30 ? '隨便贊助一次（NT$30 起）就開到 30 個，<a href="#/alerts" data-go="support">怎麼支持 →</a>' : "先關掉一個再開。"}` : "設定失敗，稍後再試。";
+      return;
+    }
+    if (!SNIPE) PUSH_TOTAL++;
     SNIPE = { min_off: off, cls }; track("ah_snipe_on", { house: HOUSE, off });
     $("#snMsg").textContent = "✓ 開著：每小時檢查，同一筆只通知一次。";
   };
