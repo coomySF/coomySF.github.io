@@ -65,6 +65,11 @@ INDEX_CATS = [
     ["ench", "附魔材料", "商品", ["附魔"]],
     ["elem", "元素材料", "商品", ["元素材料"]],
     ["potion", "藥水", "消耗品", ["藥水", "藥劑"]],
+    # 指定商品的籃子（第 5 欄＝物品 id）：可以跟上面的類別重疊，「整體」不重複算
+    ["pvp", "PvP 戰場消耗品", "", [], [
+        5634, 3387, 13446, 3928, 13444, 14530, 14529, 8545, 2459, 20004, 13452,   # 自由行動、有限無敵、治療／法力、繃帶、迅捷、巨魔之血、貓鼬
+        15993, 4390, 18641, 10562,                                              # 手榴彈、炸藥
+    ]],
 ]
 INDEX_KEEP_MS = 30 * DAY
 INDEX_MIN_SOLD = 5        # 7 天內至少推算成交這麼多件才放進籃子，避免冷門貨亂跳
@@ -289,26 +294,34 @@ def update_index(hdir, hist, meta, cur_t):
     第一次執行時用手上的 7 天明細往回補。
     """
     path = os.path.join(hdir, "index.json")
-    idx = read_json(path) or {"cats": [[c[0], c[1], c[2], c[3]] for c in INDEX_CATS], "base": None, "t": [], "v": {}, "d": {}}
+    idx = read_json(path) or {"base": None, "t": [], "v": {}, "d": {}}
+    idx["cats"] = [[c[0], c[1], c[2], c[3]] + ([c[4]] if len(c) > 4 else []) for c in INDEX_CATS]   # 新增類別時舊檔也跟著更新；指定籃子附物品 id
     keys = [c[0] for c in INDEX_CATS] + ["all"]
-    cat_of = {}
+    for k in keys:   # 新類別：前面補 100，長度跟時間軸對齊
+        idx["v"].setdefault(k, [100.0] * len(idx["t"]))
+    cat_of, picked = {}, collections.defaultdict(list)
     for c in INDEX_CATS:
         for sub in c[3]:
             cat_of[(c[2], sub)] = c[0]
-    basket = {}
+        for i in (c[4] if len(c) > 4 else []):
+            picked[str(i)].append(c[0])
+    # 籃子：(類別, 商品) 一筆；同一個商品可以在分類籃子和指定籃子各出現一次，「整體」只算分類那筆
+    basket = []
     for iid, cols in hist["items"].items():
         m = meta.get(iid)
-        cat = m and cat_of.get((m[2], m[3]))
-        if not cat:
+        cats = ([cat_of[(m[2], m[3])]] if m and (m[2], m[3]) in cat_of else []) + picked.get(iid, [])
+        if not cats:
             continue
         asks = [a for a in cols[0] if a]
         sold = sum(x for x in cols[3] if x)
         if asks and sold >= INDEX_MIN_SOLD:
-            basket[iid] = (cat, cols[0], (sum(asks) / len(asks)) * (sold + 1))
+            w = (sum(asks) / len(asks)) * (sold + 1)
+            for k, cat in enumerate(cats):
+                basket.append((cat, cols[0], w, k == 0 and cat not in picked.get(iid, [])))
     tot = collections.Counter()
-    for cat, _, w in basket.values():
+    for cat, _, w, _ in basket:
         tot[cat] += w
-    basket = {i: (cat, a, min(w, tot[cat] * INDEX_MAX_SHARE)) for i, (cat, a, w) in basket.items()}
+    basket = [(cat, a, min(w, tot[cat] * INDEX_MAX_SHARE), in_all) for cat, a, w, in_all in basket]
     T = hist["t"]
     last_t = idx["t"][-1] if idx["t"] else None
     if last_t is None and T:
@@ -321,12 +334,12 @@ def update_index(hdir, hist, meta, cur_t):
         if T[j] <= last_t:
             continue
         acc = {k: [0.0, 0.0] for k in keys}
-        for cat, asks, w in basket.values():
+        for cat, asks, w, in_all in basket:
             a0, a1 = asks[j - 1], asks[j]
             if not a0 or not a1:
                 continue
             r = math.log(min(INDEX_CLIP[1], max(INDEX_CLIP[0], a1 / a0)))
-            for k in (cat, "all"):
+            for k in ((cat, "all") if in_all else (cat,)):
                 acc[k][0] += w * r
                 acc[k][1] += w
         idx["t"].append(T[j])
@@ -348,7 +361,7 @@ def update_index(hdir, hist, meta, cur_t):
             d[-1][1] = idx["v"][k][-1]
         else:
             d.append([day, idx["v"][k][-1]])
-    idx["n"] = {k: sum(1 for b in basket.values() if b[0] == k or k == "all") for k in keys}
+    idx["n"] = {k: sum(1 for b in basket if b[0] == k or (k == "all" and b[3])) for k in keys}
     write_json(path, idx)
 
 

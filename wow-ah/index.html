@@ -607,6 +607,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
 
   <p class="foot">
     <a href="https://discord.gg/p7XjaXQay" target="_blank" rel="noopener noreferrer" data-track="discord-community">加入台灣拍賣場 Discord</a> · Coomy 維護的玩家社群，歡迎新手提問、分享實測或一起經營。<br>
+    <a href="weekly/">📰 台服拍賣場週報</a> · 每週物價變化、熱賣商品、可撿可出清單。<br>
     <span id="footSupport"></span>
     資料來自暴雪官方 Battle.net API 每小時的拍賣場快照，非官方工具，與暴雪娛樂無關。<br>
     快照只看得到「掛著什麼」，成交是推算的：可能是時間到而下架的單一律不算成交，所以成交量是下限。推算規則參考 <a href="https://auctionhouse.tk.gg/data/" target="_blank" rel="noopener">auctionhouse.tk.gg</a>。<br>
@@ -697,7 +698,7 @@ try { watch = new Set(JSON.parse(localStorage.getItem("wowah.watch") || "[]")); 
 const saveWatch = () => { try { localStorage.setItem("wowah.watch", JSON.stringify([...watch])); } catch (e) {} };
 const state = { q: "", cls: "", sub: "", sig: "", thr: 0.2, minv: 5, sort: "vol24", dir: -1, shown: 100 };
 try { Object.assign(state, JSON.parse(localStorage.getItem("wowah.filters") || "{}"), { shown: 100 }); } catch (e) {}
-const saveFilters = () => { try { const { q, shown, ...rest } = state; localStorage.setItem("wowah.filters", JSON.stringify(rest)); } catch (e) {} };
+const saveFilters = () => { try { const { q, shown, pick, ...rest } = state; /* pick（指定籃子）只在這次瀏覽有效 */ localStorage.setItem("wowah.filters", JSON.stringify(rest)); } catch (e) {} };
 
 async function boot() {
   renderHouseBar();
@@ -818,6 +819,7 @@ function bindFilters() {
 }
 
 function matches(r) {
+  if (state.pick && !state.pick.ids.has(r.id)) return false;
   if (state.q && !r.key.includes(state.q)) return false;
   if (state.cls && r.cls !== state.cls) return false;
   if (state.sub && r.sub !== state.sub) return false;
@@ -891,7 +893,7 @@ function renderList() {
   $("#rows").innerHTML = html;
   $("#empty").hidden = list.length > 0;
   const SIG_NAME = { cheap: "「可撿」", dear: "「可出」", hot: "「搶手」", slow: "「滯銷」", watch: "「★ 觀察」" };
-  const active = [state.cls && `類別「${state.cls}」`, state.sub && `子類「${state.sub}」`, state.sig && SIG_NAME[state.sig]].filter(Boolean);
+  const active = [state.pick && `「${state.pick.name}」`, state.cls && `類別「${state.cls}」`, state.sub && `子類「${state.sub}」`, state.sig && SIG_NAME[state.sig]].filter(Boolean);
   if (hidden > 0) $("#hint").insertAdjacentHTML("beforeend", ` <button class="clr" id="clr">另有 ${hidden} 筆被篩選藏起來・全部顯示</button>`);
   else if (active.length) $("#hint").insertAdjacentHTML("beforeend", ` <button class="clr" id="clr">清除篩選（${active.length}）</button>`);
   if (!list.length) $("#empty").innerHTML = `沒有符合的商品${active.length ? `——被 ${active.map(esc).join("、")} 篩掉了。<button class="clr" id="clr2">清除篩選${state.q ? "（保留搜尋字）" : ""}</button>` : state.q ? `——拍賣場上沒有名稱包含「${esc(state.q)}」的商品。` : ""}${state.minv > 0 && !active.length && !state.q ? "（試試把「24h 成交」改成不限）" : ""}`;
@@ -1221,7 +1223,7 @@ function renderIndex() {
   const since = full ? "7 日漲跌" : `自 ${tpe(T[i0], { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
   const rows = IDX.cats.map((c) => {
     const v = (IDX.v[c[0]] || []).slice(i0);
-    return { key: c[0], name: c[1], cls: c[2], subs: c[3], v, val: v[v.length - 1], chg: v.length ? v[v.length - 1] / v[0] - 1 : 0, n: IDX.n?.[c[0]] };
+    return { key: c[0], name: c[1], cls: c[2], subs: c[3], ids: c[4], v, val: v[v.length - 1], chg: v.length ? v[v.length - 1] / v[0] - 1 : 0, n: IDX.n?.[c[0]] };
   }).filter((r) => r.n);
   const all = IDX.v.all || [];
   const col = (x) => (Math.abs(x) < 0.0005 ? "var(--muted)" : x > 0 ? "var(--up)" : "var(--down)");
@@ -1233,6 +1235,7 @@ function renderIndex() {
     <p class="idx-note">100＝${HINFO.since.slice(5)} 開始收集時的價格（${HLABEL}拍賣場）。每小時看籃子裡每樣商品的最低價漲跌，用成交金額加權平均（單一商品最多佔 20%）。紅＝漲、綠＝跌。</p>`;
   card.querySelectorAll(".idx-row").forEach((b) => b.onclick = () => {
     const r = rows.find((x) => x.key === b.dataset.k);
+    state.pick = r.ids ? { name: r.name, ids: new Set(r.ids) } : null;   // 指定商品的籃子（例如 PvP 戰場消耗品）
     state.cls = r.cls; $("#cls").value = r.cls; fillSubs();
     state.sub = r.subs.length === 1 ? r.subs[0] : ""; $("#sub").value = state.sub;
     state.sig = ""; $("#sig").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === "")));
@@ -2231,7 +2234,7 @@ function renderAlertPage(view) {
 }
 
 function clearFilters() {   // 搜尋字留著：玩家剛打的字不該被清掉
-  Object.assign(state, { cls: "", sub: "", sig: "", shown: 100 });
+  Object.assign(state, { cls: "", sub: "", sig: "", shown: 100, pick: null });
   $("#cls").value = ""; fillSubs();
   $("#sig").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === "")));
   saveFilters(); renderList();

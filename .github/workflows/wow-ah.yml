@@ -16,7 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: _tools/wow-ah
+          sparse-checkout: |
+            _tools/wow-ah
+            wow-ah/weekly
       - name: Check out ah-data
         run: |
           git config --global user.name "wow-ah bot"
@@ -49,4 +51,13 @@ jobs:
             echo "$n" > .commits && git add .commits
             git commit -q -m "ah-data $(date -u +%FT%TZ)"
             git push -q origin HEAD:ah-data
+          fi
+      - name: Weekly report
+        # 每天第一次執行時更新「本週」週報（靜態頁，Google 收錄得到）；同一天不重複 commit
+        run: |
+          python3 _tools/wow-ah/weekly.py --data data --out wow-ah/weekly
+          if [ -n "$(git status --porcelain wow-ah/weekly)" ]; then
+            git add wow-ah/weekly
+            git commit -q -m "台服拍賣場週報 $(TZ=Asia/Taipei date +%F)"
+            git pull -q --rebase origin main && git push -q origin HEAD:main
           fi
