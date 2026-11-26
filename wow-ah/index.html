@@ -1794,7 +1794,7 @@ function renderPromo() {
 
 /* ---------------- Discord 推播（Supabase） ---------------- */
 // 公開設定：Supabase 專案網址和 anon key（本來就是給瀏覽器用的公開金鑰）、Ko-fi 頁面名稱。空的就顯示「即將開放」
-const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "", email: false, discord: true };   // discord：Discord 登入（Supabase 後台接好 Discord provider 再打開）；email：信箱驗證碼（已改用 Discord，保留程式備用）
+const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "coomysky", email: false, discord: true };   // discord：Discord 登入（Supabase 後台接好 Discord provider 再打開）；email：信箱驗證碼（已改用 Discord，保留程式備用）
 const PUSH_ON = !!(PUSH.url && PUSH.anon);
 let PUSH_TOTAL = 0;   // 所有拍賣場合計的推播數（上限是合計）
 let SB = null, PSUB = null, PUSHED = new Map(), PEMAIL = "", PNAME = "", OTP_TO = "";   // PUSHED：item_id → {hi, lo}；PEMAIL：登入的信箱（匿名是空的）
@@ -2051,7 +2051,7 @@ function supportHtml() {
         <p class="go-sub">開張第一個在 Threads 通知你</p>`}
         ${code ? `<p class="sm mycode">你的支持者代碼：<b class="code">${esc(code)}</b></p>` : ""}
         <details class="how"><summary>怎麼拿到 30 個推播？</summary>
-          <p>付款時用你 Discord 帳號的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面用 Discord 登入開啟推播）"}，幾分鐘內自動解鎖。Ko-fi 用美元結帳，選最接近的金額就好。只要網站還在，就一直有效。</p></details>
+          <p>付款時用你 Discord 帳號的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面用 Discord 登入開啟推播）"}，幾分鐘內自動解鎖。Ko-fi 以美元結帳，台幣金額僅供參考；請在付款頁輸入金額並確認，實際扣款依付款服務匯率為準。只要網站還在，就一直有效。</p></details>
       </div>
     </div>
     <div class="th-bar"><span>想要什麼新功能，或抓到 bug？到 Threads 私訊我，我都會看。新功能也會先在那裡說。</span><a class="th-go" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">追蹤 @coomysky</a></div>
