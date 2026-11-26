@@ -748,11 +748,13 @@ function renderStatus() {
   // 資料累積不足時提醒
   const flowH = Math.max(0, ...ROWS.slice(0, 200).map((r) => r.flowHours || 0));
   if (!flowH && state.sort === "vol24") state.sort = "listed"; // 還沒有成交資料時先看掛單量
-  const days = Math.min(7, Math.floor(flowH / 24));
-  document.querySelectorAll('#list th[data-k="avg7"], #list th[data-k="dev"]').forEach((th) => th.classList.toggle("warm", flowH < 168));
-  if (flowH < 168) {
+  // 累積了幾天：從這個拍賣場開始收集的那一刻算（flowHours 只看最近 24 小時，不能拿來算天數）
+  const dataH = Math.max(0, (OV.t - Date.parse(HINFO.since.replace(/\//g, "-") + "T08:00:00+08:00")) / 3600e3);
+  const days = Math.min(7, Math.floor(dataH / 24));
+  document.querySelectorAll('#list th[data-k="avg7"], #list th[data-k="dev"]').forEach((th) => th.classList.toggle("warm", dataH < 168));
+  if (dataH < 168) {
     $("#notice").hidden = false;
-    $("#notice").innerHTML = `<b>資料累積中 ${days}/7 天</b><span class="warm-bar"><i style="width:${(Math.min(flowH, 168) / 168 * 100).toFixed(0)}%"></i></span>「7 日均」「偏離」還不準，先看<b>現價</b>和設<b>到價提醒</b>就好。${HLABEL}拍賣場 ${HINFO.since} 開始收集。`;
+    $("#notice").innerHTML = `<b>資料累積中 ${days}/7 天</b><span class="warm-bar"><i style="width:${(Math.min(dataH, 168) / 168 * 100).toFixed(0)}%"></i></span>「7 日均」「偏離」還不準，先看<b>現價</b>和設<b>到價提醒</b>就好。${HLABEL}拍賣場 ${HINFO.since} 開始收集。`;
   }
   if (false) {
     $("#notice").textContent = `${HLABEL}拍賣場 ${HINFO.since} 才開始收集，目前只有 ${flowH} 小時的成交資料。7 日均價、量比要累積滿幾天才準；熱圖至少要 4 週。`;
