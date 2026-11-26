@@ -95,7 +95,7 @@ sitemap: true
 <meta name="description" content="{html.escape(desc)}">
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc)}">
 <meta property="og:image" content="{SITE}og.jpg?v=3"><meta name="twitter:card" content="summary_large_image">
-<link rel="canonical" href="{SITE}weekly/{year}-w{week:02d}.html">
+<link rel="canonical" href="{SITE}weekly/{year}-w{week:02d}/">
 <style>
 :root{{color-scheme:dark}}body{{margin:0;background:#0b0d11;color:#ece6d6;font:16px/1.7 "Noto Sans TC",system-ui,sans-serif}}
 main{{max-width:860px;margin:0 auto;padding:28px 16px 60px}}a{{color:#e2bd62}}h1{{font:900 28px/1.3 "Noto Serif TC",serif;margin:8px 0}}
@@ -120,7 +120,7 @@ th{{color:#8f8a7c;font-weight:500}}.up{{color:#f2625b}}.down{{color:#3fcf6b}}.le
 
 def index_page(out):
     files = sorted((f for f in os.listdir(out) if re.match(r"\d{4}-w\d{2}\.html$", f)), reverse=True)
-    lis = "".join(f'<li><a href="{f}">{f[:4]} 第 {int(f[6:8])} 週</a></li>' for f in files)
+    lis = "".join(f'<li><a href="{f[:-5]}/">{f[:4]} 第 {int(f[6:8])} 週</a></li>' for f in files)
     return f"""---
 layout: null
 sitemap: true
