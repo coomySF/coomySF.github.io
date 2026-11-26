@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-"""一次性：列出永恆台服有哪些規則（PvP／PvE）與拍賣場（聯盟／部落），只印名稱和 id。"""
+"""一次性：列出永恆台服有哪些規則（PvP／PvE）與拍賣場（聯盟／部落），只印名稱、id 和掛單數。"""
 import json
 import collect as c
 
 t = c.get_token()
-for path in ["/data/wow/ruleset/index", "/data/wow/search/ruleset"]:
-    st, d, _ = c.api(t, path, c.DYN_NS)
-    print("##", path, st, json.dumps(d, ensure_ascii=False)[:1500] if d else "")
-for r in range(0, 9):
-    st, d, _ = c.api(t, f"/data/wow/ruleset/{r}/auctions/index", c.DYN_NS)
-    if st == 200 and d:
-        print("## ruleset", r, json.dumps({k: v for k, v in d.items() if k != "_links"}, ensure_ascii=False)[:1500])
-    else:
-        print("## ruleset", r, st)
+for r in (1, 2, 5):
     st, d, _ = c.api(t, f"/data/wow/ruleset/{r}", c.DYN_NS)
-    if st == 200 and d:
-        print("   info", json.dumps({k: v for k, v in d.items() if k != "_links"}, ensure_ascii=False)[:600])
+    print(f"## ruleset {r}: {(d or {}).get('name')} status={((d or {}).get('status') or {}).get('name')}")
+    st, d, _ = c.api(t, f"/data/wow/ruleset/{r}/auctions/index", c.DYN_NS)
+    for a in (d or {}).get("auctions", []):
+        hid = a["id"]
+        s1, h, _ = c.api(t, f"/data/wow/ruleset/{r}/auctions/{hid}", c.DYN_NS)
+        s2, cm, _ = c.api(t, f"/data/wow/ruleset/{r}/auctions/{hid}/commodities", c.DYN_NS)
+        print(f"   house {hid} {a['name']}: items={len((h or {}).get('auctions', []))} commodities={len((cm or {}).get('auctions', []))} ({s1}/{s2})")
