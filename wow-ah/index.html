@@ -328,29 +328,70 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .push-step input.mail { flex: 1 1 220px; } .push-step input.otp { width: 140px; flex: 0 0 auto; letter-spacing: .2em; font-family: var(--font-num, monospace); }
   .code { font-family: var(--font-num, monospace); letter-spacing: .1em; }
   .ap-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
-  .support-card { border-color: var(--gold-line, var(--line)); background: radial-gradient(120% 80% at 0% 0%, var(--gold-soft, transparent), transparent 60%), var(--surface); }
-  .support-copy { max-width: 620px; line-height: 1.75; color: var(--ink-2); }
-  .support-copy p { margin: 0 0 10px; } .support-copy .sign { color: var(--ink); text-align: right; font-family: var(--font-title, inherit); }
-  .tiers { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 14px 0 12px; }
-  .tier { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 10px 10px 9px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--ink); cursor: pointer; text-align: left; position: relative; }
-  .tier b { font-size: 17px; font-family: var(--font-num, inherit); }
-  .tier .tl { font-size: 13px; font-weight: 700; } .tier .ts { font-size: 11px; color: var(--muted); line-height: 1.4; } .tier .tu { font-size: 11px; color: var(--muted); font-family: var(--font-num, inherit); margin-top: auto; }
-  .tier .rec { font-style: normal; font-size: 10px; margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--gold, var(--ink)); color: #1a1405; vertical-align: 1px; }
-  .tier.on { border-color: var(--gold, var(--ink)); box-shadow: 0 0 0 1px var(--gold, var(--ink)) inset; background: var(--gold-soft, var(--surface-2)); }
-  .support-go { display: inline-flex; align-items: center; text-decoration: none; height: 42px; padding: 0 20px; font-size: 15px; }
-  .support-go[disabled] { opacity: .55; cursor: not-allowed; }
-  .support-how { margin-top: 10px; color: var(--ink-2); max-width: 680px; }
-  .support-done { color: var(--ink); font-weight: 700; }
   .discord-go { background: #5865f2; color: #fff; height: 40px; margin-right: 10px; }
-  .me-card { display: flex; gap: 14px; align-items: flex-start; margin: 4px 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); max-width: 620px; }
-  .me-av img { display: block; width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold, var(--line)); }
-  .me-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .me-txt b { font-family: var(--font-title, inherit); font-size: 16px; }
-  .me-txt p { margin: 6px 0 8px; color: var(--ink-2); line-height: 1.6; }
-  .th-go { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 700; text-decoration: none; }
-  .th-go { white-space: nowrap; }
   .ab-thanks { color: var(--muted); }
-  @media (max-width: 600px) { .tiers { grid-template-columns: 1fr 1fr; } .tier:last-child { grid-column: 1 / -1; } }
+  /* 遠征補給站（只做深色） */
+  .support-card { position: relative; overflow: hidden; border-color: var(--gold-line, var(--line)); background: radial-gradient(90% 70% at 0% 0%, rgba(226, 189, 98, .10), transparent 60%), var(--surface); padding: 22px 20px 16px; }
+  .support-card::before { content: ""; position: absolute; left: 10%; right: 10%; top: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .corner { position: absolute; width: 14px; height: 14px; pointer-events: none; }
+  .corner.tl { top: 6px; left: 6px; border-top: 1px solid var(--gold); border-left: 1px solid var(--gold); }
+  .corner.br { bottom: 6px; right: 6px; border-bottom: 1px solid var(--gold); border-right: 1px solid var(--gold); }
+  .sup-grid { display: grid; gap: 22px; }
+  @media (min-width: 900px) { .sup-grid { grid-template-columns: 1fr 420px; align-items: start; } }
+  .sup-hero { display: flex; gap: 16px; align-items: center; }
+  .hero-av { position: relative; flex: 0 0 auto; width: 96px; height: 96px; margin: 0; }
+  @media (min-width: 900px) { .hero-av { width: 128px; height: 128px; } }
+  .hero-av img { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); border-radius: 50%; object-fit: cover; transform: scale(1.04); border: 2px solid var(--gold); box-shadow: 0 0 0 4px var(--surface); }
+  .hero-av .ring { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, transparent, var(--gold) 25%, transparent 45%); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 2px)); animation: spin 14s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .av-badge { position: absolute; right: 2px; bottom: 2px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--surface); border: 1px solid var(--gold); color: var(--gold); }
+  .sup-h { font-family: var(--font-title, inherit); font-size: clamp(20px, 4.6vw, 28px); line-height: 1.3; margin: 4px 0 6px; color: var(--ink); }
+  .sup-sub { margin: 0; color: var(--ink-2); line-height: 1.6; }
+  .av-cap { margin: 6px 0 14px; font-size: 12px; color: var(--muted); }
+  .trail { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 4px 0 10px; padding: 0; position: relative; }
+  .trail::before { content: ""; position: absolute; left: 6px; right: 16%; top: 6px; height: 1px; background: repeating-linear-gradient(90deg, var(--gold) 0 4px, transparent 4px 8px); }
+  .trail li { position: relative; padding-top: 20px; font-size: 12px; color: var(--muted); }
+  .trail li::before { content: ""; position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--gold); background: var(--surface); }
+  .trail li.done::before { background: var(--gold); }
+  .trail li.now::before { background: var(--surface); box-shadow: 0 0 0 0 rgba(226, 189, 98, .6); animation: pulse 2.4s ease-out infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(226, 189, 98, 0); } 100% { box-shadow: 0 0 0 0 rgba(226, 189, 98, 0); } }
+  .trail b { display: block; color: var(--ink); font-size: 13px; }
+  .trail span { line-height: 1.4; }
+  .costs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .costs i { font-style: normal; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; }
+  .support-copy { line-height: 1.75; color: var(--ink-2); }
+  .support-copy p { margin: 0 0 10px; }
+  .sup-shop { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(0, 0, 0, .25); }
+  .shop-h { font-size: 12px; letter-spacing: .08em; color: var(--gold); margin-bottom: 8px; }
+  .tiers { display: flex; flex-direction: column; gap: 6px; }
+  .tier { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 10px; min-height: 52px; padding: 6px 10px 6px 6px; border: 1px solid var(--line); border-left: 3px solid transparent; border-radius: 8px; background: var(--surface-2); color: var(--ink); cursor: pointer; text-align: left; }
+  .tier:hover { border-color: var(--gold-line, var(--line)); }
+  .tier.on { border-left-color: var(--gold); background: rgba(226, 189, 98, .12); border-color: var(--gold-line, var(--gold)); }
+  .slot { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 6px; background: #07090c; border: 1px solid var(--line); color: var(--gold); }
+  .tn { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; min-width: 0; }
+  .tn b { font-size: 14px; } .tn small { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+  .tp { text-align: right; } .tp b { display: block; font-family: var(--font-num, inherit); font-size: 15px; color: var(--gold); } .tp small { font-size: 11px; color: var(--muted); font-family: var(--font-num, inherit); }
+  .tn b.q1 { color: #e6e6e6; } .tn b.q2 { color: #1eff00; } .tn b.q3 { color: #3d9bff; } .tn b.q4 { color: #b86df5; } .tn b.q5 { color: #ff8000; }
+  .rec { font-style: normal; font-size: 10px; padding: 0 6px; border-radius: 999px; background: var(--gold); color: #1a1405; font-weight: 700; }
+  .loot { position: relative; margin: 12px 0 10px; padding: 12px 14px; border: 1px solid var(--gold-line, var(--gold)); border-radius: 4px; background: rgba(8, 12, 24, .96); font-size: 13px; line-height: 1.55; }
+  .loot .ln { font-family: var(--font-title, inherit); font-size: 16px; color: #ff8000; }
+  .loot .lb { color: #fff; font-size: 12px; } .loot .lu { color: #1eff00; margin-top: 4px; } .loot .lq { color: #ffd100; font-style: italic; margin-top: 6px; font-size: 12px; }
+  .looted { position: absolute; top: 10px; right: 10px; transform: rotate(-8deg); padding: 2px 8px; border: 2px solid var(--gold); color: var(--gold); font-weight: 900; font-size: 12px; border-radius: 4px; }
+  .support-go { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 48px; margin-top: 12px; padding: 6px 14px; text-align: center; border-radius: 8px; border: 0; background: linear-gradient(180deg, #e9c25a, #b8871a); color: #1a1405; font-size: 15px; font-weight: 800; text-decoration: none; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 6px 20px rgba(226, 189, 98, .18); cursor: pointer; }
+  .support-go.flash { filter: brightness(1.25); }
+  .support-go.soon { background: transparent; border: 1px dashed var(--gold); color: var(--gold); box-shadow: none; cursor: default; }
+  .go-sub { margin: 6px 0 0; text-align: center; font-size: 12px; color: var(--muted); font-family: var(--font-num, inherit); }
+  .mycode { margin: 8px 0 0; text-align: center; }
+  .how { margin-top: 10px; font-size: 13px; color: var(--ink-2); } .how summary { cursor: pointer; color: var(--gold); } .how p { margin: 6px 0 0; line-height: 1.6; }
+  .support-done { color: var(--ink); font-weight: 700; font-size: 13px; }
+  .th-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-2); }
+  .th-go { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--gold-line, var(--gold)); color: var(--gold); font-size: 13px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+  .sign small { display: block; font-family: var(--font-body, inherit); font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .loot.top { margin: 0 0 12px; }
+  .sign { margin: 12px 0 0; text-align: right; font-family: var(--font-title, inherit); color: var(--ink); }
+  .coin { position: fixed; z-index: 60; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3c4, #e2bd62 45%, #9a6b10); pointer-events: none; animation: coin .55s ease-out forwards; }
+  @keyframes coin { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .hero-av .ring, .trail li.now::before { animation: none; } .hero-av .ring { background: none; box-shadow: 0 0 24px rgba(226, 189, 98, .35); } }
   .ap-add { position: relative; margin: 6px 0 12px; }
   .ap-add input { width: 100%; max-width: 420px; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field, var(--bg)); color: var(--ink); }
   .ap-hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -1882,37 +1923,105 @@ function bindPushCard(view) {
   }));
 }
 /* ---------------- 支持 Coomy（贊助） ---------------- */
-// 捐過一次（任何金額）就永久把 Discord 推播從 1 個開到 30 個；Ko-fi 以美元結帳，按鈕標約略美元
-const TIERS = [[30, "旅店一杯麥酒", "一杯手搖，請我喝一杯", 1], [50, "補一組藥水", "一份雞排，熬夜寫 code 有力氣", 1.5], [100, "出團修裝費", "一碗牛肉麵，讓網站穩穩跑下去", 3], [150, "一整晚的合劑", "一張電影票，幫我顧好主機和推播", 5], [300, "矽谷旅費的一塊磚", "認真幫我湊旅費，這份我會記很久", 10]];
+// 「遠征補給站」：捐過一次（任何金額）就永久把 Discord 推播從 1 個開到 30 個；Ko-fi 以美元結帳，標約略美元
+// [金額, 品名, ≈ 生活換算, 約美元, 圖示, 品質色, 按鈕動詞]
+const TIERS = [
+  [30, "旅店一杯麥酒", "一杯手搖", 1, "ale", "q1", "請 Coomy 喝杯麥酒"],
+  [50, "補一組藥水", "一份雞排", 1.5, "potion", "q2", "幫 Coomy 補一組藥水"],
+  [100, "出團修裝費", "一碗牛肉麵", 3, "anvil", "q3", "幫 Coomy 付這次修裝費"],
+  [150, "一整晚的合劑", "一張電影票", 5, "flask", "q4", "送 Coomy 一整晚的合劑"],
+  [300, "矽谷旅費的一塊磚", "這塊磚我會帶去矽谷", 10, "brick", "q5", "幫 Coomy 疊一塊矽谷磚"],
+];
+// 單色金線圖示（currentColor）
+const ICON = {
+  ale: '<path d="M7 9h9v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2zM16 11h2a2 2 0 0 1 0 4h-2M7 9c0-2 1.5-3 3-3 .5-1.5 3.5-1.5 4 0 1.5 0 2 1.5 2 3"/>',
+  potion: '<path d="M10 3h4M10.5 3v4.5L6.5 15a4.5 4.5 0 0 0 4 6h3a4.5 4.5 0 0 0 4-6l-4-7.5V3M8 15h8"/>',
+  anvil: '<path d="M4 8h12c0 2.5 2 3.5 4 3.5V13H15l-1 3h2v3H8v-3h2l-1-3c-3 0-5-2-5-5zM9 8V6h3v2"/>',
+  flask: '<path d="M9 3h6M10 3v5.2a6 6 0 1 0 4 0V3M7.3 14h9.4"/>',
+  brick: '<path d="M3 8h18v10H3zM3 13h18M9 8v5M15 13v5"/>',
+};
+const icon = (k) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
 let tierPick = 100;
 function supportHtml() {
-  const t = TIERS.find((x) => x[0] === tierPick);
-  const code = PSUB?.code;
-  return `<div class="card support-card" id="support">
-    <div class="promo-k">☕ 支持 Coomy</div>
-    <h3 class="promo-h">喜歡這個拍賣場小工具嗎？</h3>
-    <div class="support-copy">
-      <p>嗨，我是 Coomy，玩魔獸很多年的老玩家，這個網站是我用 <a href="/">AllWill</a> 做的。</p>
-      <p>我很喜歡 WoW，也正在創業，準備去矽谷闖一闖。希望這個網站能幫大家少花一點冤枉金幣，也順便幫我湊一點旅費。</p>
-      <p>網站每小時抓資料、主機、推播，都有一點費用。你的一點點支持，會讓我更有動力把它顧好。</p>
-      <p>網站會一直免費、沒有廣告，你用得順手我就很開心了！哪天在拍賣場賺到一筆，順手請我喝杯麥酒，我會開心到在鐵爐堡門口跳舞 🍻</p>
+  const t = TIERS.find((x) => x[0] === tierPick), code = PSUB?.code, sup = isSupporter();
+  return `<section class="card support-card" id="support" aria-labelledby="supH"><i class="corner tl"></i><i class="corner br"></i>
+    <div class="sup-grid">
+      <div class="sup-story">
+        <div class="sup-hero">
+          <figure class="hero-av"><span class="ring" aria-hidden="true"></span><img src="coomy.webp" width="128" height="128" alt="Coomy 拿著炸雞笑得很開心" loading="lazy" decoding="async"><span class="av-badge" title="${sup ? "旅店常客" : "遠征中"}">${sup ? "🍺" : "◆"}</span></figure>
+          <div><div class="promo-k">◆ 遠征補給站</div>
+            <h3 class="sup-h" id="supH">我要從台灣出發，去矽谷闖一闖。</h3>
+            <p class="sup-sub">這個網站會一直免費、沒有廣告。想推我一把的話，送我一份補給就好。</p></div>
+        </div>
+        <p class="av-cap">↑ 收到補給大概就是這個表情 🍗</p>
+        <ol class="trail" aria-label="Coomy 的旅程">
+          <li class="done"><b>台灣・艾澤拉斯</b><span>做出這個拍賣場</span></li>
+          <li class="now"><b>現在</b><span>創業中，網站持續更新</span></li>
+          <li class="next"><b>下一站 ◆</b><span>矽谷</span></li>
+        </ol>
+        <div class="costs"><span>網站開銷：</span><i>每小時抓資料</i><i>主機</i><i>Discord 推播</i></div>
+        <div class="support-copy">
+          <p>嗨，我是 Coomy，玩魔獸很多年了。我很愛 WoW，也正在創業、準備去矽谷——希望這個網站幫你少花點冤枉金幣，也順便幫我湊一點旅費。</p>
+          <p>網站每小時抓資料、跑主機、送推播，都有開銷。你的一份小補給，是我繼續把它顧好的動力。哪天在拍賣場賺了一筆，就請我喝杯麥酒吧，我會開心到在鐵爐堡門口跳舞 🍻</p>
+        </div>
+      </div>
+      <div class="sup-shop">
+        <div class="loot top${sup ? " got" : ""}" aria-label="贊助回饋">
+          ${sup ? '<span class="looted">已拾取</span>' : ""}
+          <div class="ln">Discord 到價推播 ×30</div>
+          <div class="lb">永久綁定・跟著你的 Discord 帳號</div>
+          <div class="lu">使用：同時盯 30 個商品，價格一到，直接傳到你的手機。</div>
+          <div class="lq">「任何一份補給都會掉這件。NT$30 和 NT$300 掉的是同一件，不用比誰捐得多。」</div>
+        </div>
+        <div class="shop-h">選一份補給（捐多少都拿到同一件）</div>
+        <div class="tiers" role="radiogroup" aria-label="補給金額">${TIERS.map(([n, name, life, usd, ic, q]) => `<button class="tier${n === tierPick ? " on" : ""}" role="radio" aria-checked="${n === tierPick}" data-n="${n}">
+          <span class="slot ${q}">${icon(ic)}</span>
+          <span class="tn"><b class="${q}">${name}</b></span>
+          <span class="tp"><b>NT$${n}</b><small>約 US$${usd}</small></span></button>`).join("")}</div>
+        ${sup ? '<p class="support-done">✓ 戰利品已拾取：推播 30 個已開通。你是這趟遠征的旅店常客，謝謝你！想再請一杯，也非常歡迎。</p>' : ""}
+        ${PUSH.kofi ? `<a class="support-go" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener" id="kofiGo">${sup ? "再請 Coomy 喝一杯" : t[6]} →</a>
+        <p class="go-sub">NT$${t[0]}・約 US$${t[3]}・用 Ko-fi 安全結帳</p>`
+        : `<a class="support-go" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">補給站快開張・先追蹤 Threads →</a>
+        <p class="go-sub">開張第一個在 Threads 通知你</p>`}
+        ${code ? `<p class="sm mycode">你的支持者代碼：<b class="code">${esc(code)}</b></p>` : ""}
+        <details class="how"><summary>怎麼拿到 30 個推播？</summary>
+          <p>付款時用你 Discord 帳號的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面用 Discord 登入開啟推播）"}，幾分鐘內自動解鎖。Ko-fi 用美元結帳，選最接近的金額就好。只要網站還在，就一直有效。</p></details>
+      </div>
     </div>
-    <div class="me-card">
-      <a class="me-av" href="https://www.threads.com/@coomysky" target="_blank" rel="me noopener" aria-label="前往 Coomy 的 Threads"><img src="coomy.webp" width="64" height="64" alt="Coomy 的大頭照" loading="lazy" decoding="async"></a>
-      <div class="me-txt"><b>Coomy</b><span class="mut sm">魔獸老玩家・創業中・準備去矽谷</span>
-        <p class="sm">有想要的功能、對網站的想法，或發現哪裡怪怪的（bug），都歡迎到 Threads 私訊我，我都會看！順手追蹤，網站有新功能我會第一個在那裡說。</p>
-        <a class="th-go" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">在 Threads 追蹤 coomysky</a></div>
-    </div>
-    <div class="tiers" role="radiogroup" aria-label="贊助金額">${TIERS.map(([n, lab, sub, usd]) => `<button class="tier${n === tierPick ? " on" : ""}" role="radio" aria-checked="${n === tierPick}" data-n="${n}"><b>NT$${n}</b><span class="tl">${lab}${n === 100 ? '<i class="rec">推薦</i>' : ""}</span><span class="ts">${sub}</span><span class="tu">約 US$${usd}</span></button>`).join("")}</div>
-    ${isSupporter() ? '<p class="support-done">✓ 你已經是支持者（旅店常客），推播已開到 30 個。想再請我喝一杯也非常歡迎，謝謝你！</p>' : ""}
-    ${PUSH.kofi ? `<a class="promo-cta support-go" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener" id="kofiGo">用 Ko-fi 贊助 NT$${t[0]}（約 US$${t[3]}）</a>` : '<button class="promo-cta support-go" disabled>贊助即將開放</button>'}
-    <p class="sm support-how">捐任何金額一次，Discord 推播就從 1 個永久變成 30 個——不管捐 30 還是 300 都一樣，不用比誰捐得多。付款時用你 Discord 帳號的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面開啟 Discord 推播）"}，幾分鐘內自動解鎖。Ko-fi 以美元結帳，金額選最接近的就好。只要網站還在，就一直有效。</p>
-  </div>`;
+    <div class="th-bar"><span>想要什麼新功能，或抓到 bug？到 Threads 私訊我，我都會看。新功能也會先在那裡說。</span><a class="th-go" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">追蹤 @coomysky</a></div>
+    <p class="sign">謝謝你陪我走這一段，拍賣場見。— Coomy<small>（這個網站是我和 AllWill 一起做的）</small></p>
+  </section>`;
 }
 function bindSupport(view) {
-  view.querySelectorAll(".tier").forEach((b) => (b.onclick = () => { tierPick = +b.dataset.n; renderAlertPage(view); $("#support")?.scrollIntoView({ block: "nearest" }); }));
+  const box = $("#support");
+  if (!box) return;
+  box.querySelectorAll(".tier").forEach((b) => (b.onclick = () => {
+    tierPick = +b.dataset.n;
+    const t = TIERS.find((x) => x[0] === tierPick);
+    box.querySelectorAll(".tier").forEach((x) => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-checked", String(on)); });
+    const go = $("#kofiGo"); if (go) go.textContent = `${isSupporter() ? "再請 Coomy 喝一杯" : t[6]} →`;
+    if (go) box.querySelector(".go-sub").textContent = `NT$${t[0]}・約 US$${t[3]}・用 Ko-fi 安全結帳`;
+  }));
   const k = $("#kofiGo");
-  if (k) k.onclick = () => track("ah_support_click", { amount: tierPick });
+  if (k) k.onclick = () => { track("ah_support_click", { amount: tierPick }); coinBurst(k); };
+  // 贊助區進入畫面一半：記一次曝光（算點擊率的分母）
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { track("ah_support_view"); io.disconnect(); } }, { threshold: 0.5 });
+    io.observe(box);
+  }
+}
+// 按下贊助：金幣從按鈕迸出（減少動態效果時只亮一下）
+function coinBurst(el) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 200); return; }
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 6; i++) {
+    const c = document.createElement("i");
+    c.className = "coin";
+    c.style.left = `${r.left + r.width / 2}px`; c.style.top = `${r.top + r.height / 2}px`;
+    c.style.setProperty("--dx", `${(i - 2.5) * 22}px`); c.style.setProperty("--dy", `${-40 - (i % 3) * 18}px`);
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 600);
+  }
 }
 const SUPPORT_LINE = "台灣拍賣場行情由 Coomy 用 AllWill 做、自己維護，免費、沒有廣告。喜歡的話，歡迎<a href=\"#/alerts\" data-go=\"support\">支持一下</a>；有想法或發現 bug，到 <a href=\"https://www.threads.com/@coomysky\" target=\"_blank\" rel=\"noopener\" data-track=\"threads\">Threads @coomysky</a> 私訊我。";
 
