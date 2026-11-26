@@ -484,7 +484,7 @@ def push_user_alerts(overview_rows, meta, house):
         return
     h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     try:
-        _, body, _ = http(f"{url}/rest/v1/wowah_push_alerts?house=eq.{house}&select=uid,item_id,hi,lo,last_kind,wowah_subs(webhook,discord_id)", h)
+        _, body, _ = http(f"{url}/rest/v1/wowah_push_alerts?house=eq.{house}&select=uid,item_id,hi,lo,last_kind,wowah_subs(webhook,discord_id,tier,supporter_until)", h)
         rules = json.loads(body)
     except Exception as e:
         print(f"::warning::push alerts: {e}")
@@ -504,13 +504,19 @@ def push_user_alerts(overview_rows, meta, house):
             continue
         changes.append((r["uid"], r["item_id"], kind))
         sub = r.get("wowah_subs") or {}
-        # 有 Discord 登入就由機器人私訊，否則用玩家自己貼的 webhook
-        dest = ("dm", sub["discord_id"]) if bot and sub.get("discord_id") else ("hook", sub["webhook"]) if sub.get("webhook") else None
-        if kind and dest:
+        # 有 Discord 登入就由機器人私訊，否則用玩家自己貼的 webhook；公會方案兩邊都送（webhook＝公會頻道）
+        dests = []
+        if bot and sub.get("discord_id"):
+            dests.append(("dm", sub["discord_id"]))
+        if sub.get("webhook") and (not dests or sub.get("tier") == "guild"):
+            dests.append(("hook", sub["webhook"]))
+        if kind and dests:
             name = (meta.get(str(r["item_id"])) or [None])[0] or f"#{r['item_id']}"
-            out[dest].append(f"{'📈' if kind == 'sell' else '📉'} 【{HOUSE_LABEL.get(house, house)}】**{name}** 現價 {gold(ask)}，"
+            msg = (f"{'📈' if kind == 'sell' else '📉'} 【{HOUSE_LABEL.get(house, house)}】**{name}** 現價 {gold(ask)}，"
                              f"{'漲到你設的 ' + gold(r['hi']) + ' 以上：可以掛賣了' if kind == 'sell' else '跌到你設的 ' + gold(r['lo']) + ' 以下：可以進貨了'}"
                              f"\n{SITE}?h={house}#/item/{r['item_id']}")
+            for d in dests:
+                out[d].append(msg)
     sent = 0
     for (how, target), msgs in out.items():
         content = "\n".join(msgs)[:1900]
