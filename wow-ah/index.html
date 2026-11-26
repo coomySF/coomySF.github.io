@@ -337,6 +337,17 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .ap-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
   .discord-go { background: #5865f2; color: #fff; height: 40px; margin-right: 10px; }
   .dm-state { margin: 8px 0; } .adv { margin: 4px 0 8px; } .adv summary { cursor: pointer; color: var(--muted); }
+  .goal { margin: 2px 0 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0, 0, 0, .25); }
+  .goal-h { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 13px; } .goal-h b { color: var(--gold); font-family: var(--font-num, inherit); font-size: 15px; } .goal-h span { color: var(--muted); }
+  .goal-bar { height: 8px; margin: 8px 0; border-radius: 999px; background: var(--surface-2); overflow: hidden; } .goal-bar i { display: block; height: 100%; min-width: 2px; background: linear-gradient(90deg, #b8871a, #e9c25a); }
+  .goal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12px; color: var(--ink-2); }
+  .goal-list span { display: inline-block; min-width: 84px; color: var(--muted); font-family: var(--font-num, inherit); } .goal-list li.ok { color: var(--gold); }
+  .tn b.q6 { color: #e6cc80; }
+  .paysteps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; font-size: 13px; color: var(--ink-2); }
+  .paysteps li { display: grid; grid-template-columns: 20px 1fr; align-items: start; gap: 8px; line-height: 1.6; } .paysteps li > b:first-child { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); color: #1a1405; font-size: 12px; }
+  .limit-box { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--gold-line, var(--gold)); border-left: 3px solid var(--gold); border-radius: 8px; background: rgba(226, 189, 98, .08); font-size: 13px; line-height: 1.6; }
+  #list th.warm::after { content: "累積中"; display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 999px; font-size: 9px; letter-spacing: 0; color: var(--muted); border: 1px solid var(--line); vertical-align: 1px; }
+  .warm-bar { display: inline-block; width: 90px; height: 6px; margin: 0 10px; border-radius: 999px; background: var(--surface-2); vertical-align: middle; overflow: hidden; } .warm-bar i { display: block; height: 100%; background: var(--gold); }
   .ab-thanks { color: var(--muted); }
   /* 遠征補給站（只做深色） */
   .support-card { position: relative; overflow: hidden; border-color: var(--gold-line, var(--line)); background: radial-gradient(90% 70% at 0% 0%, rgba(226, 189, 98, .10), transparent 60%), var(--surface); padding: 22px 20px 16px; }
@@ -733,8 +744,13 @@ function renderStatus() {
   // 資料累積不足時提醒
   const flowH = Math.max(0, ...ROWS.slice(0, 200).map((r) => r.flowHours || 0));
   if (!flowH && state.sort === "vol24") state.sort = "listed"; // 還沒有成交資料時先看掛單量
-  if (flowH < 24) {
+  const days = Math.min(7, Math.floor(flowH / 24));
+  document.querySelectorAll('#list th[data-k="avg7"], #list th[data-k="dev"]').forEach((th) => th.classList.toggle("warm", flowH < 168));
+  if (flowH < 168) {
     $("#notice").hidden = false;
+    $("#notice").innerHTML = `<b>資料累積中 ${days}/7 天</b><span class="warm-bar"><i style="width:${(Math.min(flowH, 168) / 168 * 100).toFixed(0)}%"></i></span>「7 日均」「偏離」還不準，先看<b>現價</b>和設<b>到價提醒</b>就好。${HLABEL}拍賣場 ${HINFO.since} 開始收集。`;
+  }
+  if (false) {
     $("#notice").textContent = `${HLABEL}拍賣場 ${HINFO.since} 才開始收集，目前只有 ${flowH} 小時的成交資料。7 日均價、量比要累積滿幾天才準；熱圖至少要 4 週。`;
   }
 }
@@ -1898,7 +1914,7 @@ async function pushStart() {
   track("ah_push_start");
 }
 const isSupporter = () => PSUB?.supporter_until && Date.parse(PSUB.supporter_until) > Date.now();
-const pushCap = () => (isSupporter() ? 30 : 1);
+const pushCap = () => (isSupporter() ? (PSUB?.tier === "guild" ? 100 : 30) : 1);
 // 本機提醒有改時，同步到推播（有開推播的才同步）
 async function pushSync(id) {
   if (!PUSH_ON || !PUSHED.has(+id)) return;
@@ -1954,7 +1970,7 @@ function pushCardHtml() {
       : PUSH.discord ? `目前只存在這台裝置。<button class="clr" id="pushDiscord">用 Discord 登入</button>，換手機、電腦也能用。<span class="sm" id="pushMailMsg" aria-live="polite"></span>`
       : PUSH.email ? `目前只存在這台裝置。${emailForm("<b>綁定信箱</b>，換手機、電腦也能用：")}` : ""}</div>
     ${PSUB.discord_id ? `<p class="sm dm-state">${PSUB.dm_ok ? '✓ 到價時「台灣拍賣場」機器人會<b>私訊你</b>（已經傳了一則歡迎訊息給你）。' : '⚠ 機器人私訊不到你：到 Discord 的「台灣拍賣場」伺服器 → 伺服器名稱 →「隱私設定」打開「私人訊息」，再按 <button class="clr" id="dmRetry">重試</button>'}</p>
-    <details class="sm adv"><summary>進階：改送到自己的頻道（webhook）</summary>${hookHtml}</details>` : hookHtml}
+    <details class="sm adv"${isGuild() ? " open" : ""}><summary>${isGuild() ? "公會頻道：貼上公會頻道的 webhook，到價會同時推到那裡" : "進階：改送到自己的頻道（webhook）"}</summary>${hookHtml}</details>` : hookHtml}
     <p class="sm">下面表格的「推播」打勾的商品（${HLABEL}拍賣場），到價就傳到 Discord（每小時檢查）。所有拍賣場合計已用 <b>${PUSH_TOTAL}／${pushCap()}</b>${isSupporter() ? ' <span class="chip c-ye">☕ 旅店常客・30 個</span>' : ""}</p>
     ${isSupporter() ? "" : `<div class="support">${PUSH_TOTAL >= pushCap() ? "免費的 1 個已經在用囉。" : "免費的 1 個先拿去盯你最在意的那個材料。"}支持一次（NT$30 起），就能永久追 30 個。<a href="#support" class="go-support">看怎麼支持 →</a></div>`}
   </div>`;
@@ -1983,7 +1999,7 @@ function bindPushCard(view) {
     const id = +cb.closest("tr").dataset.id;
     if (cb.checked && !ALERTS[id]) { cb.checked = false; return; }
     const r = await pushToggle(id, cb.checked);
-    if (r === "limit") { cb.checked = false; alert0(pushCap() >= 30 ? "30 個推播都用滿了，先取消一個再勾。" : "免費的 1 個已經在用囉。支持一次（NT$30 起），就能永久追 30 個——下面有說明。"); }
+    if (r === "limit") { cb.checked = false; showLimitBox(); }
     else if (r === "error") { cb.checked = false; alert0("設定失敗，稍後再試。"); }
     rer();
   }));
@@ -1997,7 +2013,18 @@ const TIERS = [
   [100, "出團修裝費", "一碗牛肉麵", 3, "anvil", "q3", "幫 Coomy 付這次修裝費"],
   [150, "一整晚的合劑", "一張電影票", 5, "flask", "q4", "送 Coomy 一整晚的合劑"],
   [300, "矽谷旅費的一塊磚", "這塊磚我會帶去矽谷", 10, "brick", "q5", "幫 Coomy 疊一塊矽谷磚"],
+  [1500, "公會補給箱", "推播 100 個＋同時推到公會頻道", 50, "chest", "q6", "幫公會開一個補給箱"],
 ];
+// 本月補給的目標與達標後要做的功能（Coomy 決定；達標就做）
+const GOALS = [[3000, "怪物、商人名稱全部中文化"], [8000, "價格走勢延長到 30 天"], [15000, "手機 App 推播"]];
+let MSTAT = null;   // 本月補給 {n, twd}，只有筆數和總額
+async function loadMonthStats() {
+  try {
+    const r = await fetch(`${PUSH.url}/rest/v1/rpc/wowah_month_stats`, { method: "POST", headers: { apikey: PUSH.anon, "Content-Type": "application/json" }, body: "{}" });
+    MSTAT = (await r.json())[0] || { n: 0, twd: 0 };
+  } catch (e) { MSTAT = null; }
+}
+const isGuild = () => isSupporter() && PSUB?.tier === "guild";
 // 單色金線圖示（currentColor）
 const ICON = {
   ale: '<path d="M7 9h9v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2zM16 11h2a2 2 0 0 1 0 4h-2M7 9c0-2 1.5-3 3-3 .5-1.5 3.5-1.5 4 0 1.5 0 2 1.5 2 3"/>',
@@ -2005,6 +2032,7 @@ const ICON = {
   anvil: '<path d="M4 8h12c0 2.5 2 3.5 4 3.5V13H15l-1 3h2v3H8v-3h2l-1-3c-3 0-5-2-5-5zM9 8V6h3v2"/>',
   flask: '<path d="M9 3h6M10 3v5.2a6 6 0 1 0 4 0V3M7.3 14h9.4"/>',
   brick: '<path d="M3 8h18v10H3zM3 13h18M9 8v5M15 13v5"/>',
+  chest: '<path d="M3 10a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v9H3zM3 12h18M10.5 12v3h3v-3"/>',
 };
 const icon = (k) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
 let tierPick = 100;
@@ -2016,47 +2044,71 @@ function supportHtml() {
         <div class="sup-hero">
           <figure class="hero-av"><span class="ring" aria-hidden="true"></span><img src="coomy.webp" width="128" height="128" alt="Coomy 拿著炸雞笑得很開心" loading="lazy" decoding="async"><span class="av-badge" title="${sup ? "旅店常客" : "遠征中"}">${sup ? "🍺" : "◆"}</span></figure>
           <div><div class="promo-k">◆ 遠征補給站</div>
-            <h3 class="sup-h" id="supH">我要從台灣出發，去矽谷闖一闖。</h3>
-            <p class="sup-sub">這個網站會一直免費、沒有廣告。想推我一把的話，送我一份補給就好。</p></div>
+            <h3 class="sup-h" id="supH">讓這個台服拍賣場工具一直活著、越來越強。</h3>
+            <p class="sup-sub">免費、沒有廣告。你的補給會變成主機、推播，和下一個新功能。</p></div>
         </div>
-        <p class="av-cap">↑ 收到補給大概就是這個表情 🍗</p>
+        ${goalHtml()}
+        <div class="costs"><span>網站開銷：</span><i>每小時抓資料</i><i>主機</i><i>Discord 推播</i><i>AI 開發</i></div>
+        <div class="support-copy">
+          <p>網站每小時幫大家抓 6 個台服拍賣場的資料、跑主機、送推播，這些都有開銷。你的一份小補給，是我繼續把它顧好、做出新功能的動力。哪天在拍賣場賺了一筆，就請我喝杯麥酒吧，我會開心到在鐵爐堡門口跳舞 🍻</p>
+          <p>我是 Coomy，玩魔獸很多年了，現在正在創業、準備去矽谷。你的補給也會順便變成我旅費的一小塊。</p>
+        </div>
         <ol class="trail" aria-label="Coomy 的旅程">
           <li class="done"><b>台灣・艾澤拉斯</b><span>做出這個拍賣場</span></li>
           <li class="now"><b>現在</b><span>創業中，網站持續更新</span></li>
           <li class="next"><b>下一站 ◆</b><span>矽谷</span></li>
         </ol>
-        <div class="costs"><span>網站開銷：</span><i>每小時抓資料</i><i>主機</i><i>Discord 推播</i></div>
-        <div class="support-copy">
-          <p>嗨，我是 Coomy，玩魔獸很多年了。我很愛 WoW，也正在創業、準備去矽谷——希望這個網站幫你少花點冤枉金幣，也順便幫我湊一點旅費。</p>
-          <p>網站每小時抓資料、跑主機、送推播，都有開銷。你的一份小補給，是我繼續把它顧好的動力。哪天在拍賣場賺了一筆，就請我喝杯麥酒吧，我會開心到在鐵爐堡門口跳舞 🍻</p>
-        </div>
       </div>
       <div class="sup-shop">
         <div class="loot top${sup ? " got" : ""}" aria-label="贊助回饋">
           ${sup ? '<span class="looted">已拾取</span>' : ""}
-          <div class="ln">Discord 到價推播 ×30</div>
-          <div class="lb">永久綁定・跟著你的 Discord 帳號</div>
-          <div class="lu">使用：同時盯 30 個商品，價格一到，直接傳到你的手機。</div>
-          <div class="lq">「任何一份補給都會掉這件。NT$30 和 NT$300 掉的是同一件，不用比誰捐得多。」</div>
+          ${lootHtml(tierPick === 1500)}
         </div>
-        <div class="shop-h">選一份補給（捐多少都拿到同一件）</div>
+        <div class="shop-h">選一份補給（NT$30–300 都拿到同一件）</div>
         <div class="tiers" role="radiogroup" aria-label="補給金額">${TIERS.map(([n, name, life, usd, ic, q]) => `<button class="tier${n === tierPick ? " on" : ""}" role="radio" aria-checked="${n === tierPick}" data-n="${n}">
           <span class="slot ${q}">${icon(ic)}</span>
-          <span class="tn"><b class="${q}">${name}</b></span>
-          <span class="tp"><b>NT$${n}</b><small>約 US$${usd}</small></span></button>`).join("")}</div>
-        ${sup ? '<p class="support-done">✓ 戰利品已拾取：推播 30 個已開通。你是這趟遠征的旅店常客，謝謝你！想再請一杯，也非常歡迎。</p>' : ""}
+          <span class="tn"><b class="${q}">${name}</b>${n === 1500 ? `<small>${life}</small>` : ""}</span>
+          <span class="tp"><b>NT$${n.toLocaleString()}</b><small>約 US$${usd}</small></span></button>`).join("")}</div>
+        ${sup ? `<p class="support-done">✓ 戰利品已拾取：推播 ${isGuild() ? "100 個＋公會頻道" : "30 個"}已開通。你是這趟遠征的旅店常客，謝謝你！想再請一杯，也非常歡迎。</p>` : ""}
         ${PUSH.kofi ? `<a class="support-go" href="https://ko-fi.com/${esc(PUSH.kofi)}" target="_blank" rel="noopener" id="kofiGo">${sup ? "再請 Coomy 喝一杯" : t[6]} →</a>
-        <p class="go-sub">NT$${t[0]}・約 US$${t[3]}・用 Ko-fi 安全結帳</p>`
+        <p class="go-sub">NT$${t[0].toLocaleString()}・約 US$${t[3]}・用 Ko-fi 安全結帳</p>`
         : `<a class="support-go" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">補給站快開張・先追蹤 Threads →</a>
         <p class="go-sub">開張第一個在 Threads 通知你</p>`}
-        ${code ? `<p class="sm mycode">你的支持者代碼：<b class="code">${esc(code)}</b></p>` : ""}
-        <details class="how"><summary>怎麼拿到 30 個推播？</summary>
+        ${PUSH.kofi && !sup ? payStepsHtml(code, t) : ""}
+        <details class="how"><summary>細節：怎麼對上我的帳號？</summary>
           <p>付款時用你 Discord 帳號的信箱${code ? `，或在 Ko-fi 留言貼上支持者代碼 <b class="code">${esc(code)}</b>` : "（先在上面用 Discord 登入開啟推播）"}，幾分鐘內自動解鎖。Ko-fi 以美元結帳，台幣金額僅供參考；請在付款頁輸入金額並確認，實際扣款依付款服務匯率為準。只要網站還在，就一直有效。</p></details>
       </div>
     </div>
     <div class="th-bar"><span>想要什麼新功能，或抓到 bug？到 Threads 私訊我，我都會看。新功能也會先在那裡說。</span><a class="th-go" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">追蹤 @coomysky</a></div>
     <p class="sign">謝謝你陪我走這一段，拍賣場見。— Coomy<small>（這個網站是我用 AllWill 一起做的）</small></p>
   </section>`;
+}
+function lootHtml(guild) {
+  return guild ? `<div class="ln">公會補給箱：到價推播 ×100</div>
+          <div class="lb">永久綁定・跟著你的 Discord 帳號</div>
+          <div class="lu">使用：同時盯 100 個商品，到價時私訊你，並同時推到你貼上的公會頻道 webhook。</div>
+          <div class="lq">「副會長幫整個公會開的那一箱。」</div>`
+    : `<div class="ln">Discord 到價推播 ×30</div>
+          <div class="lb">永久綁定・跟著你的 Discord 帳號</div>
+          <div class="lu">使用：同時盯 30 個商品，價格一到，直接傳到你的手機。</div>
+          <div class="lq">「NT$30 和 NT$300 掉的是同一件，不用比誰捐得多。」</div>`;
+}
+// 本月補給進度：只用真實的筆數與總額（Ko-fi 每筆記錄），目標和達標功能寫在 GOALS
+function goalHtml() {
+  if (!MSTAT) return "";
+  const twd = MSTAT.twd || 0, next = GOALS.find((g) => twd < g[0]) || GOALS[GOALS.length - 1], pctv = Math.min(100, (twd / next[0]) * 100);
+  return `<div class="goal" aria-label="本月補給進度">
+    <div class="goal-h"><b>本月補給 NT$${Math.round(twd).toLocaleString()}</b><span>${MSTAT.n} 份補給・下一個目標 NT$${next[0].toLocaleString()}</span></div>
+    <div class="goal-bar"><i style="width:${pctv.toFixed(1)}%"></i></div>
+    <ul class="goal-list">${GOALS.map(([n, f]) => `<li class="${twd >= n ? "ok" : ""}"><span>NT$${n.toLocaleString()}</span>${twd >= n ? "✓ " : ""}${esc(f)}</li>`).join("")}</ul>
+  </div>`;
+}
+function payStepsHtml(code, t) {
+  return `<ol class="paysteps">
+    <li><b>1</b><span>${code ? `複製你的支持者代碼 <b class="code">${esc(code)}</b> <button class="clr" id="copyCode" data-code="${esc(code)}">複製</button>` : "先在上面用 Discord 登入開啟推播（用同一個信箱付款就會自動對上）"}</span></li>
+    <li><b>2</b><span>在 Ko-fi 輸入 <b id="payUsd">US$${t[3]}</b>${code ? "，把代碼貼進留言" : ""}，用信用卡或 PayPal 付款</span></li>
+    <li><b>3</b><span>幾分鐘內自動解鎖 <button class="clr" id="checkUnlock">我付完了，查詢解鎖</button> <span class="sm" id="unlockMsg" aria-live="polite"></span></span></li>
+  </ol>`;
 }
 function bindSupport(view) {
   const box = $("#support");
@@ -2066,8 +2118,19 @@ function bindSupport(view) {
     const t = TIERS.find((x) => x[0] === tierPick);
     box.querySelectorAll(".tier").forEach((x) => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-checked", String(on)); });
     const go = $("#kofiGo"); if (go) go.textContent = `${isSupporter() ? "再請 Coomy 喝一杯" : t[6]} →`;
-    if (go) box.querySelector(".go-sub").textContent = `NT$${t[0]}・約 US$${t[3]}・用 Ko-fi 安全結帳`;
+    if (go) box.querySelector(".go-sub").textContent = `NT$${t[0].toLocaleString()}・約 US$${t[3]}・用 Ko-fi 安全結帳`;
+    const loot = box.querySelector(".loot"); if (loot && !isSupporter()) loot.innerHTML = lootHtml(tierPick === 1500);
+    const pu = $("#payUsd"); if (pu) pu.textContent = `US$${t[3]}`;
   }));
+  const cp = $("#copyCode");
+  if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(cp.dataset.code); cp.textContent = "已複製 ✓"; } catch (e) { cp.textContent = "請手動複製"; } track("ah_support_copy"); };
+  const cu = $("#checkUnlock");
+  if (cu) cu.onclick = async () => {
+    cu.disabled = true; $("#unlockMsg").textContent = "查詢中…";
+    await pushLoad().catch(() => {}); await loadMonthStats();
+    if (isSupporter()) { track("ah_support_unlocked"); renderAlertPage(view); $("#support")?.scrollIntoView({ block: "start" }); }
+    else { cu.disabled = false; $("#unlockMsg").textContent = "還沒收到，通常幾分鐘內；超過 30 分鐘請到 Threads 私訊我，附上 Ko-fi 收據。"; }
+  };
   const k = $("#kofiGo");
   if (k) k.onclick = () => { track("ah_support_click", { amount: tierPick }); coinBurst(k); };
   // 贊助區進入畫面一半：記一次曝光（算點擊率的分母）
@@ -2091,6 +2154,17 @@ function coinBurst(el) {
 }
 const SUPPORT_LINE = "台灣拍賣場行情由 Coomy 用 AllWill 做、自己維護，免費、沒有廣告。喜歡的話，歡迎<a href=\"#/alerts\" data-go=\"support\">支持一下</a>；有想法或發現 bug，到 <a href=\"https://www.threads.com/@coomysky\" target=\"_blank\" rel=\"noopener\" data-track=\"threads\">Threads @coomysky</a> 私訊我。";
 
+// 推播額度用滿的那一刻：在原地說明怎麼解鎖（不是彈窗）
+function showLimitBox() {
+  const m = $("#apMsg");
+  if (!m) return;
+  track("ah_support_view", { from: "limit" });
+  if (pushCap() >= 100) { m.innerHTML = '<div class="limit-box">100 個推播都用滿了，先取消一個再勾。</div>'; return; }
+  if (pushCap() >= 30) { m.innerHTML = '<div class="limit-box">30 個推播都用滿了。先取消一個，或幫公會開一個<b>公會補給箱</b>（推播 100 個＋公會頻道）。<a href="#support" class="go-support">看公會補給箱 →</a></div>'; }
+  else m.innerHTML = `<div class="limit-box"><b>免費的 1 個已經在用囉。</b>捐任何金額一次（NT$30 起），推播就永久開到 30 個。${PSUB?.code ? `你的支持者代碼：<b class="code">${esc(PSUB.code)}</b>・` : ""}<a href="#support" class="go-support">怎麼支持 →</a></div>`;
+  m.querySelectorAll(".go-support").forEach((a) => (a.onclick = (e) => { e.preventDefault(); $("#support")?.scrollIntoView({ behavior: "smooth" }); }));
+  m.scrollIntoView({ block: "nearest" });
+}
 // 頁面上的小提示（不用瀏覽器 alert 對話框）
 function alert0(msg) { const m = $("#pushHookMsg") || $("#apMsg"); if (m) m.textContent = msg; }
 
@@ -2104,7 +2178,7 @@ function showAlerts() {
   window.scrollTo(0, 0);
   track("ah_alerts");
   renderAlertPage(view);
-  if (PUSH_ON) pushLoad().then(() => { if (!$("#alertView").hidden) renderAlertPage(view); }).catch(() => {});
+  if (PUSH_ON) Promise.all([pushLoad().catch(() => {}), loadMonthStats()]).then(() => { if (!$("#alertView").hidden) renderAlertPage(view); });
 }
 function renderAlertPage(view) {
   const ids = [...new Set([...Object.keys(ALERTS).map(Number), ...alertAdd])];
