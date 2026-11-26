@@ -541,6 +541,13 @@ html.film-static .letterbox, html.film-static .fin-mark, html.film-static .film-
 .ah-s svg { display: block; }
 .ah-v, .ah-c { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 15px; }
 .ah-empty { margin: 10px 0; color: var(--film-muted); font-size: 13px; }
+.ah-link { display: block; color: inherit; text-decoration: none; }
+.ah-houses { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 10px; }
+.ah-seg { display: inline-flex; border: 1px solid rgba(220, 148, 124, .28); border-radius: 999px; overflow: hidden; }
+.ah-seg button { appearance: none; border: 0; background: transparent; color: var(--film-muted); font: inherit; font-size: 12px; padding: 4px 11px; cursor: pointer; }
+.ah-seg button + button { border-left: 1px solid rgba(220, 148, 124, .2); }
+.ah-seg button[aria-pressed="true"] { background: rgba(220, 148, 124, .16); color: var(--film-ink, #f3e9df); font-weight: 700; }
+.ah-seg button:focus-visible { outline: 2px solid rgba(220, 148, 124, .7); outline-offset: -2px; }
 .ah-foot { margin: 8px 0 0; font-size: 11.5px; color: var(--film-muted); opacity: .8; }
 @media (max-width: 480px) {
   .ah-card { padding: 16px 14px 12px; }

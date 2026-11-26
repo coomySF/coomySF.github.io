@@ -5,7 +5,7 @@ description: 關於 AI、Agent 協作、團隊決策與可複製的軟體生產�
 seo:
   type: WebSite
 ---
-<link rel="stylesheet" href="{{ '/assets/css/cinema.css' | relative_url }}?v=20261125-1">
+<link rel="stylesheet" href="{{ '/assets/css/cinema.css' | relative_url }}?v=20261126-1">
 <script>document.documentElement.classList.add('home-noir');</script>
 
 <div id="film">
@@ -91,7 +91,8 @@ seo:
 </section>
 
 <section class="home-ah" id="ah-index" data-reveal>
-  <a class="ah-card" href="{{ '/wow-ah/' | relative_url }}" aria-label="台服拍賣場物價指數，前往拍賣場行情">
+  <div class="ah-card">
+  <a class="ah-link" id="ahLink" href="{{ '/wow-ah/' | relative_url }}" aria-label="台服拍賣場物價指數，前往拍賣場行情">
     <div class="ah-head">
       <span class="ah-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="9" cy="8" rx="6" ry="3"/><path d="M3 8v4c0 1.7 2.7 3 6 3s6-1.3 6-3V8"/><path d="M9 15v3c0 1.7 2.7 3 6 3s6-1.3 6-3v-6c0-1.7-2.7-3-6-3"/></svg></span>
       <span class="ah-title">拍賣場物價</span>
@@ -99,13 +100,22 @@ seo:
       <span class="ah-go">物價指數 →</span>
     </div>
     <div class="ah-rows" id="ahRows"><p class="ah-empty">讀取中…</p></div>
-    <p class="ah-foot">魔獸世界：永恆・台服聯盟拍賣場・每小時更新・100＝11/25 開始收集時</p>
   </a>
+    <div class="ah-houses" id="ahHouses" aria-label="切換拍賣場"></div>
+    <p class="ah-foot" id="ahFoot">魔獸世界：永恆・台服拍賣場・每小時更新</p>
+  </div>
 </section>
 <script>
 (function () {
   var RAW = "https://raw.githubusercontent.com/coomySF/coomySF.github.io/ah-data";
   var rows = document.getElementById("ahRows"), meta = document.getElementById("ahMeta");
+  var link = document.getElementById("ahLink"), foot = document.getElementById("ahFoot"), bar = document.getElementById("ahHouses");
+  // 跟 /wow-ah/ 共用同一個「我選的拍賣場」（同網域的 localStorage）
+  var HOUSES = [["tw-110", "PvE", "聯盟", "11/25"], ["tw-113", "PvE", "部落", "11/26"], ["tw-116", "PvE", "黑水灣", "11/26"], ["tw-111", "PvP", "聯盟", "11/26"], ["tw-114", "PvP", "部落", "11/26"], ["tw-117", "PvP", "黑水灣", "11/26"]];
+  var house = "tw-110";
+  try { var sv = localStorage.getItem("wowah.house"); if (HOUSES.some(function (h) { return h[0] === sv; })) house = sv; } catch (e) {}
+  var base = link.getAttribute("href"), ver = Date.now();
+  function hinfo() { return HOUSES.filter(function (h) { return h[0] === house; })[0]; }
   function get(path, v) { return fetch(RAW + "/" + path + "?v=" + v).then(function (r) { if (!r.ok) throw r.status; return r.json(); }); }
   function pct(x) { var a = Math.abs(x * 100); if (a < 0.05) return "±0.0%"; return (x > 0 ? "+" : "−") + (a < 10 ? a.toFixed(1) : Math.round(a)) + "%"; }
   function color(x) { return Math.abs(x) < 0.0005 ? "var(--film-muted)" : x > 0 ? "#e66767" : "#3fc56a"; }
@@ -114,7 +124,27 @@ seo:
     v.forEach(function (y, i) { d += (i ? "L" : "M") + (1 + i / n * (w - 2)).toFixed(1) + "," + (hi === lo ? h / 2 : h - 3 - (y - lo) / (hi - lo) * (h - 6)).toFixed(1); });
     return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + " " + h + '" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   }
-  get("status.json", Date.now()).then(function (st) { return get("tw-110/index.json", st.updated || Date.now()); }).then(function (ix) {
+  function drawBar() {
+    var h = hinfo(), seg = function (vals, cur, key) { return '<span class="ah-seg">' + vals.map(function (v) { return '<button type="button" data-' + key + '="' + v + '" aria-pressed="' + (v === cur) + '">' + v + "</button>"; }).join("") + "</span>"; };
+    bar.innerHTML = seg(["PvE", "PvP"], h[1], "realm") + seg(["聯盟", "部落", "黑水灣"], h[2], "fac");
+    Array.prototype.forEach.call(bar.querySelectorAll("button"), function (b) {
+      b.onclick = function () {
+        var cur = hinfo(), realm = b.dataset.realm || cur[1], fac = b.dataset.fac || cur[2];
+        var nx = HOUSES.filter(function (x) { return x[1] === realm && x[2] === fac; })[0];
+        if (!nx || nx[0] === house) return;
+        house = nx[0];
+        try { localStorage.setItem("wowah.house", house); } catch (e) {}
+        load();
+      };
+    });
+    link.setAttribute("href", base + "?h=" + h[0]);
+    link.setAttribute("aria-label", "台服 " + h[1] + " " + h[2] + "拍賣場物價指數，前往拍賣場行情");
+    foot.textContent = "魔獸世界：永恆・台服 " + h[1] + " " + h[2] + "拍賣場・每小時更新・100＝" + h[3] + " 開始收集時";
+  }
+  function load() {
+  drawBar();
+  rows.innerHTML = '<p class="ah-empty">讀取中…</p>';
+  get("status.json", ver).then(function (st) { ver = st.updated || ver; return get(house + "/index.json", ver); }).then(function (ix) {
     var T = ix.t, last = T.length - 1;
     if (last < 1) throw "short";
     var i0 = 0; while (i0 < last && T[i0] < T[last] - 7 * 864e5) i0++;
@@ -124,7 +154,9 @@ seo:
       var v = ix.v[c[0]].slice(i0), val = v[v.length - 1], chg = val / v[0] - 1, col = color(chg);
       return '<div class="ah-row"><span class="ah-n">' + c[1] + '</span><span class="ah-s">' + spark(v, col) + '</span><span class="ah-v">' + val.toFixed(1) + '</span><span class="ah-c" style="color:' + col + '">' + pct(chg) + "</span></div>";
     }).join("");
-  }).catch(function () { rows.innerHTML = '<p class="ah-empty">指數暫時讀不到，點進去看拍賣場行情。</p>'; });
+  }).catch(function () { rows.innerHTML = '<p class="ah-empty">' + (house === "tw-110" ? "指數暫時讀不到" : "這個拍賣場才剛開始收集，指數要累積幾小時") + "，點進去看拍賣場行情。</p>"; });
+  }
+  load();
 })();
 </script>
 
