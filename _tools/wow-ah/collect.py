@@ -386,6 +386,42 @@ def update_index(hdir, hist, meta, cur_t):
     write_json(path, idx)
 
 
+# ---------- 快結束、低於行情的競標 ----------
+
+ENDING_LEFT = {"SHORT": "30 分內", "MEDIUM": "30 分–2 小時"}   # 暴雪只給區間；快照約晚半小時才抓到，SHORT 多半已經結束
+ENDING_MAX_RATIO = 0.75   # 目前出價 ≤ 行情 75% 才列
+ENDING_MIN_REF = 5000     # 行情至少 50 銀，太便宜的不值得搶
+ENDING_KEEP = 200
+
+
+def write_ending(hdir, house_json, rows, cur_t):
+    """非堆疊商品（裝備、配方…）裡，快結束而且目前出價明顯低於行情的競標 → ending.json。
+    行情＝7 日均（沒有就掛單中位價）；直購價很低的（等於可以直接買）不算競標機會。"""
+    i_avg7, i_med = OF.index("avg7"), OF.index("median")
+    out = []
+    for a in (house_json or {}).get("auctions", []):
+        left = a.get("time_left")
+        bid = a.get("bid")
+        if left not in ENDING_LEFT or not bid:
+            continue
+        iid = str(a["item"]["id"])
+        qty = a.get("quantity") or 1
+        row = rows.get(iid)
+        if not row:
+            continue
+        ref = row[i_avg7] or row[i_med]
+        unit_bid = bid / qty
+        buyout = a.get("buyout")
+        if not ref or ref < ENDING_MIN_REF or unit_bid > ref * ENDING_MAX_RATIO:
+            continue
+        if buyout and buyout / qty <= ref * ENDING_MAX_RATIO:
+            continue   # 直購本來就便宜，不需要搶標
+        out.append([int(iid), qty, bid, buyout, left, round(ref), round(1 - unit_bid / ref, 3)])
+    out.sort(key=lambda x: -(x[5] * x[1] - x[2]))   # 省最多錢的在前
+    write_json(os.path.join(hdir, "ending.json"),
+               {"t": cur_t, "f": ["item", "qty", "bid", "buyout", "left", "ref", "off"], "items": out[:ENDING_KEEP]})
+
+
 # ---------- 商品資料 ----------
 
 def fetch_meta(token, ids, meta, misses, now_ms):
@@ -740,6 +776,7 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
     write_json(os.path.join(hdir, "overview.json"),
                {"house": key, "t": cur_t, "hours": len(w24), "f": OF, "items": out_items})
 
+    write_ending(hdir, house, rows, cur_t)
     check_alerts(watch, rows, meta, misc, key)
     push_user_alerts(rows, meta, key)
 
