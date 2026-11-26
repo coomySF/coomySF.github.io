@@ -297,8 +297,7 @@ def update_index(hdir, hist, meta, cur_t):
     idx = read_json(path) or {"base": None, "t": [], "v": {}, "d": {}}
     idx["cats"] = [[c[0], c[1], c[2], c[3]] + ([c[4]] if len(c) > 4 else []) for c in INDEX_CATS]   # 新增類別時舊檔也跟著更新；指定籃子附物品 id
     keys = [c[0] for c in INDEX_CATS] + ["all"]
-    for k in keys:   # 新類別：前面補 100，長度跟時間軸對齊
-        idx["v"].setdefault(k, [100.0] * len(idx["t"]))
+    new_keys = [k for k in keys if k not in idx["v"]]
     cat_of, picked = {}, collections.defaultdict(list)
     for c in INDEX_CATS:
         for sub in c[3]:
@@ -322,6 +321,28 @@ def update_index(hdir, hist, meta, cur_t):
     for cat, _, w, _ in basket:
         tot[cat] += w
     basket = [(cat, a, min(w, tot[cat] * INDEX_MAX_SHARE), in_all) for cat, a, w, in_all in basket]
+    # 新類別：用手上的每小時明細把已經有的時間點補算回去（明細沒涵蓋的早期時間點記 100）
+    if new_keys and idx["t"]:
+        pos = {t: j for j, t in enumerate(hist["t"])}
+        for k in new_keys:
+            series, prev_j = [], None
+            for t in idx["t"]:
+                j = pos.get(t)
+                v = series[-1] if series else 100.0
+                if j is not None and prev_j is not None:
+                    num = den = 0.0
+                    for cat, asks, w, in_all in basket:
+                        if cat != k and not (k == "all" and in_all):
+                            continue
+                        a0, a1 = asks[prev_j], asks[j]
+                        if a0 and a1:
+                            num += w * math.log(min(INDEX_CLIP[1], max(INDEX_CLIP[0], a1 / a0)))
+                            den += w
+                    v = round(v * (math.exp(num / den) if den else 1.0), 2)
+                series.append(v)
+                if j is not None:
+                    prev_j = j
+            idx["v"][k] = series
     T = hist["t"]
     last_t = idx["t"][-1] if idx["t"] else None
     if last_t is None and T:
@@ -568,6 +589,11 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
     st_c, commod, lm_c = api(token, base + "/commodities", DYN_NS, None if force else prev_t)
     if st_c == 304:
         print(f"{key}: no new snapshot since {prev_t}")
+        # 指數新增了類別（例如 PvP 戰場消耗品）：不用等下一份快照，現在就補算進去
+        ix = read_json(os.path.join(hdir, "index.json"))
+        if ix and {c[0] for c in INDEX_CATS} - set(ix.get("v", {})) and prev_t:
+            update_index(hdir, load_hist(hdir), meta, prev_t)
+            print(f"{key}: index categories backfilled")
         return None
     st_h, house, lm_h = api(token, base, DYN_NS)
     if st_c != 200 or st_h != 200:
