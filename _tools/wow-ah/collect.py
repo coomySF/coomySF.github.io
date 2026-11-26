@@ -386,6 +386,53 @@ def update_index(hdir, hist, meta, cur_t):
     write_json(path, idx)
 
 
+# ---------- 競標結束時間估計 ----------
+
+BUCKET_H = {"SHORT": (0, 0.5), "MEDIUM": (0.5, 2), "LONG": (2, 12), "VERY_LONG": (12, 48)}
+
+
+def update_ends(sdir, house_json, prev_auc, prev_t, cur_t):
+    """暴雪只給剩餘時間區間。每小時把「最早、最晚可能結束時間」夾緊：
+    ① 現在的區間 → 結束時間在 cur_t + 區間內；② 上一份快照跟這一份之間換了區間（例如 2–12 小時掉到 30 分–2 小時），
+    代表在這段時間跨過 2 小時的界線 → 結束時間在 (prev_t + 2h, cur_t + 2h]。追蹤越久越準。"""
+    path = os.path.join(sdir, "ends.json")
+    old = read_json(path, {})
+    ends = {}
+    for a in (house_json or {}).get("auctions", []):
+        left = a.get("time_left")
+        if left not in BUCKET_H:
+            continue
+        aid = str(a["id"])
+        b0, b1 = BUCKET_H[left]
+        lo, hi = cur_t + b0 * HOUR, cur_t + b1 * HOUR
+        if aid in old:
+            lo, hi = max(lo, old[aid][0]), min(hi, old[aid][1])
+        p = prev_auc.get(aid)
+        if p and prev_t and p[3] != left and p[3] in BUCKET_H and BUCKET_H[p[3]][0] == b1:
+            lo, hi = max(lo, prev_t + b1 * HOUR), min(hi, cur_t + b1 * HOUR)
+        if lo > hi:   # 資料不一致（例如快照時間抖動）：退回只看現在的區間
+            lo, hi = cur_t + b0 * HOUR, cur_t + b1 * HOUR
+        ends[aid] = [int(lo), int(hi)]
+    write_json(path, ends)
+    return ends
+
+
+def write_bids(hdir, house_json, ends):
+    """非堆疊商品目前的競標（商品頁「現在的競標」用）：每個商品最多 20 筆，出價低的在前 → bids/{shard}.json"""
+    by = collections.defaultdict(list)
+    for a in (house_json or {}).get("auctions", []):
+        if not a.get("bid"):
+            continue
+        e = ends.get(str(a["id"]), [None, None])
+        by[str(a["item"]["id"])].append([a["bid"], a.get("buyout"), a.get("time_left"), e[0], e[1], a.get("quantity") or 1])
+    shards = collections.defaultdict(dict)
+    for iid, lst in by.items():
+        lst.sort(key=lambda x: x[0] / x[5])
+        shards[shard_of(iid)][iid] = lst[:20]
+    for s in range(SHARDS):
+        write_json(os.path.join(hdir, "bids", f"{s}.json"), {"f": ["bid", "buyout", "left", "endLo", "endHi", "qty"], "items": shards.get(s, {})})
+
+
 # ---------- 快結束、低於行情的競標 ----------
 
 ENDING_LEFT = {"SHORT": "30 分內", "MEDIUM": "30 分–2 小時"}   # 暴雪只給區間；快照約晚半小時才抓到，SHORT 多半已經結束
@@ -394,7 +441,7 @@ ENDING_MIN_REF = 5000     # 行情至少 50 銀，太便宜的不值得搶
 ENDING_KEEP = 200
 
 
-def write_ending(hdir, house_json, rows, cur_t):
+def write_ending(hdir, house_json, rows, cur_t, ends=None):
     """非堆疊商品（裝備、配方…）裡，快結束而且目前出價明顯低於行情的競標 → ending.json。
     行情＝7 日均（沒有就掛單中位價）；直購價很低的（等於可以直接買）不算競標機會。"""
     i_avg7, i_med = OF.index("avg7"), OF.index("median")
@@ -416,11 +463,70 @@ def write_ending(hdir, house_json, rows, cur_t):
             continue
         if buyout and buyout / qty <= ref * ENDING_MAX_RATIO:
             continue   # 直購本來就便宜，不需要搶標
-        out.append([int(iid), qty, bid, buyout, left, round(ref), round(1 - unit_bid / ref, 3), a["id"]])
+        e = (ends or {}).get(str(a["id"]), [None, None])
+        out.append([int(iid), qty, bid, buyout, left, round(ref), round(1 - unit_bid / ref, 3), a["id"], e[0], e[1]])
     out.sort(key=lambda x: -(x[5] * x[1] - x[2]))   # 省最多錢的在前（行情×數量 − 出價）
     write_json(os.path.join(hdir, "ending.json"),
-               {"t": cur_t, "f": ["item", "qty", "bid", "buyout", "left", "ref", "off", "aid"], "items": out[:ENDING_KEEP]})
+               {"t": cur_t, "f": ["item", "qty", "bid", "buyout", "left", "ref", "off", "aid", "endLo", "endHi"], "items": out[:ENDING_KEEP]})
     return out[:ENDING_KEEP]
+
+
+def tpe_hm(ms):
+    return datetime.fromtimestamp(ms / 1000, TPE).strftime("%H:%M")
+
+
+def end_txt(lo, hi, left):
+    if lo and hi and hi - lo <= 3 * HOUR:
+        return f"預計 {tpe_hm(lo)}–{tpe_hm(hi)} 結束"
+    return {"SHORT": "剩 30 分內", "MEDIUM": "剩 30 分–2 小時", "LONG": "剩 2–12 小時", "VERY_LONG": "剩 12–48 小時"}.get(left, "")
+
+
+def bidwatch_notify(house_json, ends, meta, misc, house):
+    """單品搶標提醒：玩家指定商品＋出價上限，出現出價不超過上限的競標就私訊一次（附預估結束時間）。"""
+    url, key, bot = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY"), os.environ.get("DISCORD_BOT_TOKEN")
+    if not (url and key and bot):
+        return
+    h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    try:
+        _, body, _ = http(f"{url}/rest/v1/wowah_bidwatch?house=eq.{house}&select=uid,item_id,max_bid,wowah_subs(discord_id)", h)
+        rules = json.loads(body)
+    except Exception as e:
+        print(f"::warning::bidwatch: {type(e).__name__}")
+        return
+    if not rules:
+        return
+    by_item = collections.defaultdict(list)
+    for a in (house_json or {}).get("auctions", []):
+        if a.get("bid") and a.get("time_left") != "SHORT":
+            by_item[a["item"]["id"]].append(a)
+    sent = misc.setdefault("bidwatch_sent", {})
+    bh = {"Authorization": f"Bot {bot}", "Content-Type": "application/json", "User-Agent": "coomysf-wow-ah (https://coomysf.github.io, 1)"}
+    msgs = collections.defaultdict(list)
+    for r in rules:
+        did = (r.get("wowah_subs") or {}).get("discord_id")
+        if not did:
+            continue
+        done = set(sent.get(r["uid"], []))
+        name = (meta.get(str(r["item_id"])) or [f"#{r['item_id']}"])[0]
+        for a in by_item.get(r["item_id"], []):
+            qty = a.get("quantity") or 1
+            if a["id"] in done or a["bid"] / qty > r["max_bid"]:
+                continue
+            lo, hi = ends.get(str(a["id"]), [None, None])
+            msgs[(r["uid"], did)].append(f"🎯 **{name}**{f' ×{qty}' if qty > 1 else ''} 目前出價 {gold(a['bid'])}（你的上限 {gold(r['max_bid'])}）・{end_txt(lo, hi, a.get('time_left'))}"
+                                         f"{'・沒有直購' if not a.get('buyout') else f'・直購 {gold(a['buyout'])}'}")
+            done.add(a["id"])
+        sent[r["uid"]] = list(done)[-400:]
+    n = 0
+    for (uid, did), lines in msgs.items():
+        content = (f"【{HOUSE_LABEL.get(house, house)}】你盯的裝備有便宜的競標了，記得時間上線出價：\n" + "\n".join(lines[:10]) + f"\n{SITE}?h={house}#/ending")[:1900]
+        try:
+            _, b, _ = http("https://discord.com/api/v10/users/@me/channels", bh, json.dumps({"recipient_id": did}).encode(), retries=2, timeout=15)
+            http(f"https://discord.com/api/v10/channels/{json.loads(b)['id']}/messages", bh, json.dumps({"content": content, "allowed_mentions": {"parse": []}}).encode(), retries=2, timeout=15)
+            n += 1
+        except Exception as e:
+            print(f"bidwatch dm failed: {type(e).__name__}")
+    print(f"bidwatch: {len(rules)} rules, {n} dms")
 
 
 def snipe_notify(items, meta, misc, house):
@@ -447,13 +553,13 @@ def snipe_notify(items, meta, misc, house):
             continue   # 要 Discord 登入才私訊得到（額度在資料庫的觸發器管：免費 1、支持者 30）
         done = set(sent_ids.get(sub["uid"], []))
         lines = []
-        for iid, qty, bid, buyout, left, ref, off, aid in cands:
+        for iid, qty, bid, buyout, left, ref, off, aid, *_ in cands:
             m = meta.get(str(iid)) or []
             if off < float(sub["min_off"]) or (sub.get("cls") and m[2:3] != [sub["cls"]]) or aid in done:
                 continue
             name = m[0] if m else f"#{iid}"
             lines.append(f"⏳ **{name}**{f' ×{qty}' if qty > 1 else ''} 目前出價 {gold(bid)}（行情 {gold(ref * qty)}，便宜 {round(off * 100)}%）"
-                         f"{'・沒有直購' if not buyout else f'・直購 {gold(buyout)}'}")
+                         f"{'・沒有直購' if not buyout else f'・直購 {gold(buyout)}'}・{end_txt(*(_[:2] if _ else (None, None)), left)}")
             done.add(aid)
         if not lines:
             continue
@@ -684,7 +790,10 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
             ov = read_json(os.path.join(hdir, "overview.json"))
             if st_h == 200 and ov:
                 rows = {str(it["id"]): it["o"] for it in ov["items"]}
-                snipe_notify(write_ending(hdir, house, rows, prev_t), meta, misc, key)
+                ends = read_json(os.path.join(sdir, "ends.json"), {})
+                write_bids(hdir, house, ends)
+                snipe_notify(write_ending(hdir, house, rows, prev_t, ends), meta, misc, key)
+                bidwatch_notify(house, ends, meta, misc, key)
                 write_json(os.path.join(sdir, "misc.json"), misc)
                 print(f"{key}: ending list written from current snapshot")
         return None
@@ -833,7 +942,10 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
     write_json(os.path.join(hdir, "overview.json"),
                {"house": key, "t": cur_t, "hours": len(w24), "f": OF, "items": out_items})
 
-    snipe_notify(write_ending(hdir, house, rows, cur_t), meta, misc, key)
+    ends = update_ends(sdir, house, prev_doc["auctions"], prev_t, cur_t)
+    write_bids(hdir, house, ends)
+    snipe_notify(write_ending(hdir, house, rows, cur_t, ends), meta, misc, key)
+    bidwatch_notify(house, ends, meta, misc, key)
     check_alerts(watch, rows, meta, misc, key)
     push_user_alerts(rows, meta, key)
 
