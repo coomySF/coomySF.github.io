@@ -482,13 +482,15 @@ def end_txt(lo, hi, left):
 
 
 def bidwatch_notify(house_json, ends, meta, misc, house):
-    """單品搶標提醒：玩家指定商品＋出價上限，出現出價不超過上限的競標就私訊一次（附預估結束時間）。"""
+    """單品搶標提醒：玩家指定商品＋出價上限，出現出價不超過上限的競標就私訊一次（附預估結束時間）。
+    last_call＝只在「快結束」才通知：這一輪是它結束前的最後一輪（預估最早結束時間在一小時內、最晚的還沒到），出價還低於上限。
+    收集器每小時跑一次，所以「剩半小時」做不到分鐘準，實際是剩 0–60 分鐘。"""
     url, key, bot = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY"), os.environ.get("DISCORD_BOT_TOKEN")
     if not (url and key and bot):
         return
     h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     try:
-        _, body, _ = http(f"{url}/rest/v1/wowah_bidwatch?house=eq.{house}&select=uid,item_id,max_bid,wowah_subs(discord_id)", h)
+        _, body, _ = http(f"{url}/rest/v1/wowah_bidwatch?house=eq.{house}&select=uid,item_id,max_bid,last_call,wowah_subs(discord_id)", h)
         rules = json.loads(body)
     except Exception as e:
         print(f"::warning::bidwatch: {type(e).__name__}")
@@ -502,6 +504,7 @@ def bidwatch_notify(house_json, ends, meta, misc, house):
     sent = misc.setdefault("bidwatch_sent", {})
     bh = {"Authorization": f"Bot {bot}", "Content-Type": "application/json", "User-Agent": "coomysf-wow-ah (https://coomysf.github.io, 1)"}
     msgs = collections.defaultdict(list)
+    now = int(time.time() * 1000)
     for r in rules:
         did = (r.get("wowah_subs") or {}).get("discord_id")
         if not did:
@@ -510,12 +513,17 @@ def bidwatch_notify(house_json, ends, meta, misc, house):
         name = (meta.get(str(r["item_id"])) or [f"#{r['item_id']}"])[0]
         for a in by_item.get(r["item_id"], []):
             qty = a.get("quantity") or 1
-            if a["id"] in done or a["bid"] / qty > r["max_bid"]:
-                continue
             lo, hi = ends.get(str(a["id"]), [None, None])
+            tag = f"L{a['id']}" if r.get("last_call") else a["id"]
+            if tag in done or a["bid"] / qty > r["max_bid"]:
+                continue
+            if r.get("last_call") and not (lo and hi and hi > now and lo <= now + HOUR):
+                continue
             msgs[(r["uid"], did)].append(f"🎯 **{name}**{f' ×{qty}' if qty > 1 else ''} 目前出價 {gold(a['bid'])}（你的上限 {gold(r['max_bid'])}）・{end_txt(lo, hi, a.get('time_left'))}"
                                          f"{'・沒有直購' if not a.get('buyout') else f'・直購 {gold(a['buyout'])}'}")
-            done.add(a["id"])
+            if r.get("last_call"):
+                msgs[(r["uid"], did)][-1] = "⏰ 快結束了・" + msgs[(r["uid"], did)][-1]
+            done.add(tag)
         sent[r["uid"]] = list(done)[-400:]
     n = 0
     for (uid, did), lines in msgs.items():
