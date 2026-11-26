@@ -1,0 +1,19 @@
+name: wow-ah-discover
+# 一次性：列出永恆台服的規則與拍賣場 id（用完會刪掉）
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: _tools/wow-ah
+      - name: Discover
+        env:
+          BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
+          BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
+        working-directory: _tools/wow-ah
+        run: python3 discover.py
