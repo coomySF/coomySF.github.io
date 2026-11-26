@@ -473,17 +473,18 @@ def check_alerts(watch, overview_rows, meta, misc, house):
 
 
 SITE = "https://coomysf.github.io/wow-ah/"
+HOUSE_LABEL = {"tw-110": "PvE 聯盟", "tw-113": "PvE 部落", "tw-116": "PvE 黑水灣", "tw-111": "PvP 聯盟", "tw-114": "PvP 部落", "tw-117": "PvP 黑水灣"}
 
 
 def push_user_alerts(overview_rows, meta, house):
     """玩家自己設的 Discord 推播（存在 Supabase，網頁 #/alerts 設定）。沒設 SUPABASE_* 就略過。
     同一個方向只通知一次，價格離開門檻後才會再通知。"""
     url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY")
-    if not url or not key or house != "tw-110":
+    if not url or not key:
         return
     h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     try:
-        _, body, _ = http(f"{url}/rest/v1/wowah_push_alerts?select=uid,item_id,hi,lo,last_kind,wowah_subs(webhook,discord_id)", h)
+        _, body, _ = http(f"{url}/rest/v1/wowah_push_alerts?house=eq.{house}&select=uid,item_id,hi,lo,last_kind,wowah_subs(webhook,discord_id)", h)
         rules = json.loads(body)
     except Exception as e:
         print(f"::warning::push alerts: {e}")
@@ -507,9 +508,9 @@ def push_user_alerts(overview_rows, meta, house):
         dest = ("dm", sub["discord_id"]) if bot and sub.get("discord_id") else ("hook", sub["webhook"]) if sub.get("webhook") else None
         if kind and dest:
             name = (meta.get(str(r["item_id"])) or [None])[0] or f"#{r['item_id']}"
-            out[dest].append(f"{'📈' if kind == 'sell' else '📉'} **{name}** 現價 {gold(ask)}，"
+            out[dest].append(f"{'📈' if kind == 'sell' else '📉'} 【{HOUSE_LABEL.get(house, house)}】**{name}** 現價 {gold(ask)}，"
                              f"{'漲到你設的 ' + gold(r['hi']) + ' 以上：可以掛賣了' if kind == 'sell' else '跌到你設的 ' + gold(r['lo']) + ' 以下：可以進貨了'}"
-                             f"\n{SITE}#/item/{r['item_id']}")
+                             f"\n{SITE}?h={house}#/item/{r['item_id']}")
     sent = 0
     for (how, target), msgs in out.items():
         content = "\n".join(msgs)[:1900]
@@ -528,7 +529,7 @@ def push_user_alerts(overview_rows, meta, house):
             print(f"push failed ({how}): {type(e).__name__} {getattr(e, 'code', '')}")
     for uid, item_id, kind in changes:
         try:
-            http(f"{url}/rest/v1/wowah_push_alerts?uid=eq.{uid}&item_id=eq.{item_id}",
+            http(f"{url}/rest/v1/wowah_push_alerts?uid=eq.{uid}&house=eq.{house}&item_id=eq.{item_id}",
                  {**h, "Prefer": "return=minimal"}, json.dumps({"last_kind": kind}).encode(), method="PATCH")
         except Exception as e:
             print(f"::warning::push state: {type(e).__name__}")

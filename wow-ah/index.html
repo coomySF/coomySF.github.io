@@ -294,6 +294,10 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .ab-acts .clr { margin-left: 0; text-decoration: none; display: inline-flex; align-items: center; }
   .alertbar.on-page { display: none; }
   @media (max-width: 600px) { .vtabs { overflow-x: auto; scrollbar-width: none; } .vtabs::-webkit-scrollbar { display: none; } .vtabs a { white-space: nowrap; padding: 8px 7px; } .tlong { display: none; } }
+  .housebar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 10px 0 2px; }
+  .hb-k { font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+  .hseg button { min-width: 52px; }
+  .hb-k + .hseg + .hb-k { margin-left: 6px; }
   .tbadge { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; text-align: center; background: var(--surface-2); color: var(--ink-2); font-weight: 700; }
   .tbadge.hot { background: var(--up); color: #fff; }
   .bellq { border: 0; background: none; cursor: pointer; font-size: 14px; padding: 4px; opacity: .35; filter: grayscale(1); }
@@ -498,7 +502,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   <header class="top">
     <a class="crumb" href="/">← Coomy</a>
     <h1>台灣拍賣場行情</h1>
-    <p class="sub">魔獸世界：永恆・台服聯盟拍賣場物價・每小時更新</p>
+    <p class="sub" id="subLine">魔獸世界：永恆・台服聯盟拍賣場物價・每小時更新</p>
+    <div class="housebar" id="houseBar"></div>
     <div class="status" id="status">讀取中…</div>
     <p class="notice" id="notice" hidden></p>
     <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a><a href="#/farm" data-t="farm">打寶賺錢</a><a href="#/alerts" data-t="alerts">🔔 <span class="tlong">到價</span>提醒<span class="tbadge" id="tBadge" hidden></span></a></nav>
@@ -600,7 +605,39 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
 
 <script>
 const DATA = new URLSearchParams(location.search).get("data") || "https://raw.githubusercontent.com/coomySF/coomySF.github.io/ah-data";
-const HOUSE = "tw-110";
+// 拍賣場：兩組伺服器 × 聯盟／部落／黑水灣（A 組當 PvE、B 組當 PvP，待玩家回報確認）
+const HOUSES = [
+  { k: "tw-110", realm: "PvE", fac: "聯盟", since: "2026/11/25" }, { k: "tw-113", realm: "PvE", fac: "部落", since: "2026/11/26" }, { k: "tw-116", realm: "PvE", fac: "黑水灣", since: "2026/11/26" },
+  { k: "tw-111", realm: "PvP", fac: "聯盟", since: "2026/11/26" }, { k: "tw-114", realm: "PvP", fac: "部落", since: "2026/11/26" }, { k: "tw-117", realm: "PvP", fac: "黑水灣", since: "2026/11/26" },
+];
+const HOUSE = (() => {
+  const q = new URLSearchParams(location.search).get("h");
+  let saved = null;
+  try { saved = localStorage.getItem("wowah.house"); } catch (e) {}
+  const pick = HOUSES.find((h) => h.k === q) ? q : HOUSES.find((h) => h.k === saved) ? saved : "tw-110";
+  try { localStorage.setItem("wowah.house", pick); } catch (e) {}
+  return pick;
+})();
+const HINFO = HOUSES.find((h) => h.k === HOUSE);
+const HLABEL = `${HINFO.realm} ${HINFO.fac}`;
+function switchHouse(realm, fac) {
+  const h = HOUSES.find((x) => x.realm === realm && x.fac === fac);
+  if (!h || h.k === HOUSE) return;
+  try { localStorage.setItem("wowah.house", h.k); } catch (e) {}
+  track("ah_house", { house: h.k });
+  const u = new URL(location.href); u.searchParams.delete("h");
+  location.replace(u.toString());
+}
+function renderHouseBar() {
+  const el = $("#houseBar");
+  if (!el) return;
+  const seg = (name, opts, cur, attr) => `<div class="seg hseg" role="group" aria-label="${name}">${opts.map((o) => `<button data-${attr}="${o}" aria-pressed="${o === cur}">${o}</button>`).join("")}</div>`;
+  el.innerHTML = `<span class="hb-k">伺服器</span>${seg("伺服器類型", ["PvE", "PvP"], HINFO.realm, "realm")}<span class="hb-k">陣營</span>${seg("陣營", ["聯盟", "部落", "黑水灣"], HINFO.fac, "fac")}`;
+  el.querySelectorAll("[data-realm]").forEach((b) => (b.onclick = () => switchHouse(b.dataset.realm, HINFO.fac)));
+  el.querySelectorAll("[data-fac]").forEach((b) => (b.onclick = () => switchHouse(HINFO.realm, b.dataset.fac)));
+  const sub = $("#subLine");
+  if (sub) sub.textContent = `魔獸世界：永恆・台服 ${HLABEL}拍賣場物價・每小時更新`;
+}
 const SHARDS = 128;
 // 走勢圖上的事件標記：每週重置與手動事件（台北時間）
 const WEEKLY_RESET = { weekday: 4, hour: 7, label: "週重置" }; // 0=週日
@@ -651,6 +688,7 @@ try { Object.assign(state, JSON.parse(localStorage.getItem("wowah.filters") || "
 const saveFilters = () => { try { const { q, shown, ...rest } = state; localStorage.setItem("wowah.filters", JSON.stringify(rest)); } catch (e) {} };
 
 async function boot() {
+  renderHouseBar();
   try {
     STATUS = await getJSON("status.json").catch(() => null);
     if (STATUS?.updated) VER = STATUS.updated;
@@ -696,7 +734,7 @@ function renderStatus() {
   if (!flowH && state.sort === "vol24") state.sort = "listed"; // 還沒有成交資料時先看掛單量
   if (flowH < 24) {
     $("#notice").hidden = false;
-    $("#notice").textContent = `2026/11/25 才開始收集，目前只有 ${flowH} 小時的成交資料。7 日均價、量比要累積滿幾天才準；熱圖至少要 4 週。`;
+    $("#notice").textContent = `${HLABEL}拍賣場 ${HINFO.since} 才開始收集，目前只有 ${flowH} 小時的成交資料。7 日均價、量比要累積滿幾天才準；熱圖至少要 4 週。`;
   }
 }
 
@@ -1579,8 +1617,9 @@ function myColor(rc) {
 /* ---------------- 價格提醒 ---------------- */
 // 存在這台裝置：漲到多少通知我賣、跌到多少通知我買（銅）。頁面開著時每 10 分鐘看有沒有新快照
 let ALERTS = {};
-try { ALERTS = JSON.parse(localStorage.getItem("wowah.alerts") || "{}"); } catch (e) {}
-const saveAlerts = () => { try { localStorage.setItem("wowah.alerts", JSON.stringify(ALERTS)); } catch (e) {} };
+const ALERT_KEY = HOUSE === "tw-110" ? "wowah.alerts" : `wowah.alerts.${HOUSE}`;   // 每個拍賣場價格不同，提醒分開存
+try { ALERTS = JSON.parse(localStorage.getItem(ALERT_KEY) || "{}"); } catch (e) {}
+const saveAlerts = () => { try { localStorage.setItem(ALERT_KEY, JSON.stringify(ALERTS)); } catch (e) {} };
 function alertHit(id) {
   const a = ALERTS[id], r = ROWBY.get(+id);
   if (!a || !r || r.ask == null) return null;
@@ -1756,6 +1795,7 @@ function renderPromo() {
 // 公開設定：Supabase 專案網址和 anon key（本來就是給瀏覽器用的公開金鑰）、Ko-fi 頁面名稱。空的就顯示「即將開放」
 const PUSH = { url: "https://mzobbjuhoddruekmxzoe.supabase.co", anon: "sb_publishable_SvZ7kzPfwx_fKJbH6-g5RA_M868pnYg", kofi: "", email: false, discord: true };   // discord：Discord 登入（Supabase 後台接好 Discord provider 再打開）；email：信箱驗證碼（已改用 Discord，保留程式備用）
 const PUSH_ON = !!(PUSH.url && PUSH.anon);
+let PUSH_TOTAL = 0;   // 所有拍賣場合計的推播數（上限是合計）
 let SB = null, PSUB = null, PUSHED = new Map(), PEMAIL = "", PNAME = "", OTP_TO = "";   // PUSHED：item_id → {hi, lo}；PEMAIL：登入的信箱（匿名是空的）
 async function sb() {
   if (SB) return SB;
@@ -1769,9 +1809,10 @@ async function pushLoad() {
   if (!session) { PSUB = null; PEMAIL = ""; return; }
   PEMAIL = session.user?.is_anonymous ? "" : session.user?.email || "";
   PNAME = session.user?.user_metadata?.full_name || session.user?.user_metadata?.name || "";
-  const [{ data: subs }, { data: rows }] = await Promise.all([c.from("wowah_subs").select("*").limit(1), c.from("wowah_push_alerts").select("item_id,hi,lo")]);
+  const [{ data: subs }, { data: rows }] = await Promise.all([c.from("wowah_subs").select("*").limit(1), c.from("wowah_push_alerts").select("item_id,hi,lo").eq("house", HOUSE)]);
   PSUB = subs?.[0] || null;
   PUSHED = new Map((rows || []).map((r) => [r.item_id, r]));
+  try { const { count } = await c.from("wowah_push_alerts").select("item_id", { count: "exact", head: true }); PUSH_TOTAL = count ?? PUSHED.size; } catch (e) { PUSH_TOTAL = PUSHED.size; }
   // 換裝置登入：雲端的推播提醒帶回這台的提醒清單
   let added = 0;
   for (const r of PUSHED.values()) if (!ALERTS[r.item_id]) { ALERTS[r.item_id] = { hi: r.hi ?? null, lo: r.lo ?? null }; watch.add(r.item_id); added++; }
@@ -1795,7 +1836,7 @@ async function pushVerify(code) {
   await pushLoad();
   if (before) {
     if (before.webhook && !PSUB.webhook) await c.from("wowah_subs").update({ webhook: before.webhook }).eq("uid", PSUB.uid);
-    for (const r of before.rows) if (!PUSHED.has(r.item_id)) await c.from("wowah_push_alerts").insert({ item_id: r.item_id, hi: r.hi ?? null, lo: r.lo ?? null });
+    for (const r of before.rows) if (!PUSHED.has(r.item_id)) await c.from("wowah_push_alerts").insert({ house: HOUSE, item_id: r.item_id, hi: r.hi ?? null, lo: r.lo ?? null });
     await pushLoad();
   }
   OTP_TO = ""; track("ah_push_email_ok");
@@ -1827,7 +1868,7 @@ async function pushOAuthReturn() {
   let before = {};
   try { before = JSON.parse(sessionStorage.getItem("wowah.oauth") || "{}"); sessionStorage.removeItem("wowah.oauth"); } catch (e) {}
   if (before.webhook && !PSUB.webhook) await c.from("wowah_subs").update({ webhook: before.webhook }).eq("uid", PSUB.uid);
-  for (const r of before.rows || []) if (!PUSHED.has(r.item_id)) await c.from("wowah_push_alerts").insert({ item_id: r.item_id, hi: r.hi ?? null, lo: r.lo ?? null });
+  for (const r of before.rows || []) if (!PUSHED.has(r.item_id)) await c.from("wowah_push_alerts").insert({ house: HOUSE, item_id: r.item_id, hi: r.hi ?? null, lo: r.lo ?? null });
   await pushLoad();
   track("ah_push_discord_ok");
   if (!$("#alertView").hidden) renderAlertPage($("#alertView"));
@@ -1861,20 +1902,20 @@ const pushCap = () => (isSupporter() ? 30 : 1);
 async function pushSync(id) {
   if (!PUSH_ON || !PUSHED.has(+id)) return;
   const c = await sb(), a = ALERTS[id];
-  if (!a || (a.hi == null && a.lo == null)) { await c.from("wowah_push_alerts").delete().eq("item_id", +id); PUSHED.delete(+id); return; }
-  await c.from("wowah_push_alerts").update({ hi: a.hi, lo: a.lo }).eq("item_id", +id);
+  if (!a || (a.hi == null && a.lo == null)) { await c.from("wowah_push_alerts").delete().eq("house", HOUSE).eq("item_id", +id); PUSHED.delete(+id); return; }
+  await c.from("wowah_push_alerts").update({ hi: a.hi, lo: a.lo }).eq("house", HOUSE).eq("item_id", +id);
   PUSHED.set(+id, { item_id: +id, hi: a.hi, lo: a.lo });
 }
 async function pushToggle(id, on) {
   const c = await sb(), a = ALERTS[id];
   if (on) {
-    const { error } = await c.from("wowah_push_alerts").insert({ item_id: +id, hi: a?.hi ?? null, lo: a?.lo ?? null });
+    const { error } = await c.from("wowah_push_alerts").insert({ house: HOUSE, item_id: +id, hi: a?.hi ?? null, lo: a?.lo ?? null });
     if (error) return String(error.message || "").startsWith("push_limit") ? "limit" : "error";
-    PUSHED.set(+id, { item_id: +id, hi: a?.hi, lo: a?.lo });
-    track("ah_push_on", { item_id: +id });
+    PUSHED.set(+id, { item_id: +id, hi: a?.hi, lo: a?.lo }); PUSH_TOTAL++;
+    track("ah_push_on", { item_id: +id, house: HOUSE });
   } else {
-    await c.from("wowah_push_alerts").delete().eq("item_id", +id);
-    PUSHED.delete(+id);
+    await c.from("wowah_push_alerts").delete().eq("house", HOUSE).eq("item_id", +id);
+    if (PUSHED.delete(+id)) PUSH_TOTAL = Math.max(0, PUSH_TOTAL - 1);
   }
   return "ok";
 }
@@ -1913,8 +1954,8 @@ function pushCardHtml() {
       : PUSH.email ? `目前只存在這台裝置。${emailForm("<b>綁定信箱</b>，換手機、電腦也能用：")}` : ""}</div>
     ${PSUB.discord_id ? `<p class="sm dm-state">${PSUB.dm_ok ? '✓ 到價時「台灣拍賣場」機器人會<b>私訊你</b>（已經傳了一則歡迎訊息給你）。' : '⚠ 機器人私訊不到你：到 Discord 的「台灣拍賣場」伺服器 → 伺服器名稱 →「隱私設定」打開「私人訊息」，再按 <button class="clr" id="dmRetry">重試</button>'}</p>
     <details class="sm adv"><summary>進階：改送到自己的頻道（webhook）</summary>${hookHtml}</details>` : hookHtml}
-    <p class="sm">下面表格的「推播」打勾的商品，到價就傳到 Discord（每小時檢查）。已用 <b>${PUSHED.size}／${pushCap()}</b>${isSupporter() ? ' <span class="chip c-ye">☕ 旅店常客・30 個</span>' : ""}</p>
-    ${isSupporter() ? "" : `<div class="support">${PUSHED.size >= pushCap() ? "免費的 1 個已經在用囉。" : "免費的 1 個先拿去盯你最在意的那個材料。"}支持一次（NT$30 起），就能永久追 30 個。<a href="#support" class="go-support">看怎麼支持 →</a></div>`}
+    <p class="sm">下面表格的「推播」打勾的商品（${HLABEL}拍賣場），到價就傳到 Discord（每小時檢查）。所有拍賣場合計已用 <b>${PUSH_TOTAL}／${pushCap()}</b>${isSupporter() ? ' <span class="chip c-ye">☕ 旅店常客・30 個</span>' : ""}</p>
+    ${isSupporter() ? "" : `<div class="support">${PUSH_TOTAL >= pushCap() ? "免費的 1 個已經在用囉。" : "免費的 1 個先拿去盯你最在意的那個材料。"}支持一次（NT$30 起），就能永久追 30 個。<a href="#support" class="go-support">看怎麼支持 →</a></div>`}
   </div>`;
 }
 function bindPushCard(view) {
