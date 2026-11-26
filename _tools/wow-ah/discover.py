@@ -5,8 +5,11 @@ import collect as c
 
 t = c.get_token()
 for ns in ["dynamic-forever-tw", "dynamic-classic1x-tw", "dynamic-classic-tw"]:
-    for path in ["/data/wow/realm/index", "/data/wow/connected-realm/index", "/data/wow/search/realm?_page=1"]:
-        st, d, _ = c.api(t, path, ns)
+    for path in ["/data/wow/realm/index", "/data/wow/connected-realm/index", "/data/wow/realm/tw"]:
+        try:
+            st, d, _ = c.api(t, path, ns)
+        except Exception as e:
+            st, d = getattr(e, "code", e), None
         txt = json.dumps(d, ensure_ascii=False) if d else ""
         print(f"## {ns} {path} {st} {txt[:700]}")
 items = {14047: "符文布", 10620: "瑟銀礦石", 12359: "瑟銀錠", 13468: "黑蓮花", 8831: "紫蓮花", 2772: "鐵礦石"}
