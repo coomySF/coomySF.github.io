@@ -329,6 +329,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .code { font-family: var(--font-num, monospace); letter-spacing: .1em; }
   .ap-pl { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; white-space: nowrap; }
   .discord-go { background: #5865f2; color: #fff; height: 40px; margin-right: 10px; }
+  .dm-state { margin: 8px 0; } .adv { margin: 4px 0 8px; } .adv summary { cursor: pointer; color: var(--muted); }
   .ab-thanks { color: var(--muted); }
   /* 遠征補給站（只做深色） */
   .support-card { position: relative; overflow: hidden; border-color: var(--gold-line, var(--line)); background: radial-gradient(90% 70% at 0% 0%, rgba(226, 189, 98, .10), transparent 60%), var(--surface); padding: 22px 20px 16px; }
@@ -1797,7 +1798,8 @@ async function pushDiscord() {
   const c = await sb();
   try { sessionStorage.setItem("wowah.oauth", JSON.stringify(PSUB ? { webhook: PSUB.webhook, rows: [...PUSHED.values()] } : {})); } catch (e) {}
   track("ah_push_discord");
-  const { error } = await c.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: location.origin + location.pathname } });
+  // guilds.join：登入時順便加入「台灣拍賣場」伺服器，之後由機器人私訊推播
+  const { error } = await c.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: location.origin + location.pathname, scopes: "identify email guilds.join" } });
   return error ? "沒辦法連到 Discord，稍後再試。" : "ok";
 }
 // 從 Discord 授權回來：換到登入狀態、把這台原本免登入的設定搬過去、回到提醒頁
@@ -1812,6 +1814,7 @@ async function pushOAuthReturn() {
   if (!session) return;
   const { error } = await c.from("wowah_subs").insert({});
   if (error && error.code !== "23505") return;
+  await discordJoin(session);
   await pushLoad();
   let before = {};
   try { before = JSON.parse(sessionStorage.getItem("wowah.oauth") || "{}"); sessionStorage.removeItem("wowah.oauth"); } catch (e) {}
@@ -1820,6 +1823,15 @@ async function pushOAuthReturn() {
   await pushLoad();
   track("ah_push_discord_ok");
   if (!$("#alertView").hidden) renderAlertPage($("#alertView"));
+}
+// 加入伺服器＋機器人私訊歡迎（provider_token 只在剛登入回來時拿得到）
+async function discordJoin(session) {
+  try {
+    const r = await fetch(`${PUSH.url}/functions/v1/wowah-discord-join`, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}`, apikey: PUSH.anon, "Content-Type": "application/json" }, body: JSON.stringify({ provider_token: session.provider_token || null }) });
+    const j = await r.json();
+    track("ah_push_dm", { dm: !!j.dm, joined: j.joined || 0 });
+    return j;
+  } catch (e) { return null; }
 }
 async function pushSignOut() {
   const c = await sb();
@@ -1885,12 +1897,14 @@ function pushCardHtml() {
     : PUSH.email ? `${emailForm('<span class="sm"><b>用信箱登入（建議）</b>：手機、電腦都是同一套推播和贊助。</span>')}
     <p class="sm mut">不想留信箱？<button class="clr" id="pushStart">先不登入，只在這台裝置開啟</button></p>` : '<button class="promo-cta sm" id="pushStart">開啟 Discord 推播</button>'}</div>`;
   const until = isSupporter() ? new Date(PSUB.supporter_until).toLocaleDateString("zh-TW") : "";
-  return `<div class="push-box"><b>📲 Discord 推播</b>${PSUB.webhook ? ' <span class="chip c-gr">已連上</span>' : ""}
+  const hookHtml = `<div class="push-step"><label>Discord webhook 網址 <input type="url" id="pushHook" placeholder="https://discord.com/api/webhooks/…" value="${esc(PSUB.webhook || "")}" autocomplete="off"></label><button class="clr" id="pushHookSave">儲存並傳測試訊息</button><span class="sm" id="pushHookMsg" aria-live="polite"></span>
+      <details class="sm"><summary>怎麼拿 webhook 網址？（1 分鐘）</summary><ol><li>在 Discord 左邊按「＋」建立一個只有你自己的伺服器（或用你管理的伺服器）。</li><li>對想收通知的頻道按 ⚙️ 編輯頻道 →「整合」→「Webhook」→「新 Webhook」。</li><li>按「複製 Webhook 網址」，貼到上面。手機裝 Discord 就會跳通知。</li></ol><p class="mut">這個網址只有你和推播程式看得到，別貼給別人。</p></details></div>`;
+  return `<div class="push-box"><b>📲 Discord 推播</b>${PSUB.webhook || PSUB.dm_ok ? ' <span class="chip c-gr">已連上</span>' : ""}
     <div class="sm acct">${PEMAIL ? `已用 <b>${esc(PNAME ? "Discord：" + PNAME : PEMAIL)}</b> 登入，換裝置一樣登入就是同一套設定。<button class="clr" id="pushOut">登出</button>`
       : PUSH.discord ? `目前只存在這台裝置。<button class="clr" id="pushDiscord">用 Discord 登入</button>，換手機、電腦也能用。<span class="sm" id="pushMailMsg" aria-live="polite"></span>`
       : PUSH.email ? `目前只存在這台裝置。${emailForm("<b>綁定信箱</b>，換手機、電腦也能用：")}` : ""}</div>
-    <div class="push-step"><label>Discord webhook 網址 <input type="url" id="pushHook" placeholder="https://discord.com/api/webhooks/…" value="${esc(PSUB.webhook || "")}" autocomplete="off"></label><button class="clr" id="pushHookSave">儲存並傳測試訊息</button><span class="sm" id="pushHookMsg" aria-live="polite"></span>
-      <details class="sm"><summary>怎麼拿 webhook 網址？（1 分鐘）</summary><ol><li>在 Discord 左邊按「＋」建立一個只有你自己的伺服器（或用你管理的伺服器）。</li><li>對想收通知的頻道按 ⚙️ 編輯頻道 →「整合」→「Webhook」→「新 Webhook」。</li><li>按「複製 Webhook 網址」，貼到上面。手機裝 Discord 就會跳通知。</li></ol><p class="mut">這個網址只有你和推播程式看得到，別貼給別人。</p></details></div>
+    ${PSUB.discord_id ? `<p class="sm dm-state">${PSUB.dm_ok ? '✓ 到價時「台灣拍賣場」機器人會<b>私訊你</b>（已經傳了一則歡迎訊息給你）。' : '⚠ 機器人私訊不到你：到 Discord 的「台灣拍賣場」伺服器 → 伺服器名稱 →「隱私設定」打開「私人訊息」，再按 <button class="clr" id="dmRetry">重試</button>'}</p>
+    <details class="sm adv"><summary>進階：改送到自己的頻道（webhook）</summary>${hookHtml}</details>` : hookHtml}
     <p class="sm">下面表格的「推播」打勾的商品，到價就傳到 Discord（每小時檢查）。已用 <b>${PUSHED.size}／${pushCap()}</b>${isSupporter() ? ' <span class="chip c-ye">☕ 旅店常客・30 個</span>' : ""}</p>
     ${isSupporter() ? "" : `<div class="support">${PUSHED.size >= pushCap() ? "免費的 1 個已經在用囉。" : "免費的 1 個先拿去盯你最在意的那個材料。"}支持一次（NT$30 起），就能永久追 30 個。<a href="#support" class="go-support">看怎麼支持 →</a></div>`}
   </div>`;
@@ -1909,6 +1923,8 @@ function bindPushCard(view) {
   if (ob) ob.onclick = () => { OTP_TO = ""; rer(); };
   const dg = $("#pushDiscord");
   if (dg) dg.onclick = async () => { dg.disabled = true; const r = await pushDiscord(); if (r !== "ok") { dg.disabled = false; const m = $("#pushMailMsg"); if (m) m.textContent = r; } };
+  const dr = $("#dmRetry");
+  if (dr) dr.onclick = async () => { dr.disabled = true; const c = await sb(); const { data: { session } } = await c.auth.getSession(); if (session) await discordJoin(session); await pushLoad(); rer(); };
   const po = $("#pushOut");
   if (po) po.onclick = async () => { await pushSignOut(); rer(); };
   const hs = $("#pushHookSave");
@@ -1989,7 +2005,7 @@ function supportHtml() {
       </div>
     </div>
     <div class="th-bar"><span>想要什麼新功能，或抓到 bug？到 Threads 私訊我，我都會看。新功能也會先在那裡說。</span><a class="th-go" href="https://www.threads.com/@coomysky" target="_blank" rel="noopener" data-track="threads">追蹤 @coomysky</a></div>
-    <p class="sign">謝謝你陪我走這一段，拍賣場見。— Coomy<small>（這個網站是我和 AllWill 一起做的）</small></p>
+    <p class="sign">謝謝你陪我走這一段，拍賣場見。— Coomy<small>（這個網站是我用 AllWill 一起做的）</small></p>
   </section>`;
 }
 function bindSupport(view) {

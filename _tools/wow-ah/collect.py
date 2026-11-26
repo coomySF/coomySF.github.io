@@ -481,12 +481,13 @@ def push_user_alerts(overview_rows, meta, house):
         return
     h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
     try:
-        _, body, _ = http(f"{url}/rest/v1/wowah_push_alerts?select=uid,item_id,hi,lo,last_kind,wowah_subs(webhook)", h)
+        _, body, _ = http(f"{url}/rest/v1/wowah_push_alerts?select=uid,item_id,hi,lo,last_kind,wowah_subs(webhook,discord_id)", h)
         rules = json.loads(body)
     except Exception as e:
         print(f"::warning::push alerts: {e}")
         return
-    out = collections.defaultdict(list)      # webhook → 訊息
+    out = collections.defaultdict(list)      # ("dm", Discord ID) 或 ("hook", webhook) → 訊息
+    bot = os.environ.get("DISCORD_BOT_TOKEN")
     changes = []
     for r in rules:
         row = overview_rows.get(str(r["item_id"]))
@@ -499,28 +500,37 @@ def push_user_alerts(overview_rows, meta, house):
         if kind == r["last_kind"]:
             continue
         changes.append((r["uid"], r["item_id"], kind))
-        hook = (r.get("wowah_subs") or {}).get("webhook")
-        if kind and hook:
+        sub = r.get("wowah_subs") or {}
+        # 有 Discord 登入就由機器人私訊，否則用玩家自己貼的 webhook
+        dest = ("dm", sub["discord_id"]) if bot and sub.get("discord_id") else ("hook", sub["webhook"]) if sub.get("webhook") else None
+        if kind and dest:
             name = (meta.get(str(r["item_id"])) or [None])[0] or f"#{r['item_id']}"
-            out[hook].append(f"{'📈' if kind == 'sell' else '📉'} **{name}** 現價 {gold(ask)}，"
+            out[dest].append(f"{'📈' if kind == 'sell' else '📉'} **{name}** 現價 {gold(ask)}，"
                              f"{'漲到你設的 ' + gold(r['hi']) + ' 以上：可以掛賣了' if kind == 'sell' else '跌到你設的 ' + gold(r['lo']) + ' 以下：可以進貨了'}"
                              f"\n{SITE}#/item/{r['item_id']}")
     sent = 0
-    for hook, msgs in out.items():
-        payload = json.dumps({"username": "台灣拍賣場到價提醒", "content": "\n".join(msgs)[:1900],
-                              "allowed_mentions": {"parse": []}}).encode()
+    for (how, target), msgs in out.items():
+        content = "\n".join(msgs)[:1900]
         try:
-            http(hook, {"Content-Type": "application/json", "User-Agent": "coomysf-wow-ah"}, payload, retries=2, timeout=15)
+            if how == "dm":
+                bh = {"Authorization": f"Bot {bot}", "Content-Type": "application/json", "User-Agent": "coomysf-wow-ah (https://coomysf.github.io, 1)"}
+                _, body, _ = http("https://discord.com/api/v10/users/@me/channels", bh, json.dumps({"recipient_id": target}).encode(), retries=2, timeout=15)
+                ch = json.loads(body)["id"]
+                http(f"https://discord.com/api/v10/channels/{ch}/messages", bh,
+                     json.dumps({"content": content, "allowed_mentions": {"parse": []}}).encode(), retries=2, timeout=15)
+            else:
+                http(target, {"Content-Type": "application/json", "User-Agent": "coomysf-wow-ah"},
+                     json.dumps({"username": "台灣拍賣場到價提醒", "content": content, "allowed_mentions": {"parse": []}}).encode(), retries=2, timeout=15)
             sent += 1
-        except Exception as e:   # 單一玩家的 webhook 壞掉不影響別人
-            print(f"push failed: {type(e).__name__}")
+        except Exception as e:   # 單一玩家私訊關掉或 webhook 壞掉不影響別人（Discord 50007＝對方不收私訊）
+            print(f"push failed ({how}): {type(e).__name__} {getattr(e, 'code', '')}")
     for uid, item_id, kind in changes:
         try:
             http(f"{url}/rest/v1/wowah_push_alerts?uid=eq.{uid}&item_id=eq.{item_id}",
                  {**h, "Prefer": "return=minimal"}, json.dumps({"last_kind": kind}).encode(), method="PATCH")
         except Exception as e:
             print(f"::warning::push state: {type(e).__name__}")
-    print(f"push: {len(rules)} rules, {len(changes)} changed, {sent} webhooks sent")
+    print(f"push: {len(rules)} rules, {len(changes)} changed, {sent} sent")
 
 
 # ---------- 主流程 ----------

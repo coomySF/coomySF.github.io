@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.wowah-kofi]
 verify_jwt = false
+
+[functions.wowah-discord-join]
+verify_jwt = false
