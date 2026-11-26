@@ -2399,7 +2399,7 @@ function watchBox() {
   const ids = Object.keys(META).filter((k) => (META[k][0] || "").toLowerCase().includes(estate.q) && ["武器", "護甲", "配方"].includes(META[k][2]));
   const exact = ids.find((k) => (META[k][0] || "").toLowerCase() === estate.q);
   const pick = exact ? [exact] : ids.slice(0, 5);
-  if (!pick.length) return "";
+  if (!pick.length) return `<div class="snipe-box"><span class="sm">🎯 找不到「${esc(estate.q)}」：只搜得到${HLABEL}拍賣場出現過的武器、護甲、配方。換個字、少打幾個字試試看。</span></div>`;
   return `<div class="snipe-box on bw-list">${pick.map((k) => bidRow(k, estate.max)).join("")}
     <span class="sm" id="bwMsg2" aria-live="polite">${ids.length > pick.length ? `還有 ${ids.length - pick.length} 件符合，打完整名稱比較準。` : ""}</span>${bidHint()}</div>`;
 }
