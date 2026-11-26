@@ -785,7 +785,9 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
             update_index(hdir, load_hist(hdir), meta, prev_t)
             print(f"{key}: index categories backfilled")
         # 搶標清單還沒有這份快照的版本：用最近一份快照的競標補產生（不動成交推算）
-        if (read_json(os.path.join(hdir, "ending.json")) or {}).get("t") != prev_t and prev_t:
+        if prev_t and ((read_json(os.path.join(hdir, "ending.json")) or {}).get("t") != prev_t
+                       or len((read_json(os.path.join(hdir, "ending.json")) or {}).get("f", [])) < 10
+                       or not os.path.exists(os.path.join(hdir, "bids", "0.json"))):
             st_h, house, _ = api(token, base, DYN_NS)
             ov = read_json(os.path.join(hdir, "overview.json"))
             if st_h == 200 and ov:
