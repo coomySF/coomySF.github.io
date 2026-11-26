@@ -32,7 +32,9 @@ from datetime import datetime, timedelta, timezone
 
 REGION = "tw"
 RULESET = 2
-HOUSES = {"tw-110": 110}  # PvP 聯盟
+# 永恆台服有資料的拍賣場（兩組伺服器 × 聯盟／部落／黑水灣；id 是全域的，跟網址裡的 ruleset 無關）
+# A 組：110 聯盟、113 部落、116 黑水灣；B 組：111 聯盟、114 部落、117 黑水灣（哪組是 PvP／PvE 待確認）
+HOUSES = {"tw-110": 110, "tw-113": 113, "tw-116": 116, "tw-111": 111, "tw-114": 114, "tw-117": 117}
 API = f"https://{REGION}.api.blizzard.com"
 DYN_NS = f"dynamic-forever-{REGION}"
 STATIC_NS = [f"static-forever-{REGION}", f"static-classic1x-{REGION}", f"static-classic-{REGION}"]
