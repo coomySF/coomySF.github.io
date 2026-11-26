@@ -59,7 +59,7 @@ def parse_dungeon(mid):
     lv = next((x for i, x in enumerate(lines) if lines[i - 1] == "等級" and re.match(r"\d+ - \d+", x)), None)
     lo, hi = (int(v) for v in lv.split(" - ")) if lv else (None, None)
     asof = next((m.group(1) for x in lines if (m := re.search(r"資料整理到 ([^。]+)。", x))), "")
-    bosses = []
+    bosses, names, quests = [], {}, []
     try:
         i = lines.index("掉落")
     except ValueError:
@@ -77,10 +77,22 @@ def parse_dungeon(mid):
             n = re.match(r"(\d+) 次", lines[j + 2])
             if n:
                 boss["loot"].append([int(m.group(1)), int(n.group(1))])
+                names[m.group(1)] = lines[j + 1]
             j += 3
             continue
         j += 1
-    return {"id": mid, "name": name, "players": players, "lo": lo, "hi": hi, "asof": asof, "bosses": bosses}
+    # 副本任務：「任務名」「任務 N 級」…「獎勵」後面的 [#物品] 名稱
+    q0 = next((k for k in range(end, len(lines)) if lines[k] == "副本任務"), None)
+    q1 = next((k for k in range(q0 or len(lines), len(lines)) if lines[k] == "攻略"), len(lines))
+    k = q0 or len(lines)
+    while k < q1:
+        if (m := re.match(r"任務 (\d+) 級", lines[k])):
+            quests.append({"name": lines[k - 1], "lv": int(m.group(1)), "rewards": []})
+        elif (m := re.match(r"\[#(\d+)\]", lines[k])) and quests:
+            quests[-1]["rewards"].append(int(m.group(1)))
+            names[m.group(1)] = lines[k + 1]
+        k += 1
+    return {"id": mid, "name": name, "players": players, "lo": lo, "hi": hi, "asof": asof, "bosses": bosses, "quests": quests, "names": names}
 
 
 def item_info(build, ids):

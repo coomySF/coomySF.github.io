@@ -354,6 +354,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .end-teaser { display: block; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--gold-line, var(--line)); border-left: 3px solid var(--gold); border-radius: 10px; background: rgba(226, 189, 98, .07); color: var(--ink); text-decoration: none; font-size: 14px; }
   .end-teaser:hover { background: rgba(226, 189, 98, .12); }
   .snipe-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 10px 0 4px; padding: 10px 12px; border: 1px dashed var(--gold-line, var(--line)); border-radius: 10px; font-size: 13px; }
+  .fv-dun { margin: 14px 0 20px; } .fv-dun h4 { margin: 0 0 2px; font-size: 17px; } .fv-dun p { margin: 0 0 8px; }
   .bw-list { flex-direction: column; align-items: stretch; }
   .bw-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
   .snipe-box.on { border-style: solid; background: rgba(226, 189, 98, .06); }
@@ -527,7 +528,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
     <div class="housebar" id="houseBar"></div>
     <div class="status" id="status">讀取中…</div>
     <p class="notice" id="notice" hidden></p>
-    <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a><a href="#/farm" data-t="farm">打寶賺錢</a><a href="#/alerts" data-t="alerts">🔔 <span class="tlong">到價</span>提醒<span class="tbadge" id="tBadge" hidden></span></a></nav>
+    <nav class="vtabs" aria-label="功能"><a href="#/" data-t="ah">物價行情</a><a href="#/prof" data-t="prof">練專業划算嗎</a><a href="#/farm" data-t="farm">打寶賺錢</a><a href="#/forever" data-t="forever">🆕 永恆新增</a><a href="#/alerts" data-t="alerts">🔔 <span class="tlong">到價</span>提醒<span class="tbadge" id="tBadge" hidden></span></a></nav>
     <div class="mebar" id="meBar"></div>
     <aside class="community-entry" aria-label="玩家社群"><span>查完行情，找人一起研究怎麼賺金。</span><a href="https://discord.gg/p7XjaXQay" target="_blank" rel="noopener noreferrer" data-track="discord-community">加入 Discord 玩家社群 ↗</a></aside>
     <div class="alertbar" id="alertBar" hidden></div>
@@ -591,6 +592,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   <section id="alertView" hidden></section>
 
   <section id="endingView" hidden></section>
+
+  <section id="foreverView" hidden></section>
 
   <section class="about" id="about" aria-labelledby="aboutH">
     <h2 id="aboutH">魔獸世界：永恆 台服拍賣場物價查詢</h2>
@@ -936,10 +939,12 @@ new MutationObserver(labelTables).observe(document.body, { childList: true, subt
 const LIST_TITLE = document.title;
 function route() {
   const h = location.hash;
-  const tab = h.startsWith("#/prof") ? "prof" : h.startsWith("#/farm") ? "farm" : h.startsWith("#/alerts") ? "alerts" : h.startsWith("#/ending") ? "ending" : "ah";
+  const tab = h.startsWith("#/prof") ? "prof" : h.startsWith("#/farm") ? "farm" : h.startsWith("#/alerts") ? "alerts" : h.startsWith("#/ending") ? "ending" : h.startsWith("#/forever") ? "forever" : "ah";
   $("#alertBar").classList.toggle("on-page", tab === "alerts");   // 提醒管理頁本身就列了，上面的橫幅收起來
   document.querySelectorAll(".vtabs a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.t === tab)));
+  $("#foreverView").hidden = true;
   let m;
+  if (h.startsWith("#/forever")) { showForever(); return; }
   if ((m = h.match(/^#\/item\/(\d+)/))) { showItem(+m[1]); return; }
   if ((m = h.match(/^#\/prof(?:\/(\d+))?/))) { showProf(m[1] ? +m[1] : null); return; }
   if (h.startsWith("#/farm")) { showFarm(); return; }
@@ -968,7 +973,7 @@ async function showItem(id) {
   const img = r.icon ? `<img src="${esc(r.icon)}" alt="" width="46" height="46">` : '<span class="noimg"></span>';
   const inWatch = watch.has(id);
   view.innerHTML = `<button class="back" id="back">← 回列表</button>
-    <div class="ihead">${img}<div><h2 class="q-${esc(r.q)}">${esc(r.name)}</h2><div class="cl">${esc([r.cls, r.sub].filter(Boolean).join("・"))}${r.nc ? `<span class="tag" title="這種商品每口只有 1 個，暴雪 API 看不出是賣掉還是下架，成交量都是推算的">非堆疊・成交是估計 ⓘ</span>` : ""}
+    <div class="ihead">${img}<div><h2 class="q-${esc(r.q)}">${esc(r.name)}</h2><div class="cl">${esc([r.cls, r.sub].filter(Boolean).join("・"))}${r.nc ? `<span class="tag" title="這種商品每口只有 1 個，暴雪 API 看不出是賣掉還是下架，成交量都是推算的">非堆疊・成交是估計 ⓘ</span>` : ""}<span id="fvChip">${itemForeverChip(id)}</span>
       <button class="star" id="istar" aria-pressed="${inWatch}" aria-label="加入觀察">★</button></div><div class="ginfo" id="gearInfo" hidden></div></div></div>
     <div class="tiles">
       <div class="tile"><div class="k">現價（最低一口）</div><div class="v">${money(r.ask)}</div><div class="x">第二檔 ${money(r.ask2)}</div></div>
@@ -1009,6 +1014,7 @@ async function showItem(id) {
   draw();
   bindAlertBox(id);
   craftCards(id, r);
+  if (!FOREVER) loadForever().then(() => { const el = $("#fvChip"); if (el) el.innerHTML = itemForeverChip(id); }).catch(() => {});
   bidCards(id, r);
   dropCards(id, r);
   $("#hmTabs").querySelectorAll("button").forEach((b) => b.onclick = () => { $("#hmTabs").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); heatMode = b.dataset.v; rec && heatmap(rec.hm); });
@@ -2234,6 +2240,96 @@ function showLimitBox() {
 }
 // 頁面上的小提示（不用瀏覽器 alert 對話框）
 function alert0(msg) { const m = $("#pushHookMsg") || $("#apMsg"); if (m) m.textContent = msg; }
+
+/* ---------------- 永恆新增：跟經典版不一樣的地方 ---------------- */
+// forever.json 由 _tools/wow-ah/build_forever.py 產生：永恆 client 跟經典版 client 的物品表比對，加上阿莫比玩家回報的新副本掉落
+let FOREVER = null;
+const QNAME = ["灰色", "白色", "綠色", "藍色", "紫色", "橘色"];
+const BIND = ["不綁定", "拾取綁定", "裝備後綁定", "使用後綁定", "任務物品"];
+const STAT = { 1: "生命力", 3: "敏捷", 4: "力量", 5: "智力", 6: "精神", 7: "耐力", 12: "防禦", 13: "閃躲", 14: "招架", 15: "格擋", 31: "命中", 32: "致命一擊", 35: "韌性", 36: "加速", 38: "攻擊強度", 41: "治療", 42: "法術傷害", 43: "法力恢復", 45: "法術能量", 47: "法術穿透", 48: "格擋值" };
+const FCLS = { gear: [2, 4], recipe: [9], mat: [5, 7], use: [0], other: [1, 15] };
+const fstate2 = { tab: "new", cls: "", chg: "" };
+async function loadForever() {
+  if (FOREVER) return FOREVER;
+  const r = await fetch(new URL("forever.json?v=20261127", location.href));   /* forever.json 重建時改這個版本 */
+  if (!r.ok) throw new Error("forever.json " + r.status);
+  return (FOREVER = await r.json());
+}
+// 改了什麼 → 一句話
+function chgTxt(c, html = true) {
+  const b = (t) => (html ? `<b>${t}</b>` : t), out = [];
+  if (c.q) out.push(`品質 ${QNAME[c.q[0]]}→${b(QNAME[c.q[1]])}`);
+  if (c.il) out.push(`物品等級 ${c.il[0]}→${b(c.il[1])}`);
+  if (c.rl) out.push(`需求等級 ${c.rl[0] || "無"}→${b(c.rl[1] || "無")}`);
+  if (c.b) out.push(`${BIND[c.b[0]] || "?"}→${b(BIND[c.b[1]] || "?")}`);
+  if (c.st) out.push(`堆疊 ${c.st[0]}→${b(c.st[1])}`);
+  if (c["+"]) out.push(`多了${c["+"].map((s) => STAT[s] || "其他屬性").join("、")}`);
+  if (c["-"]) out.push(`拿掉${c["-"].map((s) => STAT[s] || "其他屬性").join("、")}`);
+  return out.join("・");
+}
+// 商品頁標記：永恆新增 / 永恆改過
+function itemForeverChip(id) {
+  if (!FOREVER) return "";
+  const n = FOREVER.items[id], c = FOREVER.changed[id];
+  if (n) { const d = n[8] && FOREVER.dungeons.find((x) => `m${x.id}` === n[8] || `q${x.id}` === n[8]); return ` <a class="chip c-ye" href="#/forever" title="經典版沒有這件，是《永恆》新增的${d ? `（${d.name}${n[8][0] === "q" ? "任務獎勵" : "掉落"}）` : ""}">🆕 永恆新增</a>`; }
+  if (c) return ` <a class="chip c-ye" href="#/forever" title="跟經典版比：${esc(chgTxt(c, false))}">✦ 永恆改過</a>`;
+  return "";
+}
+async function showForever() {
+  ["listView", "itemView", "about", "profView", "farmView", "alertView", "endingView"].forEach((k) => ($("#" + k).hidden = true));
+  const view = $("#foreverView");
+  view.hidden = false;
+  document.title = "永恆新增了什麼｜魔獸世界：永恆 新副本、新裝備、物品改動";
+  window.scrollTo(0, 0);
+  track("ah_forever");
+  if (!FOREVER) view.innerHTML = '<div class="skel"><i></i><i></i><i></i></div>';
+  try { await Promise.all([loadForever(), loadDrops().catch(() => {})]); } catch (e) { view.innerHTML = "<p>永恆資料讀取失敗。</p>"; return; }
+  renderForever(view);
+}
+function renderForever(view) {
+  const F = FOREVER, onAH = (id) => ROWBY.has(+id);
+  const newIds = Object.keys(F.items).filter((id) => onAH(id) || F.items[id][8]);
+  const chgIds = Object.keys(F.changed).filter(onAH);
+  const seg = (id, opts, cur) => `<div class="seg" id="${id}">${opts.map(([v, t]) => `<button data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
+  // 7 天成交金額排序；沒成交的排在有成交的後面（不然掛天價沒人買的會跑到最上面）
+  const val = (id) => { const r = ROWBY.get(+id); if (!r) return -1; const p = r.avg7 ?? r.ask ?? 0; return r.vol7 > 0 ? p * r.vol7 : p / 1e9; };
+  const priceCells = (id) => { const r = ROWBY.get(+id); return r ? `<td>${money(r.avg7 ?? r.ask)}</td><td class="num">${fmtN(r.vol7 || 0)}</td>` : '<td class="mut sm" colspan="2">拍賣場還沒出現</td>'; };
+  const link = (id) => (META[id] ? gearLink(id) : `<a class="it pit" href="https://www.wowhead.com/classic/tw/item=${id}" target="_blank" rel="noopener"><span class="noimg"></span><span class="nm">${esc(F.items[id]?.[0] || "#" + id)}</span></a>`);
+  // 新副本
+  const dun = F.dungeons.map((d) => {
+    const enemy = d.side && HINFO.fac !== "黑水灣" && d.side !== HINFO.fac;
+    return `<div class="fv-dun"><h4>${esc(d.name)} <span class="mut sm">Lv ${d.lo}–${d.hi}・${d.players} 人</span>${d.side ? ` <span class="chip ${enemy ? "c-or" : "c-gy"}">${d.side}領地</span>` : ""}</h4>
+      <p class="sm mut">${esc(d.where)}${enemy ? `・${HINFO.fac}要闖進${d.side}的地盤` : ""}</p>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>首領</th><th class="lt">掉落（玩家回報的掉落率）</th></tr></thead><tbody>
+      ${d.bosses.filter((b) => b[2] >= 20).map(([n, loot]) => `<tr><td><b>${esc(n)}</b></td><td class="lt drops">${loot.slice(0, 6).map(([iid, pm]) => `<div>${link(iid)} <span class="mut sm">${dropPct(pm)}${ROWBY.get(iid) ? `・${money(farmPrice(iid), true)}` : ""}</span></div>`).join("")}${loot.length > 6 ? `<div class="mut sm">另 ${loot.length - 6} 件</div>` : ""}</td></tr>`).join("")}
+      ${d.quests.length ? `<tr><td><b>副本任務</b></td><td class="lt drops">${d.quests.filter((q) => q[2].length).map(([n, lv, rw]) => `<div>${esc(n)} <span class="mut sm">${lv} 級・選一件：</span>${rw.map(link).join(" ")}</div>`).join("")}</td></tr>` : ""}
+      </tbody></table></div></div>`;
+  }).join("");
+  // 新物品、改過的物品
+  const clsOk = (id) => !fstate2.cls || FCLS[fstate2.cls].includes((F.items[id] || [])[2]);
+  const newRows = newIds.filter(clsOk).sort((a, b) => val(b) - val(a));
+  const chgOk = (c) => !fstate2.chg || (fstate2.chg === "q" ? c.q : fstate2.chg === "b" ? c.b : fstate2.chg === "lv" ? c.il || c.rl : c["+"] || c["-"]);
+  const chgRows = chgIds.filter((id) => chgOk(F.changed[id])).sort((a, b) => val(b) - val(a));
+  const shown = 100;
+  view.innerHTML = `<div class="card"><h3>🆕 《永恆》新增了什麼</h3>
+    <p class="desc">《魔獸世界：永恆》不是原封不動的經典版。這頁把永恆的遊戲檔跟經典版（60 版）比對：<b>${F.dungeons.length} 個新副本</b>、<b>${newIds.length} 件新物品</b>已經在${HLABEL}拍賣場出現過或打得到、<b>${chgIds.length} 件拍賣場上的物品被改過</b>。</p>
+    <p class="mut sm">比對永恆 client ${esc(F.build)} 和經典版 ${esc(F.era)} 的物品表。永恆的屬性改成照物品等級分配，算不出「+4 變 +6」的精確數字，只列得出品質、等級、綁定、多了或少了哪種屬性。新副本的掉落是<a href="https://wowamobi.com/dungeons" target="_blank" rel="noopener">阿莫比</a>玩家回報的。</p></div>
+    <div class="card"><h3>新副本</h3>${dun}<p class="mut sm"><a href="#/farm">看哪個副本最值得刷 →</a></p></div>
+    <div class="card"><h3>新物品・改過的物品</h3>
+      <div class="filters pfilters">${seg("fvTab", [["new", `新物品（${newIds.length}）`], ["chg", `改過的（${chgIds.length}）`]], fstate2.tab)}
+      ${fstate2.tab === "new" ? seg("fvCls", [["", "全部"], ["gear", "裝備"], ["recipe", "配方"], ["mat", "材料"], ["use", "消耗品"], ["other", "其他"]], fstate2.cls)
+        : seg("fvChg", [["", "全部"], ["q", "品質變了"], ["b", "綁定變了"], ["lv", "等級變了"], ["s", "屬性變了"]], fstate2.chg)}</div>
+      <div class="tscroll"><table class="ptab"><thead><tr><th>物品</th>${fstate2.tab === "new" ? "<th>品質</th><th>來源</th>" : '<th class="lt">跟經典版比</th>'}<th>平均價（7 日）</th><th>7 天成交</th></tr></thead><tbody>
+      ${fstate2.tab === "new"
+        ? newRows.slice(0, shown).map((id) => { const n = F.items[id], d = n[8] && F.dungeons.find((x) => n[8].slice(1) == x.id);
+            return `<tr><td>${link(id)}</td><td class="sm">${n[1] != null ? QNAME[n[1]] : "—"}</td><td class="sm">${d ? `${esc(d.name)}${n[8][0] === "q" ? "任務" : "掉落"}` : '<span class="mut">—</span>'}</td>${priceCells(id)}</tr>`; }).join("")
+        : chgRows.slice(0, shown).map((id) => `<tr><td>${link(id)}</td><td class="lt sm">${chgTxt(F.changed[id])}</td>${priceCells(id)}</tr>`).join("")}
+      </tbody></table></div>
+      <p class="mut sm">依拍賣場 7 天成交金額排序，列前 ${shown} 件。點進商品看價格走勢。</p></div>`;
+  view.querySelectorAll("#fvTab button").forEach((b) => (b.onclick = () => { fstate2.tab = b.dataset.v; renderForever(view); }));
+  view.querySelectorAll("#fvCls button").forEach((b) => (b.onclick = () => { fstate2.cls = b.dataset.v; renderForever(view); }));
+  view.querySelectorAll("#fvChg button").forEach((b) => (b.onclick = () => { fstate2.chg = b.dataset.v; renderForever(view); }));
+}
 
 /* ---------------- 快結束的便宜競標（搶標） ---------------- */
 // 收集器每小時從非堆疊商品挑出：剩 30 分–2 小時（或 30 分內）、目前出價低於 7 日均 25% 以上的競標

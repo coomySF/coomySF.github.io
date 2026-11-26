@@ -7,3 +7,4 @@ vendor/
 supabase/.temp/
 
 __pycache__/
+_tools/wow-ah/.cache/
