@@ -733,6 +733,7 @@ async function boot() {
   window.addEventListener("hashchange", route);
   loadIndex();
   endTeaser();
+  if (Object.keys(BIDS).length || SNIPE_L) loadBidHits().then(() => { renderAlerts(); notifyHits(); }).catch(() => {});
   startWatcher();
 }
 
@@ -1670,6 +1671,8 @@ function alertHit(id) {
 let DISMISS = new Set();
 try { DISMISS = new Set(JSON.parse(sessionStorage.getItem("wowah.dismiss") || "[]")); } catch (e) {}
 const hitKey = (h) => `${h.r.id}:${h.kind}:${OV?.t}`;
+const bidKey = (h) => `b${h.id}:${h.a[0]}:${h.a[3]}`;
+const snipeKey = () => `s:${ENDING?.t}`;
 const saveDismiss = () => { try { sessionStorage.setItem("wowah.dismiss", JSON.stringify([...DISMISS])); } catch (e) {} };
 // 「支持一下」連結：到提醒頁並捲到贊助區塊
 document.addEventListener("click", (e) => {
@@ -1684,7 +1687,8 @@ document.addEventListener("click", (e) => { const w = e.target.closest("[data-tr
 document.addEventListener("click", (e) => { const a = e.target.closest("[data-track=threads]"); if (a) track("ah_threads", { from: a.closest(".foot") ? "foot" : "support" }); });
 document.addEventListener("click", (e) => { const a = e.target.closest('[data-track="discord-community"]'); if (a) track("ah_community_join", { from: a.closest(".foot") ? "foot" : "header", page: location.hash || "#/" }); });
 function renderBadge() {
-  const b = $("#tBadge"), n = Object.keys(ALERTS).length, hits = Object.keys(ALERTS).filter((id) => alertHit(id)).length;
+  const b = $("#tBadge"), n = Object.keys(ALERTS).length + Object.keys(BIDS).length + (SNIPE_L ? 1 : 0);
+  const hits = Object.keys(ALERTS).filter((id) => alertHit(id)).length + BIDHITS.length + (SNIPEHITS.length ? 1 : 0);
   if (!b) return;
   b.hidden = !n;
   b.textContent = String(hits || n);
@@ -1694,22 +1698,28 @@ function renderBadge() {
 function renderAlerts() {
   renderBadge();
   const bar = $("#alertBar"), hits = Object.keys(ALERTS).map(alertHit).filter(Boolean).filter((h) => !DISMISS.has(hitKey(h)));
-  const n = Object.keys(ALERTS).length;
+  const n = Object.keys(ALERTS).length + Object.keys(BIDS).length + (SNIPE_L ? 1 : 0);
+  const bhits = BIDHITS.filter((h) => !DISMISS.has(bidKey(h)));
+  const shit = SNIPEHITS.length && !DISMISS.has(snipeKey()) ? SNIPEHITS : [];
   if (!n) { bar.hidden = true; return; }
   bar.hidden = false;
   const perm = "Notification" in window ? Notification.permission : "unsupported";
-  bar.innerHTML = `${hits.length ? hits.map((h) => `<div class="hit ${h.kind}"><a href="#/item/${h.r.id}">🔔 <b>${esc(h.r.name)}</b> 現價 ${money(h.r.ask, true)}，${h.kind === "sell" ? `漲到你設的 ${money(h.a.hi, true)} 以上：<b>可以掛賣了</b>` : `跌到你設的 ${money(h.a.lo, true)} 以下：<b>可以進貨了</b>`}</a>
-      <span class="hit-act"><button class="clr" data-off="${h.r.id}" title="刪掉這個商品的價格提醒">取消提醒</button><button class="hit-x" data-hide="${hitKey(h)}" aria-label="先收起，有新價格再提醒" title="先收起，有新價格再提醒">×</button></span></div>`).join("")
-      : `<span class="mut">🔔 你設了 ${n} 個價格提醒，目前都沒有新的到價。</span>`}
-    ${hits.length && PUSH_ON ? '<span class="sm ab-thanks">這次有幫到你嗎？<a href="#/alerts" data-go="support">請 Coomy 喝杯麥酒</a> ☕</span>' : ""}
-    <div class="ab-acts"><a class="clr" href="#/alerts">管理提醒（${n}）</a>${hits.length > 1 ? '<button class="clr" id="hideAll">全部收起</button>' : ""}
+  bar.innerHTML = `${hits.map((h) => `<div class="hit ${h.kind}"><a href="#/item/${h.r.id}">🔔 <b>${esc(h.r.name)}</b> 現價 ${money(h.r.ask, true)}，${h.kind === "sell" ? `漲到你設的 ${money(h.a.hi, true)} 以上：<b>可以掛賣了</b>` : `跌到你設的 ${money(h.a.lo, true)} 以下：<b>可以進貨了</b>`}</a>
+      <span class="hit-act"><button class="clr" data-off="${h.r.id}" title="刪掉這個商品的價格提醒">取消提醒</button><button class="hit-x" data-hide="${hitKey(h)}" aria-label="先收起，有新價格再提醒" title="先收起，有新價格再提醒">×</button></span></div>`).join("")}
+    ${bhits.map((h) => `<div class="hit buy"><a href="#/item/${h.id}">🎯 <b>${esc(bidName(h.id))}</b> 有出價 ${money(h.a[0], true)} 的競標（你設 ${money(h.w.max, true)} 以下）・${endTxt(h.a[3], h.a[4], h.a[2])}${h.w.last ? "・<b>快結束了</b>" : ""}</a>
+      <span class="hit-act"><button class="hit-x" data-hide="${bidKey(h)}" aria-label="先收起" title="先收起，有新的競標再提醒">×</button></span></div>`).join("")}
+    ${shit.length ? `<div class="hit buy"><a href="#/ending">⏳ <b>${shit.length} 筆快結束的便宜競標</b>符合你的條件（便宜 ${Math.round(SNIPE_L.off * 100)}% 以上${SNIPE_L.cls ? "・" + SNIPE_L.cls : ""}），快去搶 →</a>
+      <span class="hit-act"><button class="hit-x" data-hide="${snipeKey()}" aria-label="先收起" title="先收起，下一小時有新的再提醒">×</button></span></div>` : ""}
+    ${hits.length || bhits.length || shit.length ? "" : `<span class="mut">🔔 你設了 ${n} 個提醒，目前都沒有新的到價或便宜競標。</span>`}
+    ${(hits.length || bhits.length) && PUSH_ON ? '<span class="sm ab-thanks">這次有幫到你嗎？<a href="#/alerts" data-go="support">請 Coomy 喝杯麥酒</a> ☕</span>' : ""}
+    <div class="ab-acts"><a class="clr" href="#/alerts">管理提醒（${n}）</a>${hits.length + bhits.length + (shit.length ? 1 : 0) > 1 ? '<button class="clr" id="hideAll">全部收起</button>' : ""}
     ${perm === "default" ? '<button class="clr" id="notifOn">開啟桌面通知</button>' : perm === "granted" ? '<span class="mut sm">桌面通知已開（這個分頁開著時會提醒）</span>' : ""}</div>`;
   const b = $("#notifOn");
   if (b) b.onclick = async () => { try { await Notification.requestPermission(); } catch (e) {} renderAlerts(); };
   bar.querySelectorAll("[data-hide]").forEach((x) => (x.onclick = () => { DISMISS.add(x.dataset.hide); saveDismiss(); renderAlerts(); }));
   bar.querySelectorAll("[data-off]").forEach((x) => (x.onclick = () => { delete ALERTS[x.dataset.off]; saveAlerts(); renderAlerts(); if (!$("#listView").hidden) renderList(); }));
   const all = $("#hideAll");
-  if (all) all.onclick = () => { hits.forEach((h) => DISMISS.add(hitKey(h))); saveDismiss(); renderAlerts(); };
+  if (all) all.onclick = () => { hits.forEach((h) => DISMISS.add(hitKey(h))); bhits.forEach((h) => DISMISS.add(bidKey(h))); if (shit.length) DISMISS.add(snipeKey()); saveDismiss(); renderAlerts(); };
 }
 const notified = new Set();
 function notifyHits() {
@@ -1722,6 +1732,17 @@ function notifyHits() {
     notified.add(key);
     try { new Notification(`${h.r.name} ${h.kind === "sell" ? "可以掛賣了" : "可以進貨了"}`, { body: `台服拍賣場現價 ${money(h.r.ask, true)}（你設 ${h.kind === "sell" ? "高於 " + money(h.a.hi, true) : "低於 " + money(h.a.lo, true)}）`, tag: key }); } catch (e) {}
   }
+  const strip = (t) => t.replace(/<[^>]+>/g, "");
+  for (const h of BIDHITS) {
+    const key = bidKey(h);
+    if (notified.has(key)) continue;
+    notified.add(key);
+    try { new Notification(`🎯 ${bidName(h.id)} 有便宜的競標`, { body: `目前出價 ${money(h.a[0], true)}（你設 ${money(h.w.max, true)} 以下）・${strip(endTxt(h.a[3], h.a[4], h.a[2]))}`, tag: key }); } catch (e) {}
+  }
+  if (SNIPEHITS.length && !notified.has(snipeKey())) {
+    notified.add(snipeKey());
+    try { new Notification(`⏳ ${SNIPEHITS.length} 筆快結束的便宜競標`, { body: SNIPEHITS.slice(0, 3).map((x) => `${bidName(x[0])} 便宜 ${Math.round(x[6] * 100)}%`).join("、"), tag: snipeKey() }); } catch (e) {}
+  }
 }
 function startWatcher() {
   notifyHits();
@@ -1731,7 +1752,7 @@ function startWatcher() {
       if (!st.updated || st.updated === STATUS?.updated) return;
       STATUS = st; VER = st.updated;
       OV = await getJSON(`${HOUSE}/overview.json`);
-      buildRows(); renderStatus(); renderAlerts(); notifyHits();
+      buildRows(); renderStatus(); ENDING = null; await loadBidHits().catch(() => {}); renderAlerts(); notifyHits();
       if (!$("#listView").hidden) renderList();
     } catch (e) {}
   }, 10 * 60 * 1000);
@@ -1861,6 +1882,7 @@ async function pushLoad() {
   let added = 0;
   for (const r of PUSHED.values()) if (!ALERTS[r.item_id]) { ALERTS[r.item_id] = { hi: r.hi ?? null, lo: r.lo ?? null }; watch.add(r.item_id); added++; }
   if (added) { saveAlerts(); saveWatch(); renderAlerts(); }
+  try { await loadBidPush(); } catch (e) {}
 }
 // Email 登入：寄 6 位數驗證碼（Supabase 信件範本要放驗證碼 Token 變數），輸入後登入同一個帳號
 async function pushSendCode(email) {
@@ -1929,7 +1951,7 @@ async function discordJoin(session) {
 async function pushSignOut() {
   const c = await sb();
   await c.auth.signOut();
-  PSUB = null; PEMAIL = ""; PUSHED = new Map();
+  PSUB = null; PEMAIL = ""; PUSHED = new Map(); BWATCH = {}; SNIPE = null;
 }
 async function pushStart() {
   const c = await sb();
@@ -1941,7 +1963,7 @@ async function pushStart() {
   track("ah_push_start");
 }
 const isSupporter = () => PSUB?.supporter_until && Date.parse(PSUB.supporter_until) > Date.now();
-const pushCap = () => (isSupporter() ? (PSUB?.tier === "guild" ? 100 : 30) : 1);
+const pushCap = () => (isSupporter() ? (PSUB?.tier === "guild" ? 100 : 30) : 2);
 // 本機提醒有改時，同步到推播（有開推播的才同步）
 async function pushSync(id) {
   if (!PUSH_ON || !PUSHED.has(+id)) return;
@@ -1984,7 +2006,7 @@ function pushCardHtml() {
   const emailForm = (lead) => OTP_TO
     ? `<div class="push-step"><span class="sm">驗證碼已寄到 <b>${esc(OTP_TO)}</b>（看一下垃圾信）</span><input type="text" id="pushOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="6 位數驗證碼" class="otp"><button class="promo-cta sm" id="pushOtpGo">登入</button><button class="clr" id="pushOtpBack">換信箱</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`
     : `<div class="push-step">${lead}<input type="email" id="pushMail" autocomplete="email" placeholder="你的信箱" class="mail"><button class="promo-cta sm" id="pushMailGo">寄驗證碼</button><span class="sm" id="pushMailMsg" aria-live="polite"></span></div>`;
-  if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價直接 Discord 私訊你，手機會跳通知。免費 1 個商品，支持者 30 個。</p>
+  if (!PSUB) return `<div class="push-box"><b>📲 Discord 推播：關掉網頁也收得到</b><p class="mut sm">到價直接 Discord 私訊你，手機會跳通知。免費 2 個（例如 1 個材料到價＋1 個搶標），支持者 30 個。</p>
     ${PUSH.discord ? `<button class="promo-cta discord-go" id="pushDiscord">用 Discord 登入開啟</button><span class="sm mut">手機電腦登同一個，設定跟贊助都跟著走。</span><span class="sm" id="pushMailMsg" aria-live="polite"></span>
     <p class="sm mut">不想登入？<button class="clr" id="pushStart">只在這台裝置開啟</button></p>`
     : PUSH.email ? `${emailForm('<span class="sm"><b>用信箱登入（建議）</b>：手機、電腦都是同一套推播和贊助。</span>')}
@@ -1999,7 +2021,7 @@ function pushCardHtml() {
     ${PSUB.discord_id ? `<p class="sm dm-state">${PSUB.dm_ok ? '✓ 到價時「台灣拍賣場」機器人會<b>私訊你</b>（剛先私你一則，去看看）。' : '⚠ 機器人私訊不到你：到 Discord 的「台灣拍賣場」伺服器 → 伺服器名稱 →「隱私設定」打開「私人訊息」，再按 <button class="clr" id="dmRetry">重試</button>'}</p>
     <details class="sm adv"${isGuild() ? " open" : ""}><summary>${isGuild() ? "公會頻道：貼上公會頻道的 webhook，到價會同時推到那裡" : "進階：改送到自己的頻道（webhook）"}</summary>${hookHtml}</details>` : hookHtml}
     <p class="sm">表格裡「推播」打勾的商品（${HLABEL}拍賣場），到價就傳到 Discord，每小時檢查一次。全部拍賣場加起來已用 <b>${PUSH_TOTAL}／${pushCap()}</b>${isSupporter() ? ` <span class="chip c-ye">☕ 旅店常客・${isGuild() ? "100 個＋公會頻道" : "30 個"}</span>` : ""}</p>
-    ${isSupporter() ? "" : `<div class="support">${PUSH_TOTAL >= pushCap() ? "免費的 1 個已經在用囉。" : "免費的 1 個先拿去盯你最在意的那個材料。"}支持一次（NT$30 起），就能永久追 30 個。<a href="#support" class="go-support">看怎麼支持 →</a></div>`}
+    ${isSupporter() ? "" : `<div class="support">${PUSH_TOTAL >= pushCap() ? "免費的 2 個已經在用囉。" : "免費 2 個：一個盯材料到價、一個盯想搶的裝備剛好。"}支持一次（NT$30 起），就能永久追 30 個。<a href="#support" class="go-support">看怎麼支持 →</a></div>`}
   </div>`;
 }
 function bindPushCard(view) {
@@ -2032,7 +2054,7 @@ function bindPushCard(view) {
   }));
 }
 /* ---------------- 支持 Coomy（贊助） ---------------- */
-// 「遠征補給站」：捐過一次（任何金額）就永久把 Discord 推播從 1 個開到 30 個；Ko-fi 以美元結帳，標約略美元
+// 「遠征補給站」：捐過一次（任何金額）就永久把 Discord 推播從 2 個開到 30 個；Ko-fi 以美元結帳，標約略美元
 // [金額, 品名, ≈ 生活換算, 約美元, 圖示, 品質色, 按鈕動詞]
 const TIERS = [
   [30, "旅店一杯麥酒", "一杯手搖", 1, "ale", "q1", "請 Coomy 喝杯麥酒"],
@@ -2197,7 +2219,7 @@ function showLimitBox() {
   track("ah_support_view", { from: "limit" });
   if (pushCap() >= 100) { m.innerHTML = '<div class="limit-box">100 個推播都用滿了，先取消一個再勾。</div>'; return; }
   if (pushCap() >= 30) { m.innerHTML = '<div class="limit-box">30 個推播都用滿了。先取消一個，或幫公會開一個<b>公會補給箱</b>（推播 100 個＋公會頻道）。<a href="#support" class="go-support">看公會補給箱 →</a></div>'; }
-  else m.innerHTML = `<div class="limit-box"><b>免費的 1 個已經在用囉。</b>隨便贊助一次（NT$30 起），推播就永久開到 30 個。${PSUB?.code ? `你的支持者代碼：<b class="code">${esc(PSUB.code)}</b>・` : ""}<a href="#support" class="go-support">怎麼支持 →</a></div>`;
+  else m.innerHTML = `<div class="limit-box"><b>免費的 2 個已經在用囉。</b>隨便贊助一次（NT$30 起），推播就永久開到 30 個。${PSUB?.code ? `你的支持者代碼：<b class="code">${esc(PSUB.code)}</b>・` : ""}<a href="#support" class="go-support">怎麼支持 →</a></div>`;
   m.querySelectorAll(".go-support").forEach((a) => (a.onclick = (e) => { e.preventDefault(); $("#support")?.scrollIntoView({ behavior: "smooth" }); }));
   m.scrollIntoView({ block: "nearest" });
 }
@@ -2223,8 +2245,101 @@ async function endTeaser() {
   const n = (ENDING?.items || []).filter((x) => x[4] === "MEDIUM").length;
   el.hidden = false;
   el.innerHTML = n ? `⏳ <b>${n} 筆快結束的便宜競標</b>，目前出價比行情低 25% 以上，有空就去搶 →`
-    : `⏳ <b>搶標快訊</b>：快結束、出價比行情低的競標，現在沒有，開通知等它出現 →`;
+    : `⏳ <b>搶標快訊</b>：快結束、出價比行情低的競標，現在沒有，設個提醒等它出現 →`;
 }
+
+/* ---------------- 搶標提醒：跟到價提醒一樣存在這台裝置，網頁開著就提醒；勾 Discord 才推播 ---------------- */
+// BIDS：盯某件商品，出價低於 max 就提醒（last＝只在快結束還這麼便宜才提醒）；SNIPE_L：快結束的便宜競標，便宜 off 以上、類別 cls
+let BIDS = {}, SNIPE_L = null;
+const BIDS_KEY = `wowah.bids.${HOUSE}`, SNIPE_KEY = `wowah.snipe.${HOUSE}`;
+try { BIDS = JSON.parse(localStorage.getItem(BIDS_KEY) || "{}"); SNIPE_L = JSON.parse(localStorage.getItem(SNIPE_KEY) || "null"); } catch (e) {}
+const saveBids = () => { try { localStorage.setItem(BIDS_KEY, JSON.stringify(BIDS)); localStorage.setItem(SNIPE_KEY, JSON.stringify(SNIPE_L)); } catch (e) {} };
+let BWATCH = {}, SNIPE = null;   // 有開 Discord 推播的（雲端那份）：BWATCH item_id → {max_bid, last_call}；SNIPE {min_off, cls}
+const limitMsg = () => `推播額度用完了（${pushCap()} 個）。${pushCap() < 30 ? '隨便贊助一次（NT$30 起）就開到 30 個，<a href="#/alerts" data-go="support">怎麼支持 →</a>' : "先關掉一個再開。"}`;
+const pushErr = (error) => (String(error?.message || "").startsWith("push_limit") ? limitMsg() : "推播設定失敗，稍後再試。");
+async function loadBidPush() {   // pushLoad 登入後呼叫：雲端的帶回這台
+  const c = await sb();
+  const [{ data: bw }, { data: sn }] = await Promise.all([c.from("wowah_bidwatch").select("item_id,max_bid,last_call").eq("house", HOUSE), c.from("wowah_snipe").select("min_off,cls").eq("house", HOUSE).limit(1)]);
+  BWATCH = Object.fromEntries((bw || []).map((x) => [x.item_id, x]));
+  SNIPE = sn?.[0] || null;
+  let changed = false;
+  for (const x of bw || []) if (!BIDS[x.item_id]) { BIDS[x.item_id] = { max: x.max_bid, last: x.last_call }; changed = true; }
+  if (SNIPE && !SNIPE_L) { SNIPE_L = { off: +SNIPE.min_off, cls: SNIPE.cls || "" }; changed = true; }
+  if (changed) saveBids();
+}
+// 改了本機的搶標提醒：有開推播的同步到雲端；push 傳 true/false 就是開關推播。回傳錯誤訊息，成功回 ""
+async function bidSync(id, push) {
+  if (!PUSH_ON || !PSUB) return "";
+  const on = push ?? !!BWATCH[id], w = BIDS[id], c = await sb();
+  if (!on || !w) {
+    if (BWATCH[id]) { await c.from("wowah_bidwatch").delete().eq("house", HOUSE).eq("item_id", id); delete BWATCH[id]; PUSH_TOTAL = Math.max(0, PUSH_TOTAL - 1); }
+    return "";
+  }
+  const { error } = await c.from("wowah_bidwatch").upsert({ house: HOUSE, item_id: id, max_bid: w.max, last_call: !!w.last }, { onConflict: "uid,house,item_id" });
+  if (error) return pushErr(error);
+  if (!BWATCH[id]) { PUSH_TOTAL++; track("ah_bidwatch_push", { item_id: id }); }
+  BWATCH[id] = { max_bid: w.max, last_call: !!w.last };
+  return "";
+}
+async function snipeSync(push) {
+  if (!PUSH_ON || !PSUB) return "";
+  const on = push ?? !!SNIPE, c = await sb();
+  if (!on || !SNIPE_L) {
+    if (SNIPE) { await c.from("wowah_snipe").delete().eq("house", HOUSE); SNIPE = null; PUSH_TOTAL = Math.max(0, PUSH_TOTAL - 1); }
+    return "";
+  }
+  const { error } = await c.from("wowah_snipe").upsert({ house: HOUSE, min_off: SNIPE_L.off, cls: SNIPE_L.cls || null }, { onConflict: "uid,house" });
+  if (error) return pushErr(error);
+  if (!SNIPE) { PUSH_TOTAL++; track("ah_snipe_push", { house: HOUSE }); }
+  SNIPE = { min_off: SNIPE_L.off, cls: SNIPE_L.cls || null };
+  return "";
+}
+function setBid(id, max, last) { BIDS[id] = { max, last: !!last }; saveBids(); track("ah_bidwatch", { item_id: id }); }
+function delBid(id) { delete BIDS[id]; saveBids(); return bidSync(id, false); }
+
+// 網頁上的提醒：讀盯著的商品那幾份競標清單，找出價低於上限的
+let BIDSH = {}, BIDHITS = [], SNIPEHITS = [];
+const bidName = (id) => (META[id] || [])[0] || ROWBY.get(+id)?.name || `#${id}`;
+function snipeMatch(x) {
+  const s = SNIPE_L, c = (META[x[0]] || [])[2];
+  return s && x[4] === "MEDIUM" && x[6] >= s.off && (!s.cls || c === s.cls);
+}
+async function loadBidHits() {
+  const ids = Object.keys(BIDS).map(Number), now = Date.now();
+  const shards = [...new Set(ids.map((i) => i % SHARDS))];
+  await Promise.all([...shards.map(async (s) => { try { BIDSH[s] = await getJSON(`${HOUSE}/bids/${s}.json`); } catch (e) {} }), SNIPE_L ? loadEnding() : null]);
+  BIDHITS = ids.flatMap((id) => {
+    const w = BIDS[id], list = BIDSH[id % SHARDS]?.items?.[id] || [];
+    const a = list.find(([bid, , left, lo, hi, qty]) => left !== "SHORT" && bid / qty <= w.max && (!w.last || (lo && hi && hi > now && lo <= now + 3600e3)));
+    return a ? [{ id, a, w }] : [];
+  });
+  SNIPEHITS = (ENDING?.items || []).filter(snipeMatch);
+}
+const lowestBid = (id) => (BIDSH[id % SHARDS]?.items?.[id] || [])[0];
+
+// 設定列（搶標頁、商品頁共用）：出價上限、快結束才提醒、Discord 推播
+const lastBox = (attr, on) => `<label class="sm" title="網站每小時檢查一次，會在它結束前的最後一輪（大約剩 0–60 分）、出價還低於上限時提醒你"><input type="checkbox" ${attr}${on ? " checked" : ""}> 只在快結束（剩不到 1 小時）還這麼便宜才提醒</label>`;
+const pushBox = (attr, on) => (PUSH_ON && PSUB ? `<label class="sm"><input type="checkbox" ${attr}${on ? " checked" : ""}> Discord 推播</label>` : "");
+const bidHint = () => (PUSH_ON && !PSUB ? '<span class="sm mut">提醒存在這台裝置，網頁開著才看得到；想關掉網頁也收到，<a href="#/alerts">到提醒頁開 Discord 推播</a>。</span>' : '<span class="sm mut">網頁開著會提醒你；勾 Discord 推播就算 1 個推播。</span>');
+function bidRow(k, defMax) {
+  const w = BIDS[k];
+  return `<div class="bw-row" data-row="${k}">🎯 <b>${esc(bidName(k))}</b>：出價低於 <input type="text" class="numin" data-bw="${k}" placeholder="例如 10g" value="${w ? moneyTxt(w.max) : defMax ? moneyTxt(defMax) : ""}"> 就提醒我 ${lastBox(`data-bwlast="${k}"`, w?.last)} ${pushBox(`data-bwpush="${k}"`, !!BWATCH[k])}
+    <button class="clr" data-bwset="${k}">${w ? "更新" : "設定"}</button>${w ? ` <button class="clr" data-bwdel="${k}">取消</button> <span class="sm good">✓ 盯著中</span>` : ""}</div>`;
+}
+function bindBidRows(root, msgSel, after) {
+  root.querySelectorAll("[data-bwset]").forEach((b) => (b.onclick = async () => {
+    const id = +b.dataset.bwset, v = parseMoney(root.querySelector(`[data-bw="${id}"]`).value), msg = root.querySelector(msgSel);
+    if (!v || Number.isNaN(v)) { msg.textContent = "出價上限寫成 10g、9g50s 這樣。"; return; }
+    setBid(id, v, root.querySelector(`[data-bwlast="${id}"]`).checked);
+    const p = root.querySelector(`[data-bwpush="${id}"]`);
+    const err = await bidSync(id, p ? p.checked : undefined);
+    await loadBidHits(); renderAlerts(); after();
+    const m2 = root.querySelector(msgSel) || msg;
+    m2.innerHTML = err || `✓ 設好了：出價低於 ${money(v, true)} 的競標一出現就提醒你${BWATCH[id] ? "，也會 Discord 私訊" : ""}。`;
+  }));
+  root.querySelectorAll("[data-bwdel]").forEach((b) => (b.onclick = async () => { await delBid(+b.dataset.bwdel); await loadBidHits(); renderAlerts(); after(); }));
+}
+
 async function showEnding() {
   ["listView", "itemView", "about", "profView", "farmView", "alertView"].forEach((k) => ($("#" + k).hidden = true));
   const view = $("#endingView");
@@ -2234,22 +2349,16 @@ async function showEnding() {
   track("ah_ending");
   if (!ENDING) { view.innerHTML = '<div class="skel"><i></i><i></i></div>'; await loadEnding(); }
   if (PUSH_ON && !PSUB) await pushLoad().catch(() => {});
-  if (PUSH_ON && PSUB) await Promise.all([loadSnipe(), loadBidWatch()]);
   renderEnding(view);
 }
-let SNIPE = null;
-async function loadSnipe() {
-  try { const c = await sb(); const { data } = await c.from("wowah_snipe").select("min_off,cls").eq("house", HOUSE).limit(1); SNIPE = data?.[0] || null; } catch (e) { SNIPE = null; }
-}
 function snipeBox() {
-  if (!PUSH_ON) return "";
-  if (!PSUB) return `<div class="snipe-box"><span>🔔 <b>有好康就私訊你</b>：用 Discord 登入，符合條件的競標一出現，機器人直接私訊你（算 1 個推播，免費就能開 1 個）。</span><a class="clr" href="#/alerts">去登入 →</a></div>`;
-  const on = !!SNIPE, off = SNIPE ? +SNIPE.min_off : 0.4, cls = SNIPE?.cls || "";
-  return `<div class="snipe-box on">
-    <label><input type="checkbox" id="snOn" ${on ? "checked" : ""}> 🔔 <b>有好康就私訊我</b>（${HLABEL}拍賣場）</label>
+  const s = SNIPE_L, off = s ? s.off : 0.4, cls = s?.cls || "";
+  return `<div class="snipe-box ${s ? "on" : ""}">
+    <label><input type="checkbox" id="snOn" ${s ? "checked" : ""}> ⏳ <b>有好康就提醒我</b>（${HLABEL}拍賣場）</label>
     <label>便宜 <select id="snOff">${[0.25, 0.4, 0.6].map((v) => `<option value="${v}"${Math.abs(v - off) < 0.01 ? " selected" : ""}>${v * 100}%</option>`).join("")}</select> 以上</label>
     <label>只看 <select id="snCls"><option value="">全部</option>${["武器", "護甲", "配方"].map((c) => `<option${c === cls ? " selected" : ""}>${c}</option>`).join("")}</select></label>
-    <span class="sm" id="snMsg" aria-live="polite">${on ? "✓ 開著：每小時檢查，同一筆只通知一次。" : `算 1 個推播（目前已用 ${PUSH_TOTAL}／${pushCap()}）`}</span></div>`;
+    ${pushBox('id="snPush"', !!SNIPE)}
+    <span class="sm" id="snMsg" aria-live="polite">${s ? `✓ 開著${SNIPE ? "，也會 Discord 私訊" : ""}。` : ""}</span>${!s || !PSUB ? bidHint() : ""}</div>`;
 }
 function renderEnding(view) {
   const items = ENDING?.items || [];
@@ -2258,63 +2367,31 @@ function renderEnding(view) {
     .sort((a, b) => (a[4] === "SHORT") - (b[4] === "SHORT") || b[5] * b[1] - b[2] - (a[5] * a[1] - a[2]));
   const seg = (id, opts, cur) => `<div class="seg" id="${id}">${opts.map(([v, t]) => `<button data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
   view.innerHTML = `<div class="card"><h3>⏳ 快結束的便宜競標</h3>
-    <p class="desc">只能競標（或直購很貴）的裝備、配方，剩不到 2 小時、目前出價比 7 日均低 25% 以上。去拍賣場搜尋名稱，出價比目前高一點就有機會搶到。想盯某件裝備：下面搜尋名稱，就能設「🎯 出價低於多少就私訊我」，清單裡的也可以直接按「🎯 盯這件」。<br>
+    <p class="desc">只能競標（或直購很貴）的裝備、配方，剩不到 2 小時、目前出價比 7 日均低 25% 以上。去拍賣場搜尋名稱，出價比目前高一點就有機會搶到。想盯某件裝備：下面搜尋名稱，設「🎯 出價低於多少就提醒我」；清單裡的也可以直接按「🎯 盯這件」。設好的提醒都在<a href="#/alerts">提醒管理</a>。<br>
     <span class="mut sm">${ENDING ? `快照 ${tpe(ENDING.t, { hour: "2-digit", minute: "2-digit" })}（${age} 分鐘前）` : "還沒有資料"}・暴雪的剩餘時間只給區間，快照大約晚半小時，「30 分內」的多半已經結束了。</span></p>
     ${snipeBox()}
     <div class="filters pfilters"><input type="search" id="enQ" placeholder="搜尋商品，例如 克羅之刃" value="${esc(estate.q)}" autocomplete="off"><label class="sm">出價上限 <input type="text" id="enMax" class="numin" placeholder="例如 10g" value="${estate.max ? moneyTxt(estate.max) : ""}"></label>${seg("enCls", [["", "全部"], ["武器", "武器"], ["護甲", "護甲"], ["配方", "配方"], ["其他", "其他"]], estate.cls)}${seg("enOff", [[0.25, "便宜 25%+"], [0.4, "40%+"], [0.6, "60%+"]], estate.off)}</div>
     <div id="watchBox">${watchBox()}</div>
     <div class="tscroll"><table class="ptab"><thead><tr><th>商品</th><th>目前出價</th><th>行情（7 日均）</th><th>便宜</th><th>結束</th><th>直購</th><th></th></tr></thead><tbody>
     ${rows.map(([iid, qty, bid, buyout, left, ref, off, aid, lo, hi]) => `<tr class="${left === "SHORT" ? "dim" : ""}"><td>${gearLink(iid)}${qty > 1 ? ` <span class="mut sm">×${qty}</span>` : ""}</td>
-      <td>${money(bid)}</td><td>${money(ref * qty)}</td><td><b class="good">${Math.round(off * 100)}%</b></td><td class="sm">${endTxt(lo, hi, left)}${left === "SHORT" ? '<div class="mut">多半已結束</div>' : ""}</td><td>${buyout ? money(buyout) : '<span class="mut sm">只能競標</span>'}</td><td>${BWATCH?.[iid] ? '<span class="sm good">🎯 盯著</span>' : `<button class="clr" data-bwq="${iid}" title="出價低於多少就私訊我">🎯 盯這件</button>`}</td></tr>`).join("")
-      || `<tr><td colspan="7" class="mut">這個小時沒有符合條件的競標。${HLABEL}拍賣場換個條件看看，或開「有好康就私訊我」等它出現。</td></tr>`}
+      <td>${money(bid)}</td><td>${money(ref * qty)}</td><td><b class="good">${Math.round(off * 100)}%</b></td><td class="sm">${endTxt(lo, hi, left)}${left === "SHORT" ? '<div class="mut">多半已結束</div>' : ""}</td><td>${buyout ? money(buyout) : '<span class="mut sm">只能競標</span>'}</td><td>${BIDS[iid] ? '<span class="sm good">🎯 盯著</span>' : `<button class="clr" data-bwq="${iid}" title="出價低於多少就提醒我">🎯 盯這件</button>`}</td></tr>`).join("")
+      || `<tr><td colspan="7" class="mut">這個小時沒有符合條件的競標。${HLABEL}拍賣場換個條件看看，或開「有好康就提醒我」等它出現。</td></tr>`}
     </tbody></table></div></div>`;
   view.querySelectorAll("#enCls button").forEach((b) => (b.onclick = () => { estate.cls = b.dataset.v; renderEnding(view); }));
   view.querySelectorAll("#enOff button").forEach((b) => (b.onclick = () => { estate.off = +b.dataset.v; renderEnding(view); }));
   let qt; $("#enQ").oninput = (e) => { clearTimeout(qt); qt = setTimeout(() => { estate.q = e.target.value.trim().toLowerCase(); renderEnding(view); $("#enQ").focus(); $("#enQ").setSelectionRange(99, 99); }, 300); };
   $("#enMax").onchange = (e) => { const v = parseMoney(e.target.value); estate.max = Number.isNaN(v) ? null : v; renderEnding(view); };
   const save = async () => {
-    const c = await sb(), on = $("#snOn").checked, off = +$("#snOff").value, cls = $("#snCls").value || null;
-    if (!on) { await c.from("wowah_snipe").delete().eq("house", HOUSE); if (SNIPE) PUSH_TOTAL = Math.max(0, PUSH_TOTAL - 1); SNIPE = null; $("#snMsg").textContent = "已關閉。"; return; }
-    const { error } = await c.from("wowah_snipe").upsert({ house: HOUSE, min_off: off, cls }, { onConflict: "uid,house" });
-    if (error) {
-      $("#snOn").checked = false;
-      $("#snMsg").innerHTML = String(error.message || "").startsWith("push_limit") ? `推播額度用完了（${pushCap()} 個）。${pushCap() < 30 ? '隨便贊助一次（NT$30 起）就開到 30 個，<a href="#/alerts" data-go="support">怎麼支持 →</a>' : "先關掉一個再開。"}` : "設定失敗，稍後再試。";
-      return;
-    }
-    if (!SNIPE) PUSH_TOTAL++;
-    SNIPE = { min_off: off, cls }; track("ah_snipe_on", { house: HOUSE, off });
-    $("#snMsg").textContent = "✓ 開著：每小時檢查，同一筆只通知一次。";
+    const on = $("#snOn").checked, p = $("#snPush");
+    SNIPE_L = on ? { off: +$("#snOff").value, cls: $("#snCls").value } : null;
+    saveBids(); if (on) track("ah_snipe_on", { house: HOUSE, off: SNIPE_L.off });
+    const err = await snipeSync(on && p ? p.checked : on ? undefined : false);
+    await loadBidHits(); renderAlerts(); renderEnding(view);
+    if (err) { $("#snPush").checked = false; $("#snMsg").innerHTML = err; }
   };
-  ["#snOn", "#snOff", "#snCls"].forEach((id) => { const el = $(id); if (el) el.onchange = save; });
+  ["#snOn", "#snOff", "#snCls", "#snPush"].forEach((id) => { const el = $(id); if (el) el.onchange = save; });
   view.querySelectorAll("[data-bwq]").forEach((b) => (b.onclick = () => { estate.q = (META[b.dataset.bwq][0] || "").toLowerCase(); renderEnding(view); $("#watchBox").scrollIntoView({ block: "center", behavior: "smooth" }); const i = view.querySelector(`[data-bw="${b.dataset.bwq}"]`); if (i) i.focus(); }));
-  view.querySelectorAll("[data-bwset]").forEach((b) => (b.onclick = async () => {
-    const id = +b.dataset.bwset, v = parseMoney(view.querySelector(`[data-bw="${id}"]`).value);
-    if (!v || Number.isNaN(v)) { $("#bwMsg2").textContent = "出價上限寫成 10g、9g50s 這樣。"; return; }
-    const last = view.querySelector(`[data-bwlast="${id}"]`).checked;
-    const err = await setBidWatch(id, v, last);
-    if (err) { $("#bwMsg2").innerHTML = err; return; }
-    if (!BWATCH?.[id]) PUSH_TOTAL++;
-    BWATCH = { ...BWATCH, [id]: { max_bid: v, last_call: last } }; renderEnding(view); $("#bwMsg2").textContent = "✓ 設好了：有出價低於上限的競標就私訊你。";
-  }));
-  view.querySelectorAll("[data-bwdel]").forEach((b) => (b.onclick = async () => {
-    const id = +b.dataset.bwdel, c = await sb();
-    await c.from("wowah_bidwatch").delete().eq("house", HOUSE).eq("item_id", id);
-    delete BWATCH[id]; PUSH_TOTAL = Math.max(0, PUSH_TOTAL - 1); renderEnding(view);
-  }));
-}
-
-// 單品搶標提醒（商品頁、搶標頁共用）：回傳錯誤訊息 HTML，成功回 ""
-async function setBidWatch(id, max, last) {
-  const c = await sb();
-  const { error } = await c.from("wowah_bidwatch").upsert({ house: HOUSE, item_id: id, max_bid: max, last_call: !!last }, { onConflict: "uid,house,item_id" });
-  if (!error) { track("ah_bidwatch", { item_id: id }); return ""; }
-  return String(error.message || "").startsWith("push_limit") ? `推播額度用完了（${pushCap()} 個）。${pushCap() < 30 ? '隨便贊助一次（NT$30 起）就開到 30 個，<a href="#/alerts" data-go="support">怎麼支持 →</a>' : "先關掉一個再設。"}` : "設定失敗，稍後再試。";
-}
-// 「快結束才通知」：每小時跑一次，抓結束前最後一輪（剩 0–60 分）而且出價還低於上限
-const lastBox = (attr, on) => `<label class="sm" title="網站每小時檢查一次，會在它結束前的最後一輪（大約剩 0–60 分）、出價還低於上限時通知你"><input type="checkbox" ${attr}${on ? " checked" : ""}> 只在快結束（剩不到 1 小時）還這麼便宜才通知</label>`;
-let BWATCH = null;   // 這個拍賣場已設的單品搶標提醒 {item_id: max_bid}
-async function loadBidWatch() {
-  try { const c = await sb(); const { data } = await c.from("wowah_bidwatch").select("item_id,max_bid,last_call").eq("house", HOUSE); BWATCH = Object.fromEntries((data || []).map((x) => [x.item_id, x])); } catch (e) { BWATCH = {}; }
+  bindBidRows(view, "#bwMsg2", () => renderEnding(view));
 }
 // 搶標頁：搜尋到的商品可以直接「盯」
 function watchBox() {
@@ -2323,40 +2400,27 @@ function watchBox() {
   const exact = ids.find((k) => (META[k][0] || "").toLowerCase() === estate.q);
   const pick = exact ? [exact] : ids.slice(0, 5);
   if (!pick.length) return "";
-  if (!PUSH_ON || !PSUB) return `<div class="snipe-box"><span>🎯 <b>想盯「${esc(META[pick[0]][0])}」？</b>用 Discord 登入，就能設「出價低於多少就私訊我」（免費就能開 1 個）。</span><a class="clr" href="#/alerts">去登入 →</a></div>`;
-  return `<div class="snipe-box on bw-list">${pick.map((k) => { const w = BWATCH?.[k]; return `<div class="bw-row">🎯 <b>${esc(META[k][0])}</b>：出價低於 <input type="text" class="numin" data-bw="${k}" placeholder="例如 10g" value="${w ? moneyTxt(w.max_bid) : estate.max ? moneyTxt(estate.max) : ""}"> 就私訊我 ${lastBox(`data-bwlast="${k}"`, w?.last_call)} <button class="clr" data-bwset="${k}">${w ? "更新" : "設定"}</button>${w ? ` <button class="clr" data-bwdel="${k}">取消</button> <span class="sm good">✓ 盯著中</span>` : ""}</div>`; }).join("")}
-    <span class="sm" id="bwMsg2" aria-live="polite">${ids.length > pick.length ? `還有 ${ids.length - pick.length} 件符合，打完整名稱比較準。` : "有新的競標符合就私訊你，附預估結束時間；算 1 個推播。"}</span></div>`;
+  return `<div class="snipe-box on bw-list">${pick.map((k) => bidRow(k, estate.max)).join("")}
+    <span class="sm" id="bwMsg2" aria-live="polite">${ids.length > pick.length ? `還有 ${ids.length - pick.length} 件符合，打完整名稱比較準。` : ""}</span>${bidHint()}</div>`;
 }
 
-// 商品頁：這件現在的競標（出價、直購、預估結束），以及「出價低於多少就私訊我」
+// 商品頁：這件現在的競標（出價、直購、預估結束），以及「出價低於多少就提醒我」
 async function bidCards(id, r) {
   const box = $("#bidBox");
   if (!box) return;
   let B = null;
   try { B = await getJSON(`${HOUSE}/bids/${id % SHARDS}.json`); } catch (e) { return; }
   const list = B?.items?.[id] || [];
-  let watch = null;
-  if (PUSH_ON) { await pushLoad().catch(() => {}); if (PSUB) { try { const c = await sb(); const { data } = await c.from("wowah_bidwatch").select("max_bid,last_call").eq("house", HOUSE).eq("item_id", id).limit(1); watch = data?.[0] || null; } catch (e) {} } }
-  if ($("#bidBox") !== box || (!list.length && !watch && !PUSH_ON)) return;
+  if (PUSH_ON && !PSUB) await pushLoad().catch(() => {});
+  if ($("#bidBox") !== box) return;
   const ref = r.avg7 ?? r.ask;
   box.innerHTML = `<div class="card"><h3>現在的競標${list.length ? `（${list.length} 筆）` : ""}</h3>
     ${list.length ? `<div class="tscroll"><table class="ptab"><thead><tr><th>目前出價</th><th>比行情</th><th>結束</th><th>直購</th></tr></thead><tbody>
     ${list.map(([bid, buyout, left, lo, hi, qty]) => `<tr class="${left === "SHORT" ? "dim" : ""}"><td>${money(bid)}${qty > 1 ? ` <span class="mut sm">×${qty}</span>` : ""}</td><td>${ref ? `<span class="${bid / qty < ref ? "good" : ""}">${pct(bid / qty / ref - 1)}</span>` : "—"}</td><td class="sm">${endTxt(lo, hi, left)}</td><td>${buyout ? money(buyout) : '<span class="mut sm">只能競標</span>'}</td></tr>`).join("")}
-    </tbody></table></div>` : '<p class="mut">這個小時沒有人在競標這件。</p>'}
-    ${PUSH_ON ? (PSUB ? `<div class="snipe-box on"><label>🎯 <b>出價低於</b> <input type="text" id="bwMax" class="numin" placeholder="例如 10g" value="${watch ? moneyTxt(watch.max_bid) : ""}"> <b>就私訊我</b></label>${lastBox('id="bwLast"', watch?.last_call)}${watch ? '<button class="clr" id="bwDel">取消</button>' : '<button class="clr" id="bwSave">設定</button>'}<span class="sm" id="bwMsg" aria-live="polite">${watch ? "✓ 開著：有新的競標符合就私訊你，附預估結束時間。" : "算 1 個推播。"}</span></div>`
-      : `<div class="snipe-box"><span>🎯 <b>出價低於多少就私訊我</b>：用 Discord 登入就能設（算 1 個推播，免費就能開 1 個）。</span><a class="clr" href="#/alerts">去登入 →</a></div>`) : ""}
+    </tbody></table></div>` : '<p class="mut">這個小時沒有人在競標這件。可以先設提醒，有人上架競標再叫你。</p>'}
+    <div class="snipe-box on bw-list">${bidRow(id)}<span class="sm" id="bwMsg" aria-live="polite"></span>${bidHint()}</div>
     <p class="mut sm">剩餘時間暴雪只給區間；網站每小時追蹤同一筆拍賣，區間一變就能推算大概幾點結束，追越久越準。</p></div>`;
-  const save = async () => {
-    const v = parseMoney($("#bwMax").value);
-    if (!v || Number.isNaN(v)) { $("#bwMsg").textContent = "寫成 10g、9g50s 這樣。"; return; }
-    const err = await setBidWatch(id, v, $("#bwLast").checked);
-    if (err) { $("#bwMsg").innerHTML = err; return; }
-    bidCards(id, r);
-  };
-  const sv = $("#bwSave"); if (sv) sv.onclick = save;
-  const bm = $("#bwMax"); if (bm && watch) bm.onchange = save;
-  const bl = $("#bwLast"); if (bl && watch) bl.onchange = save;
-  const dl = $("#bwDel"); if (dl) dl.onclick = async () => { const c = await sb(); await c.from("wowah_bidwatch").delete().eq("house", HOUSE).eq("item_id", id); bidCards(id, r); };
+  bindBidRows(box, "#bwMsg", () => bidCards(id, r));
 }
 
 /* ---------------- 提醒管理 ---------------- */
@@ -2370,7 +2434,37 @@ function showAlerts() {
   window.scrollTo(0, 0);
   track("ah_alerts");
   renderAlertPage(view);
-  if (PUSH_ON) Promise.all([pushLoad().catch(() => {}), loadMonthStats()]).then(() => { if (!$("#alertView").hidden) renderAlertPage(view); });
+  Promise.all([PUSH_ON ? pushLoad().catch(() => {}) : null, PUSH_ON ? loadMonthStats() : null, loadBidHits().catch(() => {})]).then(() => { if (!$("#alertView").hidden) renderAlertPage(view); });
+}
+// 提醒管理：搶標提醒（盯單品＋快結束的便宜競標），每一條自己勾要不要 Discord 推播
+function bidCardHtml() {
+  const ids = Object.keys(BIDS).map(Number), push = PUSH_ON && PSUB, now = Date.now();
+  const hit = new Set(BIDHITS.map((h) => h.id));
+  return `<div class="card" id="bidCard"><h3>搶標提醒</h3>
+    <p class="desc">盯只能競標的裝備：出價低於上限就提醒你，網頁開著時每 10 分鐘檢查。${push ? "勾「Discord」的，網頁關掉也會私訊你（每條算 1 個推播）。" : PUSH_ON ? "想關掉網頁也收到，在上面開 Discord 推播，就能每條自己勾。" : ""}<a href="#/ending">去看快結束的便宜競標 →</a></p>
+    ${ids.length || SNIPE_L ? `<div class="tscroll"><table class="ptab ap"><thead><tr><th>盯什麼</th><th>現在最低出價</th><th>出價上限</th><th>快結束才提醒</th><th>狀態</th>${push ? "<th>推播</th>" : ""}<th></th></tr></thead><tbody>
+    ${SNIPE_L ? `<tr class="${SNIPEHITS.length ? "ap-hit buy" : ""}"><td>⏳ <a href="#/ending">快結束的便宜競標</a><div class="mut sm">便宜 ${Math.round(SNIPE_L.off * 100)}% 以上・${SNIPE_L.cls || "全部類別"}</div></td><td>—</td><td>—</td><td class="sm mut">剩 30 分–2 小時</td>
+      <td>${SNIPEHITS.length ? `<b class="neg-d">${SNIPEHITS.length} 筆符合</b>` : '<span class="mut">這小時沒有</span>'}</td>${push ? `<td><label class="ap-pl"><input type="checkbox" class="bc-push" data-sn="1" ${SNIPE ? "checked" : ""}> Discord</label></td>` : ""}<td><button class="clr bc-del" data-sn="1">刪除</button></td></tr>` : ""}
+    ${ids.map((id) => { const w = BIDS[id], lb = lowestBid(id); return `<tr class="${hit.has(id) ? "ap-hit buy" : ""}" data-bid="${id}"><td>🎯 ${gearLink(id)}</td><td>${lb ? `${money(lb[0])}<div class="mut sm">${endTxt(lb[3], lb[4], lb[2])}</div>` : '<span class="mut sm">沒有人在競標</span>'}</td>
+      <td><input type="text" class="ap-in bc-max" value="${moneyTxt(w.max)}" aria-label="出價上限"></td><td><input type="checkbox" class="bc-last" ${w.last ? "checked" : ""} aria-label="只在快結束還這麼便宜才提醒"></td>
+      <td>${hit.has(id) ? '<b class="neg-d">有便宜的競標</b>' : '<span class="mut">還沒有</span>'}</td>${push ? `<td><label class="ap-pl"><input type="checkbox" class="bc-push" ${BWATCH[id] ? "checked" : ""}> Discord</label></td>` : ""}<td><button class="clr bc-del">刪除</button></td></tr>`; }).join("")}
+    </tbody></table></div>` : '<p class="mut">還沒設。到<a href="#/ending">快結束的便宜競標</a>搜尋裝備，或在裝備的商品頁設「🎯 出價低於多少就提醒我」。</p>'}
+    <div class="sm" id="bcMsg" aria-live="polite"></div></div>`;
+}
+function bindBidCard(view) {
+  const card = view.querySelector("#bidCard");
+  if (!card) return;
+  const msg = (t) => { const m = view.querySelector("#bcMsg"); if (m) m.innerHTML = t; };
+  const redo = async (err) => { await loadBidHits().catch(() => {}); renderAlerts(); renderAlertPage(view); if (err) msg(err); };
+  card.querySelectorAll("tr[data-bid]").forEach((tr) => {
+    const id = +tr.dataset.bid;
+    tr.querySelector(".bc-max").onchange = async (e) => { const v = parseMoney(e.target.value); if (!v || Number.isNaN(v)) { e.target.classList.add("bad"); return; } setBid(id, v, BIDS[id].last); redo(await bidSync(id)); };
+    tr.querySelector(".bc-last").onchange = async (e) => { setBid(id, BIDS[id].max, e.target.checked); redo(await bidSync(id)); };
+    const p = tr.querySelector(".bc-push"); if (p) p.onchange = async () => redo(await bidSync(id, p.checked));
+    tr.querySelector(".bc-del").onclick = async () => redo(await delBid(id));
+  });
+  const sp = card.querySelector(".bc-push[data-sn]"); if (sp) sp.onchange = async () => redo(await snipeSync(sp.checked));
+  const sd = card.querySelector(".bc-del[data-sn]"); if (sd) sd.onclick = async () => { SNIPE_L = null; saveBids(); redo(await snipeSync(false)); };
 }
 function renderAlertPage(view) {
   const ids = [...new Set([...Object.keys(ALERTS).map(Number), ...alertAdd])];
@@ -2394,7 +2488,7 @@ function renderAlertPage(view) {
     </tbody></table></div>
     <button class="clr ap-wipe" id="apWipe">${alertWipe ? "確定要刪除全部？再按一次" : "全部刪除"}</button>`
     : '<p class="mut">還沒設提醒。上面搜一個，或去商品頁設。</p>'}
-  </div>${PUSH_ON ? supportHtml() : ""}`;
+  </div>${bidCardHtml()}${PUSH_ON ? supportHtml() : ""}`;
   const q = $("#apQ"), hitsBox = $("#apHits");
   q.oninput = () => {
     const t = q.value.trim().toLowerCase();
@@ -2415,6 +2509,7 @@ function renderAlertPage(view) {
   });
   const w = $("#apWipe");
   if (w) w.onclick = () => { if (!alertWipe) { alertWipe = true; renderAlertPage(view); setTimeout(() => { alertWipe = false; }, 5000); return; } ALERTS = {}; alertAdd.clear(); alertWipe = false; saveAlerts(); renderAlerts(); renderAlertPage(view); };
+  bindBidCard(view);
   bindPushCard(view);
   bindSupport(view);
   view.querySelectorAll(".go-support").forEach((a) => (a.onclick = (e) => { e.preventDefault(); $("#support")?.scrollIntoView({ behavior: "smooth" }); }));

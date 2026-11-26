@@ -558,7 +558,7 @@ def snipe_notify(items, meta, misc, house):
     for sub in subs:
         info = sub.get("wowah_subs") or {}
         if not info.get("discord_id"):
-            continue   # 要 Discord 登入才私訊得到（額度在資料庫的觸發器管：免費 1、支持者 30）
+            continue   # 要 Discord 登入才私訊得到（額度在資料庫的觸發器管：免費 2、支持者 30）
         done = set(sent_ids.get(sub["uid"], []))
         lines = []
         for iid, qty, bid, buyout, left, ref, off, aid, *_ in cands:
