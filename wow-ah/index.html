@@ -2516,6 +2516,7 @@ async function bidCards(id, r) {
   let B = null;
   try { B = await getJSON(`${HOUSE}/bids/${id % SHARDS}.json`); } catch (e) { return; }
   const list = B?.items?.[id] || [];
+  if (!r.nc && !list.length && !BIDS[id]) { box.innerHTML = ""; return; }   // 堆疊商品（材料）沒有競標，不顯示
   if (PUSH_ON && !PSUB) await pushLoad().catch(() => {});
   if ($("#bidBox") !== box) return;
   const ref = r.avg7 ?? r.ask;
