@@ -416,10 +416,57 @@ def write_ending(hdir, house_json, rows, cur_t):
             continue
         if buyout and buyout / qty <= ref * ENDING_MAX_RATIO:
             continue   # 直購本來就便宜，不需要搶標
-        out.append([int(iid), qty, bid, buyout, left, round(ref), round(1 - unit_bid / ref, 3)])
-    out.sort(key=lambda x: -(x[5] * x[1] - x[2]))   # 省最多錢的在前
+        out.append([int(iid), qty, bid, buyout, left, round(ref), round(1 - unit_bid / ref, 3), a["id"]])
+    out.sort(key=lambda x: -(x[5] * x[1] - x[2]))   # 省最多錢的在前（行情×數量 − 出價）
     write_json(os.path.join(hdir, "ending.json"),
-               {"t": cur_t, "f": ["item", "qty", "bid", "buyout", "left", "ref", "off"], "items": out[:ENDING_KEEP]})
+               {"t": cur_t, "f": ["item", "qty", "bid", "buyout", "left", "ref", "off", "aid"], "items": out[:ENDING_KEEP]})
+    return out[:ENDING_KEEP]
+
+
+def snipe_notify(items, meta, misc, house):
+    """搶標快訊：剩 30 分–2 小時、符合玩家門檻（便宜幾成、類別）的競標，機器人私訊支持者。同一筆拍賣只通知一次。"""
+    url, key, bot = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_KEY"), os.environ.get("DISCORD_BOT_TOKEN")
+    cands = [x for x in items if x[4] == "MEDIUM"]
+    if not (url and key and bot and cands):
+        return
+    h = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    try:
+        _, body, _ = http(f"{url}/rest/v1/wowah_snipe?house=eq.{house}&select=uid,min_off,cls,wowah_subs(discord_id,supporter_until)", h)
+        subs = json.loads(body)
+    except Exception as e:
+        print(f"::warning::snipe: {type(e).__name__}")
+        return
+    sent_ids = misc.setdefault("snipe_sent", {})
+    now_iso = datetime.now(timezone.utc).isoformat()
+    bh = {"Authorization": f"Bot {bot}", "Content-Type": "application/json", "User-Agent": "coomysf-wow-ah (https://coomysf.github.io, 1)"}
+    n_msg = 0
+    for sub in subs:
+        info = sub.get("wowah_subs") or {}
+        if not info.get("discord_id") or not (info.get("supporter_until") or "") > now_iso:
+            continue   # 支持者功能
+        done = set(sent_ids.get(sub["uid"], []))
+        lines = []
+        for iid, qty, bid, buyout, left, ref, off, aid in cands:
+            m = meta.get(str(iid)) or []
+            if off < float(sub["min_off"]) or (sub.get("cls") and m[2:3] != [sub["cls"]]) or aid in done:
+                continue
+            name = m[0] if m else f"#{iid}"
+            lines.append(f"⏳ **{name}**{f' ×{qty}' if qty > 1 else ''} 目前出價 {gold(bid)}（行情 {gold(ref * qty)}，便宜 {round(off * 100)}%）"
+                         f"{'・沒有直購' if not buyout else f'・直購 {gold(buyout)}'}")
+            done.add(aid)
+        if not lines:
+            continue
+        content = (f"【{HOUSE_LABEL.get(house, house)}】快結束的便宜競標（剩 30 分–2 小時，快去拍賣場搜尋出價）\n" + "\n".join(lines[:10])
+                   + f"\n{SITE}?h={house}#/ending")[:1900]
+        try:
+            _, b, _ = http("https://discord.com/api/v10/users/@me/channels", bh, json.dumps({"recipient_id": info["discord_id"]}).encode(), retries=2, timeout=15)
+            http(f"https://discord.com/api/v10/channels/{json.loads(b)['id']}/messages", bh,
+                 json.dumps({"content": content, "allowed_mentions": {"parse": []}}).encode(), retries=2, timeout=15)
+            n_msg += 1
+        except Exception as e:
+            print(f"snipe dm failed: {type(e).__name__}")
+        sent_ids[sub["uid"]] = list(done)[-400:]
+    print(f"snipe: {len(cands)} candidates, {n_msg} dms")
 
 
 # ---------- 商品資料 ----------
@@ -776,7 +823,7 @@ def run_house(token, key, house_id, data, meta, misses, watch, now_ms, force):
     write_json(os.path.join(hdir, "overview.json"),
                {"house": key, "t": cur_t, "hours": len(w24), "f": OF, "items": out_items})
 
-    write_ending(hdir, house, rows, cur_t)
+    snipe_notify(write_ending(hdir, house, rows, cur_t), meta, misc, key)
     check_alerts(watch, rows, meta, misc, key)
     push_user_alerts(rows, meta, key)
 
