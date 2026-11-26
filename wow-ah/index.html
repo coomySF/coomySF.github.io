@@ -625,8 +625,9 @@ function switchHouse(realm, fac) {
   if (!h || h.k === HOUSE) return;
   try { localStorage.setItem("wowah.house", h.k); } catch (e) {}
   track("ah_house", { house: h.k });
-  const u = new URL(location.href); u.searchParams.delete("h");
-  location.replace(u.toString());
+  // 網址只差 # 後面的話瀏覽器不會重新載入，所以把拍賣場寫進 ?h=（也方便分享）
+  const u = new URL(location.href); u.searchParams.set("h", h.k);
+  location.assign(u.toString());
 }
 function renderHouseBar() {
   const el = $("#houseBar");
