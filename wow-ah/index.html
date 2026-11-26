@@ -1271,10 +1271,10 @@ let DROPS = null, CRE = {};
 async function loadDrops() {
   if (DROPS) return DROPS;
   const [d, c] = await Promise.all([
-    fetch(new URL("drops.json", location.href)).then((r) => { if (!r.ok) throw new Error("drops.json " + r.status); return r.json(); }),
+    fetch(new URL("drops.json?v=20261127", location.href))   /* drops.json 重建時改這個版本 */.then((r) => { if (!r.ok) throw new Error("drops.json " + r.status); return r.json(); }),
     getJSON("meta/creatures.json").catch(() => ({})),
   ]);
-  CRE = c; DROPS = d;
+  CRE = { ...(d.crn || {}), ...c }; DROPS = d;   // crn：永恆新增副本的首領（沒有怪物 id，暴雪 API 查不到）
   return d;
 }
 const RANK = ["", "精英", "稀有精英", "首領", "稀有"];
@@ -1284,12 +1284,21 @@ const dropPct = (pm) => (pm >= 100 ? `${Math.round(pm / 10)}%` : `${(pm / 10).to
 const killsFor = (pm) => Math.max(1, Math.round(1000 / pm));
 const SUMMON_TIP = "這隻怪沒有固定出生點，要觸發事件、任務或召喚才會出現";
 const isRaid = (pl) => (DROPS.places[pl]?.[1] || 0) >= 20;
+// 在敵對陣營地盤裡的副本：聯盟拍賣場不推薦部落主城裡的（反之亦然），黑水灣兩邊都會用，只標出來
+const ENEMY_LAND = {
+  m389: ["部落", "在奧格瑪（部落主城）裡"], m2999: ["部落", "在幽暗城上方（部落領地）"],
+  m34: ["聯盟", "在暴風城（聯盟主城）裡"], m3065: ["聯盟", "在鐵爐堡下方（聯盟領地）"],
+};
+const enemyLand = (pl) => { const x = ENEMY_LAND[pl]; return x && x[0] !== HINFO.fac ? x : null; };   // 中立的黑水灣也會回傳（兩邊都標）
+const isEnemy = (pl) => { const x = enemyLand(pl); return !!x && HINFO.fac !== "黑水灣"; };
+const landChip = (pl) => { const x = enemyLand(pl); return x ? ` <span class="chip ${isEnemy(pl) ? "c-or" : "c-gy"}" title="${x[1]}${isEnemy(pl) ? `，${HINFO.fac}要闖進敵對陣營的地盤才進得去` : ""}">${x[0]}領地</span>` : ""; };
 function placeTxt(pl, short) {
   const p = DROPS.places[pl];
   if (!p) return `<span class="mut" title="${SUMMON_TIP}">召喚／事件怪 ⓘ</span>`;
   if (!p[1]) return esc(p[0]);
-  if (short) return esc(p[0]);
-  return `${esc(p[0])}<span class="mut sm">・${p[2] ? `Lv ${p[2]}–${p[3]}・` : ""}${p[1] >= 20 ? `${p[1]} 人團隊副本` : `${p[1]} 人副本`}</span>`;
+  if (short) return esc(p[0]) + landChip(pl);
+  const src = DROPS.src?.[pl];   // 永恆新增副本：掉落率是玩家回報的
+  return `${esc(p[0])}<span class="mut sm">・${p[2] ? `Lv ${p[2]}–${p[3]}・` : ""}${p[1] >= 20 ? `${p[1]} 人團隊副本` : `${p[1]} 人副本`}</span>${landChip(pl)}${src ? ` <span class="chip c-gy" title="永恆新增的副本，遊戲檔沒有掉落表；掉落率是${esc(src)}">永恆新增・玩家回報</span>` : ""}`;
 }
 function mobCell(m) {
   const x = DROPS.mobs[m], rk = RANK[x[1]];
@@ -1461,7 +1470,7 @@ function renderFarm(view) {
     }
   }
   const insts = [...inst.values()].map((e) => ({ ...e, players: DROPS.places[e.pl][1], each: e.ev / DROPS.places[e.pl][1] }))
-    .filter((e) => (!fstate.kind || (fstate.kind === "raid") === isRaid(e.pl)) && (!fstate.reach || reachPlace(e.pl, lv)))
+    .filter((e) => (!fstate.kind || (fstate.kind === "raid") === isRaid(e.pl)) && (!fstate.reach || reachPlace(e.pl, lv)) && !isEnemy(e.pl))
     .sort((a, b) => b.each - a.each);
   const best = insts[0];
 
@@ -1484,7 +1493,7 @@ function renderFarm(view) {
     ${best ? `<p class="headline">${who ? who + "，" : ""}現在最值得刷：<b>${placeTxt(best.pl)}</b>，清一趟平均掉 ${money(best.ev)} 的可賣掉落${best.players > 1 ? `，${best.players} 人分每人約 <b>${money(best.each)}</b>` : ""}${top ? `；拍賣場最好賣的${lv && fstate.reach ? "打得到的" : "可打"}裝備是 ${gearLink(top.id)}（7 天賣掉 ${fmtN(top.vol7)} 件，平均價 ${money(top.avg7 ?? top.ask)}）` : ""}。</p>` : `<p class="headline">${lv ? `以你 ${lv} 級，目前沒有打得到、又在拍賣場有成交的副本掉落。` : "目前拍賣場上沒有副本掉落的成交。"}</p>`}
     <p class="mut sm">${DROP_NOTE}</p></div>
 
-    <div class="card"><h3>哪個副本最值得刷</h3><p class="desc">每趟期望值＝每隻怪的掉率 × 怪的數量 × 拍賣場價格，加總整個副本，再除以隊伍人數＝每人分到多少。只算指定掉落，世界掉落沒算進去，實際會再多一點。</p>
+    <div class="card"><h3>哪個副本最值得刷</h3><p class="desc">每趟期望值＝每隻怪的掉率 × 怪的數量 × 拍賣場價格，加總整個副本，再除以隊伍人數＝每人分到多少。只算指定掉落，世界掉落沒算進去，實際會再多一點。${HINFO.fac === "黑水灣" ? "黑水灣兩個陣營都會用，在主城或陣營領地裡的副本有標出來。" : `在${HINFO.fac === "聯盟" ? "部落" : "聯盟"}領地裡的副本（${Object.entries(ENEMY_LAND).filter(([, x]) => x[0] !== HINFO.fac).map(([k]) => DROPS.places[k]?.[0]).filter(Boolean).join("、")}）${HINFO.fac}很難進去，不列。`}</p>
     <div class="seg" id="fKind" role="group" aria-label="副本類型"><button data-v="" aria-pressed="${!fstate.kind}">全部</button><button data-v="party" aria-pressed="${fstate.kind === "party"}">5 人副本</button><button data-v="raid" aria-pressed="${fstate.kind === "raid"}">團隊副本</button></div>
     <div class="tscroll"><table class="ptab"><thead><tr><th>副本</th><th>每人每趟</th><th class="lt">最值錢的掉落</th></tr></thead><tbody>
     ${insts.map((e) => { const its = [...e.items.values()].sort((a, b) => b.ev - a.ev).slice(0, 3);
