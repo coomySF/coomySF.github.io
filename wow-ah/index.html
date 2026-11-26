@@ -351,6 +351,11 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   .limit-box { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--gold-line, var(--gold)); border-left: 3px solid var(--gold); border-radius: 8px; background: rgba(226, 189, 98, .08); font-size: 13px; line-height: 1.6; }
   #list th.warm::after { content: "累積中"; display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 999px; font-size: 9px; letter-spacing: 0; color: var(--muted); border: 1px solid var(--line); vertical-align: 1px; }
   .warm-bar { display: inline-block; width: 90px; height: 6px; margin: 0 10px; border-radius: 999px; background: var(--surface-2); vertical-align: middle; overflow: hidden; } .warm-bar i { display: block; height: 100%; background: var(--gold); }
+  .end-teaser { display: block; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--gold-line, var(--line)); border-left: 3px solid var(--gold); border-radius: 10px; background: rgba(226, 189, 98, .07); color: var(--ink); text-decoration: none; font-size: 14px; }
+  .end-teaser:hover { background: rgba(226, 189, 98, .12); }
+  .snipe-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 10px 0 4px; padding: 10px 12px; border: 1px dashed var(--gold-line, var(--line)); border-radius: 10px; font-size: 13px; }
+  .snipe-box.on { border-style: solid; background: rgba(226, 189, 98, .06); }
+  .snipe-box select { height: 28px; border-radius: 6px; border: 1px solid var(--line); background: var(--field, var(--bg)); color: var(--ink); }
   .ab-thanks { color: var(--muted); }
   /* 遠征補給站（只做深色） */
   .support-card { position: relative; overflow: hidden; border-color: var(--gold-line, var(--line)); background: radial-gradient(90% 70% at 0% 0%, rgba(226, 189, 98, .10), transparent 60%), var(--surface); padding: 22px 20px 16px; }
@@ -529,6 +534,7 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   <section id="listView">
     <div class="card promo" id="promo" hidden></div>
     <div class="card idx" id="idxCard" hidden></div>
+    <a class="end-teaser" id="endTeaser" href="#/ending" hidden></a>
     <div class="filters" id="filters">
       <input type="search" id="q" placeholder="搜尋商品名稱" aria-label="搜尋商品名稱" autocomplete="off">
       <select id="cls" aria-label="類別"><option value="">所有類別</option></select>
@@ -581,6 +587,8 @@ w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),e
   <section id="farmView" hidden></section>
 
   <section id="alertView" hidden></section>
+
+  <section id="endingView" hidden></section>
 
   <section class="about" id="about" aria-labelledby="aboutH">
     <h2 id="aboutH">魔獸世界：永恆 台服拍賣場物價查詢</h2>
@@ -722,6 +730,7 @@ async function boot() {
   route();
   window.addEventListener("hashchange", route);
   loadIndex();
+  endTeaser();
   startWatcher();
 }
 
@@ -924,7 +933,7 @@ new MutationObserver(labelTables).observe(document.body, { childList: true, subt
 const LIST_TITLE = document.title;
 function route() {
   const h = location.hash;
-  const tab = h.startsWith("#/prof") ? "prof" : h.startsWith("#/farm") ? "farm" : h.startsWith("#/alerts") ? "alerts" : "ah";
+  const tab = h.startsWith("#/prof") ? "prof" : h.startsWith("#/farm") ? "farm" : h.startsWith("#/alerts") ? "alerts" : h.startsWith("#/ending") ? "ending" : "ah";
   $("#alertBar").classList.toggle("on-page", tab === "alerts");   // 提醒管理頁本身就列了，上面的橫幅收起來
   document.querySelectorAll(".vtabs a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.t === tab)));
   let m;
@@ -932,13 +941,14 @@ function route() {
   if ((m = h.match(/^#\/prof(?:\/(\d+))?/))) { showProf(m[1] ? +m[1] : null); return; }
   if (h.startsWith("#/farm")) { showFarm(); return; }
   if (h.startsWith("#/alerts")) { showAlerts(); return; }
-  $("#itemView").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
+  if (h.startsWith("#/ending")) { showEnding(); return; }
+  $("#itemView").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true; $("#endingView").hidden = true; $("#listView").hidden = false; $("#about").hidden = false;
   document.title = LIST_TITLE;
   renderList();
 }
 
 async function showItem(id) {
-  $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true;
+  $("#listView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true; $("#endingView").hidden = true;
   const view = $("#itemView");
   view.hidden = false;
   view.innerHTML = '<button class="back" id="back">← 回列表</button><div class="skel"><i style="height:64px"></i><i style="height:96px"></i><i></i><i></i></div>';
@@ -1415,7 +1425,7 @@ function reachItem(id, lv) {
 
 const fstate = { sort: "value", cls: "", kind: "", reach: true, mine: false, shown: 50 };
 async function showFarm() {
-  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#alertView").hidden = true;
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#alertView").hidden = true; $("#endingView").hidden = true;
   const view = $("#farmView");
   view.hidden = false;
   if (!DROPS) view.innerHTML = '<div class="skel"><i></i><i></i><i></i></div>';
@@ -1673,7 +1683,8 @@ function renderBadge() {
   const b = $("#tBadge"), n = Object.keys(ALERTS).length, hits = Object.keys(ALERTS).filter((id) => alertHit(id)).length;
   if (!b) return;
   b.hidden = !n;
-  b.textContent = hits ? `${hits} 到價` : String(n);
+  b.textContent = String(hits || n);
+  b.title = hits ? `${hits} 個到價` : `設了 ${n} 個提醒`;
   b.classList.toggle("hot", !!hits);
 }
 function renderAlerts() {
@@ -2186,9 +2197,80 @@ function showLimitBox() {
 // 頁面上的小提示（不用瀏覽器 alert 對話框）
 function alert0(msg) { const m = $("#pushHookMsg") || $("#apMsg"); if (m) m.textContent = msg; }
 
+/* ---------------- 快結束的便宜競標（搶標） ---------------- */
+// 收集器每小時從非堆疊商品挑出：剩 30 分–2 小時（或 30 分內）、目前出價低於 7 日均 25% 以上的競標
+const LEFT_TW = { SHORT: "30 分內", MEDIUM: "30 分–2 小時" };
+let ENDING = null;
+const estate = { cls: "", off: 0.25 };
+async function loadEnding() { try { ENDING = await getJSON(`${HOUSE}/ending.json`); } catch (e) { ENDING = null; } return ENDING; }
+async function endTeaser() {
+  const el = $("#endTeaser");
+  if (!el) return;
+  await loadEnding();
+  const n = (ENDING?.items || []).filter((x) => x[4] === "MEDIUM").length;
+  el.hidden = !n;
+  el.innerHTML = `⏳ <b>${n} 筆快結束的便宜競標</b>，目前出價比行情低 25% 以上，有空就去搶 →`;
+}
+async function showEnding() {
+  ["listView", "itemView", "about", "profView", "farmView", "alertView"].forEach((k) => ($("#" + k).hidden = true));
+  const view = $("#endingView");
+  view.hidden = false;
+  document.title = "快結束的便宜競標｜魔獸世界：永恆 台服拍賣場";
+  window.scrollTo(0, 0);
+  track("ah_ending");
+  if (!ENDING) { view.innerHTML = '<div class="skel"><i></i><i></i></div>'; await loadEnding(); }
+  if (PUSH_ON && !PSUB) await pushLoad().catch(() => {});
+  if (PUSH_ON && PSUB) await loadSnipe();
+  renderEnding(view);
+}
+let SNIPE = null;
+async function loadSnipe() {
+  try { const c = await sb(); const { data } = await c.from("wowah_snipe").select("min_off,cls").eq("house", HOUSE).limit(1); SNIPE = data?.[0] || null; } catch (e) { SNIPE = null; }
+}
+function snipeBox() {
+  if (!PUSH_ON) return "";
+  if (!PSUB) return `<div class="snipe-box"><span>🔔 <b>有好康就私訊你</b>：用 Discord 登入，符合條件的競標一出現，機器人直接私訊你（支持者功能）。</span><a class="clr" href="#/alerts">去登入 →</a></div>`;
+  if (!isSupporter()) return `<div class="snipe-box"><span>🔔 <b>有好康就私訊你</b>：這是支持者功能，隨便贊助一次（NT$30 起）就解鎖，順便推播開到 30 個。</span><a class="clr" href="#/alerts" data-go="support">怎麼支持 →</a></div>`;
+  const on = !!SNIPE, off = SNIPE ? +SNIPE.min_off : 0.4, cls = SNIPE?.cls || "";
+  return `<div class="snipe-box on">
+    <label><input type="checkbox" id="snOn" ${on ? "checked" : ""}> 🔔 <b>有好康就私訊我</b>（${HLABEL}拍賣場）</label>
+    <label>便宜 <select id="snOff">${[0.25, 0.4, 0.6].map((v) => `<option value="${v}"${Math.abs(v - off) < 0.01 ? " selected" : ""}>${v * 100}%</option>`).join("")}</select> 以上</label>
+    <label>只看 <select id="snCls"><option value="">全部</option>${["武器", "護甲", "配方"].map((c) => `<option${c === cls ? " selected" : ""}>${c}</option>`).join("")}</select></label>
+    <span class="sm" id="snMsg" aria-live="polite">${on ? "✓ 開著：每小時檢查，同一筆只通知一次。" : ""}</span></div>`;
+}
+function renderEnding(view) {
+  const items = ENDING?.items || [];
+  const age = ENDING ? Math.round((Date.now() - ENDING.t) / 60000) : null;
+  const rows = items.filter((x) => x[6] >= estate.off && (!estate.cls || (estate.cls === "其他" ? !["武器", "護甲", "配方"].includes((META[x[0]] || [])[2]) : (META[x[0]] || [])[2] === estate.cls)))
+    .sort((a, b) => (a[4] === "SHORT") - (b[4] === "SHORT") || b[5] * b[1] - b[2] - (a[5] * a[1] - a[2]));
+  const seg = (id, opts, cur) => `<div class="seg" id="${id}">${opts.map(([v, t]) => `<button data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`).join("")}</div>`;
+  view.innerHTML = `<div class="card"><h3>⏳ 快結束的便宜競標</h3>
+    <p class="desc">只能競標（或直購很貴）的裝備、配方，剩不到 2 小時、目前出價比 7 日均低 25% 以上。去拍賣場搜尋名稱，出價比目前高一點就有機會搶到。<br>
+    <span class="mut sm">${ENDING ? `快照 ${tpe(ENDING.t, { hour: "2-digit", minute: "2-digit" })}（${age} 分鐘前）` : "還沒有資料"}・暴雪的剩餘時間只給區間，快照大約晚半小時，「30 分內」的多半已經結束了。</span></p>
+    ${snipeBox()}
+    <div class="filters pfilters">${seg("enCls", [["", "全部"], ["武器", "武器"], ["護甲", "護甲"], ["配方", "配方"], ["其他", "其他"]], estate.cls)}${seg("enOff", [[0.25, "便宜 25%+"], [0.4, "40%+"], [0.6, "60%+"]], estate.off)}</div>
+    <div class="tscroll"><table class="ptab"><thead><tr><th>商品</th><th>目前出價</th><th>行情（7 日均）</th><th>便宜</th><th>剩餘</th><th>直購</th></tr></thead><tbody>
+    ${rows.map(([iid, qty, bid, buyout, left, ref, off]) => `<tr class="${left === "SHORT" ? "dim" : ""}"><td>${gearLink(iid)}${qty > 1 ? ` <span class="mut sm">×${qty}</span>` : ""}</td>
+      <td>${money(bid)}</td><td>${money(ref * qty)}</td><td><b class="good">${Math.round(off * 100)}%</b></td><td class="sm">${LEFT_TW[left]}${left === "SHORT" ? '<div class="mut">多半已結束</div>' : ""}</td><td>${buyout ? money(buyout) : '<span class="mut sm">只能競標</span>'}</td></tr>`).join("")
+      || `<tr><td colspan="6" class="mut">這個小時沒有符合條件的競標。${HLABEL}拍賣場換個條件看看，或開「有好康就私訊我」等它出現。</td></tr>`}
+    </tbody></table></div></div>`;
+  view.querySelectorAll("#enCls button").forEach((b) => (b.onclick = () => { estate.cls = b.dataset.v; renderEnding(view); }));
+  view.querySelectorAll("#enOff button").forEach((b) => (b.onclick = () => { estate.off = +b.dataset.v; renderEnding(view); }));
+  const save = async () => {
+    const c = await sb(), on = $("#snOn").checked, off = +$("#snOff").value, cls = $("#snCls").value || null;
+    if (!on) { await c.from("wowah_snipe").delete().eq("house", HOUSE); SNIPE = null; $("#snMsg").textContent = "已關閉。"; return; }
+    const { error } = await c.from("wowah_snipe").upsert({ house: HOUSE, min_off: off, cls }, { onConflict: "uid,house" });
+    if (error) { $("#snMsg").textContent = "設定失敗，稍後再試。"; return; }
+    SNIPE = { min_off: off, cls }; track("ah_snipe_on", { house: HOUSE, off });
+    $("#snMsg").textContent = "✓ 開著：每小時檢查，同一筆只通知一次。";
+  };
+  ["#snOn", "#snOff", "#snCls"].forEach((id) => { const el = $(id); if (el) el.onchange = save; });
+}
+
 /* ---------------- 提醒管理 ---------------- */
 let alertAdd = new Set(), alertWipe = false;   // alertAdd：剛加進來、還沒填門檻的商品
 function showAlerts() {
+  $("#endingView").hidden = true;
   $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#profView").hidden = true; $("#farmView").hidden = true;
   const view = $("#alertView");
   view.hidden = false;
@@ -2520,7 +2602,7 @@ function bindProfControls(rerender, skill) {
 const fromFor = (skill) => Math.max(1, ME[skill] ?? pstate.from);
 
 async function showProf(skill) {
-  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true;
+  $("#listView").hidden = true; $("#itemView").hidden = true; $("#about").hidden = true; $("#farmView").hidden = true; $("#alertView").hidden = true; $("#endingView").hidden = true;
   const view = $("#profView");
   view.hidden = false;
   view.innerHTML = '<p class="mut">讀取配方…</p>';
